@@ -620,6 +620,7 @@ var gateway = {
 	'setConnectedWhenIdentified': 0,
 	'connectTimeoutID': 0,
 	'disconnectMessageShown': 0,
+	'firstConnect': 1, //jeśli dostanę ERROR gdy to jest nadal 1 = błąd z poprzedniej sesji, od razu łączę ponownie
 	'statusWindow': new Status(),
 	'reconnect': function() { //wywoływana po kliknięciu 'połącz ponownie'
 		gateway.connectStatus = statusDisconnected;
@@ -644,6 +645,7 @@ var gateway = {
 		}
 		$('#not_connected_wrapper').fadeOut(400); //schować szare tło!
 		clearTimeout(gateway.connectTimeoutID); //już ok więc nie czekam na nieudane połączenie
+		gateway.firstConnect = 0;
 		if (gateway.getActive() && gateway.findChannel(gateway.active)) {
 			$('#'+gateway.findChannel(gateway.active).id+'-nicklist').show(); //gwarantuje pokazanie listy nicków na bieżącym kanale po ponownym połączeniu
 		}
@@ -737,6 +739,9 @@ var gateway = {
 				gateway.send('JOIN '+guser.channels[0]);
 			}
 		}, 500);
+		
+		clearTimeout(gateway.connectTimeoutID);
+		gateway.connectTimeoutID = setTimeout(gateway.connectTimeout, 20000);
 
 	},
 	'realconnect': function(ajaxUrl) {
@@ -2134,6 +2139,9 @@ var cmdBinds = {
 			gateway.disconnected(msg.text);
 
 			if(gateway.connectStatus == statusDisconnected) {
+				if(gateway.firstConnect){
+					gateway.reconnect();
+				}
 				return;
 			}
 
@@ -2953,6 +2961,12 @@ $(function(){
 		    dnick = ''
             $(document).attr('title', 'Nieznany @ PIRC.pl');
 		}
+		
+		if(!navigator.cookieEnabled){
+			$('.not-connected-text > p').html('<p>Twoja przeglądarka ma wyłączoną obsługę ciasteczek. Nie można uruchomić bramki.</p>');
+			return;
+		}
+		
 		var reqChannel = guser.channels[0];
 		var my_nick = dnick;
 		var my_pass = '';
@@ -2972,31 +2986,32 @@ $(function(){
 			}
 		}
 		
-
-		$.ajax({
-			url: '/bajax/',
-			data: {
-				send: ''
-			},
-			dataType: 'json',
-			success: function(data) {
-				if(data.status != 1 && data.status != 4) {
-					gateway.initSys();
-					gateway.recoverConnection();
-					gateway.connectTimeoutID = setTimeout(gateway.connectTimeout, 20000);
-					gateway.processData(data);
+		setTimeout(function(){
+			$.ajax({
+				url: '/bajax/',
+				data: {
+					send: ''
+				},
+				dataType: 'json',
+				success: function(data) {
+					if(data.status != 1 && data.status != 4) {
+						gateway.initSys();
+						gateway.recoverConnection();
+						gateway.connectTimeoutID = setTimeout(gateway.connectTimeout, 20000);
+						gateway.processData(data);
+					}
 				}
-			}
-		});
+			});
 		
-		var nconn_html = '<form onsubmit="gateway.initialize();" action="javascript:void(0);"><table>';
-		nconn_html += '<tr><td style="text-align: right; padding-right: 10px;">Kanał:</td><td><input type="text" id="nschan" value="'+$('<div/>').text(reqChannel).html()+'" /></td></tr>';
-		nconn_html += '<tr><td style="text-align: right; padding-right: 10px;">Nick:</td><td><input type="text" id="nsnick" value="'+my_nick+'" /></td></tr>';
-		nconn_html += '<tr><td style="text-align: right; padding-right: 10px;">Hasło (jeżeli zarejestrowany):</td><td><input type="password" id="nspass" value="'+my_pass+'" autofocus="autofocus" /></td></tr>';
-		nconn_html += '<tr><td></td><td style="text-align: left;"><input type="checkbox" id="save_cookie" /> Zapisz w ciasteczkach</td></tr>';
-		nconn_html += '<tr><td colspan="2" style="text-align: center; margin-top: 15px;"><input type="submit" value="Połącz z IRC" /></td></tr>';
-		nconn_html += '</table></form>';
-		$('.not-connected-text > p').html(nconn_html);
+			var nconn_html = '<form onsubmit="gateway.initialize();" action="javascript:void(0);"><table>';
+			nconn_html += '<tr><td style="text-align: right; padding-right: 10px;">Kanał:</td><td><input type="text" id="nschan" value="'+$('<div/>').text(reqChannel).html()+'" /></td></tr>';
+			nconn_html += '<tr><td style="text-align: right; padding-right: 10px;">Nick:</td><td><input type="text" id="nsnick" value="'+my_nick+'" /></td></tr>';
+			nconn_html += '<tr><td style="text-align: right; padding-right: 10px;">Hasło (jeżeli zarejestrowany):</td><td><input type="password" id="nspass" value="'+my_pass+'" autofocus="autofocus" /></td></tr>';
+			nconn_html += '<tr><td></td><td style="text-align: left;"><input type="checkbox" id="save_cookie" /> Zapisz w ciasteczkach</td></tr>';
+			nconn_html += '<tr><td colspan="2" style="text-align: center; margin-top: 15px;"><input type="submit" value="Połącz z IRC" /></td></tr>';
+			nconn_html += '</table></form>';
+			$('.not-connected-text > p').html(nconn_html);
+		}, 200);
 	}
 });
 
