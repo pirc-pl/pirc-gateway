@@ -1091,12 +1091,14 @@ var gateway = {
         	});
         }
         
-        var rexpr = /https?:\/\/www.youtube.com\/watch\?v=([^ ]+)/i;
+        var rexpr = /https?:\/\/www.youtube.com\/watch\?[^ ]*v=([^ ]+)/i;
         
-        var fmatch = text.match(/(https?:\/\/www.youtube.com\/watch\?v=[^ ]+)/gi);
+        var fmatch = text.match(/(https?:\/\/www.youtube.com\/watch\?[^ ]*v=[^ ?&]+)/gi);
+        console.log(fmatch);
         if(fmatch){
         	fmatch.forEach(function(arg){
 			    var rmatch = rexpr.exec(arg);
+			    console.log(rmatch);
 			    if(rmatch[1]){
 		    		var rand = Math.floor(Math.random() * 10000).toString();
 		    		var imgurl = encodeURI(rmatch[1]);
