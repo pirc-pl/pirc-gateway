@@ -2925,13 +2925,13 @@ $(function(){
 			}
 		});
 		$(window).unload(function(){
-		//	gateway.send("QUIT :Zamknął okno");   ///// ODKOMENTUJ TO
+			gateway.send("QUIT :Zamknął okno");
 			gateway.send();
 		});
 
 		// bo chrome
 		window.onunload = function() {
-		//	gateway.send("QUIT :Zamknął okno");    ////// I TO TEŻ
+			gateway.send("QUIT :Zamknął okno");
 			gateway.send();
 		};
 
