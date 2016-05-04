@@ -1,4 +1,4 @@
-<?
+<?php
 
 
 const STATUS_NOT_CONNECTED = 1;
