@@ -19,6 +19,8 @@ var alt = [
 
 var reqChannel = '';
 
+var server = 'ws://'+location.host+'/ircsocket';
+
 var messagePatterns = {
 	'nickChange': '<span class="time">%s</span> &nbsp; <span class="mode">*** %s zmieni\u0142 nick na %s</span><br />',
 	'nickInUse': '<span class="time">%s</span> &nbsp; <span class="kick">*** %s: Nick jest juz uzywany przez kogos innego.</span><br />',
@@ -27,7 +29,7 @@ var messagePatterns = {
 	'join': '<span class="time">%s</span> &nbsp; <span class="join">&rarr; <b>%s</b> <i>[%s@%s]</i> do\u0142\u0105czy\u0142 do %s.</span><br />',
 	'part': '<span class="time">%s</span> &nbsp; <span class="part">&larr; <b>%s</b> <i>[%s@%s]</i> opu\u015bci\u0142 %s [%s]</span><br />',
 	'quit': '<span class="time">%s</span> &nbsp; <span class="part">&larr; <b>%s</b> <i>[%s@%s]</i> opu\u015bci\u0142 IRC [%s]</span><br />',
-	'partOwn': '<span class="time">%s</span> &nbsp; <span class="part">&larr; Opu\u015bci\u0142e\u015b kana\u0142 %s</span><br />',
+	'partOwn': '<span class="time">%s</span> &nbsp; <span class="part">&larr; Opu\u015bci\u0142e\u015b kana\u0142 %s. <a href="#" onclick="gateway.send(\'JOIN %s\')">Dołącz ponownie</a></span><br />',
 	'channelMsg': '<span class="time">%s</span> &nbsp; <span class="nick">&lt;%s&gt;</span> %s<br />',
 	'yourMsg': '<span class="time">%s</span> &nbsp; <span class="yournick">&lt;%s&gt;</span> %s<br />',
 	'channelMsgHilight': '<span class="time">%s</span> &nbsp; <span class="hilight"><span class="nick">&lt;%s&gt;</span> %s</span><br />',
@@ -66,7 +68,7 @@ var messagePatterns = {
 	'exceptListEnd': '<span class="time">%s</span> &nbsp; <span class="mode">*** Koniec listy except.</span><br />',
 	'mode': '<span class="time">%s</span> &nbsp; <span class="mode">*** Ustawienia kana\u0142u %s: [%s]</span><br />',
 	'error': '<span class="time">%s</span> &nbsp; <span class="mode"> !!! Roz\u0142\u0105czono z serwerem: %s</span><br />',
-	'existingConnection': '<span class="time">%s</span> &nbsp; <span class="mode">*** Połączenie już istnieje, wykorzystuję je. Jeśli masz otwartą więcej niż jedną bramkę, spodziewaj się problemów!</span><br />'
+	'existingConnection': '<span class="time">%s</span> &nbsp; <span class="mode">*** Połączenie już istnieje, wykorzystuję je. Jeśli masz otwartą więcej niż jedną bramkę, spodziewaj się problemów!</span><br />',
 };
 
 var modes = {
@@ -204,7 +206,7 @@ function NicklistUser(usernick, initMode, chan) {
 					'<td valign="top">&nbsp;&nbsp;'+$('<div/>').text(this.nick).html()+'</td>'+
 				'</tr></table>'+
 				'<ul class="options" id="'+this.id+'-opt">'+
-					'<li onClick=\'gateway.send("WHOIS '+gateway.sescape(this.nick)+'")\'>Informacje (WHOIS)</li>'+
+					'<li onClick=\'' + ((this.nick.toLowerCase() == guser.nick.toLowerCase())?'gateway.displayOwnWhois = true; ':'') + 'gateway.send("WHOIS '+gateway.sescape(this.nick)+'")\'>Informacje (WHOIS)</li>'+
 					'<li onClick=\'gateway.queries.push(new Query("'+this.nick+'")); gateway.switchTab("'+this.nick+'")\' class="switchTab">Rozmowa Prywatna (QUERY)</li>'+
 					'li  onClick=\'gateway.showKick("'+this.channel+'", "'+this.nick+'")\'>Wyrzu\u0107 z kana\u0142u</li>'+
 					'<li onClick=\'gateway.showStatus("'+this.channel+'", "'+this.nick+'")\'>Daj uprawnienia</li>'+
@@ -217,7 +219,7 @@ function NicklistUser(usernick, initMode, chan) {
 					'<td valign="top"><img alt="'+alt[this.level]+'" src="'+icons[this.level]+'" width="16" height="16" /></td><td valign="top">&nbsp;&nbsp;'+this.nick+'</td>'+
 				'</tr></table>'+
 				'<ul class="options" id="'+this.id+'-opt">'+
-					'<li onClick=\'gateway.send("WHOIS '+gateway.sescape(this.nick)+'")\'>Informacje (WHOIS)</li>'+
+					'<li onClick=\'' + ((this.nick.toLowerCase() == guser.nick.toLowerCase())?'gateway.displayOwnWhois = true; ':'') + 'gateway.send("WHOIS '+gateway.sescape(this.nick)+'")\'>Informacje (WHOIS)</li>'+
 					'<li onClick=\'gateway.queries.push(new Query("'+this.nick+'")); gateway.switchTab("'+this.nick+'")\' class="switchTab">Rozmowa Prywatna (QUERY)</li>'+
 					'<li onClick=\'gateway.showKick("'+this.channel+'", "'+this.nick+'")\'>Wyrzu\u0107 z kana\u0142u</li>'+
 					'<li onClick=\'gateway.showStatus("'+this.channel+'", "'+this.nick+'")\'>Daj uprawnienia</li>'+
@@ -438,7 +440,8 @@ function Channel(chan) {
 	this.close = function() {
 		if(!this.left) {
 			this.part();
-			gateway.send("PART "+this.name);
+			gateway.send("PART "+this.name+" :Opuścił kanał");
+			gateway.statusWindow.appendMessage(messagePatterns.partOwn, [gateway.niceTime(), this.name, this.name]);
 		}
 		this.nicklist.remove();
 		$('#'+this.id+'-tab').remove();
@@ -469,7 +472,8 @@ function Channel(chan) {
 	$('<span/>').attr('id', this.id+'-window').hide().appendTo('#main-window');
 	$('<span/>').attr('id', this.id+'-topic').hide().appendTo('#topic');
 	$('#'+this.id+'-topic').html('<h1>'+$('<div/>').text(this.name).html()+'</h1><h2></h2>');
-	$('<li/>').attr('id', this.id+'-tab').html('<a href="javascript:void(0);" onclick="gateway.switchTab(\''+this.name+'\')" class="switchTab">'+$('<div/>').text(this.name).html()+'</a><a href="javascript:void(0);" onclick="gateway.removeChannel(\''+this.name+'\')"><div class="close"></div></a>').appendTo('#tabs');
+	$('<li/>').attr('id', this.id+'-tab').html('<a href="javascript:void(0);" onclick="gateway.switchTab(\''+this.name+'\')" class="switchTab">'+$('<div/>').text(this.name).html()+'</a>'+
+		'<a href="javascript:void(0);" onclick="gateway.removeChannel(\''+this.name+'\')"><div class="close"></div></a>').appendTo('#tabs');
 //	$('#'+this.id+'-window').vprintf(messagePatterns.joinOwn, [gateway.niceTime(), this.name]);
 }
 
@@ -619,28 +623,112 @@ var disp = {
 	}
 };
 
+var irc = {
+	'messagedata': function() {
+		this.text = '';
+		this.args = [];
+		this.command = '';
+		this.sender = {
+			'nick': '',
+			'ident': '',
+			'host': '',
+			'server': false,
+			'user': false
+		};
+	},
+	'parseMessage': function(msg){
+		lines = msg.split("\n");
+		packets = [];
+		packetcnt = 0;
+		lines.forEach(function(line){
+			ircmsg = new irc.messagedata();
+			if(line.charAt(0) == "\r"){
+				line = line.substr(1);
+			}
+			while(line.slice(-1) == "\r" || line.slice(-1) == " "){
+				line = line.slice(0, -1);
+				if(line == ''){
+					return;
+				}
+			}
+			data = line.split(" :");
+			console.log(data);
+			if(data[1]){
+				ircmsg.text = data[1];
+			}
+			cmddata = data[0].split(" ");
+		//	console.log(cmddata);
+			if(cmddata[0].charAt(0) == ':'){
+				var rexpr = /^:([^ !@]+)(!([^ !@]+)@([^ !@]+))?$/i;
+				
+				var rmatch = rexpr.exec(cmddata[0]);
+				console.log(rmatch);
+
+				ircmsg.sender.nick = rmatch[1];
+				if(ircmsg.sender.nick.match(/\./)){
+					ircmsg.sender.server = true;
+				} else {
+					ircmsg.sender.user = true;
+				}
+				if(rmatch[3]){
+					ircmsg.sender.ident = rmatch[3];
+				}
+				if(rmatch[4]){
+					ircmsg.sender.host = rmatch[4];
+				}
+				ircmsg.command = cmddata[1];
+				var i = 2;
+			} else {
+				ircmsg.command = cmddata[0];
+				var i = 1;
+			}
+			while(cmddata[i]){
+				ircmsg.args[i-2] = cmddata[i];
+				i++;
+			}
+			console.log(ircmsg);
+			packets[packetcnt] = ircmsg;
+			packetcnt++;
+		});
+	//	console.log(packets);
+		return {'status': 2, 'packets': packets };
+	}
+};
+
 var gateway = {
+	'websock': 0,
 	'whois': '',
 	'connectStatus': statusDisconnected,
 	'joined': 0,
 	'setConnectedWhenIdentified': 0,
 	'connectTimeoutID': 0,
+	'pingIntervalID': false,
 	'disconnectMessageShown': 0,
+	'displayOwnWhois': false,
 	'firstConnect': 1, //jeśli dostanę ERROR gdy to jest nadal 1 = błąd z poprzedniej sesji, od razu łączę ponownie
+	'allowNewSend' : true,
 	'statusWindow': new Status(),
 	'reconnect': function() { //wywoływana po kliknięciu 'połącz ponownie'
-		gateway.connectStatus = statusDisconnected;
-		$('#not_connected_wrapper').fadeIn(50);
-		$('.not-connected-text > h3').html('Łączenie');
-		$('.not-connected-text > p').html('Ponowne łączenie, czekaj...<br />Nie używaj teraz przycisku "Wstecz" ani "Odśwież".');
-		$('#reconnect_wrapper').fadeOut(50);
-		gateway.connect(true);
+		gateway.websock.onerror = undefined;
+		gateway.websock.onclose = undefined;
+		gateway.websock.close();
+		gateway.websock = false;
+		setTimeout(function(){
+			gateway.connectStatus = statusDisconnected;
+			$('#not_connected_wrapper').fadeIn(50);
+			$('.not-connected-text > h3').html('Łączenie');
+			$('.not-connected-text > p').html('Ponowne łączenie, czekaj...<br />Nie używaj teraz przycisku "Wstecz" ani "Odśwież".');
+			$('#reconnect_wrapper').fadeOut(50);
+			gateway.connect(true);
+		}, 500);
 //			$(this).fadeOut(50);
 	},
 	'iKnowIAmConnected': function() { //użytkownik może już pisać na kanale
-		setInterval(function(){
-			gateway.ping();
-		}, 20000);
+		if(!gateway.pingIntervalID){
+			gateway.pingIntervalID = setInterval(function(){
+				gateway.ping();
+			}, 20000);
+		}
 		if(gateway.connectStatus == statusIdentified){
 			gateway.connectStatus = statusConnected;
 			if(guser.nickservnick != '' && guser.nick != guser.nickservnick) { //ostatnia próba zmiany nicka na właściwy
@@ -659,6 +747,11 @@ var gateway = {
 	'pingcnt': 0,
 	'disconnected': function(text) { //informacja w okienkach i ich blokowanie przy rozłączeniu
 		clearTimeout(gateway.connectTimeoutID);
+		gateway.websock.onerror = undefined;
+		gateway.websock.onclose = undefined;
+		gateway.connectTimeoutID = false;
+		clearInterval(gateway.pingIntervalID);
+		gateway.pingIntervalID = false;
 		if(gateway.disconnectMessageShown) {
 			return;
 		}
@@ -674,57 +767,84 @@ var gateway = {
 			gateway.pingcnt = 0;
 			return;
 		}
-		gateway.send('PING :JavaScript');
+		gateway.forceSend('PING :JavaScript');
 		if(gateway.pingcnt > 3) {
 			gateway.connectStatus = statusError;
 			$('#reconnect_wrapper').fadeIn(50);
-			gateway.send('QUIT :Błąd bramki >> zbyt długi czas odpowiedzi serwera');
+	//		gateway.send('QUIT :Błąd bramki >> zbyt długi czas odpowiedzi serwera');
 			gateway.disconnected('Przekroczony czas odpowiedzi serwera');
+			gateway.pingcnt = 0;
 		} else {
 			gateway.pingcnt++;
 		}
 	},
-	'connect': function(force) { //łączenie z irc
-	/*	if(force) {
-			gateway.send('QUIT :Dziwny problem??? Bramka się wykrzaczyła!');
-			setTimeout(gateway.realconnect, 1000, '/bajax/force/1/new/1');
-			gateway.connectTimeoutID = setTimeout(gateway.connectTimeout, 20000);
-			return true;
-		} else {*/
-			$.ajax({
-				url: '/bajax/',
-				data: {
-					send: ''
-				},
-				dataType: 'json',
-				success: gateway.connectCont
-			});
-			gateway.connectTimeoutID = setTimeout(gateway.connectTimeout, 20000);
-			return true;
-	//	}
-	},
-	'connectCont': function(data) {
-		if(data.status == 4) { // błąd od PHP
-			gateway.connectStatus = statusError;
-			gateway.disconnected('Błąd serwera bramki');
-			$('#not_connected_wrapper').fadeIn(200);
-			$('.not-connected-text > h3').html('Błąd');
-			$('.not-connected-text > p').html('Serwer bramki nie działa. Spróbuj ponownie za kilka minut. <input type="button" onclick="gateway.reconnect();" value="Połącz ponownie" />');
-		} else {
-			if(data.status != 1) {
-				gateway.recoverConnection();
-				gateway.processData(data);
+	'configureConnection': function(){
+		gateway.websock.onmessage = gateway.onRecv;
+		gateway.websock.onerror = gateway.sockError;
+		gateway.websock.onclose = gateway.sockError;
+		if(gateway.delayedSendTimer){
+			clearInterval(gateway.delayedSendTimer);
+			gateway.delayedSendTimer = false;
+		}
+		gateway.delayedSendTimer = setInterval(function(){
+			if(gateway.toSend.length > 0){
+				gateway.forceSend(gateway.toSend.shift());
 			} else {
-				gateway.realconnect('/bajax/new/1/force/1');
+				if(gateway.sendDelayCnt > 0){
+					gateway.sendDelayCnt--;	
+				}
+			}
+		}, 1000);
+	},
+	'connect': function(force) {
+		gateway.connectTimeoutID = setTimeout(gateway.connectTimeout, 20000);
+		if(!gateway.websock || gateway.websock.readyState == WebSocket.CLOSING || gateway.websock.readyState == WebSocket.CLOSED){
+			gateway.websock = new WebSocket(server);
+			gateway.websock.onmessage = function(e){
+				var regexp = /^SYNC ([^ ]+)$/i
+				var rmatch = regexp.exec(e.data);
+				console.log(rmatch);
+				if(rmatch[1]){
+					if(rmatch[1] == '1'){
+						gateway.recoverConnection();
+					} else {
+						gateway.connect(true);
+					}
+				}
+
+			};
+			gateway.websock.onopen = function(){
+				gateway.forceSend('SYNC '+sessionid);
+			};
+			
+		} else {
+			if(guser.nickservpass != '' && guser.nickservnick != ''){
+				gateway.websock.onmessage = function(e){
+					var regexp = /^SYNC ([^ ]+)$/i
+					var rmatch = regexp.exec(e.data);
+					console.log(rmatch);
+					if(rmatch[1]){
+						if(rmatch[1] == '1'){
+							gateway.recoverConnection();
+						} else {
+							gateway.configureConnection();
+							gateway.forceSend('NEW '+sessionid+' ' + guser.nick + ' ' + md5(guser.nickservpass));
+						}
+					}
+				};
+				gateway.forceSend('FIND '+ guser.nickservnick + ' ' + md5(guser.nickservpass) + ' '+ sessionid);
+			} else {
+				gateway.configureConnection();
+				gateway.forceSend('NEW '+sessionid+' ' + guser.nick + ' x');
 			}
 		}
 	},
 	'recoverConnection': function() {
+		gateway.connectTimeoutID = setTimeout(gateway.connectTimeout, 20000);
 		// już jest połączenie
+		gateway.configureConnection();
 		gateway.statusWindow.appendMessage(messagePatterns.existingConnection, [gateway.niceTime()]);
 		gateway.send('PRIVMSG');
-	//	gateway.send('JOIN 0');
-
 			
 		if(guser.nick == getCookie('nick') && getCookie('password')){
 			guser.nickservnick = guser.nick;
@@ -732,38 +852,13 @@ var gateway = {
 		}
 			
 		setTimeout(function(){
-		/*	if(guser.nickservnick != '') {
-				gateway.send('NICK '+guser.nickservnick);
-			} else if(guser.nick != ''){
-				gateway.send('NICK '+guser.nick);
-			}*/
-	//		gateway.send('JOIN '+guser.channels[0]);
-			if(reqChannel && reqChannel.match(/#[^ ]/)){
+			if(reqChannel && reqChannel.match(/^#[^ ]/)){
 				gateway.send('JOIN '+reqChannel);
 			}
-			if(guser.channels[0] && guser.channels[0] != reqChannel && guser.channels[0].match(/#[^ ]/)){
+			if(guser.channels[0] && guser.channels[0] != reqChannel && guser.channels[0].match(/^#[^ ]/)){
 				gateway.send('JOIN '+guser.channels[0]);
 			}
 		}, 500);
-		
-		clearTimeout(gateway.connectTimeoutID);
-		gateway.connectTimeoutID = setTimeout(gateway.connectTimeout, 20000);
-
-	},
-	'realconnect': function(ajaxUrl) {
-		$.ajax({
-			url: ajaxUrl,
-			type: 'POST',
-			data: {
-				nick: guser.nick,
-				channel: guser.channels[0]
-			},
-			dataType: 'json',
-			success: gateway.onRecv
-		});
-		gateway.send();
-		clearTimeout(gateway.connectTimeoutID);
-		gateway.connectTimeoutID = setTimeout(gateway.connectTimeout, 20000);
 	},
 	'processData': function(data) {
 		for (i in data.packets) { //wywoływanie funkcji 'handlerów' od poleceń
@@ -776,24 +871,29 @@ var gateway = {
 			}
 		}
 	},
-	'onRecv': function(data) {
+	'sockError': function(e) {
+		if(gateway.connectStatus != statusDisconnected && gateway.connectStatus != statusError){
+			gateway.connectStatus = statusError;
+			$('#reconnect_wrapper').fadeIn(50);
+			gateway.disconnected('Błąd serwera bramki');
+		}
+	},
+	'onRecv': function(sdata) {
+			console.log(sdata);
+	/*	mdata = new FileReader();
+		mdata.onload = function(e){
+			ircdata = String.fromCharCode.apply(null, new Uint8Array(e.target.result));
+	//		console.log(ircdata);
+			
+			data = irc.parseMessage(ircdata);*/
+		data = irc.parseMessage(Base64.decode(sdata.data));
+		
 		gateway.processData(data);
 
 		if(gateway.connectStatus == statusDisconnected) { //informacja o łączeniu
 
 		} else {
 			if(gateway.connectStatus != statusError){
-				if(data.status == 1){ //byłem połączony, a php nagle odpowiedział że brak podłączenia -- błąd!
-					gateway.connectStatus = statusError;
-					$('#reconnect_wrapper').fadeIn(50);
-					gateway.disconnected('Błąd serwera bramki');
-				} else if(data.status == 4) {
-					gateway.connectStatus = statusError;
-					$('#not_connected_wrapper').fadeIn(200);
-					$('.not-connected-text > h3').html('Błąd');
-					$('.not-connected-text > p').html('Serwer bramki przestał działać. <input type="button" onclick="gateway.reconnect();" value="Połącz ponownie" />');
-					gateway.disconnected('Błąd serwera bramki');
-				}
 			}
 		}
 		if(guser.nickservpass != '' && guser.nickservnick != ''){
@@ -817,7 +917,7 @@ var gateway = {
 			}
 			if(gateway.connectStatus == statusGhostAndNickSent && guser.nick == guser.nickservnick){ //ghost się udał
 				gateway.send("PRIVMSG NickServ :IDENTIFY "+guser.nickservpass);
-	            $(".notify-text").append('<p>I już nie jest: usunąłem go używając twojego hasła :)</p>');
+			    $(".notify-text").append('<p>I już nie jest: usunąłem go używając twojego hasła :)</p>');
 				gateway.connectStatus = statusIdentified;
 			}
 		} else {
@@ -832,20 +932,22 @@ var gateway = {
 			gateway.setConnectedWhenIdentified = 0;
 			if(!gateway.joined) {
 				$('#input').focus();
-				gateway.joinChannels();
+			//	gateway.joinChannels();
 				gateway.joined = 1;
 				gateway.disconnectMessageShown = 0; //tutaj resetuję
 			}
 		} else {
 			gateway.joined = 0;
 		}
+		/*}
+		mdata.readAsArrayBuffer(sdata.data);*/
 	},
 	'joinChannels': function() {
-		var joinstr = "";
-/*		for(c in gateway.channels) {
-			joinstr += "JOIN "+gateway.channels[c].name+"\n";
+		var joinstr = guser.channels[0]?('JOIN '+guser.channels[0]+'\r\n'):'';
+		for(c in gateway.channels) {
+			joinstr += "JOIN "+gateway.channels[c].name+"\r\n";
 		}
-		gateway.send(joinstr);*/
+		gateway.send(joinstr);
 	},
 	'connectTimeout': function() {
 		if(gateway.connectStatus != statusConnected){
@@ -863,12 +965,9 @@ var gateway = {
 	'initSys': function() {
 		$('.not-connected-text > h3').html('Łączenie');
 		$('.not-connected-text > p').html('Poczekaj, trwa łączenie...<br />Nie używaj teraz przycisku "Wstecz" ani "Odśwież".');
-		intervalID = setInterval(function(){
-			gateway.send();
-		}, 200);
 	},
 	'initialize': function() {
-		if(!$('#nsnick').val().match(/^[0-9a-z_`\[\]\-]+$/i)) {
+		if(!$('#nsnick').val().match(/^[\^\|0-9a-z_`\[\]\-]+$/i)) {
 			alert('Nick zawiera niedozwolone znaki!');
 			return false;
 		}
@@ -901,26 +1000,27 @@ var gateway = {
 		gateway.initSys();
 		gateway.connect(false);
 
-//			window.setTimeout('gateway.send()', 200);
 		return false;
 	},
+	'delayedSendTimer': false,
+	'toSend': [],
+	'sendDelayCnt': 0,
+	'sendDelayed': function(data){
+	    gateway.toSend.push(data);
+	},
 	'send': function(data) {
-//			if(gateway.loadDelay > 20 && data && data != '') {
-//				gateway.loadDelay = 20;
-//			}
-//			if(gateway.loadDelay > 10 && data && data != '') {
-//				setTimeout('gateway.send()', 200);
-//			}
-		$.ajax({
-			url: '/bajax/',
-			type: 'POST',
-			'data': {
-				send: data
-			},
-			dataType: 'json',
-			success: gateway.onRecv
-		});
-		return true;
+		if(gateway.sendDelayCnt < 3){
+		console.log(data);
+			gateway.forceSend(data);
+			gateway.sendDelayCnt++;
+		} else {
+			gateway.toSend.push(data);
+		}
+	},
+	'forceSend': function(data){
+		sdata = Base64.encode(data+'\r\n');
+		console.log(sdata);
+		gateway.websock.send(sdata);
 	},
 	'niceTime': function() {
 		dateobj = new Date();
@@ -1420,7 +1520,7 @@ var gateway = {
 				}
 			} else {
 				if (gateway.getActive()) {
-					gateway.getActive.appendMessage(messagePatterns.notConnected, [gateway.niceTime()]);
+					gateway.getActive().appendMessage(messagePatterns.notConnected, [gateway.niceTime()]);
 				} else {
 					gateway.statusWindow.appendMessage(messagePatterns.notConnected, [gateway.niceTime()]);
 				}
@@ -1534,6 +1634,13 @@ var gateway = {
 			$("#options_wrapper").fadeIn(400);
 		}
     },
+    'clickQuit': function() {
+    	$('.notify-text').html('<h3>Wyjście z IRC</h3>'+
+    		'Czy na pewno chcesz się rozłączyć z IRC?<br /><br />'+
+    		'<input type="button" onclick="commands.quit.callback([\'quit\'], \'/quit Użytkownik rozłączył się\'); $(\'.notifywindow\').fadeOut(100);" value="Rozłącz" /> <input type="button" onclick="$(\'.notifywindow\').fadeOut(400)" value="Anuluj" />');
+    	$('.notifywindow').fadeIn(400);
+    	$(".notifywindow").css('z-index', 10);
+    },
     'completion': {
 		'string': '',
 		'rawStr': '',
@@ -1609,7 +1716,7 @@ var gateway = {
 }
 
 var cmdBinds = {
-    '001': [
+    '001': [	// RPL_WELCOME 
         function(msg) {
             if(msg.args[0] != guser.nick) {
                 guser.changeNick(msg.args[0], true);
@@ -1620,8 +1727,16 @@ var cmdBinds = {
 			gateway.connectStatus = status001;
         }
     ],
-    '411': [ //brzydki sposób na uzyskanie bieżącego nicka
+    'CONNECTED': [
     	function(msg) {
+    		gateway.joinChannels();
+    	}
+    ],
+    '411': [ //	ERR_NORECIPIENT - brzydki sposób na uzyskanie bieżącego nicka
+    	function(msg) {
+    		if(gateway.connectStatus != statusDisconnected){
+    			return;
+    		}
     		if(msg.args[0] != guser.nick) {
     			var oldNick = guser.nick;
     			setTimeout(function(){
@@ -1630,6 +1745,7 @@ var cmdBinds = {
     			guser.changeNick(msg.args[0], true);
     		}
     		gateway.send('WHOIS '+guser.nick);
+    		gateway.connectStatus = status001;
     	}
     ],
 	'PONG': [
@@ -1730,7 +1846,7 @@ var cmdBinds = {
                     }
                     channel.appendMessage('%s', [html]);
                 }
-            } else if(!msg.sender.server && msg.sender.nick != guser.nick){ // wiadomość prywatna
+            } else if(!msg.sender.server/* && msg.sender.nick != guser.nick*/){ // wiadomość prywatna
 	            query = gateway.findQuery(msg.sender.nick);
                 if(msg.text.match(/^\001.*\001$/i)) {	// ctcp
                     if(msg.text.match(/^\001ACTION.*\001$/i)) { //akcja
@@ -1744,6 +1860,15 @@ var cmdBinds = {
                             gateway.findQuery(msg.sender.nick).markNew();
                         }
                         query.appendMessage('%s', [html]);
+                    } else if(msg.text.match(/^\001(VERSION|USERINFO).*\001$/i)) {
+                    	version_string = 'Bramka WWW PIRC.PL, wersja '+gatewayVersion+' na '+navigator.userAgent;
+                    	gateway.sendDelayed('NOTICE '+msg.sender.nick+ ' \001VERSION '+version_string+'\x01');
+                    } else if(msg.text.match(/^\001REFERER\001$/i)) {
+                    	referer_string = document.referrer;
+                    	if(referer_string == ''){
+                    		referer_string = 'Nieznany';
+                    	}
+                    	gateway.sendDelayed('NOTICE '+msg.sender.nick+ ' \001REFERER '+referer_string+'\x01');
                     } else {	// inny ctcp
                         var acttext = msg.text.replace(/^\001(.*)\001$/i, '$1');
                         if(query) {
@@ -1864,7 +1989,7 @@ var cmdBinds = {
 					}
                     gateway.findChannel(msg.args[0]).nicklist.removeNick(msg.sender.nick);
                 } else {
-                    gateway.findChannel(msg.args[0]).appendMessage(messagePatterns.partOwn, [gateway.niceTime(), msg.args[0]]);
+                    gateway.findChannel(msg.args[0]).appendMessage(messagePatterns.partOwn, [gateway.niceTime(), msg.args[0], msg.args[0]]);
                     gateway.findChannel(msg.args[0]).part();
                 }
             }
@@ -1883,63 +2008,52 @@ var cmdBinds = {
             }
         }
     ],
-    '307': [
+    '307': [	// RPL_USERIP
         function(msg) {
-	        if(gateway.connectStatus != statusConnected){
-	        	return;
-	        }
             $(".notify-text").append("<p class='whois'><span class='info'><br /></span><span class='data'>Ten nick jest zarejestrowany</span></p>");
         }
     ],
-    '311': [
+    '311': [	// RPL_WHOISUSER 
         function(msg) {
-	        if(gateway.connectStatus != statusConnected){
-	        	return;
-	        }
             $(".notify-text").text(" ");
             $(".notify-text").append("<h3>Informacje o użytkowniku " +$('<div/>').text(msg.args[1]).html()+ "</h3>");
             $(".notify-text").append("<p class='whois'><span class='info'>Pełna maska:</span><span class='data'> " + $('<div/>').text(msg.args[1]).html() + "!" + msg.args[2] + "@" + msg.args[3] + "</span></p>");
             $(".notify-text").append("<p class='whois'><span class='info'>Realname:</span><span class='data'> " + $('<div/>').text(msg.text).html() + "</span></p>");
         }
     ],
-    '301': [
+    '301': [	// RPL_AWAY
         function(msg) {
-            if(gateway.connectStatus != statusConnected){
-	        	return;
-	   		}
             $(".notify-text").append("<p class='whois'><span class='info'><br /></span><span class='data'>Ten użytkownik ma status away: " + $('<div/>').text(msg.text).html() + "</span></p>");
         }
     ],
-    '312': [
+    '312': [	// RPL_WHOISSERVER 
         function(msg) {
-            if(gateway.connectStatus != statusConnected){
-	        		return;
-	  		}
             $(".notify-text").append("<p class='whois'><span class='info'>serwer:</span><span class='data'>" + msg.args[2] + " "+ $('<div/>').text(msg.text).html() + "</span></p>");
         }
     ],
-    '313': [
+    '313': [	// RPL_WHOISOPERATOR
         function(msg) {
-		    if(gateway.connectStatus != statusConnected){
-			    	return;
-			}
             $(".notify-text").append("<p class='whois'><span class='info'><br /></span><span class='data'><b class=admin>ADMINISTRATOR SIECI</b> (" + $('<div/>').text(msg.text.substr(5)).html() +")</span></p>");
         }
     ],
-    '318': [
+    '318': [	// RPL_ENDOFWHOIS
         function(msg) {
 		    if(gateway.connectStatus != statusConnected){
-			    	return;
+			    return;
 			}
+			if(msg.args[1].toLowerCase() == guser.nick.toLowerCase() && !gateway.displayOwnWhois){
+				return;
+			}
+			gateway.displayOwnWhois = false;
             //                        if ($("#optionGraphicalPopups:checked").val() != null) {
             $(".notifywindow").fadeIn(250);
 			$(".notifywindow").css('z-index', 10);
             //                        }
         }
     ],
-    '319': [
+    '319': [	// RPL_WHOISCHANNELS
         function(msg) {
-            if(gateway.connectStatus != statusDisconnected){ // normalny whois
+            if(gateway.connectStatus == statusConnected){ // normalny whois
             	$(".notify-text").append("<p class='whois'><span class='info'>Kanały:</span><span class='data'> "+ $('<div/>').text(msg.text).html() + "</span></p>");
             } else {	// sprawdzam, na jakich kanałach sam jestem
             	gateway.connectStatus = status001;
@@ -1962,7 +2076,7 @@ var cmdBinds = {
 		    }
         }
     ],
-    '322': [
+    '322': [	// RPL_LIST
 		function(msg) {
 			if (!msg.text) {
 				var outtext = "<i>(brak tematu)</i>"; // Na wypadek jakby topic nie był ustawiony.
@@ -1973,7 +2087,7 @@ var cmdBinds = {
 			gateway.statusWindow.markBold();
 		}
     ],
-    '324': [
+    '324': [	// RPL_CHANNELMODEIS
 		function(msg) {
 			if(gateway.findChannel(msg.args[1])) {
 				var chan = msg.args[1];
@@ -1983,7 +2097,7 @@ var cmdBinds = {
 			}
 		}
     ],
-    '353': [
+    '353': [	// RPL_NAMREPLY 
         function(msg) {
 	        gateway.iKnowIAmConnected();
 	        if(gateway.findChannel(msg.args[2])) {
@@ -2008,7 +2122,7 @@ var cmdBinds = {
 
         }
     ],
-    '332': [
+    '332': [	// RPL_TOPIC 
         function(msg) {
             if(gateway.findChannel(msg.args[1])) {
                 if(msg.text) {
@@ -2021,61 +2135,61 @@ var cmdBinds = {
             }
         }
     ],
-    '333': [
+    '333': [	// RPL_TOPICWHOTIME 
         function(msg) {
             if(gateway.findChannel(msg.args[1])) {
                 gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.topicTime, [gateway.niceTime(), msg.args[2], gateway.parseTime(msg.args[3])]);
             }
         }
     ],
-    '346': [
+    '346': [	// RPL_INVITELIST
 		function(msg) {
 			if(gateway.findChannel(msg.args[1])) {
 				gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.invexListElement, [gateway.niceTime(), msg.args[2], msg.args[3], gateway.parseTime(msg.args[4])]);
 			}
 		}
     ],
-    '347': [
+    '347': [	// RPL_INVITELIST
 		function(msg) {
 			if(gateway.findChannel(msg.args[1])) {
 				gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.invexListEnd, [gateway.niceTime()]);
 			}
 		}			
     ],
-    '348': [
+    '348': [	// RPL_EXCEPTLIST
 		function(msg) {
 			if(gateway.findChannel(msg.args[1])) {
 				gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.exceptListElement, [gateway.niceTime(), msg.args[2], msg.args[3], gateway.parseTime(msg.args[4])]);
 			}
 		}
     ],
-    '349': [
+    '349': [	// RPL_ENDOFEXCEPTLIST 
 		function(msg) {
 			if(gateway.findChannel(msg.args[1])) {
 				gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.exceptListEnd, [gateway.niceTime()]);
 			}
 		}			
     ],
-    '367': [
+    '367': [	// RPL_BANLIST 
 		function(msg) {
 			if(gateway.findChannel(msg.args[1])) {
 				gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.banListElement, [gateway.niceTime(), msg.args[2], msg.args[3], gateway.parseTime(msg.args[4])]);
 			}
 		}
     ],
-    '368': [
+    '368': [	// RPL_ENDOFBANLIST
 		function(msg) {
 			if(gateway.findChannel(msg.args[1])) {
 				gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.banListEnd, [gateway.niceTime()]);
 			}
 		}			
     ],
-    '372': [
+    '372': [	// RPL_MOTD
         function(msg) {
             gateway.statusWindow.appendMessage(messagePatterns.motd, [gateway.niceTime(), msg.text]);
         }
     ],
-    '401': [
+    '401': [	// ERR_NOSUCHNICK
         function(msg) {
             $(".notify-text").text(" ");
             $(".notify-text").append("<h3>Nie można wykonać żądanej akcji</h3>");
@@ -2085,14 +2199,14 @@ var cmdBinds = {
 			$(".notifywindow").css('z-index', 10);
         }
     ],
-    '404': [
+    '404': [	// ERR_CANNOTSENDTOCHAN
         function(msg) {
             if(gateway.findChannel(msg.args[1])) {
                 gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.cannotSendToChan, [gateway.niceTime(), msg.args[1], msg.text])
             }
         }
     ],
-    '433' : [
+    '433' : [	// ERR_NICKNAMEINUSE 
         function(msg) {
             $(".notify-text").text(" ");
             $(".notify-text").append("<h3>Nie można zmienić nicka </h3>");
@@ -2107,9 +2221,9 @@ var cmdBinds = {
             gateway.statusWindow.appendMessage(messagePatterns.nickInUse, [gateway.niceTime(), msg.args[1]]);
         }
     ],
-    '474' : [ // TODO inne powody, przez które nie można wejść
+    '474' : [	// ERR_BANNEDFROMCHAN
         function(msg) {
-			gateway.iKnowIAmConnected();
+			gateway.iKnowIAmConnected(); // TODO inne powody, przez które nie można wejść
             $(".error-text").text(" ");
             $(".error-text").append("<h3>Nie można dołączyć do kanału<br />" + msg.args[1] + "<br /><br /></h3>");
             if (msg.text == "Cannot join channel (+b)") {
@@ -2120,7 +2234,7 @@ var cmdBinds = {
 			$(".errorwindow").css('z-index', 10);
         }
     ],
-    '482' : [
+    '482' : [	// ERR_CHANOPRIVSNEEDED 
         function(msg) {
             $(".error-text").text(" ");
             $(".error-text").append("<h3>"+ msg.args[1] + ": brak uprawnień<br /></h3>");
@@ -2132,13 +2246,18 @@ var cmdBinds = {
 			$(".errorwindow").css('z-index', 10);
         }
     ],
-    '974' : [
+    '974' : [	// ERR_CHANOPRIVSNEEDED 
         function(msg) {
             gateway.showPermError(msg.text);
             if(gateway.getActive()) {
                 gateway.getActive().appendMessage(messagePatterns.noPerms, [gateway.niceTime(), msg.args[1]]);
             }
         }
+    ],
+    'PING' : [
+    	function(msg) {
+    		gateway.forceSend('PONG :'+msg.text);
+    	}
     ],
 	'ERROR' : [
 		function(msg) {
@@ -2152,6 +2271,9 @@ var cmdBinds = {
 				}
 				return;
 			}
+			
+			gateway.connectStatus = statusDisconnected;
+			$('#reconnect_wrapper').fadeIn(50);
 
             $(".error-text").text(" ");
             $(".error-text").append("<h3>Serwer przerwał połączenie<br /></h3>");
@@ -2287,11 +2409,11 @@ var commands = {
 			$('.not-connected-text > h3').html('Rozłączono');
 			$('.not-connected-text > p').html('Rozłączono z IRC na życzenie. <input type="button" onclick="gateway.reconnect();" value="Połącz ponownie" />');
 			if (input.slice(1).substr(command[0].length+1) != "") {
-			  gateway.send("QUIT :" + input.slice(1).substr(command[0].length+1));
+				gateway.send("QUIT :" + input.slice(1).substr(command[0].length+1));
 			} else {
-				gateway.send("QUIT");
+				gateway.send("\r\nQUIT");
 			}
-			gateway.send();
+		//	gateway.send();
 		}
 	},
 	'exit': {
@@ -2327,6 +2449,9 @@ var commands = {
 		'callback': function(command, input) {
 			if(command[1]) {
 				gateway.send("WHOIS "+command[1]);
+				if(command[1].toLowerCase() == guser.nick.toLowerCase()){
+					gateway.displayOwnWhois = true;
+				}
 			} else {
 				gateway.notEnoughParams("whois", "musisz podać nick osoby o której chcesz zdobyć informację.");
 			}
@@ -2464,7 +2589,7 @@ var commands = {
 		'custom': [],
 		'callback': function(command, input) {
 			if (command[1] != "") {
-				if (command[2] != "") {
+				if (command[2] && command[2] != '') {
 					gateway.send("JOIN "+command[1]+" "+command[2]);
 				} else {
 					gateway.send("JOIN "+command[1]);
@@ -2834,9 +2959,14 @@ var commands = {
 		}
 	}   */
 }
-var lastCode = -1;
-var intervalID = false;
-$(function(){
+
+var loaded = false;
+
+var readyFunc = function(){
+	if(loaded) return;
+	$('.not-connected-text > h3').html('Ładowanie');
+	$('.not-connected-text > p').html('Poczekaj chwilę, trwa ładowanie...');
+	loaded = true;
 	if($.browser.msie && parseInt($.browser.version, 10) < 8) {
 		$('.not-connected-text > h3').html('Przestarzała przeglądarka');
 		$('.not-connected-text > p').html('Twoja przeglądarka jest przestarzała i nie jest obsługiwana. Należy zaktualizować przeglądarkę Internet Explorer do wersji 8 lub wyższej albo użyć innej przeglądarki (Firefox, Opera, Chrome, Safari) w którejś z nowszych wersji.<br />Jeżeli posiadasz przeglądarkę Internet Explorer 8 lub wyższej i widzisz ten komunikat wyłącz tzw "widok zgodności" dla tej strony.');
@@ -2845,6 +2975,83 @@ $(function(){
 		cmd_binds = 0;
 		$('div#wrapper').html('');
 	} else {
+		conn.gatewayInit();
+	}
+};
+
+$('document').ready(function(){setTimeout(readyFunc, 100);});
+
+var conn = {
+	'my_nick': '',
+	'my_pass': '',
+	'connectTimeout': function(){
+			$('.not-connected-text > p').html('Łączenie z serwerem trwa zbyt długo. Serwer bramki nie działa lub twoja przeglądarka nie funkcjonuje prawidłowo.<br />Spróbuj ponownie później lub spróbuj <a href="http://starabramka.pirc.pl/bramka/'+
+				oldGatewayUrl+'">starej wersji bramki</a>.');
+	},
+	'dispConnectDialog': function(){
+		reqChannel = guser.channels[0];
+		conn.my_nick = dnick;
+
+		if(reqChannel == '#'){
+			if(getCookie('channel')){
+				reqChannel = getCookie('channel');
+			}
+		}
+		if(conn.my_nick == ''){
+			if(getCookie('nick')){
+				conn.my_nick = getCookie('nick');
+			}
+		}
+		if(conn.my_nick == getCookie('nick')){
+			if(getCookie('password')){
+				conn.my_pass = atob(getCookie('password'));
+			}
+		}
+	
+		gateway.websock = new WebSocket(server);
+		gateway.connectTimeoutID = setTimeout(conn.connectTimeout, 20000);
+		gateway.websock.onmessage = conn.processReply;
+	/*	gateway.websock.onerror = function(e){
+			$('.not-connected-text > p').html('');
+		};
+		gateway.websock.onclose = gateway.websock.onerror;*/
+		gateway.websock.onerror = conn.connectTimeout;
+		gateway.websock.onclose = conn.connectTimeout;
+		gateway.websock.onopen = function(e) {
+			gateway.forceSend('SYNC '+sessionid);
+		};
+	},
+	'processReply': function(e){
+		console.log(e.data);
+		var regexp = /^SYNC ([^ ]+)$/i
+		var rmatch = regexp.exec(e.data);
+		console.log(rmatch);
+		if(rmatch && rmatch[1]){
+			clearTimeout(gateway.connectTimeoutID);
+			gateway.websock.onerror = undefined;
+			gateway.websock.onclose = undefined;
+			if(rmatch[1] == '1'){
+				gateway.recoverConnection();
+			} else {
+				var nconn_html = '<form onsubmit="gateway.initialize();" action="javascript:void(0);"><table>';
+				nconn_html += '<tr><td style="text-align: right; padding-right: 10px;">Kanał:</td><td><input type="text" id="nschan" value="'+$('<div/>').text(reqChannel).html()+'" /></td></tr>';
+				nconn_html += '<tr><td style="text-align: right; padding-right: 10px;">Nick:</td><td><input type="text" id="nsnick" value="'+conn.my_nick+'" /></td></tr>';
+				nconn_html += '<tr><td style="text-align: right; padding-right: 10px;">Hasło (jeżeli zarejestrowany):</td><td><input type="password" id="nspass" value="'+conn.my_pass+'" /></td></tr>';
+				nconn_html += '<tr><td></td><td style="text-align: left;"><input type="checkbox" id="save_cookie" /> Zapisz w ciasteczkach</td></tr>';
+				nconn_html += '<tr><td colspan="2" style="text-align: center; margin-top: 15px;"><input type="submit" value="Połącz z IRC" /></td></tr>';
+				nconn_html += '</table></form>';
+				nconn_html += '<br /><p>Korzystasz z najnowszej wersji bramki, po znacznych jej zmianach. Gdyby coś nie zadziałało poprawnie, możesz skorzystać ze <a href="http://starabramka.pirc.pl/bramka/'+oldGatewayUrl+
+					'">starej wersji bramki</a>. Zauważone problemy zgłoś proszę na #help lub na abuse@pirc.pl.</p>';
+				$('.not-connected-text > p').html(nconn_html);
+				if(conn.my_nick == ''){
+					$('#nsnick').focus();
+				} else {
+					$('#nspass').focus();
+				}
+			}
+		}
+	},
+	'gatewayInit': function(){
 		$('.not-connected-text p').html('Poczekaj chwilę, trwa ładowanie...');
 		$('#chatbox').click(function() {
 			gateway.closeNotify();
@@ -2941,14 +3148,14 @@ $(function(){
 			}
 		});
 		$(window).unload(function(){
-			gateway.send("QUIT :Zamknął okno");
-			gateway.send();
+	//		gateway.send("QUIT :Zamknął okno");
+	//		gateway.send();
 		});
 
 		// bo chrome
 		window.onunload = function() {
-			gateway.send("QUIT :Zamknął okno");
-			gateway.send();
+	//		gateway.send("QUIT :Zamknął okno");
+	//		gateway.send();
 		};
 
 		$('#chat-wrapper').scroll(function(){
@@ -2962,6 +3169,7 @@ $(function(){
 		});
 	   
 //		setTimeout('gateway.send()', 250);
+	/*	setTimeout("$('#not_connected_wrapper').fadeIn(200)", 250);*/
 		try {
 			$('#not_connected_wrapper').fadeIn(200);
 		} catch(e) {
@@ -2977,58 +3185,16 @@ $(function(){
 		}
 		
 		if(!navigator.cookieEnabled){
-			$('.not-connected-text > p').html('<p>Twoja przeglądarka ma wyłączoną obsługę ciasteczek. Nie można uruchomić bramki.</p>');
+			$('.not-connected-text > p').html('Twoja przeglądarka ma wyłączoną obsługę ciasteczek. Niektóre funkcje bramki mogą działać nieprawidłowo.<br /><input type="button" onclick="conn.dispConnectDialog();" value="Kontynuuj" />');
 			return;
-		}
-		
-		var reqChannel = guser.channels[0];
-		var my_nick = dnick;
-		var my_pass = '';
-		if(reqChannel == '#'){
-			if(getCookie('channel')){
-				reqChannel = getCookie('channel');
+		} else {
+			if(window.WebSocket == null){
+				$('.not-connected-text > p').html('Twoja przeglądarka nie obsługuje WebSocket. Nie można uruchomić bramki.<br />Spróbuj <a href="http://starabramka.pirc.pl/bramka/'+oldGatewayUrl+'">starej wersji bramki</a>.');
+				return;
 			}
+			conn.dispConnectDialog();
 		}
-		if(my_nick == ''){
-			if(getCookie('nick')){
-				my_nick = getCookie('nick');
-			}
-		}
-		if(my_nick == getCookie('nick')){
-			if(getCookie('password')){
-				my_pass = atob(getCookie('password'));
-			}
-		}
-		
-		setTimeout(function(){
-			$.ajax({
-				url: '/bajax/',
-				data: {
-					send: ''
-				},
-				dataType: 'json',
-				success: function(data) {
-					if(data.status != 1 && data.status != 4) {
-						gateway.initSys();
-						gateway.recoverConnection();
-						gateway.connectTimeoutID = setTimeout(gateway.connectTimeout, 20000);
-						gateway.processData(data);
-					}
-				}
-			});
-		
-			var nconn_html = '<form onsubmit="gateway.initialize();" action="javascript:void(0);"><table>';
-			nconn_html += '<tr><td style="text-align: right; padding-right: 10px;">Kanał:</td><td><input type="text" id="nschan" value="'+$('<div/>').text(reqChannel).html()+'" /></td></tr>';
-			nconn_html += '<tr><td style="text-align: right; padding-right: 10px;">Nick:</td><td><input type="text" id="nsnick" value="'+my_nick+'" /></td></tr>';
-			nconn_html += '<tr><td style="text-align: right; padding-right: 10px;">Hasło (jeżeli zarejestrowany):</td><td><input type="password" id="nspass" value="'+my_pass+'" autofocus="autofocus" /></td></tr>';
-			nconn_html += '<tr><td></td><td style="text-align: left;"><input type="checkbox" id="save_cookie" /> Zapisz w ciasteczkach</td></tr>';
-			nconn_html += '<tr><td colspan="2" style="text-align: center; margin-top: 15px;"><input type="submit" value="Połącz z IRC" /></td></tr>';
-			nconn_html += '</table></form>';
-			$('.not-connected-text > p').html(nconn_html);
-		}, 200);
 	}
-});
-
-
+}
 
 

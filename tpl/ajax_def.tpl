@@ -8,8 +8,7 @@
 					<p>Aby korzystać z bramki należy włączyć obsługę JavaScript.</p>
 				</div>
 			</div>
-		</div>
-		
+		</div>	
 		<div id="reconnect_wrapper">
 			<div id="reconnect_div">
 				<h3>Utracono połączenie</h3>
@@ -52,7 +51,8 @@
 
         <div id="top_menu">
             <div id="leftarrow">
-            	<input class="top" type="button" value="&larr;" onclick="gateway.prevTab()" />
+            	<input class="top" type="image" src="/styles/img/g_lewo.png" value="" onClick="gateway.prevTab()" />
+<!--            	<input class="top" type="button" value="&larr;" onclick="gateway.prevTab()" />-->
             </div>
             <div id="tab-wrapper">
                 <ul class="tabs" id="tabs">
@@ -60,13 +60,15 @@
                 </ul>
             </div>
             <div id="rightarrow">
-            	<input class="top" type="button" value="&rarr;" onclick="gateway.nextTab()" />
+	            <input class="top" type="image" src="/styles/img/g_prawo.png" value="" onClick="gateway.nextTab()" />
+            	<!--<input class="top" type="button" value="&rarr;" onclick="gateway.nextTab()" />-->
             </div>
         </div>
         
         <div id="options-box">
 			<a id="button-options" href="javascript:void(0);" onClick="gateway.showOptions();"></a> 
-			<a id="button-about" href="javascript:void(0);" onClick="gateway.showAbout();"></a> 
+			<a id="button-about" href="javascript:void(0);" onClick="gateway.showAbout();"></a>
+			<a id="button-quit" href="javascript:void(0);" onClick="gateway.clickQuit();"></a> 
         </div>
 
         <div id="wrapper">
@@ -136,8 +138,8 @@
             <div id="input-wrapper">
 				<table class="nostyle"><tr>
 					<!--<td style="width: 150px; text-align: right;"><span id="usernick" class="yournickname">{$nick}</span></td>-->
-	                <td style="padding-right: 10px;"> <input id="input" type="text" name="input" class="input" /></td>
 	                <td style="width: 10px;"><input type="image" src="/styles/img/plus.png" value="" class="completion" onClick="gateway.doComplete();$('#input').focus()" /></td>
+	                <td style="padding-right: 10px; padding-left: 5px;"> <input id="input" type="text" name="input" class="input" /></td>
 	                <td style="width: 10px;"><input type="button" class="symbols" value="µ☺" onClick="disp.symbolWindowShow()" /></td>
 	                <td style="width: 10px;"><input type="image" src="/styles/img/kolorki.png" value="" class="insertColor" onClick="disp.colorWindowShow()" /></td>
                 	<td style="width: 10px;"><input type="submit" value="&bull;" class="submit" OnClick="gateway.parseUserInput($('#input').val())" /></td>
@@ -265,4 +267,8 @@
             </div>
         </div>
     </body>
+	<script type="text/javascript">
+	/*	document.getElementsByClassName('not-connected-text')[0].getElementsByTagName('h3')[0].innerHTML = 'Coś nie tak';
+		document.getElementsByClassName('not-connected-text')[0].getElementsByTagName('p')[0].innerHTML = 'Twoja przeglądarka nie potrafi wyświetlić bramki. Chyba jest zbyt stara...';*/
+	</script>
 </html>

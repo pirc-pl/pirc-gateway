@@ -13,11 +13,16 @@
 				'nickservpass': '',
 				'nickservnick': ''
             };
+            var sessionid = "{$sid}";
 			var gatewayVersion = "{$gateway_version}";
+			var oldGatewayUrl = "{$gateway_url}";
         </script>
+        <script type="text/javascript" src="/js/md5.js"></script>
         <script type="text/javascript" src="/js/jquery-1.12.3.min.js"></script>
+        <!--<script type="text/javascript" src="/js/jquery-1.12.3.js"></script>-->
         <script type="text/javascript" src="/js/jquery.sprintf.js"></script>
         <script type="text/javascript" src="/js/jquery.browser.min.js"></script>
         <script type="text/javascript" src="/js/jqueryui.js"></script>
+        <script type="text/javascript" src="/js/base64.js"></script>
 		<script type="text/javascript" src="/js/gateway_def.js"></script>
     </head>

@@ -16,11 +16,15 @@ a:active {
 
 body {
 	font-family: verdana,arial,tahoma,Symbola;
-	font-size: 13px;
+	font-size: 1em;
 	margin: 0;
 	padding: 0;
 	width: 100%;
 	background: url('/styles/img/bg.png') repeat-x scroll 0 0 #E4E4E4;
+}
+
+input, button, submit {
+	font-size: 1em;
 }
 
 #not_connected_wrapper, #background-wrapper, #options_wrapper, #reconnect_wrapper {
@@ -62,9 +66,13 @@ body {
 	z-index: 10;
 }
 
+#not_connected_div {
+	width: 460px !important;
+}
+
 #top_menu {
 	background: url("/styles/img/menu.jpg") repeat-x bottom #272727;
-	height: 40px;
+	height: 42px;
 	left: 0;
 	min-height: 30px;
 	position: absolute;
@@ -76,9 +84,8 @@ body {
 #top_menu ul {
 	height: 30px;
 	list-style: none outside none;
-	margin-left: 2%;
-	margin-right: 2%;
-	padding-left: 15px;
+	margin-left: 40px;
+	margin-right: 40px;
 	width: 600%;
 }
 	
@@ -232,8 +239,8 @@ button.textFormat {
 	border: 1px solid #9A9A9A;
 	padding: 3px;
 	margin: 6px;
-	height: 25px;
-	width: 115px;
+	height: 2.1em;
+	width: 9em;
 	cursor: pointer;
 }
 
@@ -301,12 +308,12 @@ span.mode {
 	
 #info h1 {
 	display: inline;
-	font-size: 18px;
+	font-size: 1.4em;
 }
 	
 #info h2 {
 	display: inline;
-	font-size: 15px;
+	font-size: 1.2em;
 	font-weight: normal;
 	padding: 5px;
 }
@@ -339,27 +346,31 @@ span.mode {
 	position: absolute;
 	width: 100%;
 }
+
+#leftarrow, #rightarrow {
+/*	font-size: 18px;*/
+	height: 100%;
+	position: absolute;
+	top: 4px;
+	width: 32px;
+}
+
+#leftarrow input, #rightarrow input {
+	height: 30px;
+	margin-top: 1px;
+	margin-bottom: 1px;
+}
 	
 #leftarrow {
-	font-size: 19px;
-	height: 100%;
 	left: 6px;
-	position: absolute;
-	top: 6px;
-	width: 25px;
 }
 	
 #rightarrow {
-	font-size: 19px;
-	height: 100%;
-	position: absolute;
-	right: 6px;
-	top: 6px;
-	width: 25px;
+	right: 10px;
 }
 	
 #tab-wrapper {
-	height: 100%;
+	height: 80%;
 	margin: 0 auto;
 	margin-top: 5px;
 	overflow: hidden;
@@ -436,7 +447,7 @@ span.yournickname {
 }
 
 .colorwindow {
-	width: 400px;
+	width: 32em;
 	background: url("/styles/img/kolory.png") no-repeat scroll right top #D7E4F3;
 	position: fixed;
 	bottom: 25%;
@@ -445,7 +456,7 @@ span.yournickname {
 }
 
 .symbolwindow {
-	width: 700px;
+	width: 60em;
 	background: url("/styles/img/emotikony.png") no-repeat scroll right top #D7E4F3;
 	position: fixed;
 	bottom: 15%;
@@ -460,7 +471,7 @@ span.yournickname {
 }
 	
 .notifywindow h3, .colorwindow h3, .symbolwindow h3 {
-	font-size: 17px;
+	font-size: 1.3em;
 	padding-bottom: 10px;
 }
 	
@@ -468,7 +479,7 @@ div.notify-close, div.color-close, div.symbol-close {
 	color: #466999;
 	display: table;
 	float: right;
-	font-size: 20px;
+	font-size: 1.4em;
 }
 
 .colorButton {
@@ -506,7 +517,7 @@ ul.options li {
 	margin-top: 2px;
 	padding: 1px;
 	color: #556A83;
-	font-size: 11px;
+	font-size: .9em;
 }
 	
 ul.options li:hover {
@@ -538,7 +549,7 @@ ul.options li:hover {
 	color: #525252;
 	display: table;
 	float: right;
-	font-size: 20px;
+	font-size: 1.4em;
 }
 	
 .statuswindow div.status-close:hover {
@@ -552,7 +563,7 @@ ul.options li:hover {
 	border-radius: 6px;
 	background: none repeat scroll 0 0 #FAFAFA;
 	border: 1px solid #858585;
-	font-size: 11px;
+	font-size: .9em;
 	margin: 5px auto 0;
 	padding: 4px;
 	text-align: center;
@@ -641,7 +652,7 @@ div#options {
 	border-right: 1px solid #949494;
 	border-top: 1px solid #949494;
 	float: right;
-	font-size: 10px;
+	font-size: .9em;
 	height: 15px;
 	padding: 3px;
 	position: relative;
@@ -668,7 +679,7 @@ div#options {
 }
 	
 .options-content table {
-	font-size: 11px;
+	font-size: .9em;
 	padding: 10px;
 }
 	
@@ -685,7 +696,7 @@ div#options {
 	-webkit-border-radius: 10px;
 	border-radius: 10px;
 	border: 1px solid #757575;
-	font-size: 16px;
+	font-size: 1.1em;
 	height: 20px;
 	margin-bottom: 5px;
 	margin-top: 5px;
@@ -760,19 +771,11 @@ table.nostyle {
 	height: 18px;
 }
 
-#button-options {
-	width: 18px;
-	height: 18px;
-	background: url('/styles/img/g_zebatka.png') no-repeat bottom;
-	display: block;
-	float: left;
-}
-
 input.symbols {
-	font-size: 12px;
+	font-size: 1em;
 	padding-right: 1px !important;
 	padding-left: 2px !important;
-/*	padding-top: 1px !important;*/
+	padding-top: 3px !important;
 	
 }
 
@@ -807,7 +810,7 @@ input.symbols {
 	cursor: pointer;
 	text-align: center;
 	background-color: rgba(245, 245, 245, 0.8);
-	font-size: 15px;
+	font-size: 1.1em;
 	height: 22px;
 }
 
@@ -834,8 +837,12 @@ input.symbols {
 	background-color: #d7e4f3;
 }
 
-#button-options:hover, #button-options:focus {
-	background-position: top;
+#button-quit {
+	width: 18px;
+	height: 18px;
+	background: url('/styles/img/g_zamknij.png') no-repeat bottom;
+	display: block;
+	float: left;
 }
 
 #button-about {
@@ -846,7 +853,15 @@ input.symbols {
 	float: left;
 }
 
-#button-about:hover, #button-options:focus {
+#button-options {
+	width: 18px;
+	height: 18px;
+	background: url('/styles/img/g_zebatka.png') no-repeat bottom;
+	display: block;
+	float: left;
+}
+
+#button-about:hover, #button-about:focus, #button-options:hover, #button-options:focus, #button-quit:hover, #button-quit:focus {
 	background-position: top;
 }
 
@@ -886,7 +901,7 @@ input.symbols {
 }
 	
 #about_div h3 {
-	font-size: 17px;
+	font-size: 1.3em;
 	padding-bottom: 10px;
 }
 	
@@ -906,7 +921,7 @@ input.symbols {
 	color: #585858;
 	display: table;
 	float: right;
-	font-size: 20px;
+	font-size: 1.4em;
 }
 	
 #options_div div.notify-close:hover {
