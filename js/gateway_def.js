@@ -1807,7 +1807,7 @@ var cmdBinds = {
             }
             
 			var html = gateway.parseImages(msg.text);
-            
+			
             if(msg.args[0].indexOf('#') == 0) { // wiadomość kanałowa
             	var channel = gateway.findChannel(msg.args[0].toLowerCase());
             	if(!channel) {
@@ -1847,7 +1847,12 @@ var cmdBinds = {
                     channel.appendMessage('%s', [html]);
                 }
             } else if(!msg.sender.server/* && msg.sender.nick != guser.nick*/){ // wiadomość prywatna
-	            query = gateway.findQuery(msg.sender.nick);
+            	if(msg.sender.nick == guser.nick){
+					var qnick = msg.args[0];
+				} else {
+					var qnick = msg.sender.nick;
+				}
+	            query = gateway.findQuery(qnick);
                 if(msg.text.match(/^\001.*\001$/i)) {	// ctcp
                     if(msg.text.match(/^\001ACTION.*\001$/i)) { //akcja
 						if(!query) {
