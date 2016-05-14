@@ -178,7 +178,13 @@ function Nicklist(chan, id) {
 		}
 		return false;
 	}
-	$('<span id="'+this.id+'"></span>').hide().appendTo('#nicklist-main');
+	try {
+		$('<span id="'+this.id+'"></span>').hide().appendTo('#nicklist-main');
+	} catch(e) {
+		gateway.send('QUIT :Za stara przeglądarka!');
+		$('.not-connected-text > h3').html('Przestarzała przeglądarka');
+		$('.not-connected-text > p').html('Twoja przeglądarka jest przestarzała i nie jest obsługiwana. Należy zainstalować przeglądarkę (Mozilla Firefox, Internet Explorer, Opera, Safari, Chrome lub inną) w aktualnej wersji.');
+	}
 }
 
 function NicklistUser(usernick, initMode, chan) {
@@ -2839,7 +2845,7 @@ $(function(){
 		cmd_binds = 0;
 		$('div#wrapper').html('');
 	} else {
-		$('.not-connected-text > p').html('Poczekaj chwilę, trwa ładowanie...');
+		$('.not-connected-text p').html('Poczekaj chwilę, trwa ładowanie...');
 		$('#chatbox').click(function() {
 			gateway.closeNotify();
 			gateway.closeStatus();
@@ -2956,7 +2962,13 @@ $(function(){
 		});
 	   
 //		setTimeout('gateway.send()', 250);
-		setTimeout("$('#not_connected_wrapper').fadeIn(200)", 250);
+		try {
+			$('#not_connected_wrapper').fadeIn(200);
+		} catch(e) {
+			$('.not-connected-text > h3').html('Przestarzała przeglądarka');
+			$('.not-connected-text > p').html('Twoja przeglądarka jest przestarzała i nie jest obsługiwana. Należy zainstalować aktualną wersję Internet Explorer, Mozilla Firefox, Chrome, Safari bądź innej wspieranej przeglądarki.');
+			return;
+		}
 		$('.not-connected-text > h3').html($('<div/>').text(guser.channels[0]).html() + ' @ PIRC.pl');
 		dnick = $('<div/>').text(guser.nick).html();
 		if(guser.nick == '1') {
