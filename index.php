@@ -1,5 +1,5 @@
 <?php
-//error_reporting(0);
+error_reporting(0);
 $index = 1;
 require_once('config.php');
 require_once('classes/Dispatcher.php');
