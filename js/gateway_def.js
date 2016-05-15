@@ -652,17 +652,14 @@ var irc = {
 				}
 			}
 			data = line.split(" :");
-			console.log(data);
 			if(data[1]){
 				ircmsg.text = data[1];
 			}
 			cmddata = data[0].split(" ");
-		//	console.log(cmddata);
 			if(cmddata[0].charAt(0) == ':'){
 				var rexpr = /^:([^ !@]+)(!([^ !@]+)@([^ !@]+))?$/i;
 				
 				var rmatch = rexpr.exec(cmddata[0]);
-				console.log(rmatch);
 
 				ircmsg.sender.nick = rmatch[1];
 				if(ircmsg.sender.nick.match(/\./)){
@@ -686,11 +683,9 @@ var irc = {
 				ircmsg.args[i-2] = cmddata[i];
 				i++;
 			}
-			console.log(ircmsg);
 			packets[packetcnt] = ircmsg;
 			packetcnt++;
 		});
-	//	console.log(packets);
 		return {'status': 2, 'packets': packets };
 	}
 };
@@ -803,7 +798,6 @@ var gateway = {
 			gateway.websock.onmessage = function(e){
 				var regexp = /^SYNC ([^ ]+)$/i
 				var rmatch = regexp.exec(e.data);
-				console.log(rmatch);
 				if(rmatch[1]){
 					if(rmatch[1] == '1'){
 						gateway.recoverConnection();
@@ -822,7 +816,6 @@ var gateway = {
 				gateway.websock.onmessage = function(e){
 					var regexp = /^SYNC ([^ ]+)$/i
 					var rmatch = regexp.exec(e.data);
-					console.log(rmatch);
 					if(rmatch[1]){
 						if(rmatch[1] == '1'){
 							gateway.recoverConnection();
@@ -879,7 +872,6 @@ var gateway = {
 		}
 	},
 	'onRecv': function(sdata) {
-			console.log(sdata);
 	/*	mdata = new FileReader();
 		mdata.onload = function(e){
 			ircdata = String.fromCharCode.apply(null, new Uint8Array(e.target.result));
@@ -1010,7 +1002,6 @@ var gateway = {
 	},
 	'send': function(data) {
 		if(gateway.sendDelayCnt < 3){
-		console.log(data);
 			gateway.forceSend(data);
 			gateway.sendDelayCnt++;
 		} else {
@@ -1019,7 +1010,6 @@ var gateway = {
 	},
 	'forceSend': function(data){
 		sdata = Base64.encode(data+'\r\n');
-		console.log(sdata);
 		gateway.websock.send(sdata);
 	},
 	'niceTime': function() {
@@ -1200,11 +1190,9 @@ var gateway = {
         var rexpr = /https?:\/\/www.youtube.com\/watch\?[^ ]*v=([^ ]+)/i;
         
         var fmatch = text.match(/(https?:\/\/www.youtube.com\/watch\?[^ ]*v=[^ ?&]+)/gi);
-        console.log(fmatch);
         if(fmatch){
         	fmatch.forEach(function(arg){
 			    var rmatch = rexpr.exec(arg);
-			    console.log(rmatch);
 			    if(rmatch[1]){
 		    		var rand = Math.floor(Math.random() * 10000).toString();
 		    		var imgurl = encodeURI(rmatch[1]);
@@ -1214,7 +1202,6 @@ var gateway = {
 		    	}
 	        });
 	    }
-	    console.log(html);
 	    return html;
 	},
 	'colorize': function(message) {
@@ -3027,10 +3014,8 @@ var conn = {
 		};
 	},
 	'processReply': function(e){
-		console.log(e.data);
 		var regexp = /^SYNC ([^ ]+)$/i
 		var rmatch = regexp.exec(e.data);
-		console.log(rmatch);
 		if(rmatch && rmatch[1]){
 			clearTimeout(gateway.connectTimeoutID);
 			gateway.websock.onerror = undefined;
