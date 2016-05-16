@@ -651,11 +651,13 @@ var irc = {
 					return;
 				}
 			}
-			data = line.split(" :");
-			if(data[1]){
-				ircmsg.text = data[1];
+			var splitpos = line.indexOf(' :');
+			if(splitpos){
+				ircmsg.text = line.slice(splitpos+2);
 			}
-			cmddata = data[0].split(" ");
+			data = line.slice(0,splitpos);
+
+			cmddata = data.split(" ");
 			if(cmddata[0].charAt(0) == ':'){
 				var rexpr = /^:([^ !@]+)(!([^ !@]+)@([^ !@]+))?$/i;
 				
