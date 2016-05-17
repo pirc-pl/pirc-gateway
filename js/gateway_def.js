@@ -2979,7 +2979,7 @@ var conn = {
 	'my_nick': '',
 	'my_pass': '',
 	'connectTimeout': function(){
-			$('.not-connected-text > p').html('Łączenie z serwerem trwa zbyt długo. Serwer bramki nie działa lub twoja przeglądarka nie funkcjonuje prawidłowo.<br />Spróbuj ponownie później lub spróbuj <a href="http://starabramka.pirc.pl/bramka/'+
+			$('.not-connected-text > p').html('Łączenie z serwerem trwa zbyt długo, serwer bramki nie działa lub twoja przeglądarka nie funkcjonuje prawidłowo.<br />Spróbuj ponownie później lub spróbuj <a href="http://starabramka.pirc.pl/bramka/'+
 				oldGatewayUrl+'">starej wersji bramki</a>.');
 	},
 	'dispConnectDialog': function(){
@@ -3032,8 +3032,8 @@ var conn = {
 				nconn_html += '<tr><td></td><td style="text-align: left;"><input type="checkbox" id="save_cookie" /> Zapisz w ciasteczkach</td></tr>';
 				nconn_html += '<tr><td colspan="2" style="text-align: center; margin-top: 15px;"><input type="submit" value="Połącz z IRC" /></td></tr>';
 				nconn_html += '</table></form>';
-				nconn_html += '<br /><p>Korzystasz z najnowszej wersji bramki, po znacznych jej zmianach. Gdyby coś nie zadziałało poprawnie, możesz skorzystać ze <a href="http://starabramka.pirc.pl/bramka/'+oldGatewayUrl+
-					'">starej wersji bramki</a>. Zauważone problemy zgłoś proszę na #help lub na abuse@pirc.pl.</p>';
+//				nconn_html += '<br /><p>Korzystasz z najnowszej wersji bramki, po znacznych jej zmianach. Gdyby coś nie zadziałało poprawnie, możesz skorzystać ze <a href="http://starabramka.pirc.pl/bramka/'+oldGatewayUrl+
+//					'">starej wersji bramki</a>. Zauważone problemy zgłoś proszę na #help lub na abuse@pirc.pl.</p>';
 				$('.not-connected-text > p').html(nconn_html);
 				if(conn.my_nick == ''){
 					$('#nsnick').focus();
