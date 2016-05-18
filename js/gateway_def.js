@@ -650,6 +650,19 @@ var irc = {
 		packetcnt = 0;
 		lines.forEach(function(line){
 			var ircmsg = new irc.messagedata();
+
+			while(line.charAt(0) == "\r" || line.charAt(0) == "\n"){
+				line = line.substr(1);
+				if(line == ''){
+					return;
+				}
+			}
+			while(line.slice(-1) == "\r" || line.slice(-1) == " "){
+				line = line.slice(0, -1);
+				if(line == ''){
+					return;
+				}
+			}
 			
 			line.replace(/^\s+|\s+$/gm,'');
 			
