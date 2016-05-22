@@ -24,6 +24,7 @@ var server = 'ws://'+location.host+'/ircsocket';
 var messagePatterns = {
 	'nickChange': '<span class="time">%s</span> &nbsp; <span class="mode">*** %s zmieni\u0142 nick na %s</span><br />',
 	'nickInUse': '<span class="time">%s</span> &nbsp; <span class="kick">*** %s: Nick jest juz uzywany przez kogos innego.</span><br />',
+	'badNick': '<span class="time">%s</span> &nbsp; <span class="kick">*** %s: Nick nie jest dostępny.</span><br />',
 	'nickChangeOwn': '<span class="time">%s</span> &nbsp; <span class="mode">*** Jeste\u015b teraz znany jako %s</span><br />',
 	'joinOwn': '<span class="time">%s</span> &nbsp; <span class="join">&rarr; Do\u0142\u0105czy\u0142e\u015b do kana\u0142u %s.</span><br />',
 	'join': '<span class="time">%s</span> &nbsp; <span class="join">&rarr; <b>%s</b> <i>[%s@%s]</i> do\u0142\u0105czy\u0142 do %s.</span><br />',
@@ -68,7 +69,8 @@ var messagePatterns = {
 	'exceptListEnd': '<span class="time">%s</span> &nbsp; <span class="mode">*** Koniec listy except.</span><br />',
 	'mode': '<span class="time">%s</span> &nbsp; <span class="mode">*** Ustawienia kana\u0142u %s: [%s]</span><br />',
 	'error': '<span class="time">%s</span> &nbsp; <span class="mode"> !!! Roz\u0142\u0105czono z serwerem: %s</span><br />',
-	'existingConnection': '<span class="time">%s</span> &nbsp; <span class="mode">*** Połączenie już istnieje, wykorzystuję je. Jeśli masz otwartą więcej niż jedną bramkę, spodziewaj się problemów!</span><br />',
+	'existingConnection': '<span class="time">%s</span> &nbsp; <span class="mode">*** Połączenie już istnieje, dołączam się do niego.</span><br />',
+	'away': '<span class="time">%s</span> &nbsp; <span class="mode">*** %s otrzymał twoją wiadomość, ale jest teraz nieobecny: %s</span><br />'
 };
 
 var modes = {
@@ -130,7 +132,7 @@ function Nicklist(chan, id) {
 		$('#'+this.id).html('');
 		var str = '';
 		for (i in this.list) {
-			str += this.list[i].makeHTML(true);
+			str += this.list[i].makeHTML();
 		}
 		$('<ul/>').addClass('nicklist').appendTo('#'+this.id).html(str);
 	}
@@ -199,8 +201,8 @@ function NicklistUser(usernick, initMode, chan) {
 	}
 	this.channel = chan;
 
-	this.makeHTML = function(withLi) {
-		if(!withLi) {
+	this.makeHTML = function() {
+	/*	if(!withLi) {
 			return '<table class="'+$('<div/>').text(this.nick).html()+'"><tr>'+
 					'<td valign="top"><img alt="'+alt[this.level]+'" src="'+icons[this.level]+'" width="16" height="16" /></td>'+
 					'<td valign="top">&nbsp;&nbsp;'+$('<div/>').text(this.nick).html()+'</td>'+
@@ -212,20 +214,21 @@ function NicklistUser(usernick, initMode, chan) {
 					'<li onClick=\'gateway.showStatus("'+this.channel+'", "'+this.nick+'")\'>Daj uprawnienia</li>'+
 					'<li onClick=\'gateway.showStatusAnti("'+this.channel+'", "'+this.nick+'")\'>Odbierz uprawnienia</li>'+
 				'</ul>';
-		} else {
+		} else {*/
 			//return '<li id="'+this.id+'" class="'+this.nick+'"><table><tr><td valign="top"><img alt="'+alt[this.level]+'" src="'+icons[this.level]+'" width="16" height="16" /></td><td valign="top">&nbsp;&nbsp;'+this.nick+'</td></tr></table><ul class="options" id="'+this.id+'-opt"></ul><li>Jaka\u015b opcja</li></ul></li>';
-			return '<li id="'+this.id+'" class="'+$('<div/>').text(this.nick).html()+'" onclick="gateway.toggleNickOpt(\''+this.id+'\')">'+
-				'<table><tr>'+
-					'<td valign="top"><img alt="'+alt[this.level]+'" src="'+icons[this.level]+'" width="16" height="16" /></td><td valign="top">&nbsp;&nbsp;'+this.nick+'</td>'+
-				'</tr></table>'+
-				'<ul class="options" id="'+this.id+'-opt">'+
-					'<li onClick=\'' + ((this.nick.toLowerCase() == guser.nick.toLowerCase())?'gateway.displayOwnWhois = true; ':'') + 'gateway.send("WHOIS '+gateway.sescape(this.nick)+'")\'>Informacje (WHOIS)</li>'+
-					'<li onClick=\'gateway.queries.push(new Query("'+this.nick+'")); gateway.switchTab("'+this.nick+'")\' class="switchTab">Rozmowa Prywatna (QUERY)</li>'+
-					'<li onClick=\'gateway.showKick("'+this.channel+'", "'+this.nick+'")\'>Wyrzu\u0107 z kana\u0142u</li>'+
-					'<li onClick=\'gateway.showStatus("'+this.channel+'", "'+this.nick+'")\'>Daj uprawnienia</li>'+
-					'<li onClick=\'gateway.showStatusAnti("'+this.channel+'", "'+this.nick+'")\'>Odbierz uprawnienia</li>'+
-				'</ul>';
-		}
+		return '<li id="'+this.id+'" class="'+$('<div/>').text(this.nick).html()+'" onclick="gateway.toggleNickOpt(\''+this.id+'\')">'+
+			'<table><tr>'+
+				'<td valign="top"><img alt="'+alt[this.level]+'" src="'+icons[this.level]+'" width="16" height="16" /></td><td valign="top">&nbsp;&nbsp;'+this.nick+'</td>'+
+			'</tr></table>'+
+			'<ul class="options" id="'+this.id+'-opt">'+
+				'<li onClick="' + ((this.nick.toLowerCase() == guser.nick.toLowerCase())?'gateway.displayOwnWhois = true; ':'') + 'gateway.send(\'WHOIS '+gateway.sescape(this.nick)+'\')">Informacje (WHOIS)</li>'+
+				'<li onClick="services.nickInfo(\''+this.nick+'\')">Informacje (NickServ)</li>'+
+				'<li onClick="gateway.queries.push(new Query(\''+this.nick+'\')); gateway.switchTab(\''+this.nick+'\')" class="switchTab">Rozmowa Prywatna (QUERY)</li>'+
+				'<li onClick="gateway.showKick(\''+this.channel+'\', \''+this.nick+'\')">Wyrzu\u0107 z kana\u0142u</li>'+
+				'<li onClick="gateway.showStatus(\''+this.channel+'\', \''+this.nick+'\')">Daj uprawnienia</li>'+
+				'<li onClick="gateway.showStatusAnti(\''+this.channel+'\', \''+this.nick+'\')">Odbierz uprawnienia</li>'+
+			'</ul>';
+		//}
 	}
 	this.setMode = function(mode, setting) {
 		if(mode in this.modes) {
@@ -751,6 +754,72 @@ var irc = {
 	}
 };
 
+var services = {
+	'nickStore': '',
+	'badNickString': '<div class="table">'+
+		'<form class="tr" onsubmit="services.logIn();" action="javascript:void(0);">'+
+			'<span class="td_right">Twoje hasło:</span>'+
+			'<span class="td"><input type="password" id="nspass" /></span>'+
+			'<span class="td"><input type="submit" value="Zaloguj" /></span>'+
+		'</form>'+
+		'<form class="tr" onsubmit="services.changeNick();" action="javascript:void(0);">'+
+			'<span class="td_right">Nowy nick:</span>'+
+			'<span class="td"><input type="text" id="nnick" /></span>'+
+			'<span class="td"><input type="submit" value="Zmień nick" /></span>'+
+		'</form>'+
+	'</div>',
+	'nickservMessage': function(msg){
+		if (msg.text.match(/^Nieprawid.owe has.o\.$/i)) { // złe hasło nickserv
+			services.nickStore = guser.nickservnick;
+			$(".error-text").text(" ");
+			$(".error-text").append('<h3>Nieprawidłowe hasło</h3><p>Podane hasło do nicka <b>'+guser.nickservnick+'</b> jest błędne. Możesz spróbować ponownie lub zmienić nicka.</p>'+services.badNickString);
+			$(".errorwindow").fadeIn(250);
+			$(".errorwindow").css('z-index', 10);
+		}
+		if(guser.nickservpass == '' && msg.text.match(/^Ten nick jest zarejestrowany i chroniony\.$/i)){
+			services.nickStore = guser.nick;
+			$(".error-text").text(" ");
+			$(".error-text").append('<h3>Nick jest zarejestrowany</h3><p>Wybrany nick <b>'+guser.nick+'</b> jest zarejestrowany. Musisz go zmienić lub podać hasło.</p>'+services.badNickString);
+			$(".errorwindow").fadeIn(250);
+			$(".errorwindow").css('z-index', 10);
+		}
+	},
+	'logIn': function(){
+		if($('#nspass').val() == ''){
+			alert('Nie podałeś hasła!');
+			return false;
+		}
+		guser.nickservnick = services.nickStore;
+		guser.nickservpass = $('#nspass').val();
+		gateway.connectStatus = status001;
+		gateway.setConnectedWhenIdentified = 1;
+		gateway.processStatus();
+		gateway.send('PING :Init');
+		$(".errorwindow").fadeOut(250);
+		return true;
+	},
+	'changeNick': function(){
+		if($('#nnick').val() == ''){
+			alert('Nie podałeś nicka!');
+			return false;
+		}
+		gateway.send('NICK '+$('#nnick').val());
+		$(".errorwindow").fadeOut(250);
+		return true;
+	},
+	'nickInfo': function(nick){
+		var nscommand = 'INFO '+nick+' ALL';
+		var query = gateway.findQuery('nickserv');
+		if(!query) {
+			query = new Query('NickServ');
+			gateway.queries.push(query);
+		}
+		gateway.switchTab('nickserv');
+		query.appendMessage(messagePatterns.yourMsg, [gateway.niceTime(), guser.nick, nscommand]);
+		gateway.send('PRIVMSG NickServ :'+nscommand);
+	}
+};
+
 var gateway = {
 	'websock': 0,
 	'whois': '',
@@ -808,6 +877,9 @@ var gateway = {
 		gateway.connectTimeoutID = false;
 		clearInterval(gateway.pingIntervalID);
 		gateway.pingIntervalID = false;
+		if(guser.nickservnick != ''){
+			guser.nick = guser.nickservnick;
+		}
 		if(gateway.disconnectMessageShown) {
 			return;
 		}
@@ -943,12 +1015,17 @@ var gateway = {
 		
 		gateway.processData(data);
 
-		if(gateway.connectStatus == statusDisconnected) { //informacja o łączeniu
+	/*	if(gateway.connectStatus == statusDisconnected) { //informacja o łączeniu
 
 		} else {
 			if(gateway.connectStatus != statusError){
 			}
-		}
+		}*/
+		gateway.processStatus();
+		/*}
+		mdata.readAsArrayBuffer(sdata.data);*/
+	},
+	'processStatus': function() {
 		if(guser.nickservpass != '' && guser.nickservnick != ''){
 			if(gateway.connectStatus == status001) {
 				if(guser.nick != guser.nickservnick) { //auto-ghost
@@ -992,8 +1069,6 @@ var gateway = {
 		} else {
 			gateway.joined = 0;
 		}
-		/*}
-		mdata.readAsArrayBuffer(sdata.data);*/
 	},
 	'joinChannels': function() {
 		var joinstr = guser.channels[0]?('JOIN '+guser.channels[0]+'\r\n'):'';
@@ -1244,7 +1319,7 @@ var gateway = {
         		var imgurl = encodeURI(arg);
         		html += '<a onclick="disp.toggleImageView(\''+rand+'\', \''+imgurl+'\')"'+
         			' class="image_link"><span id="show-'+rand+'" style="display:inline;">Pokaż</span><span id="hide-'+rand+'" style="display:none;">Ukryj</span> obrazek</a>'+
-        			'<div style="display:none;" id="img-'+rand+'"><img id="imgc-'+rand+'" style="max-width:100%%;" /></div>';
+        			'<div style="display:none;" id="img-'+rand+'"><img id="imgc-'+rand+'" style="max-width:100%;" /></div>';
         	});
         }
         
@@ -1400,12 +1475,28 @@ var gateway = {
 		return newText;
 	},
 	'nextTab': function() {
-		$('li.activeWindow').next().find('a.switchTab').trigger('click');
+		var swtab = $('li.activeWindow').next().find('a.switchTab');
+		if(swtab){
+			swtab.trigger('click');
+		/*	var container = $('#tab-wrapper'),
+				scrollTo = $('li.activeWindow');
+
+			container.scrollLeft(container.scrollLeft() + scrollTo.width());*/
+		}
 	},
 	'prevTab': function() {
-		$('li.activeWindow').prev().find('a.switchTab').trigger('click');
+		var swtab = $('li.activeWindow').prev().find('a.switchTab');
+		if(swtab){
+			swtab.trigger('click');
+	/*		var container = $('#tab-wrapper'),
+				scrollTo = $('li.activeWindow');
+
+			container.scrollLeft(container.scrollLeft() - scrollTo.width());*/
+			$('#tab-wrapper').scrollTo(swtab);
+		}
 	},
 	'switchTab': function(chan) {
+		chan = chan.toLowerCase();
 		if(chan != "--status" && gateway.findChannel(chan)) {
 			$('#main-window > span').hide();
 			$('#nicklist-main > span').hide();
@@ -1444,7 +1535,6 @@ var gateway = {
 			$('#'+gateway.findQuery(chan).id+'-tab').addClass("activeWindow");
 			$('#'+gateway.findQuery(chan).id+'-window').show();
 			$('#'+gateway.findQuery(chan).id+'-topic').show();
-			gateway.findQuery(chan).markRead();
 			gateway.active = chan;
 			gateway.tabHistory.push(chan);
 			$('#input').focus();
@@ -1462,7 +1552,7 @@ var gateway = {
 			} else {
 				gateway.findQuery(chan).restoreScroll();
 			}
-			
+			gateway.findQuery(chan).markRead();
 		} else if(chan == "--status") {
 			$('#main-window > span').hide();
 			$('#nicklist-main > span').hide();
@@ -1684,10 +1774,19 @@ var gateway = {
     },
     'clickQuit': function() {
     	$('.notify-text').html('<h3>Wyjście z IRC</h3>'+
-    		'Czy na pewno chcesz się rozłączyć z IRC?<br /><br />'+
-    		'<input type="button" onclick="commands.quit.callback([\'quit\'], \'/quit Użytkownik rozłączył się\'); $(\'.notifywindow\').fadeOut(100);" value="Rozłącz" /> <input type="button" onclick="$(\'.notifywindow\').fadeOut(400)" value="Anuluj" />');
+    		'<form onsubmit="gateway.quit();" action="javascript:void(0);">'+
+			'Wiadomość pożegnalna: <input type="text" id="quit-msg" value="Użytkownik rozłączył się" /><br /><br />'+
+    		'<input type="submit" value="Rozłącz" /> '+
+			'<input type="button" onclick="$(\'.notifywindow\').fadeOut(400)" value="Anuluj" />'+
+			'</form>');
     	$('.notifywindow').fadeIn(400);
-    	$(".notifywindow").css('z-index', 10);
+    	$('.notifywindow').css('z-index', 10);
+    	$('#quit-msg').focus();
+    	$('#quit-msg').select();
+    },
+    'quit': function() {
+    	commands.quit.callback(['quit'], '/quit '+$('#quit-msg').val());
+		$('.notifywindow').fadeOut(100);
     },
     'completion': {
 		'string': '',
@@ -1857,7 +1956,7 @@ var cmdBinds = {
 			var html = gateway.parseImages(msg.text);
 			
             if(msg.args[0].indexOf('#') == 0) { // wiadomość kanałowa
-            	var channel = gateway.findChannel(msg.args[0].toLowerCase());
+            	var channel = gateway.findChannel(msg.args[0]);
             	if(!channel) {
             		channel = new Channel(msg.args[0]);
             		gateway.channels.push(channel);
@@ -1869,13 +1968,13 @@ var cmdBinds = {
                             var acttext = msg.text.replace(/^\001ACTION(.*)\001$/i, '$1');
                             if(msg.text.indexOf(guser.nick) != -1) {
                                 channel.appendMessage(messagePatterns.channelActionHilight, [gateway.niceTime(), msg.sender.nick, gateway.colorize(acttext)]);
-                                if(gateway.active != msg.args[0].toLowerCase()) {
-                                    gateway.findChannel(msg.args[0].toLowerCase()).markNew();
+                                if(gateway.active.toLowerCase() != msg.args[0].toLowerCase()) {
+                                    channel.markNew();
                                 }
                             } else {
                                 channel.appendMessage(messagePatterns.channelAction, [gateway.niceTime(), msg.sender.nick, gateway.colorize(acttext)]);
                                 if(gateway.active.toLowerCase() != msg.args[0].toLowerCase()) {
-                                    gateway.findChannel(msg.args[0].toLowerCase()).markBold();
+                                    channel.markBold();
                                 }
                             }
                         }
@@ -1883,12 +1982,12 @@ var cmdBinds = {
                         if(msg.text.indexOf(guser.nick) != -1) {
                             channel.appendMessage(messagePatterns.channelMsgHilight, [gateway.niceTime(), msg.sender.nick, gateway.colorize(msg.text)]);
                             if(gateway.active != msg.args[0].toLowerCase()) {
-                                gateway.findChannel(msg.args[0].toLowerCase()).markNew();
+                                channel.markNew();
                             }
                         } else {
                             channel.appendMessage(messagePatterns.channelMsg, [gateway.niceTime(), msg.sender.nick, gateway.colorize(msg.text)]);
                             if(gateway.active.toLowerCase() != msg.args[0].toLowerCase()) {
-                                gateway.findChannel(msg.args[0].toLowerCase()).markBold();
+                                channel.markBold();
                             }
                         }
                     }
@@ -1909,7 +2008,7 @@ var cmdBinds = {
 						}
                         var acttext = msg.text.replace(/^\001ACTION(.*)\001$/i, '$1');
                         query.appendMessage(messagePatterns.channelAction, [gateway.niceTime(), msg.sender.nick, gateway.colorize(acttext)]);
-                        if(gateway.active != msg.sender.nick) {
+                        if(gateway.active.toLowerCase() != msg.sender.nick.toLowerCase()) {
                             gateway.findQuery(msg.sender.nick).markNew();
                         }
                         query.appendMessage('%s', [html]);
@@ -1937,7 +2036,7 @@ var cmdBinds = {
 						gateway.queries.push(query);
 					}
                     query.appendMessage(messagePatterns.channelMsg, [gateway.niceTime(), msg.sender.nick, gateway.colorize(msg.text)]);
-                    if(gateway.active != msg.sender.nick) {
+                    if(gateway.active.toLowerCase() != msg.sender.nick.toLowerCase()) {
                         gateway.findQuery(msg.sender.nick).markNew();
                     }
                     query.appendMessage('%s', [html]);
@@ -1970,17 +2069,20 @@ var cmdBinds = {
                         }
                     }
                 } else if(!msg.sender.server && msg.sender.nick != guser.nick) { // użytkownik
-					if (msg.sender.nick.toUpperCase() === 'nickserv'.toUpperCase()) {
+				/*	if (msg.sender.nick.toUpperCase() === 'nickserv'.toUpperCase()) {
 						if (msg.text.match(/^Nieprawid.owe has.o\.$/i)) { // złe hasło nickserv
 							$(".error-text").text(" ");
 							$(".error-text").append("<h3>Nieprawidłowe hasło</h3><p>Podane hasło do nicka jest błędne. Wpisz <b>/msg NickServ identify poprawne_hasło</b> aby ponowić próbę.");
 							$(".errorwindow").fadeIn(250);
 							$(".errorwindow").css('z-index', 10);
 						}
-					}
+					}*/
 /*					if (msg.sender.nick.match(/((nick|chan|oper|bot|memo)serv)|global/i)) { //wiadomość od serwisów
 						gateway.getActive().appendMessage(messagePatterns.notice, [gateway.niceTime(), $('<div/>').text(msg.sender.nick).html(), $('<div/>').text(msg.sender.ident).html(), $('<div/>').text(msg.sender.host).html(), gateway.colorize($('<div/>').text(msg.text).html())]);
 					} else {*/
+					if(msg.sender.nick.toLowerCase() == 'nickserv'){
+						services.nickservMessage(msg);
+					}
 						if ($('#showNoticeInStatus').is(':checked')) { // notice jako query
 							gateway.statusWindow.appendMessage(messagePatterns.notice, [gateway.niceTime(), $('<div/>').text(msg.sender.nick).html(), $('<div/>').text(msg.sender.ident).html(), $('<div/>').text(msg.sender.host).html(), gateway.colorize(msg.text)]);
 							gateway.statusWindow.markBold();
@@ -1990,7 +2092,7 @@ var cmdBinds = {
 								gateway.queries.push(query);
 							}
 							gateway.findQuery(msg.sender.nick).appendMessage(messagePatterns.notice, [gateway.niceTime(), $('<div/>').text(msg.sender.nick).html(), $('<div/>').text(msg.sender.ident).html(), $('<div/>').text(msg.sender.host).html(), gateway.colorize(msg.text)]);
-							if(gateway.active != msg.sender.nick) {
+							if(gateway.active.toLowerCase() != msg.sender.nick.toLowerCase()) {
 								gateway.findQuery(msg.sender.nick).markNew();
 							}
 						}
@@ -2077,6 +2179,10 @@ var cmdBinds = {
     '301': [	// RPL_AWAY
         function(msg) {
             $(".notify-text").append("<p class='whois'><span class='info'><br /></span><span class='data'>Ten użytkownik ma status away: " + $('<div/>').text(msg.text).html() + "</span></p>");
+            var query = gateway.findQuery(msg.args[1]);
+            if(query){
+            	query.appendMessage(messagePatterns.away, [gateway.niceTime(), $('<div/>').text(msg.args[1]).html(), $('<div/>').text(msg.text).html()]);
+            }
         }
     ],
     '312': [	// RPL_WHOISSERVER 
@@ -2257,6 +2363,21 @@ var cmdBinds = {
             if(gateway.findChannel(msg.args[1])) {
                 gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.cannotSendToChan, [gateway.niceTime(), msg.args[1], msg.text])
             }
+        }
+    ],
+    '432' : [	// ERR_ERRONEUSNICKNAME 
+        function(msg) {
+            $(".notify-text").text(" ");
+            $(".notify-text").append("<h3>Nie można zmienić nicka </h3>");
+            $(".notify-text").append("<p>Nie można użyć nicka <b>"+ msg.args[1] +"</b>. Spróbuj poczekać kilka minut.</p>");
+            //                        if ($("#optionGraphicalPopups:checked").val() != null) {
+            if(gateway.connectStatus != statusDisconnected){
+            	$(".notify-text").append("<p>Twój bieżący nick to <b>"+guser.nick+"</b>.</p>");
+            }
+            $(".notifywindow").fadeIn(250);
+			$(".notifywindow").css('z-index', 10);
+            //                        }
+            gateway.statusWindow.appendMessage(messagePatterns.badNick, [gateway.niceTime(), msg.args[1]]);
         }
     ],
     '433' : [	// ERR_NICKNAMEINUSE 
@@ -2519,11 +2640,11 @@ var commands = {
 		'custom': [],
 		'callback': function(command, input) {
 			if (command[1] != "") {
-				if(!gateway.findQuery(command[1].toLowerCase())) {
-					var query = new Query(command[1].toLowerCase());
+				if(!gateway.findQuery(command[1])) {
+					var query = new Query(command[1]);
 					gateway.queries.push(query);
 				}
-				gateway.switchTab(command[1].toLowerCase());
+				gateway.switchTab(command[1]);
 			} else {
 				gateway.notEnoughParams("query", "musisz podać nick osoby z którą chcesz rozpocząć prywatną rozmowę");
 			}
@@ -2552,7 +2673,7 @@ var commands = {
 		'callback': function(command, input) {
 			if (command[1]) {
 				if(!gateway.findQuery("chanserv")) {
-					var query = new Query("chanserv");
+					var query = new Query("ChanServ");
 					gateway.queries.push(query);
 				}
 				gateway.findQuery("chanserv").appendMessage(messagePatterns.yourMsg, [gateway.niceTime(), guser.nick, input.substr(4)]);
@@ -2569,7 +2690,7 @@ var commands = {
 		'callback': function(command, input) {
 			if (command[1]) {
 				if(!gateway.findQuery("nickserv")) {
-					var query = new Query("nickserv");
+					var query = new Query("NickServ");
 					gateway.queries.push(query);
 				}
 				gateway.findQuery("nickserv").appendMessage(messagePatterns.yourMsg, [gateway.niceTime(), guser.nick, input.substr(4)]);
@@ -2682,7 +2803,7 @@ var commands = {
 					var query = new Query(command[1].toLowerCase());
 					gateway.queries.push(query);
 				}
-				gateway.findQuery(command[1].toLowerCase()).appendMessage(messagePatterns.yourNotice, [gateway.niceTime(), command[1], reason]);
+				gateway.findQuery(command[1]).appendMessage(messagePatterns.yourNotice, [gateway.niceTime(), command[1], reason]);
 			} else {
 				gateway.notEnoughParams("notice", "musisz poda\u0107 nick osoby do której chcesz napisać i tekst który chcesz jej wysłać.");
 			}
@@ -2708,9 +2829,9 @@ var commands = {
 				} else {
 					gateway.notEnoughParams("msg", "musisz poda\u0107 treść wiadomości którą chcesz wysłać.");
 				}
-				var query = gateway.findQuery(command[1].toLowerCase());
+				var query = gateway.findQuery(command[1]);
 				if(!query) {
-					query = new Query(command[1].toLowerCase());
+					query = new Query(command[1]);
 					gateway.queries.push(query);
 				}
 				query.appendMessage(messagePatterns.yourMsg, [gateway.niceTime(), guser.nick, gateway.colorize(reason)]);
@@ -3245,6 +3366,11 @@ var conn = {
 			}
 			conn.dispConnectDialog();
 		}
+		$(window).on('beforeunload', function() {
+        	if (gateway.connectStatus != statusDisconnected) {
+            	return 'Jesteś nadal połączony z IRCem. Aby przed wyjściem się rozłączyć, użyj przycisku "X w kółeczku" w prawym górnym rogu bramki.';
+        	}
+    	}); 
 	}
 }
 

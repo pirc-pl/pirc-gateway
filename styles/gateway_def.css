@@ -939,7 +939,7 @@ input.symbols {
 	padding: 6px !important;
 }
 
-spam.uiclick {
+span.uiclick {
 	text-decoration: italic;
 }
 
@@ -947,3 +947,20 @@ span.uiclick:hover {
 	cursor: pointer;
 	text-decoration: underline;
 }
+
+DIV.table  {
+    display:table;
+}
+FORM.tr, DIV.tr {
+    display:table-row;
+}
+SPAN.td, span.td_right {
+    display:table-cell;
+    margin: 4px;
+    padding: 4px;
+}
+
+span.td_right {
+	text-align: right;
+}
+
