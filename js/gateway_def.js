@@ -833,6 +833,15 @@ var gateway = {
 	'firstConnect': 1, //jeśli dostanę ERROR gdy to jest nadal 1 = błąd z poprzedniej sesji, od razu łączę ponownie
 	'allowNewSend' : true,
 	'statusWindow': new Status(),
+	'chanPassword': function(chan) {
+		if($('#chpass').val() == ''){
+			alert('Nie podałeś hasła!');
+			return false;
+		}
+		gateway.send('JOIN '+chan+' '+$('#chpass').val());
+		$(".errorwindow").fadeOut(250);
+		return true;
+	},
 	'reconnect': function() { //wywoływana po kliknięciu 'połącz ponownie'
 		gateway.websock.onerror = undefined;
 		gateway.websock.onclose = undefined;
@@ -2408,6 +2417,57 @@ var cmdBinds = {
 			$(".errorwindow").css('z-index', 10);
         }
     ],
+    '473' : [	// ERR_INVITEONLYCHAN
+        function(msg) {
+			gateway.iKnowIAmConnected();
+            $(".error-text").text(" ");
+            $(".error-text").append("<h3>Nie można dołączyć do kanału<br />" + $('<div/>').text(msg.args[1]).html() + "<br /><br /></h3>");
+            $(".error-text").append('<p>Musisz dostać zaproszenie aby wejść na ten kanał. Wpisz <b>/knock '+$('<div/>').text(msg.args[1]).html()+'</b> aby poprosić operatorów o możliwość wejścia.</p>');
+            gateway.statusWindow.appendMessage(messagePatterns.cannotJoin, [gateway.niceTime(), msg.args[1], "Kanał wymaga zaproszenia"]);
+            $(".errorwindow").fadeIn(250);
+			$(".errorwindow").css('z-index', 10);
+        }
+    ],
+    '475' : [	// ERR_BADCHANNELKEY
+        function(msg) {
+			gateway.iKnowIAmConnected();
+            $(".error-text").text(" ");
+            $(".error-text").append("<h3>Nie można dołączyć do kanału<br />" + msg.args[1] + "<br /><br /></h3>");
+            $(".error-text").append('<p>Musisz podać poprawne hasło.</p>');
+            $(".error-text").append('<form onsubmit="gateway.chanPassword(\''+$('<div/>').text(msg.args[1]).html()+'\');" action="javascript:void(0);">Hasło do '+$('<div/>').text(msg.args[1]).html()+': <input type="password" id="chpass" /> <input type="submit" value="Wejdź" /></form>');
+/*	'badNickString': '<div class="table">'+
+		'<form class="tr" onsubmit="services.logIn();" action="javascript:void(0);">'+
+			'<span class="td_right">Twoje hasło:</span>'+
+			'<span class="td"><input type="password" id="nspass" /></span>'+
+			'<span class="td"><input type="submit" value="Zaloguj" /></span>'+
+		'</form>'+
+		'<form class="tr" onsubmit="services.changeNick();" action="javascript:void(0);">'+
+			'<span class="td_right">Nowy nick:</span>'+
+			'<span class="td"><input type="text" id="nnick" /></span>'+
+			'<span class="td"><input type="submit" value="Zmień nick" /></span>'+
+		'</form>'+
+	'</div>',
+	'nickservMessage': function(msg){
+		if (msg.text.match(/^Nieprawid.owe has.o\.$/i)) { // złe hasło nickserv
+			services.nickStore = guser.nickservnick;
+			$(".error-text").text(" ");
+			$(".error-text").append('<h3>Nieprawidłowe hasło</h3><p>Podane hasło do nicka <b>'+guser.nickservnick+'</b> jest błędne. Możesz spróbować ponownie lub zmienić nicka.</p>'+services.badNickString);
+			$(".errorwindow").fadeIn(250);
+			$(".errorwindow").css('z-index', 10);
+		}
+		if(guser.nickservpass == '' && msg.text.match(/^Ten nick jest zarejestrowany i chroniony\.$/i)){
+			services.nickStore = guser.nick;
+			$(".error-text").text(" ");
+			$(".error-text").append('<h3>Nick jest zarejestrowany</h3><p>Wybrany nick <b>'+guser.nick+'</b> jest zarejestrowany. Musisz go zmienić lub podać hasło.</p>'+services.badNickString);
+			$(".errorwindow").fadeIn(250);
+			$(".errorwindow").css('z-index', 10);
+		}
+	},*/
+            gateway.statusWindow.appendMessage(messagePatterns.cannotJoin, [gateway.niceTime(), msg.args[1], "Wymagane hasło"]);
+            $(".errorwindow").fadeIn(250);
+			$(".errorwindow").css('z-index', 10);
+        }
+    ],
     '482' : [	// ERR_CHANOPRIVSNEEDED 
         function(msg) {
             $(".error-text").text(" ");
@@ -2773,6 +2833,18 @@ var commands = {
 				}
 			} else {
 				gateway.notEnoughParams("join", "musisz poda\u0107 kana\u0142 do którego chcesz do\u0142\u0105czy\u0107.");
+			}
+		}
+	},
+	'knock': {
+		'channels': true,
+		'nicks': false,
+		'custom': [],
+		'callback': function(command, input) {
+			if (command[1] != "") {
+				gateway.send("KNOCK "+command[1]);
+			} else {
+				gateway.notEnoughParams("knock", "musisz poda\u0107 kana\u0142 do którego chcesz zapukać.");
 			}
 		}
 	},
