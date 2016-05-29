@@ -25,12 +25,16 @@
             	<h3>Ustawienia</h3>
             	<table>
 					<tr>
-						<td><input type="checkbox" id="showPartQuit" /></td>
+						<td><input type="checkbox" id="showPartQuit" onchange="disp.changeSettings()" /></td>
 						<td>&nbsp; Nie pokazuj wiadomości PART/JOIN/QUIT</td>
 					</tr>
 					<tr>
-						<td><input type="checkbox" id="showNoticeInStatus" /></td>
+						<td><input type="checkbox" id="showNoticeInStatus" onchange="disp.changeSettings()" /></td>
 						<td>&nbsp; Pokazuj NOTICE w zakładce 'status'</td>
+					</tr>
+					<tr>
+						<td><input type="checkbox" id="tabsListBottom" onchange="disp.changeSettings()" /></td>
+						<td>&nbsp; Listę zakładek pokazuj na dole strony</td>
 					</tr>
             	</table>
 			</div>
@@ -66,6 +70,7 @@
         </div>
         
         <div id="options-box">
+	        <a id="button-tsize" href="javascript:void(0);" onclick="disp.showSizes();"></a>
 			<a id="button-options" href="javascript:void(0);" onClick="gateway.showOptions();"></a> 
 			<a id="button-about" href="javascript:void(0);" onClick="gateway.showAbout();"></a>
 			<a id="button-quit" href="javascript:void(0);" onClick="gateway.clickQuit();"></a> 
@@ -140,7 +145,7 @@
 					<!--<td style="width: 150px; text-align: right;"><span id="usernick" class="yournickname">{$nick}</span></td>-->
 	                <td style="width: 10px;"><input type="image" src="/styles/img/plus.png" value="" class="completion" onClick="gateway.doComplete();$('#input').focus()" /></td>
 	                <td style="padding-right: 10px; padding-left: 5px;"> <input id="input" type="text" name="input" class="input" /></td>
-	                <td style="width: 10px;"><input type="button" class="symbols" value="µ☺" onClick="disp.symbolWindowShow()" /></td>
+	                <td style="width: 10px;"><input type="image" src="/styles/img/smiley_mu.png" class="symbols" onClick="disp.symbolWindowShow()" /></td>
 	                <td style="width: 10px;"><input type="image" src="/styles/img/kolorki.png" value="" class="insertColor" onClick="disp.colorWindowShow()" /></td>
                 	<td style="width: 10px;"><input type="submit" value="&bull;" class="submit" OnClick="gateway.parseUserInput($('#input').val())" /></td>
                 </tr></table>
@@ -201,7 +206,7 @@
         </div>
         
         <div class="colorwindow">
-            <div class="color-close" onclick="$('.colorwindow').fadeOut(200)">
+            <div class="color-close" onclick="$('.colorwindow').fadeOut(200); $('#input').focus();">
                 &#215;
             </div>
             <div class="color-text">
@@ -239,7 +244,7 @@
         </div>
         
         <div class="symbolwindow">
-            <div class="symbol-close" onclick="$('.symbolwindow').fadeOut(200)">
+            <div class="symbol-close" onclick="$('.symbolwindow').fadeOut(200); $('#input').focus();">
                 &#215;
             </div>
             <div class="symbol-text">
@@ -267,6 +272,22 @@
             </div>
         </div>
     </body>
+    <div class="tsizewindow">
+        <div class="size-close" onclick="$('.tsizewindow').fadeOut(200); $('#input').focus();">
+            &#215;
+        </div>
+        <div class="size-text">
+        	<h3>Wybierz wielkość tekstu</h3>
+        	<a onclick="javascript:disp.setSize(0.6)" style="font-size:0.6em">A</a>
+        	<a onclick="javascript:disp.setSize(0.8)" style="font-size:0.8em">A</a> 
+        	<a onclick="javascript:disp.setSize(1.0)" style="font-size:1.0em">A</a>
+        	<a onclick="javascript:disp.setSize(1.2)" style="font-size:1.2em">A</a> 
+        	<a onclick="javascript:disp.setSize(1.4)" style="font-size:1.4em">A</a> 
+        	<a onclick="javascript:disp.setSize(1.6)" style="font-size:1.6em">A</a> 
+        	<a onclick="javascript:disp.setSize(1.8)" style="font-size:1.8em">A</a> 
+          	<a onclick="javascript:disp.setSize(2.0)" style="font-size:2.0em">A</a> 
+        </div>
+    </div>
 	<script type="text/javascript">
 	/*	document.getElementsByClassName('not-connected-text')[0].getElementsByTagName('h3')[0].innerHTML = 'Coś nie tak';
 		document.getElementsByClassName('not-connected-text')[0].getElementsByTagName('p')[0].innerHTML = 'Twoja przeglądarka nie potrafi wyświetlić bramki. Chyba jest zbyt stara...';*/

@@ -21,6 +21,9 @@ var reqChannel = '';
 
 var server = 'ws://'+location.host+'/ircsocket';
 
+var booleanSettings = [ 'showPartQuit', 'showNoticeInStatus', 'tabsListBottom' ];
+	
+
 var messagePatterns = {
 	'nickChange': '<span class="time">%s</span> &nbsp; <span class="mode">*** %s zmieni\u0142 nick na %s</span><br />',
 	'nickInUse': '<span class="time">%s</span> &nbsp; <span class="kick">*** %s: Nick jest juz uzywany przez kogos innego.</span><br />',
@@ -81,15 +84,8 @@ var modes = {
 };
 var modemap2 = ['owner', 'admin', 'op', 'halfop', 'voice'];
 
-function getCookie(name) {
-    var nameEQ = name + "=";
-    var ca = document.cookie.split(';');
-    for(var i=0;i < ca.length;i++) {
-        var c = ca[i];
-        while (c.charAt(0)==' ') c = c.substring(1,c.length);
-        if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
-    }
-    return null;
+function str2bool(b){
+	return (b === 'true');
 }
 
 guser.changeNick = function(newnick, silent) {
@@ -135,6 +131,7 @@ function Nicklist(chan, id) {
 			str += this.list[i].makeHTML();
 		}
 		$('<ul/>').addClass('nicklist').appendTo('#'+this.id).html(str);
+		$('.chrank').css('height', 16*disp.size).css('width', 16*disp.size);
 	}
 	this.remove = function() {
 		$('#'+this.id).remove();
@@ -218,12 +215,12 @@ function NicklistUser(usernick, initMode, chan) {
 			//return '<li id="'+this.id+'" class="'+this.nick+'"><table><tr><td valign="top"><img alt="'+alt[this.level]+'" src="'+icons[this.level]+'" width="16" height="16" /></td><td valign="top">&nbsp;&nbsp;'+this.nick+'</td></tr></table><ul class="options" id="'+this.id+'-opt"></ul><li>Jaka\u015b opcja</li></ul></li>';
 		return '<li id="'+this.id+'" class="'+$('<div/>').text(this.nick).html()+'" onclick="gateway.toggleNickOpt(\''+this.id+'\')">'+
 			'<table><tr>'+
-				'<td valign="top"><img alt="'+alt[this.level]+'" src="'+icons[this.level]+'" width="16" height="16" /></td><td valign="top">&nbsp;&nbsp;'+this.nick+'</td>'+
+				'<td valign="top"><img class="chrank" alt="'+alt[this.level]+'" src="'+icons[this.level]+'" /></td><td valign="top">&nbsp;&nbsp;'+this.nick+'</td>'+
 			'</tr></table>'+
 			'<ul class="options" id="'+this.id+'-opt">'+
+				'<li onClick="gateway.queries.push(new Query(\''+this.nick+'\')); gateway.switchTab(\''+this.nick+'\')" class="switchTab">Rozmowa Prywatna (QUERY)</li>'+
 				'<li onClick="' + ((this.nick.toLowerCase() == guser.nick.toLowerCase())?'gateway.displayOwnWhois = true; ':'') + 'gateway.send(\'WHOIS '+gateway.sescape(this.nick)+'\')">Informacje (WHOIS)</li>'+
 				'<li onClick="services.nickInfo(\''+this.nick+'\')">Informacje (NickServ)</li>'+
-				'<li onClick="gateway.queries.push(new Query(\''+this.nick+'\')); gateway.switchTab(\''+this.nick+'\')" class="switchTab">Rozmowa Prywatna (QUERY)</li>'+
 				'<li onClick="gateway.showKick(\''+this.channel+'\', \''+this.nick+'\')">Wyrzu\u0107 z kana\u0142u</li>'+
 				'<li onClick="gateway.showStatus(\''+this.channel+'\', \''+this.nick+'\')">Daj uprawnienia</li>'+
 				'<li onClick="gateway.showStatusAnti(\''+this.channel+'\', \''+this.nick+'\')">Odbierz uprawnienia</li>'+
@@ -470,6 +467,7 @@ function Channel(chan) {
 	}
 	this.setTopic = function(topic) {
 		$('#'+this.id+'-topic > h2').html(topic);
+		$('#'+this.id+'-topic > h2').click(disp.topicClick);
 	}
 
 	$('<span/>').attr('id', this.id+'-window').hide().appendTo('#main-window');
@@ -577,6 +575,25 @@ function Status() {
 	}
 }
 
+var settings = {
+	'saveCookie': function(cname, cvalue){
+		var now = new Date();
+		var expireTime = now.getTime() + 60*60*24*720; // 720 dni
+		now.setTime(expireTime);
+		document.cookie = cname+'='+cvalue+'; expires='+now.toGMTString();
+	},
+	'getCookie': function(cname) {
+	    var nameEQ = cname + "=";
+    	var ca = document.cookie.split(';');
+    	for(var i=0;i < ca.length;i++) {
+    	    var c = ca[i];
+    	    while (c.charAt(0)==' ') c = c.substring(1,c.length);
+    	    if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+    	}
+    	return null;
+	}
+}
+
 var statusDisconnected = 0;
 var status001 = 1;
 var statusGhostSent = 2;
@@ -586,6 +603,15 @@ var statusGhostAndNickSent = 5;
 var statusError = 6;
 
 var disp = {
+	'size': 1,
+	'setSize': function(s) {
+		if(!s) return;
+		$('body').css('font-size', s+'em');
+		$('input[type="checkbox"]').css('transform', 'scale('+s+')');
+		$('.chrank').css('height', 16*s).css('width', 16*s);
+		disp.size = s;
+		settings.saveCookie('tsize', s);
+	},
 	'colorWindowShow': function() {
 		$('.colorwindow').fadeIn(200);
 		$('.symbolwindow').fadeOut(200)
@@ -623,6 +649,40 @@ var disp = {
 				$('#hide-'+id).css('display', 'inline');
 			}
 		}, 250);
+	},
+	'changeSettings': function() {
+		booleanSettings.forEach(function(sname){
+			settings.saveCookie(sname, $('#'+sname).is(':checked'));
+		});
+		if ($('#tabsListBottom').is(':checked')) {
+			$('#top_menu').detach().insertAfter('#inputbox');
+			$('#top_menu').css('top', 'auto').css('bottom', '0');
+			$('#options-box').css('top', '.8em');
+			$('#info').css('top', '0');
+			$('#chatbox').css('top', '2.2em').css('bottom', '7em');
+			$('#nicklist').css('top', '2.2em').css('bottom', '7em');
+			$('#inputbox').css('bottom', '3.2em');
+		} else {
+			$('#top_menu').detach().insertAfter('#options-box');
+			$('#top_menu').css('bottom', 'auto').css('top', '0');
+			$('#options-box').css('top', '');
+			$('#info').css('top', '');
+			$('#chatbox').css('top', '').css('bottom', '');
+			$('#nicklist').css('top', '').css('bottom', '');
+			$('#inputbox').css('bottom', '');
+		}
+	},
+    'showSizes': function() {
+		$('.tsizewindow').fadeIn(200);
+	},
+	'topicClick': function() {
+		var channel = gateway.findChannel(gateway.active);
+		if(!channel){
+			return;
+		}
+		$(".notify-text").html('<h2>Temat kanału '+channel.name+'</h2><p>'+$('#'+channel.id+'-topic > h2').html()+'</p>');
+		$(".notifywindow").fadeIn(250);
+		$(".notifywindow").css('z-index', 10);
 	}
 };
 
@@ -981,9 +1041,9 @@ var gateway = {
 		gateway.statusWindow.appendMessage(messagePatterns.existingConnection, [gateway.niceTime()]);
 		gateway.send('PRIVMSG');
 			
-		if(guser.nick == getCookie('nick') && getCookie('password')){
+		if(guser.nick == settings.getCookie('nick') && settings.getCookie('password')){
 			guser.nickservnick = guser.nick;
-			guser.nickservpass = atob(getCookie('password'));
+			guser.nickservpass = atob(settings.getCookie('password'));
 		}
 			
 		setTimeout(function(){
@@ -1125,13 +1185,10 @@ var gateway = {
 			guser.nickservpass = $('#nspass').val();
 		}
 		if($('#save_cookie').is(":checked")){
-			var now = new Date();
-			var expireTime = now.getTime() + 60*60*24*720; // 720 dni
-			now.setTime(expireTime);
-			document.cookie = 'channel='+$('#nschan').val()+'; expires='+now.toGMTString();
-			document.cookie = 'nick='+$('#nsnick').val()+'; expires='+now.toGMTString();
+			settings.saveCookie('channel', $('#nschan').val());
+			settings.saveCookie('nick', $('#nsnick').val());
 			if(guser.nickservpass){
-				document.cookie = 'password='+btoa(guser.nickservpass)+'; expires='+now.toGMTString();
+				settings.saveCookie('password', btoa(guser.nickservpass));
 			}
 		}
 		gateway.initSys();
@@ -1500,11 +1557,15 @@ var gateway = {
 	/*		var container = $('#tab-wrapper'),
 				scrollTo = $('li.activeWindow');
 
-			container.scrollLeft(container.scrollLeft() - scrollTo.width());*/
-			$('#tab-wrapper').scrollTo(swtab);
+			container.scrollLeft(container.scrollLeft() - scrollTo.width());
+			$('#tab-wrapper').scrollTo(swtab);*/
 		}
 	},
 	'switchTab': function(chan) {
+		var act = gateway.getActive();
+		if(act){
+			act.saveScroll();
+		}
 		chan = chan.toLowerCase();
 		if(chan != "--status" && gateway.findChannel(chan)) {
 			$('#main-window > span').hide();
@@ -1529,10 +1590,16 @@ var gateway = {
 						"width":    "77%"
 					}, 400, function() {
 						gateway.findChannel(chan).restoreScroll();
+						setTimeout(function(){
+							gateway.findChannel(chan).restoreScroll();
+						}, 600);
 					});
 				});
 			} else {
 				gateway.findChannel(chan).restoreScroll();
+				setTimeout(function(){
+					gateway.findChannel(chan).restoreScroll();
+				}, 600);
 			}
 			
 		} else if(chan != "--status" && gateway.findQuery(chan)) {
@@ -1557,9 +1624,15 @@ var gateway = {
 				}, 401, function () {
 					$("#nicklist-closed").fadeIn(200);
 					gateway.findQuery(chan).restoreScroll();
+					setTimeout(function(){
+						gateway.findQuery(chan).restoreScroll();
+					}, 600);
 				});
 			} else {
 				gateway.findQuery(chan).restoreScroll();
+				setTimeout(function(){
+					gateway.findQuery(chan).restoreScroll();
+				}, 600);
 			}
 			gateway.findQuery(chan).markRead();
 		} else if(chan == "--status") {
@@ -1585,9 +1658,15 @@ var gateway = {
 				}, 401, function () {
 					$("#nicklist-closed").fadeIn(200);
 					gateway.statusWindow.restoreScroll();
+					setTimeout(function(){
+						gateway.statusWindow.restoreScroll();
+					}, 600);
 				});
 			} else {
 				gateway.statusWindow.restoreScroll();
+				setTimeout(function(){
+					gateway.statusWindow.restoreScroll();
+				}, 600);
 			}
 		}
 	},
@@ -3239,18 +3318,18 @@ var conn = {
 		conn.my_nick = dnick;
 
 		if(reqChannel == '#'){
-			if(getCookie('channel')){
-				reqChannel = getCookie('channel');
+			if(settings.getCookie('channel')){
+				reqChannel = settings.getCookie('channel');
 			}
 		}
 		if(conn.my_nick == ''){
-			if(getCookie('nick')){
-				conn.my_nick = getCookie('nick');
+			if(settings.getCookie('nick')){
+				conn.my_nick = settings.getCookie('nick');
 			}
 		}
-		if(conn.my_nick == getCookie('nick')){
-			if(getCookie('password')){
-				conn.my_pass = atob(getCookie('password'));
+		if(conn.my_nick == settings.getCookie('nick')){
+			if(settings.getCookie('password')){
+				conn.my_pass = atob(settings.getCookie('password'));
 			}
 		}
 	
@@ -3297,6 +3376,12 @@ var conn = {
 	},
 	'gatewayInit': function(){
 		$('.not-connected-text p').html('Poczekaj chwilę, trwa ładowanie...');
+		booleanSettings.forEach(function(sname){
+			$('#'+sname).prop('checked', str2bool(settings.getCookie(sname)));
+		});
+		disp.changeSettings();
+		disp.setSize(settings.getCookie('tsize'));
+		
 		$('#chatbox').click(function() {
 			gateway.closeNotify();
 			gateway.closeStatus();
@@ -3307,11 +3392,11 @@ var conn = {
 		gateway.closeStatus();
 		gateway.closeError();
 		}); */
-		$('#info').click(function() {
+	/*	$('#info').click(function() {
 			gateway.closeNotify();
 			gateway.closeStatus();
 			gateway.closeError();
-		});
+		});*/
 		$('#input').click(function() {
 			gateway.closeNotify();
 			gateway.closeStatus();
@@ -3402,17 +3487,6 @@ var conn = {
 	//		gateway.send();
 		};
 
-		$('#chat-wrapper').scroll(function(){
-			if(gateway.findChannel(gateway.active)) {
-				gateway.findChannel(gateway.active).saveScroll();
-			} else if(gateway.findQuery(gateway.active)) {
-				gateway.findQuery(gateway.active).saveScroll();
-			} else if(gateway.active == '--status') {
-				gateway.statusWindow.saveScroll();
-			}
-		});
-	   
-//		setTimeout('gateway.send()', 250);
 	/*	setTimeout("$('#not_connected_wrapper').fadeIn(200)", 250);*/
 		try {
 			$('#not_connected_wrapper').fadeIn(200);
@@ -3440,7 +3514,8 @@ var conn = {
 		}
 		$(window).on('beforeunload', function() {
         	if (gateway.connectStatus != statusDisconnected) {
-            	return 'Jesteś nadal połączony z IRCem. Aby przed wyjściem się rozłączyć, użyj przycisku "X w kółeczku" w prawym górnym rogu bramki.';
+        		gateway.clickQuit();
+            	return 'Jesteś nadal połączony z IRCem. Kliknij "Zostań na stronie" a następnie "Rozłącz" w okienku poniżej aby się rozłączyć przed wyjściem.';
         	}
     	}); 
 	}
