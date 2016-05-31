@@ -44,7 +44,7 @@ class Module extends ModuleT {
 		}
 		
 		Template::assign('channel', $channel);
-		Template::assign('nick', $nick);
+		if($nick != '0') Template::assign('nick', $nick);
 		Template::assign('gateway_version', settings::$gateway['version']);
 		Template::assign('sid', session_id());
 		Template::assign('gateway_url', $gateway_url);

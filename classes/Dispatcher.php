@@ -45,7 +45,8 @@ class Dispatcher {
                 }
             }
             $matches = array();
-            if(preg_match_all('#([\#:\*\.a-z0-9\-_,\^`\[\]\|\{\}\\\\]+)([^\#:\*\.a-z0-9\-_,\^`\[\]\|\{\}\\\\]|$)#i', $_GET['disp'], $matches)) {
+			$disp = iconv('utf-8','us-ascii//TRANSLIT//IGNORE', $_GET['disp']);
+            if(preg_match_all('#([\#:\*\.a-z0-9\-_,\^`\[\]\|\{\}\\\\]+)([^\#:\*\.a-z0-9\-_,\^`\[\]\|\{\}\\\\]|$)#i', $disp, $matches)) {
                 $ar = $matches[1];
                 if($langfound) {
                     $last = array_pop($ar);
@@ -55,9 +56,9 @@ class Dispatcher {
                     array_push($ar, $last);
                 }
                 self::$module = array_shift($ar);
-                for($i = 0; $i<count($ar); $i=$i+2) {
-					if(!empty($ar[$i+1]))
-						self::$args[$ar[$i]] = $ar[$i+1];
+                for($i = 0; $i<count($ar); $i++) {
+					if(isset($ar[$i+1]))
+						self::$args[$ar[$i]] = strval($ar[$i+1]);
 					else
 						self::$args[$ar[$i]] = '';
                 }
@@ -66,14 +67,17 @@ class Dispatcher {
             } else {
                 self::$module = '$$$';
             }
-            if(!empty(self::$args)) {
+            if(isset(self::$args)) {
                 $tmp = array();
                 $i = 0;
+                $j = -1;
                 foreach(self::$args as $key => $value) {
+                	$j++;
+                	if($j%2) continue;
                     if($key != 'lang') {
                         $tmp['.'.$i] = $key;
                         $i++;
-                        if(!empty($value)) {
+                        if(isset($value)) {
                             $tmp['.'.$i] = $value;
                             $i++;
                         }

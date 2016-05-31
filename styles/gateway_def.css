@@ -14,6 +14,22 @@ a:active {
     font-style: normal;
 }
 
+html {
+	font-size: 1.8vh;
+}
+
+@media (max-height: 740px) {
+	html {
+		font-size: 3vh;
+	}
+}
+
+@media (max-height: 500px) {
+	html {
+		font-size: 5vh;
+	}
+}
+
 body {
 	font-family: verdana,arial,tahoma,Symbola;
 	font-size: 1em;
@@ -56,8 +72,8 @@ input, button, submit {
 	box-shadow: 2px 2px 7px #505050;
 	background: url("/styles/img/techbg.png") no-repeat scroll right top #E8E8E8;
 	border: 1px solid #757575;
-	left: 40%;
-	margin-left: -214px;
+	left: 30%;
+	margin-left: -8em;
 	margin-top: -50px;
 	padding: 14px;
 	position: fixed;
@@ -67,7 +83,7 @@ input, button, submit {
 }
 
 #not_connected_div {
-	width: 30em !important;
+	width: 28.5em !important;
 }
 
 #top_menu {
@@ -276,6 +292,10 @@ span.yournick {
 span.hilight, span.hilight span.nick {
 	color: #1F29D3;
 	font-weight: bold;
+}
+
+.ownNick {
+	color: #1F29D3;
 }
 	
 span.join {
@@ -507,7 +527,7 @@ b.admin {
 	color: #AA0000;
 }
 	
-ul.options {
+ul.options, ul.suboptions {
 	background: none repeat scroll 0 0 #E6EFFA;
 	display: none;
 	list-style: none outside none;
@@ -520,7 +540,7 @@ ul.nicklist li:hover ul.options {
 	padding: 3px;
 }
 	
-ul.options li {
+ul.options li, ul.suboptions li {
 	background: none repeat scroll 0 0 rgba(255, 255, 255, 0.3);
 	margin-top: 2px;
 	padding: 1px;
@@ -594,8 +614,8 @@ ul.options li:hover {
 	background: url("/styles/img/errorbg.png") no-repeat scroll right top #FFC7C7;
 	border: 1px solid #C51D1D;
 	display: none;
-	left: 50%;
-	margin-left: -214px;
+	left: 40%;
+	margin-left: -12em;
 	margin-top: -50px;
 	padding: 14px;
 	position: fixed;
@@ -721,9 +741,9 @@ span.notice, span.notice-nick {
 	font-size: 50px;
 	height: 79px;
 	left: 0;
-	margin-top: -50%;
+	margin-top: -20px;
 	position: absolute;
-	top: 65%;
+	top: 50%;
 	width: 20px;
 }
 	
@@ -731,9 +751,9 @@ span.notice, span.notice-nick {
 	cursor: pointer;
 }
 	
-#nicklist-closed div.closed {
+/*#nicklist-closed div.closed {
 	top: 60%;
-}
+}*/
 	
 #nicklist-closed {
 	display: none;
@@ -847,22 +867,12 @@ input.symbols {
 	background-color: #d7e4f3;
 }
 
-#options-box > a, #options-box > div {
-	width: 18px;
-	height: 18px;
+#options-box > a {
+	width: 1.2em;
+	height: 1.2em;
+	background-size: 1.2em 2.4em;
 	display: block;
 	float: left;
-}
-
-#options-box > div {
-	line-height: 1.8em;
-	width: 5em;
-}
-
-#options-box > div > a {
-	text-align: center;
-	text-decoration: none;
-	color: black;
 }
 
 #button-quit {
@@ -985,7 +995,7 @@ span.td_right {
 }
 
 .chrank {
-	width: 16px;
-	height: 16px;
+	width: 1.1em;
+	height: 1.1em;
 }
 

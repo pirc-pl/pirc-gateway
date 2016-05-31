@@ -36,6 +36,14 @@
 						<td><input type="checkbox" id="tabsListBottom" onchange="disp.changeSettings()" /></td>
 						<td>&nbsp; Listę zakładek pokazuj na dole strony</td>
 					</tr>
+					<tr>
+						<td><input type="checkbox" id="showUserHostnames" onchange="disp.changeSettings()" /></td>
+						<td>&nbsp; Pokazuj nazwy hosta użytkowników</td>
+					</tr>
+					<tr>
+						<td><input type="checkbox" id="autoReconnect" onchange="disp.changeSettings()" checked="checked" /></td>
+						<td>&nbsp; Automatycznie łącz ponownie po rozłączeniu</td>
+					</tr>
             	</table>
 			</div>
 		</div>
