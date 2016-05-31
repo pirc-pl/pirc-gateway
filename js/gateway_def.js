@@ -305,8 +305,13 @@ function Query(nick) {
 		}
 	}
 	this.appendMessage = function(type, args) {
+		var rescroll = false;
+		if(this.name == gateway.active && document.getElementById('chat-wrapper').scrollHeight >= $('#chat-wrapper').scrollTop() + $('#chat-wrapper').innerHeight()) {
+			this.saveScroll();
+			var rescroll = true;
+		}
 		$('#'+this.id+'-window').vprintf(type, args);
-		if(this.name == gateway.active) {
+		if(rescroll && this.name == gateway.active) {
 			this.restoreScroll();
 		}
 	}
@@ -461,8 +466,13 @@ function Channel(chan) {
 	}
 
 	this.appendMessage = function(type, args) {
+		var rescroll = false;
+		if(this.name == gateway.active && document.getElementById('chat-wrapper').scrollHeight >= $('#chat-wrapper').scrollTop() + $('#chat-wrapper').innerHeight()) {
+			this.saveScroll();
+			var rescroll = true;
+		}
 		$('#'+this.id+'-window').vprintf(type, args);
-		if(this.name == gateway.active) {
+		if(rescroll && this.name == gateway.active) {
 			this.restoreScroll();
 		}
 	}
@@ -569,8 +579,13 @@ function Status() {
 		setTimeout("$('#"+this.id+"-tab').removeClass('newmsg2')", 600);
 	}
 	this.appendMessage = function(type, args) {
+		var rescroll = false;
+		if(this.name == gateway.active && document.getElementById('chat-wrapper').scrollHeight >= $('#chat-wrapper').scrollTop() + $('#chat-wrapper').innerHeight()) {
+			this.saveScroll();
+			var rescroll = true;
+		}
 		$('#'+this.id+'-window').vprintf(type, args);
-		if(this.name == gateway.active) {
+		if(rescroll && this.name == gateway.active) {
 			this.restoreScroll();
 		}
 	}
@@ -1784,22 +1799,27 @@ var gateway = {
     },
 	'commandHistory': [],
 	'commandHistoryPos': -1,
+	'inputFocus': function() {
+		if(window.getSelection().toString() == ''){
+			$("#input").focus();
+		}
+	},
     'closeNotify': function() {
         $(".notifywindow").fadeOut(200, function () {
             $(".notify-text").delay(300).text(" ");
-			$("#input").focus();
+			gateway.inputFocus();
         });
     },
     'closeStatus': function() {
         $(".statuswindow").fadeOut(200, function () {
             $(".status-text").delay(300).text(" ");
-			$("#input").focus();
+			gateway.inputFocus();
         });
     },
     'closeError': function() {
         $(".errorwindow").fadeOut(200, function () {
             $(".error-text").delay(300).text(" ");
-			$("#input").focus();
+			gateway.inputFocus();
         });
     },
     'showStatus': function(channel, nick) {
