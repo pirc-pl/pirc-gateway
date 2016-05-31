@@ -3503,6 +3503,10 @@ var conn = {
 			gateway.closeStatus();
 			gateway.closeError();
 		});
+		
+		$(window).resize(function () {
+			$('#chat-wrapper').scrollTop(document.getElementById('chat-wrapper').scrollHeight);
+		});
     
 	//	gateway.send("QUIT"); //k4be
 		$('#input').keydown(function(e) {

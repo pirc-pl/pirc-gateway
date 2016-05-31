@@ -13,7 +13,7 @@ a:active {
     font-weight: normal;
     font-style: normal;
 }
-
+/*
 html {
 	font-size: 1.8vh;
 }
@@ -29,7 +29,7 @@ html {
 		font-size: 5vh;
 	}
 }
-
+*/
 body {
 	font-family: verdana,arial,tahoma,Symbola;
 	font-size: 1em;
