@@ -306,12 +306,12 @@ function Query(nick) {
 	}
 	this.appendMessage = function(type, args) {
 		var rescroll = false;
-		if(this.name == gateway.active && document.getElementById('chat-wrapper').scrollHeight >= $('#chat-wrapper').scrollTop() + $('#chat-wrapper').innerHeight()) {
+		if(this.name.toLowerCase() == gateway.active.toLowerCase() && document.getElementById('chat-wrapper').scrollHeight >= $('#chat-wrapper').scrollTop() + $('#chat-wrapper').innerHeight()) {
 			this.saveScroll();
 			var rescroll = true;
 		}
 		$('#'+this.id+'-window').vprintf(type, args);
-		if(rescroll && this.name == gateway.active) {
+		if(rescroll && this.name.toLowerCase() == gateway.active.toLowerCase()) {
 			this.restoreScroll();
 		}
 	}
@@ -323,6 +323,10 @@ function Query(nick) {
 		this.name = newnick;
 	}
 	this.restoreScroll = function() {
+		var active = gateway.getActive();
+		if(active && this.name != active.name){
+			return;
+		}
 		if(this.scrollSaved) {
 			$('#chat-wrapper').scrollTop(this.scrollPos);
 		} else {
@@ -372,6 +376,10 @@ function Channel(chan) {
 		}
 	}
 	this.restoreScroll = function() {
+		var active = gateway.getActive();
+		if(active && this.name != active.name){
+			return;
+		}
 		if(this.scrollSaved) {
 			$('#chat-wrapper').scrollTop(this.scrollPos);
 		} else {
@@ -467,12 +475,12 @@ function Channel(chan) {
 
 	this.appendMessage = function(type, args) {
 		var rescroll = false;
-		if(this.name == gateway.active && document.getElementById('chat-wrapper').scrollHeight >= $('#chat-wrapper').scrollTop() + $('#chat-wrapper').innerHeight()) {
+		if(this.name.toLowerCase() == gateway.active.toLowerCase() && document.getElementById('chat-wrapper').scrollHeight >= $('#chat-wrapper').scrollTop() + $('#chat-wrapper').innerHeight()) {
 			this.saveScroll();
 			var rescroll = true;
 		}
 		$('#'+this.id+'-window').vprintf(type, args);
-		if(rescroll && this.name == gateway.active) {
+		if(rescroll && this.name.toLowerCase() == gateway.active.toLowerCase()) {
 			this.restoreScroll();
 		}
 	}
@@ -507,6 +515,10 @@ function Status() {
 		}
 	}
 	this.restoreScroll = function() {
+		var active = gateway.getActive();
+		if(active){
+			return;
+		}
 		if(this.scrollSaved) {
 			$('#chat-wrapper').scrollTop(this.scrollPos);
 		} else {
@@ -580,12 +592,12 @@ function Status() {
 	}
 	this.appendMessage = function(type, args) {
 		var rescroll = false;
-		if(this.name == gateway.active && document.getElementById('chat-wrapper').scrollHeight >= $('#chat-wrapper').scrollTop() + $('#chat-wrapper').innerHeight()) {
+		if(this.name.toLowerCase() == gateway.active.toLowerCase() && document.getElementById('chat-wrapper').scrollHeight >= $('#chat-wrapper').scrollTop() + $('#chat-wrapper').innerHeight()) {
 			this.saveScroll();
 			var rescroll = true;
 		}
 		$('#'+this.id+'-window').vprintf(type, args);
-		if(rescroll && this.name == gateway.active) {
+		if(rescroll && this.name.toLowerCase() == gateway.active.toLowerCase()) {
 			this.restoreScroll();
 		}
 	}
@@ -1321,6 +1333,11 @@ var gateway = {
 	'lasterror': '',
 	'nickListVisibility': true,
 	'nickListToggle': function() {
+		var active = gateway.getActive();
+		if(!active){
+			active = gateway.statusWindow;
+		}
+		active.saveScroll();
 		if($("#nicklist").width() > 40) {
 			$("#nicklist").animate({
 				"opacity": "toggle",
@@ -1330,6 +1347,9 @@ var gateway = {
 				"width":    "97%"
 			}, 401, function () {
 				$("#nicklist-closed").fadeIn(200);
+				setTimeout(function(){
+					active.restoreScroll();
+				}, 250);
 			});
 			gateway.nickListVisibility = false;
 		} else {
@@ -1340,7 +1360,10 @@ var gateway = {
 				}, 400);
 				$("#chatbox").animate({
 					"width":    "77%"
-				}, 400);
+				}, 401);
+				setTimeout(function(){
+					active.restoreScroll();
+				}, 450);
 			});
 			gateway.nickListVisibility = true;
 		}
@@ -1624,25 +1647,25 @@ var gateway = {
 			gateway.tabHistory.push(chan);
 			$('#input').focus();
 			if($("#nicklist").width() < 41 && gateway.nickListVisibility) {
-				$("#nicklist-closed").fadeOut(200, function () {
+				$("#nicklist-closed").fadeOut(1, function () {
 					$("#nicklist").animate({
 						"opacity": "toggle",
 						"width":    "23%"
-					}, 400);
+					}, 1);
 					$("#chatbox").animate({
 						"width":    "77%"
-					}, 400, function() {
+					}, 1, function() {
 						gateway.findChannel(chan).restoreScroll();
 						setTimeout(function(){
 							gateway.findChannel(chan).restoreScroll();
-						}, 600);
+						}, 200);
 					});
 				});
 			} else {
 				gateway.findChannel(chan).restoreScroll();
 				setTimeout(function(){
 					gateway.findChannel(chan).restoreScroll();
-				}, 600);
+				}, 200);
 			}
 			
 		} else if(chan != "--status" && gateway.findQuery(chan)) {
@@ -1661,21 +1684,21 @@ var gateway = {
 				$("#nicklist").animate({
 					"opacity": "toggle",
 					"width":    "40px"
-				}, 400);
+				}, 1);
 				$("#chatbox").animate({
 					"width":    "97%"
-				}, 401, function () {
-					$("#nicklist-closed").fadeIn(200);
+				}, 1, function () {
+					$("#nicklist-closed").fadeIn(1);
 					gateway.findQuery(chan).restoreScroll();
 					setTimeout(function(){
 						gateway.findQuery(chan).restoreScroll();
-					}, 600);
+					}, 200);
 				});
 			} else {
 				gateway.findQuery(chan).restoreScroll();
 				setTimeout(function(){
 					gateway.findQuery(chan).restoreScroll();
-				}, 600);
+				}, 200);
 			}
 			gateway.findQuery(chan).markRead();
 		} else if(chan == "--status") {
@@ -1695,21 +1718,21 @@ var gateway = {
 				$("#nicklist").animate({
 					"opacity": "toggle",
 					"width":    "40px"
-				}, 400);
+				}, 1);
 				$("#chatbox").animate({
 					"width":    "97%"
-				}, 401, function () {
-					$("#nicklist-closed").fadeIn(200);
+				}, 1, function () {
+					$("#nicklist-closed").fadeIn(1);
 					gateway.statusWindow.restoreScroll();
 					setTimeout(function(){
 						gateway.statusWindow.restoreScroll();
-					}, 600);
+					}, 200);
 				});
 			} else {
 				gateway.statusWindow.restoreScroll();
 				setTimeout(function(){
 					gateway.statusWindow.restoreScroll();
-				}, 600);
+				}, 200);
 			}
 		}
 	},
