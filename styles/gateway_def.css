@@ -37,6 +37,18 @@ body {
 	padding: 0;
 	width: 100%;
 	background: url('/styles/img/bg.png') repeat-x scroll 0 0 #E4E4E4;
+
+	-ms-word-break: break-all;
+	word-break: break-all;
+	overflow-wrap: break-word;
+
+	/* Non standard for webkit */
+	word-break: break-word;
+
+	-webkit-hyphens: auto;
+	-moz-hyphens: auto;
+	-ms-hyphens: auto;
+	hyphens: auto;
 }
 
 input, button, submit {
