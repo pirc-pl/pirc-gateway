@@ -208,7 +208,7 @@ function NicklistUser(usernick, initMode, chan) {
 				'<li onClick="gateway.queries.push(new Query(\''+this.nick+'\')); gateway.switchTab(\''+this.nick+'\');gateway.toggleNickOpt(\''+this.id+'\');" class="switchTab">Rozmowa Prywatna (QUERY)</li>'+
 				'<li><div style="width:100%;" onClick="gateway.toggleNickOptInfo(\''+this.id+'\')">Informacje</div>'+
 					'<ul class="suboptions" id="'+this.id+'-opt-info'+'">'+
-						'<li onClick="' + ((this.nick.toLowerCase() == guser.nick.toLowerCase())?'gateway.displayOwnWhois = true; ':'') + 'gateway.send(\'WHOIS '+gateway.sescape(this.nick)+'\');gateway.toggleNickOpt(\''+this.id+'\');">WHOIS</li>'+
+						'<li onClick="' + ((this.nick.toLowerCase() == guser.nick.toLowerCase())?'gateway.displayOwnWhois = true; ':'') + 'gateway.send(\'WHOIS '+gateway.sescape(this.nick)+' '+gateway.sescape(this.nick)+'\');gateway.toggleNickOpt(\''+this.id+'\');">WHOIS</li>'+
 						'<li onClick="services.nickInfo(\''+this.nick+'\');gateway.toggleNickOpt(\''+this.id+'\');">NickServ</li>'+
 						((this.nick.toLowerCase() == guser.nick.toLowerCase())?'':'<li onClick="gateway.ctcp(\''+this.nick+'\', \'VERSION\');gateway.toggleNickOpt(\''+this.id+'\');">Wersja oprogramowania</li>')+
 					'</ul>'+
@@ -605,10 +605,9 @@ function Status() {
 
 var settings = {
 	'saveCookie': function(cname, cvalue){
-		var now = new Date();
-		var expireTime = now.getTime() + 60*60*24*720; // 720 dni
-		now.setTime(expireTime);
-		document.cookie = cname+'='+cvalue+'; expires='+now.toGMTString();
+		var expireTime = new Date();
+		expireTime.setFullYear(expireTime.getFullYear() + 3);
+		document.cookie = cname+'='+cvalue+'; expires='+expireTime.toGMTString();
 	},
 	'getCookie': function(cname) {
 	    var nameEQ = cname + "=";
@@ -1587,7 +1586,7 @@ var gateway = {
 							newText += 'background-color:'+currBack+';';
 						}
 					}
-					newText += '">';
+					newText += '"><wbr>';
 				}
 			}
 			if(isText){
@@ -1597,7 +1596,7 @@ var gateway = {
 			
 
 		if(formatSet){
-			newText += '</span>';
+			newText += '</span><wbr>';
 		}
 		newText = newText.replace(/(http:\/\/[^ "'<>]+)/ig, "<a href=\"$1\" target=\"_blank\" onclick=\"return confirm('Link może być niebezpieczny, czy na pewno chcesz go otworzyć?')\">$1</a>");
 		newText = newText.replace(/(https:\/\/[^ "'<>]+)/ig, "<a href=\"$1\" target=\"_blank\" onclick=\"return confirm('Link może być niebezpieczny, czy na pewno chcesz go otworzyć?')\">$1</a>");
@@ -2393,6 +2392,24 @@ var cmdBinds = {
         function(msg) {
             $(".notify-text").append("<p class='whois'><span class='info'><br /></span><span class='data'><b class=admin>ADMINISTRATOR SIECI</b> (" + $('<div/>').text(msg.text.substr(5)).html() +")</span></p>");
         }
+    ],
+    '317': [    // RPL_WHOISIDLE 
+    	function(msg) {
+	    	var months = ['sty','lut','mar','kwi','maj','cze','lip','sie','wrz','paź','lis','gru'];
+    		var dateo = new Date(msg.args[3]*1000);
+    		var month = months[dateo.getMonth()];
+  			var date = dateo.getDate();
+    		var hour = dateo.getHours();
+    		var min = dateo.getMinutes() < 10 ? '0' + dateo.getMinutes() : dateo.getMinutes();
+    		var sec = dateo.getSeconds() < 10 ? '0' + dateo.getSeconds() : dateo.getSeconds();
+    		$(".notify-text").append("<p class='whois'><span class='info'>Połączył się:</span><span class='data'>" + date + " " + month + " " + hour + ":" + min + ":" + sec + "</span></p>");
+    		var idle = msg.args[2];
+    		hour = Math.floor(idle/3600);
+    		idle = idle - hour * 3600;
+    		min = Math.floor(idle/60);
+    		sec = idle - min * 60;   		
+    		$(".notify-text").append("<p class='whois'><span class='info'>Nieaktywny</span><span class='data'>" + (hour>0? hour + " h " : "") + (min>0? min + " min " : "") + sec + " sek</span></p>");
+    	}
     ],
     '318': [	// RPL_ENDOFWHOIS
         function(msg) {
