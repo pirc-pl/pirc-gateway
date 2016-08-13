@@ -21,7 +21,7 @@ var reqChannel = '';
 
 var server = 'ws://'+location.host+'/ircsocket';
 
-var booleanSettings = [ 'showPartQuit', /*'showNoticeInStatus', */'tabsListBottom', 'showUserHostnames', 'autoReconnect', 'displayLinkWarning', 'blackTheme', 'newMsgSound', 'autoDisconnect' ];
+var booleanSettings = [ 'showPartQuit', 'tabsListBottom', 'showUserHostnames', 'autoReconnect', 'displayLinkWarning', 'blackTheme', 'newMsgSound', 'autoDisconnect' ];
 var comboSettings = [ 'noticeDisplay' ];
 
 var messagePatterns = {
@@ -3211,7 +3211,6 @@ var commands = {
 		    			$(".noticewindow").fadeIn(250);
 		    			$('.notice-text').scrollTop($('.notice-text').prop("scrollHeight"));
 		    		}
-		    		console.log($("#noticeDisplay").val());
 				} else {
 					gateway.notEnoughParams("notice", "musisz poda\u0107 treść wiadomości którą chcesz wysłać.");
 				}

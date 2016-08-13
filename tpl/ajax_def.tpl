@@ -28,10 +28,6 @@
 						<td><input type="checkbox" id="showPartQuit" onchange="disp.changeSettings()" /></td>
 						<td>&nbsp; Nie pokazuj wiadomości PART/JOIN/QUIT</td>
 					</tr>
-					<!--<tr>
-						<td><input type="checkbox" id="showNoticeInStatus" onchange="disp.changeSettings()" /></td>
-						<td>&nbsp; Pokazuj NOTICE w zakładce 'status'</td>
-					</tr>-->
 					<tr>
 						<td><input type="checkbox" id="tabsListBottom" onchange="disp.changeSettings()" /></td>
 						<td>&nbsp; Listę zakładek pokazuj na dole strony</td>
