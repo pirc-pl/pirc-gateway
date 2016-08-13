@@ -938,6 +938,7 @@ var services = {
 			$(".error-text").append('<h3>Nieprawidłowe hasło</h3><p>Podane hasło do nicka <b>'+guser.nickservnick+'</b> jest błędne. Możesz spróbować ponownie lub zmienić nicka.</p>'+services.badNickString);
 			$(".errorwindow").fadeIn(250);
 			$(".errorwindow").css('z-index', 10);
+			return true;
 		}
 		if(guser.nickservpass == '' && msg.text.match(/^Ten nick jest zarejestrowany i chroniony\.$/i)){
 			services.nickStore = guser.nick;
@@ -945,7 +946,9 @@ var services = {
 			$(".error-text").append('<h3>Nick jest zarejestrowany</h3><p>Wybrany nick <b>'+guser.nick+'</b> jest zarejestrowany. Musisz go zmienić lub podać hasło.</p>'+services.badNickString);
 			$(".errorwindow").fadeIn(250);
 			$(".errorwindow").css('z-index', 10);
+			return true;
 		}
+		return false;
 	},
 	'logIn': function(){
 		if($('#nspass').val() == ''){
@@ -2371,7 +2374,9 @@ var cmdBinds = {
                     }
                 } else if(!msg.sender.server && msg.sender.nick != guser.nick) { // użytkownik
 					if(msg.sender.nick.toLowerCase() == 'nickserv'){
-						services.nickservMessage(msg);
+						if(services.nickservMessage(msg)) {
+							return;
+						}
 					}
 					if ($("#noticeDisplay").val() == 2) { // notice w statusie
 						gateway.statusWindow.appendMessage(messagePatterns.notice, [gateway.niceTime(), $('<div/>').text(msg.sender.nick).html(), $('<div/>').text(msg.sender.ident).html(), $('<div/>').text(msg.sender.host).html(), gateway.colorize(msg.text)]);
