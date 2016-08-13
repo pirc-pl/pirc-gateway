@@ -21,8 +21,8 @@ var reqChannel = '';
 
 var server = 'ws://'+location.host+'/ircsocket';
 
-var booleanSettings = [ 'showPartQuit', 'showNoticeInStatus', 'tabsListBottom', 'showUserHostnames', 'autoReconnect' ];
-	
+var booleanSettings = [ 'showPartQuit', /*'showNoticeInStatus', */'tabsListBottom', 'showUserHostnames', 'autoReconnect', 'displayLinkWarning', 'blackTheme', 'newMsgSound', 'autoDisconnect' ];
+var comboSettings = [ 'noticeDisplay' ];
 
 var messagePatterns = {
 	'nickChange': '<span class="time">%s</span> &nbsp; <span class="mode">*** %s zmieni\u0142 nick na %s</span><br />',
@@ -83,6 +83,7 @@ var modes = {
 	'user': ['q','a','o','h','v']
 };
 var modemap2 = ['owner', 'admin', 'op', 'halfop', 'voice'];
+var newMessage = 'Nowa wiadomość';
 
 function str2bool(b){
 	return (b === 'true');
@@ -274,8 +275,18 @@ function Query(nick) {
 		}
 	}
 	this.markNew = function() {
+		disp.playSound();
 		if(!this.hilight) {
 			this.hilight = window.setInterval('gateway.findQuery(\''+this.name+'\').toggleClass();', 500);
+		}
+		if(!disp.focused){
+			if(disp.titleBlinkInterval){
+				clearInterval(disp.titleBlinkInterval);
+			}
+			disp.titleBlinkInterval = setInterval(function(){
+				var title = document.title;
+				document.title = (title == newMessage ? ($('<div/>').text(guser.nick).html()+' @ PIRC.pl') : newMessage);
+			}, 500);
 		}
 	}
 	this.markBold = function() {
@@ -290,6 +301,9 @@ function Query(nick) {
 		if(this.classAdded) {
 			this.toggleClass();
 		}
+		clearInterval(disp.titleBlinkInterval);
+		disp.titleBlinkInterval = false;
+		if(document.title == newMessage) document.title = $('<div/>').text(guser.nick).html()+' @ PIRC.pl';
 		$('#'+this.id+'-tab > a').css('font-weight', 'normal');
 		$('#'+this.id+'-tab > a').css('color', '#CECECE');
 		setTimeout("$('#"+this.id+"-tab').removeClass('newmsg')", 100);
@@ -300,7 +314,7 @@ function Query(nick) {
 		$('#'+this.id+'-tab').remove();
 		$('#'+this.id+'-window').remove();
 		$('#'+this.id+'-topic').remove();
-		if(this.name == gateway.active) {
+		if(this.name.toLowerCase() == gateway.active.toLowerCase()) {
 			gateway.switchTab(gateway.tabHistoryLast(this.name));
 		}
 	}
@@ -345,7 +359,7 @@ function Query(nick) {
 	$('<span/>').attr('id', this.id+'-window').hide().appendTo('#main-window');
 	$('<span/>').attr('id', this.id+'-topic').hide().appendTo('#topic');
 	$('#'+this.id+'-topic').html('<h1>'+this.name+'</h1><h2></h2>');
-	$('<li/>').attr('id', this.id+'-tab').html('<a href="javascript:void(0);" class="switchTab" onclick="gateway.switchTab(\''+this.name+'\')">'+$('<div/>').text(this.name).html()+'</a><a href="javascript:void(0);" onclick="gateway.removeQuery(\''+this.name+'\')"><div class="close"></div></a>').appendTo('#tabs');
+	$('<li/>').attr('id', this.id+'-tab').html('<a href="javascript:void(0);" class="switchTab" onclick="gateway.switchTab(\''+this.name+'\')">'+$('<div/>').text(this.name).html()+'</a><a href="javascript:void(0);" onclick="gateway.removeQuery(\''+this.name+'\')"><div class="close" title="Zamknij rozmowę prywatną"></div></a>').appendTo('#tabs');
 	$('#'+this.id+'-window').vprintf(messagePatterns.startedQuery, [gateway.niceTime(), $('<div/>').text(this.name).html()]);
 }
 
@@ -405,6 +419,7 @@ function Channel(chan) {
 		}
 	}
 	this.markNew = function() {
+		disp.playSound();
 		if(!this.hilight) {
 			this.hilight = window.setInterval('gateway.findChannel(\''+this.name+'\').toggleClass();', 500);
 		}
@@ -418,6 +433,15 @@ function Channel(chan) {
 			setTimeout("$('#"+this.id+"-tab').removeClass('newmsg2')", 100);
 			setTimeout("$('#"+this.id+"-tab').removeClass('newmsg2')", 300);
 			setTimeout("$('#"+this.id+"-tab').removeClass('newmsg2')", 500);
+		}
+		if(!disp.focused){
+			if(disp.titleBlinkInterval){
+				clearInterval(disp.titleBlinkInterval);
+			}
+			disp.titleBlinkInterval = setInterval(function(){
+				var title = document.title;
+				document.title = (title == newMessage ? ($('<div/>').text(guser.nick).html()+' @ PIRC.pl') : newMessage);
+			}, 500);
 		}
 	}
 	this.markBold = function() {
@@ -442,6 +466,9 @@ function Channel(chan) {
 		if(this.classAddedMsg) {
 			this.toggleClassMsg();
 		}
+		clearInterval(disp.titleBlinkInterval);
+		disp.titleBlinkInterval = false;
+		if(document.title == newMessage) document.title = $('<div/>').text(guser.nick).html()+' @ PIRC.pl';
 		$('#'+this.id+'-tab > a').css('font-weight', 'normal');
 		setTimeout("$('#"+this.id+"-tab').removeClass('newmsg')", 100);
 		setTimeout("$('#"+this.id+"-tab').removeClass('newmsg')", 300);
@@ -461,7 +488,7 @@ function Channel(chan) {
 		$('#'+this.id+'-tab').remove();
 		$('#'+this.id+'-window').remove();
 		$('#'+this.id+'-topic').remove();
-		if(this.name == gateway.active) {
+		if(this.name.toLowerCase() == gateway.active.toLowerCase()) {
 			gateway.switchTab(gateway.tabHistoryLast(this.name));
 		}
 	}
@@ -493,7 +520,7 @@ function Channel(chan) {
 	$('<span/>').attr('id', this.id+'-topic').hide().appendTo('#topic');
 	$('#'+this.id+'-topic').html('<h1>'+$('<div/>').text(this.name).html()+'</h1><h2></h2>');
 	$('<li/>').attr('id', this.id+'-tab').html('<a href="javascript:void(0);" onclick="gateway.switchTab(\''+this.name+'\')" class="switchTab">'+$('<div/>').text(this.name).html()+'</a>'+
-		'<a href="javascript:void(0);" onclick="gateway.removeChannel(\''+this.name+'\')"><div class="close"></div></a>').appendTo('#tabs');
+		'<a href="javascript:void(0);" onclick="gateway.removeChannel(\''+this.name+'\')"><div class="close" title="Wyjdź z kanału"></div></a>').appendTo('#tabs');
 //	$('#'+this.id+'-window').vprintf(messagePatterns.joinOwn, [gateway.niceTime(), this.name]);
 }
 
@@ -544,6 +571,7 @@ function Status() {
 		}
 	}
 	this.markNew = function() {
+		disp.playSound();
 		if(!this.hilight) {
 			this.hilight = window.setInterval('gateway.statusWindow.toggleClass();', 500);
 		}
@@ -557,6 +585,15 @@ function Status() {
 			setTimeout("$('#"+this.id+"-tab').removeClass('newmsg2')", 100);
 			setTimeout("$('#"+this.id+"-tab').removeClass('newmsg2')", 300);
 			setTimeout("$('#"+this.id+"-tab').removeClass('newmsg2')", 500);
+		}
+		if(!disp.focused){
+			if(disp.titleBlinkInterval){
+				clearInterval(disp.titleBlinkInterval);
+			}
+			disp.titleBlinkInterval = setInterval(function(){
+				var title = document.title;
+				document.title = (title == newMessage ? ($('<div/>').text(guser.nick).html()+' @ PIRC.pl') : newMessage);
+			}, 500);
 		}
 	}
 	this.markBold = function() {
@@ -581,6 +618,9 @@ function Status() {
 		if(this.classAddedMsg) {
 			this.toggleClassMsg();
 		}
+		clearInterval(disp.titleBlinkInterval);
+		disp.titleBlinkInterval = false;
+		if(document.title == newMessage) document.title = $('<div/>').text(guser.nick).html()+' @ PIRC.pl';
 		$('#'+this.id+'-tab > a').css('font-weight', 'normal');
 		setTimeout("$('#"+this.id+"-tab').removeClass('newmsg')", 100);
 		setTimeout("$('#"+this.id+"-tab').removeClass('newmsg')", 300);
@@ -631,6 +671,8 @@ var statusError = 6;
 
 var disp = {
 	'size': 1,
+	'focused': true,
+	'titleBlinkInterval': false,
 	'setSize': function(s) {
 		if(!s) return;
 		$('body').css('font-size', s+'em');
@@ -682,6 +724,10 @@ var disp = {
 		booleanSettings.forEach(function(sname){
 			settings.saveCookie(sname, $('#'+sname).is(':checked'));
 		});
+		/*var comboSettings = [ 'noticeDisplay' ];*/
+		comboSettings.forEach(function(sname){
+			settings.saveCookie(sname, $('#'+sname).val());
+		});
 		if ($('#tabsListBottom').is(':checked')) {
 			$('#top_menu').detach().insertAfter('#inputbox');
 			$('#top_menu').css('top', 'auto').css('bottom', '0');
@@ -699,11 +745,20 @@ var disp = {
 			$('#nicklist').css('top', '').css('bottom', '');
 			$('#inputbox').css('bottom', '');
 		}
+		if ($('#blackTheme').is(':checked')) {
+			if($('#blackCss').length == 0) {
+				$('head').append('<link rel="stylesheet" type="text/css" href="/styles/gateway_black.css" id="blackCss">');
+			}
+		} else {
+			$('#blackCss').remove();
+		}
 		if ($('#showUserHostnames').is(':checked')) {
 			$('#userhost_hidden').remove();
 		} else {
-			var style = $('<style id="userhost_hidden">.userhost { display:none; }</style>');
-			$('html > head').append(style);
+			if($('#userhost_hidden').length == 0){
+				var style = $('<style id="userhost_hidden">.userhost { display:none; }</style>');
+				$('html > head').append(style);
+			}
 		}
 	},
     'showSizes': function() {
@@ -717,6 +772,13 @@ var disp = {
 		$(".notify-text").html('<h2>Temat kanału '+channel.name+'</h2><p>'+$('#'+channel.id+'-topic > h2').html()+'</p>');
 		$(".notifywindow").fadeIn(250);
 		$(".notifywindow").css('z-index', 10);
+	},
+	'playSound': function() {
+		if ( ! $('#newMsgSound').is(':checked')) {
+			return;
+		}
+		var filename = '/styles/audio/served';
+		$('#sound').html('<audio autoplay="autoplay"><source src="' + filename + '.mp3" type="audio/mpeg" /><source src="' + filename + '.ogg" type="audio/ogg" /><embed hidden="true" autostart="true" loop="false" src="' + filename +'.mp3" /></audio>');
 	}
 };
 
@@ -934,6 +996,7 @@ var gateway = {
 	'firstConnect': 1, //jeśli dostanę ERROR gdy to jest nadal 1 = błąd z poprzedniej sesji, od razu łączę ponownie
 	'allowNewSend' : true,
 	'statusWindow': new Status(),
+	'lastNoticeNick': false,
 	'chanPassword': function(chan) {
 		if($('#chpass').val() == ''){
 			alert('Nie podałeś hasła!');
@@ -1347,26 +1410,37 @@ var gateway = {
 			}, 401, function () {
 				$("#nicklist-closed").fadeIn(200);
 				setTimeout(function(){
-					active.restoreScroll();
+					gateway.getActive().restoreScroll();
 				}, 250);
 			});
 			gateway.nickListVisibility = false;
 		} else {
-			$("#nicklist-closed").fadeOut(200, function () {
-				$("#nicklist").animate({
-					"opacity": "toggle",
-					"width":    "23%"
-				}, 400);
-				$("#chatbox").animate({
-					"width":    "77%"
-				}, 401);
-				setTimeout(function(){
-					active.restoreScroll();
-				}, 450);
-			});
+			gateway.showNickList();
 			gateway.nickListVisibility = true;
 		}
+		gateway.checkNickListVisibility();
 		$('#input').focus();
+	},
+	'checkNickListVisibility': function() {
+		setTimeout(function(){
+			if(!$('#nicklist-closed').is(':visible') && !$('#nicklist').is(':visible')){
+				gateway.showNickList();
+			}
+		}, 1500);
+	},
+	'showNickList': function() {
+		$("#nicklist-closed").fadeOut(200, function () {
+			$("#nicklist").animate({
+				"opacity": "toggle",
+				"width":    "23%"
+			}, 400);
+			$("#chatbox").animate({
+				"width":    "77%"
+			}, 401);
+			setTimeout(function(){
+				gateway.getActive().restoreScroll();
+			}, 450);
+		});
 	},
 	'insert': function(text) {
 		var input = $('#input');
@@ -1598,9 +1672,18 @@ var gateway = {
 		if(formatSet){
 			newText += '</span><wbr>';
 		}
-		newText = newText.replace(/(http:\/\/[^ "'<>]+)/ig, "<a href=\"$1\" target=\"_blank\" onclick=\"return confirm('Link może być niebezpieczny, czy na pewno chcesz go otworzyć?')\">$1</a>");
-		newText = newText.replace(/(https:\/\/[^ "'<>]+)/ig, "<a href=\"$1\" target=\"_blank\" onclick=\"return confirm('Link może być niebezpieczny, czy na pewno chcesz go otworzyć?')\">$1</a>");
-		newText = newText.replace(/(ftp:\/\/[^ "'<>]+)/ig, "<a href=\"$1\" target=\"_blank\" onclick=\"return confirm('Link może być niebezpieczny, czy na pewno chcesz go otworzyć?')\">$1</a>");
+		newText = gateway.parseLinks(newText);
+		return newText;
+	},
+	'parseLinks': function(text){
+		var newText = text;
+		var confirm= '';
+		if ($('#displayLinkWarning').is(':checked')) {
+			confirm = " onclick=\"return confirm('Link może być niebezpieczny, czy na pewno chcesz go otworzyć?')\"";
+		}
+		newText = newText.replace(/(http:\/\/[^ "'<>]+)/ig, "<a href=\"$1\" target=\"_blank\"" + confirm +">$1</a>");
+		newText = newText.replace(/(https:\/\/[^ "'<>]+)/ig, "<a href=\"$1\" target=\"_blank\"" + confirm +">$1</a>");
+		newText = newText.replace(/(ftp:\/\/[^ "'<>]+)/ig, "<a href=\"$1\" target=\"_blank\"" + confirm +">$1</a>");
 		return newText;
 	},
 	'nextTab': function() {
@@ -1641,6 +1724,7 @@ var gateway = {
 			$('#'+gateway.findChannel(chan).id+'-tab').addClass("activeWindow");
 			$('#'+gateway.findChannel(chan).id+'-window').show();
 			$('#'+gateway.findChannel(chan).id+'-topic').show();
+			$('#info h2').prop('title', 'Kliknij aby zobaczyć cały temat');
 			gateway.findChannel(chan).markRead();
 			gateway.active = chan;
 			gateway.tabHistory.push(chan);
@@ -1676,6 +1760,7 @@ var gateway = {
 			$('#'+gateway.findQuery(chan).id+'-tab').addClass("activeWindow");
 			$('#'+gateway.findQuery(chan).id+'-window').show();
 			$('#'+gateway.findQuery(chan).id+'-topic').show();
+			$('#info h2').prop('title', '');
 			gateway.active = chan;
 			gateway.tabHistory.push(chan);
 			$('#input').focus();
@@ -1709,6 +1794,7 @@ var gateway = {
 			$('#--status-tab').addClass("activeWindow");
 			$('#--status-window').show();
 			$('#--status-topic').show();
+			$('#info h2').prop('title', '');
 			gateway.statusWindow.markRead();
 			gateway.active = chan;
 			gateway.tabHistory.push(chan);
@@ -1734,10 +1820,12 @@ var gateway = {
 				}, 200);
 			}
 		}
+		gateway.checkNickListVisibility();
 	},
 	'tabHistoryLast': function(ignore) {
+		var ignorec = ignore.toLowerCase();
 		for(var i=gateway.tabHistory.length; i > 0; i--) {
-			if(gateway.tabHistory[i] && ((gateway.findChannel(gateway.tabHistory[i]) || gateway.findChannel(gateway.tabHistory[i])) && (!ignore || ignore != gateway.tabHistory[i]))) {
+			if(gateway.tabHistory[i] && ((gateway.findChannel(gateway.tabHistory[i]) || gateway.findChannel(gateway.tabHistory[i])) && (!ignorec || ignorec != gateway.tabHistory[i]))) {
 				return gateway.tabHistory[i];
 			}
 		}
@@ -1829,6 +1917,13 @@ var gateway = {
     'closeNotify': function() {
         $(".notifywindow").fadeOut(200, function () {
             $(".notify-text").delay(300).text(" ");
+			gateway.inputFocus();
+        });
+    },
+    'closeNotice': function() {
+        $(".noticewindow").fadeOut(200, function () {
+            $(".notice-text").delay(300).text(" ");
+            gateway.lastNoticeNick = false;
 			gateway.inputFocus();
         });
     },
@@ -2055,6 +2150,14 @@ var gateway = {
 var cmdBinds = {
     '001': [	// RPL_WELCOME 
         function(msg) {
+        	var ckNick = settings.getCookie('origNick');
+        	if(ckNick){
+        		gateway.send('SETNAME Użytkownik bramki PIRC.pl "' + ckNick + '"');
+        		settings.saveCookie('origNick', ckNick);
+        	} else {
+        		settings.saveCookie('origNick', guser.nick);
+        	}
+			
             if(msg.args[0] != guser.nick) {
                 guser.changeNick(msg.args[0], true);
    	            $(".notify-text").append("<p>Twój bieżący nick to <b>"+guser.nick+"</b>.</p>");
@@ -2158,12 +2261,12 @@ var cmdBinds = {
                             var acttext = msg.text.replace(/^\001ACTION(.*)\001$/i, '$1');
                             if(msg.text.indexOf(guser.nick) != -1) {
                                 channel.appendMessage(messagePatterns.channelActionHilight, [gateway.niceTime(), msg.sender.nick, gateway.colorize(acttext)]);
-                                if(gateway.active.toLowerCase() != msg.args[0].toLowerCase()) {
+                                if(gateway.active.toLowerCase() != msg.args[0].toLowerCase() || !disp.focused) {
                                     channel.markNew();
                                 }
                             } else {
                                 channel.appendMessage(messagePatterns.channelAction, [gateway.niceTime(), msg.sender.nick, gateway.colorize(acttext)]);
-                                if(gateway.active.toLowerCase() != msg.args[0].toLowerCase()) {
+                                if(gateway.active.toLowerCase() != msg.args[0].toLowerCase() || !disp.focused) {
                                     channel.markBold();
                                 }
                             }
@@ -2171,12 +2274,12 @@ var cmdBinds = {
                     } else {
                         if(msg.text.indexOf(guser.nick) != -1) {
                             channel.appendMessage(messagePatterns.channelMsgHilight, [gateway.niceTime(), msg.sender.nick, gateway.colorize(msg.text)]);
-                            if(gateway.active != msg.args[0].toLowerCase()) {
+                            if(gateway.active != msg.args[0].toLowerCase() || !disp.focused) {
                                 channel.markNew();
                             }
                         } else {
                             channel.appendMessage(messagePatterns.channelMsg, [gateway.niceTime(), msg.sender.nick, gateway.colorize(msg.text)]);
-                            if(gateway.active.toLowerCase() != msg.args[0].toLowerCase()) {
+                            if(gateway.active.toLowerCase() != msg.args[0].toLowerCase() || !disp.focused) {
                                 channel.markBold();
                             }
                         }
@@ -2226,7 +2329,7 @@ var cmdBinds = {
 						gateway.queries.push(query);
 					}
                     query.appendMessage(messagePatterns.channelMsg, [gateway.niceTime(), msg.sender.nick, gateway.colorize(msg.text)]);
-                    if(gateway.active.toLowerCase() != msg.sender.nick.toLowerCase()) {
+                    if(gateway.active.toLowerCase() != msg.sender.nick.toLowerCase() || !disp.focused) {
                         gateway.findQuery(msg.sender.nick).markNew();
                     }
                     query.appendMessage('%s', [html]);
@@ -2267,34 +2370,30 @@ var cmdBinds = {
                         }
                     }
                 } else if(!msg.sender.server && msg.sender.nick != guser.nick) { // użytkownik
-				/*	if (msg.sender.nick.toUpperCase() === 'nickserv'.toUpperCase()) {
-						if (msg.text.match(/^Nieprawid.owe has.o\.$/i)) { // złe hasło nickserv
-							$(".error-text").text(" ");
-							$(".error-text").append("<h3>Nieprawidłowe hasło</h3><p>Podane hasło do nicka jest błędne. Wpisz <b>/msg NickServ identify poprawne_hasło</b> aby ponowić próbę.");
-							$(".errorwindow").fadeIn(250);
-							$(".errorwindow").css('z-index', 10);
-						}
-					}*/
-/*					if (msg.sender.nick.match(/((nick|chan|oper|bot|memo)serv)|global/i)) { //wiadomość od serwisów
-						gateway.getActive().appendMessage(messagePatterns.notice, [gateway.niceTime(), $('<div/>').text(msg.sender.nick).html(), $('<div/>').text(msg.sender.ident).html(), $('<div/>').text(msg.sender.host).html(), gateway.colorize($('<div/>').text(msg.text).html())]);
-					} else {*/
 					if(msg.sender.nick.toLowerCase() == 'nickserv'){
 						services.nickservMessage(msg);
 					}
-						if ($('#showNoticeInStatus').is(':checked')) { // notice jako query
-							gateway.statusWindow.appendMessage(messagePatterns.notice, [gateway.niceTime(), $('<div/>').text(msg.sender.nick).html(), $('<div/>').text(msg.sender.ident).html(), $('<div/>').text(msg.sender.host).html(), gateway.colorize(msg.text)]);
-							gateway.statusWindow.markBold();
-						} else { // notice w statusie
-							if(!gateway.findQuery(msg.sender.nick)) {
-								var query = new Query(msg.sender.nick);
-								gateway.queries.push(query);
-							}
-							gateway.findQuery(msg.sender.nick).appendMessage(messagePatterns.notice, [gateway.niceTime(), $('<div/>').text(msg.sender.nick).html(), $('<div/>').text(msg.sender.ident).html(), $('<div/>').text(msg.sender.host).html(), gateway.colorize(msg.text)]);
-							if(gateway.active.toLowerCase() != msg.sender.nick.toLowerCase()) {
-								gateway.findQuery(msg.sender.nick).markNew();
-							}
+					if ($("#noticeDisplay").val() == 2) { // notice w statusie
+						gateway.statusWindow.appendMessage(messagePatterns.notice, [gateway.niceTime(), $('<div/>').text(msg.sender.nick).html(), $('<div/>').text(msg.sender.ident).html(), $('<div/>').text(msg.sender.host).html(), gateway.colorize(msg.text)]);
+						gateway.statusWindow.markBold();
+					} else if($("#noticeDisplay").val() == 1) { // notice jako query
+						if(!gateway.findQuery(msg.sender.nick)) {
+							var query = new Query(msg.sender.nick);
+							gateway.queries.push(query);
 						}
-					//}
+						gateway.findQuery(msg.sender.nick).appendMessage(messagePatterns.notice, [gateway.niceTime(), $('<div/>').text(msg.sender.nick).html(), $('<div/>').text(msg.sender.ident).html(), $('<div/>').text(msg.sender.host).html(), gateway.colorize(msg.text)]);
+						if(gateway.active.toLowerCase() != msg.sender.nick.toLowerCase()) {
+							gateway.findQuery(msg.sender.nick).markNew();
+						}
+					} else if($("#noticeDisplay").val() == 0) { // notice jako okienko
+						if(!gateway.lastNoticeNick || gateway.lastNoticeNick.toLowerCase() != msg.sender.nick.toLowerCase()) {
+							$(".notice-text").append("<h3>Komunikat prywatny od "+$('<div/>').text(msg.sender.nick).html()+"</h3>");
+							gateway.lastNoticeNick = msg.sender.nick;
+						}
+           				$(".notice-text").append("<p><span class=\"time\">"+gateway.niceTime()+"</span> "+gateway.colorize($('<div/>').text(msg.text).html())+"</p>");
+            			$(".noticewindow").fadeIn(250);
+            			$('.notice-text').scrollTop($('.notice-text').prop("scrollHeight"));
+					}
                 }
             }
         }
@@ -2376,7 +2475,7 @@ var cmdBinds = {
     ],
     '301': [	// RPL_AWAY
         function(msg) {
-            $(".notify-text").append("<p class='whois'><span class='info'><br /></span><span class='data'>Ten użytkownik ma status away: " + $('<div/>').text(msg.text).html() + "</span></p>");
+            $(".notify-text").append("<p class='whois'><span class='info'>Nieobecny:</span><span class='data'>" + $('<div/>').text(msg.args[1]).html() + " jest nieobecny(a): " + $('<div/>').text(msg.text).html() + "</span></p>");
             var query = gateway.findQuery(msg.args[1]);
             if(query){
             	query.appendMessage(messagePatterns.away, [gateway.niceTime(), $('<div/>').text(msg.args[1]).html(), $('<div/>').text(msg.text).html()]);
@@ -2395,19 +2494,12 @@ var cmdBinds = {
     ],
     '317': [    // RPL_WHOISIDLE 
     	function(msg) {
-	    	var months = ['sty','lut','mar','kwi','maj','cze','lip','sie','wrz','paź','lis','gru'];
-    		var dateo = new Date(msg.args[3]*1000);
-    		var month = months[dateo.getMonth()];
-  			var date = dateo.getDate();
-    		var hour = dateo.getHours();
-    		var min = dateo.getMinutes() < 10 ? '0' + dateo.getMinutes() : dateo.getMinutes();
-    		var sec = dateo.getSeconds() < 10 ? '0' + dateo.getSeconds() : dateo.getSeconds();
-    		$(".notify-text").append("<p class='whois'><span class='info'>Połączył się:</span><span class='data'>" + date + " " + month + " " + hour + ":" + min + ":" + sec + "</span></p>");
+    		$(".notify-text").append("<p class='whois'><span class='info'>Połączył się:</span><span class='data'>" + gateway.parseTime(msg.args[3]) + "</span></p>");
     		var idle = msg.args[2];
-    		hour = Math.floor(idle/3600);
+    		var hour = Math.floor(idle/3600);
     		idle = idle - hour * 3600;
-    		min = Math.floor(idle/60);
-    		sec = idle - min * 60;   		
+    		var min = Math.floor(idle/60);
+    		var sec = idle - min * 60;   		
     		$(".notify-text").append("<p class='whois'><span class='info'>Nieaktywny</span><span class='data'>" + (hour>0? hour + " h " : "") + (min>0? min + " min " : "") + sec + " sek</span></p>");
     	}
     ],
@@ -2429,7 +2521,19 @@ var cmdBinds = {
     '319': [	// RPL_WHOISCHANNELS
         function(msg) {
             if(gateway.connectStatus == statusConnected){ // normalny whois
-            	$(".notify-text").append("<p class='whois'><span class='info'>Kanały:</span><span class='data'> "+ $('<div/>').text(msg.text).html() + "</span></p>");
+            	var chanlist = msg.text.split(' ');
+            	var chanHtml = '';
+            	chanlist.forEach(function(channel){
+            		var chanPrefix = '';
+            		var chanName = channel;
+            		if(chanName.charAt(0) != '#'){
+            			chanPrefix = chanName.charAt(0);
+            			chanName = chanName.substring(1);
+            		}
+            		chanName = $('<div/>').text(chanName).html();
+            		chanHtml += chanPrefix + '<a href="javascript:gateway.send(\'JOIN ' + chanName + '\')" title="Dołącz do kanału ' + chanName + '">' + chanName + '</a> ';
+            	});
+            	$(".notify-text").append("<p class='whois'><span class='info'>Kanały:</span><span class='data'> "+ chanHtml + "</span></p>");
             } else {	// sprawdzam, na jakich kanałach sam jestem
             	gateway.connectStatus = status001;
 		    	if(msg.args[1] == guser.nick){
@@ -2676,6 +2780,18 @@ var cmdBinds = {
         }
     ],
     '482' : [	// ERR_CHANOPRIVSNEEDED 
+        function(msg) {
+            $(".error-text").text(" ");
+            $(".error-text").append("<h3>"+ msg.args[1] + ": brak uprawnień<br /></h3>");
+            $(".error-text").append("<p>Nie masz wystarczających uprawnień aby wykonać żądaną akcję.</p>");
+            if(gateway.findChannel(msg.args[1])) {
+                gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.noPerms, [gateway.niceTime(), msg.args[1]]);
+            }
+            $(".errorwindow").fadeIn(250);
+			$(".errorwindow").css('z-index', 10);
+        }
+    ],
+    '499' : [	// ERR_CHANOPRIVSNEEDED 
         function(msg) {
             $(".error-text").text(" ");
             $(".error-text").append("<h3>"+ msg.args[1] + ": brak uprawnień<br /></h3>");
@@ -2943,16 +3059,8 @@ var commands = {
 		'nicks': false,
 		'custom': [],
 		'callback': function(command, input) {
-			if (command[1]) {
-				if(!gateway.findQuery("chanserv")) {
-					var query = new Query("ChanServ");
-					gateway.queries.push(query);
-				}
-				gateway.findQuery("chanserv").appendMessage(messagePatterns.yourMsg, [gateway.niceTime(), guser.nick, input.substr(4)]);
-				gateway.send(input.substr(1));
-			} else {
-				gateway.notEnoughParams("cs", "musisz podać tekst który chcesz wysłać do serwisu");
-			}
+			command.splice(1, 0, 'ChanServ');
+			commands.msg.callback(command, input);
 		}
 	},
 	'ns': {
@@ -2960,16 +3068,26 @@ var commands = {
 		'nicks': false,
 		'custom': [],
 		'callback': function(command, input) {
-			if (command[1]) {
-				if(!gateway.findQuery("nickserv")) {
-					var query = new Query("NickServ");
-					gateway.queries.push(query);
-				}
-				gateway.findQuery("nickserv").appendMessage(messagePatterns.yourMsg, [gateway.niceTime(), guser.nick, input.substr(4)]);
-				gateway.send(input.substr(1));
-			} else {
-				gateway.notEnoughParams("ns", "musisz podać tekst który chcesz wysłać do serwisu");
-			}
+			command.splice(1, 0, 'NickServ');
+			commands.msg.callback(command, input);
+		}
+	},
+	'hs': {
+		'channels': true,
+		'nicks': false,
+		'custom': [],
+		'callback': function(command, input) {
+			command.splice(1, 0, 'HostServ');
+			commands.msg.callback(command, input);
+		}
+	},
+	'bs': {
+		'channels': true,
+		'nicks': false,
+		'custom': [],
+		'callback': function(command, input) {
+			command.splice(1, 0, 'BotServ');
+			commands.msg.callback(command, input);
 		}
 	},
 	'topic': {
@@ -3080,14 +3198,23 @@ var commands = {
 				}
 				if(reason) {
 					gateway.send("NOTICE "+command[1]+" :"+reason);
+					if($("#noticeDisplay").val() == 2) { // notice w statusie
+						gateway.statusWindow.appendMessage(messagePatterns.yourNotice, [gateway.niceTime(), command[1], reason]);
+					} else if($("#noticeDisplay").val() == 1) { // notice jako query
+						if(!gateway.findQuery(command[1].toLowerCase())) {
+							var query = new Query(command[1].toLowerCase());
+							gateway.queries.push(query);
+						}
+						gateway.findQuery(command[1]).appendMessage(messagePatterns.yourNotice, [gateway.niceTime(), command[1], reason]);
+					} else if($("#noticeDisplay").val() == 0) { // notice jako okienko
+						$(".notice-text").append("<p><span class=\"time\">"+gateway.niceTime()+"</span> <span class=\"notice\"><b>NOTICE "+$('<div/>').text(guser.nick).html()+"→"+command[1] + "</b></span> " + gateway.colorize($('<div/>').text(reason).html())+"</p>");
+		    			$(".noticewindow").fadeIn(250);
+		    			$('.notice-text').scrollTop($('.notice-text').prop("scrollHeight"));
+		    		}
+		    		console.log($("#noticeDisplay").val());
 				} else {
 					gateway.notEnoughParams("notice", "musisz poda\u0107 treść wiadomości którą chcesz wysłać.");
 				}
-				if(!gateway.findQuery(command[1].toLowerCase())) {
-					var query = new Query(command[1].toLowerCase());
-					gateway.queries.push(query);
-				}
-				gateway.findQuery(command[1]).appendMessage(messagePatterns.yourNotice, [gateway.niceTime(), command[1], reason]);
 			} else {
 				gateway.notEnoughParams("notice", "musisz poda\u0107 nick osoby do której chcesz napisać i tekst który chcesz jej wysłać.");
 			}
@@ -3113,13 +3240,22 @@ var commands = {
 				} else {
 					gateway.notEnoughParams("msg", "musisz poda\u0107 treść wiadomości którą chcesz wysłać.");
 				}
-				var query = gateway.findQuery(command[1]);
-				if(!query) {
-					query = new Query(command[1]);
-					gateway.queries.push(query);
+				var services = [ 'nickserv', 'chanserv', 'hostserv', 'operserv', 'botserv' ];
+				if($("#noticeDisplay").val() == 0 && services.indexOf(command[1].toLowerCase()) > -1){
+					$(".notice-text").append("<p><span class=\"time\">"+gateway.niceTime()+"</span> <span class=\"notice\">[<b>"+$('<div/>').text(guser.nick).html()+" &gt; "+command[1] + "</b>]</span> " + gateway.colorize($('<div/>').text(reason).html())+"</p>");
+        			$(".noticewindow").fadeIn(250);
+        			$('.notice-text').scrollTop($('.notice-text').prop("scrollHeight"));
+				} else if($("#noticeDisplay").val() == 2 && services.indexOf(command[1].toLowerCase()) > -1){
+					gateway.statusWindow.appendMessage(messagePatterns.yourMsg, [gateway.niceTime(), guser.nick + ' → ' + command[1], gateway.colorize(reason)]);
+        		} else {
+					var query = gateway.findQuery(command[1]);
+					if(!query) {
+						query = new Query(command[1]);
+						gateway.queries.push(query);
+					}
+					query.appendMessage(messagePatterns.yourMsg, [gateway.niceTime(), guser.nick, gateway.colorize(reason)]);
+					query.appendMessage('%s', [gateway.parseImages(reason)]);
 				}
-				query.appendMessage(messagePatterns.yourMsg, [gateway.niceTime(), guser.nick, gateway.colorize(reason)]);
-				query.appendMessage('%s', [gateway.parseImages(reason)]);
 			} else {
 				gateway.notEnoughParams("msg", "musisz poda\u0107 nick osoby do której chcesz napisać i tekst który chcesz jej wysłać.");
 			}
@@ -3439,6 +3575,25 @@ var readyFunc = function(){
 
 $('document').ready(function(){setTimeout(readyFunc, 100);});
 
+function onBlur() {
+    disp.focused = false;
+};
+function onFocus(){
+    clearInterval(disp.titleBlinkInterval);
+	disp.titleBlinkInterval = false;
+	if(document.title == newMessage) document.title = $('<div/>').text(guser.nick).html()+' @ PIRC.pl';
+    disp.focused = true;
+    gateway.getActive().markRead();
+};
+
+if (/*@cc_on!@*/false) { // check for Internet Explorer
+    document.onfocusin = onFocus;
+    document.onfocusout = onBlur;
+} else {
+    window.onfocus = onFocus;
+    window.onblur = onBlur;
+}
+
 var conn = {
 	'my_nick': '',
 	'my_pass': '',
@@ -3510,9 +3665,18 @@ var conn = {
 	'gatewayInit': function(){
 		$('.not-connected-text p').html('Poczekaj chwilę, trwa ładowanie...');
 		booleanSettings.forEach(function(sname){
+			if(!settings.getCookie(sname)){
+				return;
+			}
 			if(!$('#'+sname).is(':checked')){
 				$('#'+sname).prop('checked', str2bool(settings.getCookie(sname)));
 			}
+		});
+		comboSettings.forEach(function(sname){
+			if(!settings.getCookie(sname)){
+				return;
+			}
+			$('#'+sname).val(settings.getCookie(sname));
 		});
 		disp.setSize(settings.getCookie('tsize'));
 		disp.changeSettings();
@@ -3525,6 +3689,7 @@ var conn = {
 		
 		$('#chatbox').click(function() {
 			gateway.closeNotify();
+			gateway.closeNotice();
 			gateway.closeStatus();
 			gateway.closeError();
 		});
@@ -3540,6 +3705,7 @@ var conn = {
 		});*/
 		$('#input').click(function() {
 			gateway.closeNotify();
+			gateway.closeNotice();
 			gateway.closeStatus();
 			gateway.closeError();
 		});
@@ -3659,8 +3825,12 @@ var conn = {
 		}
 		$(window).on('beforeunload', function() {
         	if (gateway.connectStatus != statusDisconnected) {
-        		gateway.clickQuit();
-            	return 'Jesteś nadal połączony z IRCem. Kliknij "Zostań na stronie" a następnie "Rozłącz" w okienku poniżej aby się rozłączyć przed wyjściem.';
+        		if ($('#autoDisconnect').is(':checked')) {
+        			gateway.send('QUIT :Użytkownik zamknął stronę');
+            	} else {
+            		gateway.clickQuit();
+            		return 'Jesteś nadal połączony z IRCem. Kliknij "Zostań na stronie" a następnie "Rozłącz" w okienku poniżej aby się rozłączyć przed wyjściem.';
+            	}
         	}
     	}); 
 	}

@@ -28,21 +28,47 @@
 						<td><input type="checkbox" id="showPartQuit" onchange="disp.changeSettings()" /></td>
 						<td>&nbsp; Nie pokazuj wiadomości PART/JOIN/QUIT</td>
 					</tr>
-					<tr>
+					<!--<tr>
 						<td><input type="checkbox" id="showNoticeInStatus" onchange="disp.changeSettings()" /></td>
 						<td>&nbsp; Pokazuj NOTICE w zakładce 'status'</td>
-					</tr>
+					</tr>-->
 					<tr>
 						<td><input type="checkbox" id="tabsListBottom" onchange="disp.changeSettings()" /></td>
 						<td>&nbsp; Listę zakładek pokazuj na dole strony</td>
 					</tr>
-					<tr>
+					<tr title="Pokazuje informację user@host przy dołączaniu i opuszczaniu kanałów przez użytkowników">
 						<td><input type="checkbox" id="showUserHostnames" onchange="disp.changeSettings()" /></td>
 						<td>&nbsp; Pokazuj nazwy hosta użytkowników</td>
 					</tr>
 					<tr>
 						<td><input type="checkbox" id="autoReconnect" onchange="disp.changeSettings()" checked="checked" /></td>
 						<td>&nbsp; Automatycznie łącz ponownie po rozłączeniu</td>
+					</tr>
+					<tr title="Ustawienie nie wpływa na linki, które są już wyświetlone">
+						<td><input type="checkbox" id="displayLinkWarning" onchange="disp.changeSettings()" checked="checked" /></td>
+						<td>&nbsp; Pokazuj ostrzeżenia o niebezpiecznych linkach</td>
+					</tr>
+					<tr>
+						<td><input type="checkbox" id="blackTheme" onchange="disp.changeSettings()" /></td>
+						<td>&nbsp; Ciemny motyw bramki (eksperymentalny)</td>
+					</tr>
+					<tr>
+						<td><input type="checkbox" id="newMsgSound" onchange="disp.changeSettings()" /></td>
+						<td>&nbsp; Informuj dźwiękiem o nowej wiadomości</td>
+					</tr>
+					<tr>
+						<td><input type="checkbox" id="autoDisconnect" onchange="disp.changeSettings()" /></td>
+						<td>&nbsp; Automatycznie rozłączaj przy zamykaniu strony</td>
+					</tr>
+					<tr>
+						<td colspan="2">
+							Sposób wyświetlania wiadomości NOTICE &nbsp;
+							<select id="noticeDisplay" onchange="disp.changeSettings()">
+								<option value="0">Wyskakujące okienko</option>
+								<option value="1">Rozmowa prywatna</option>
+								<option value="2">Zakładka statusu</option>
+							</select>
+						</td>
 					</tr>
             	</table>
 			</div>
@@ -54,7 +80,7 @@
 				<div class="notify-close" onclick="gateway.showAbout()">
 					&#215;
 				</div>
-            	<h3>Bramka AJAX PIRC.PL</h3>
+            	<h3>Bramka WWW PIRC.PL</h3>
 				<p>Wersja: <script type="text/javascript">document.write(gatewayVersion);</script></p>
 				<p>Pokaż <a href="http://pirc.pl/teksty/bramka_ajax" target="blank">ostatnie zmiany</a></p>
 				<p>&copy; 2010-2016 <a href="http://pirc.pl">PIRC.PL</a>. Wszelkie prawa zastrzeżone</p>
@@ -78,10 +104,10 @@
         </div>
         
         <div id="options-box">
-	        <a id="button-tsize" href="javascript:void(0);" onclick="disp.showSizes();"></a>
-			<a id="button-options" href="javascript:void(0);" onClick="gateway.showOptions();"></a> 
-			<a id="button-about" href="javascript:void(0);" onClick="gateway.showAbout();"></a>
-			<a id="button-quit" href="javascript:void(0);" onClick="gateway.clickQuit();"></a> 
+	        <a id="button-tsize" href="javascript:void(0);" onclick="disp.showSizes();" title="Zmień rozmiar tekstu"></a>
+			<a id="button-options" href="javascript:void(0);" onClick="gateway.showOptions();" title="Ustawienia"></a> 
+			<a id="button-about" href="javascript:void(0);" onClick="gateway.showAbout();" title="Informacje o bramce"></a>
+			<a id="button-quit" href="javascript:void(0);" onClick="gateway.clickQuit();" title="Rozłącz z IRC"></a> 
         </div>
 
         <div id="wrapper">
@@ -151,41 +177,14 @@
             <div id="input-wrapper">
 				<table class="nostyle"><tr>
 					<!--<td style="width: 150px; text-align: right;"><span id="usernick" class="yournickname">{$nick}</span></td>-->
-	                <td style="width: 10px;"><input type="image" src="/styles/img/plus.png" value="" class="completion" onClick="gateway.doComplete();$('#input').focus()" /></td>
+	                <td style="width: 10px;"><input type="image" src="/styles/img/plus.png" value="" class="completion" onClick="gateway.doComplete();$('#input').focus()" title="Uzupełnij nick lub polecenie [Tab]" /></td>
 	                <td style="padding-right: 10px; padding-left: 5px;"> <input id="input" type="text" name="input" class="input" /></td>
-	                <td style="width: 10px;"><input type="image" src="/styles/img/smiley_mu.png" class="symbols" onClick="disp.symbolWindowShow()" /></td>
-	                <td style="width: 10px;"><input type="image" src="/styles/img/kolorki.png" value="" class="insertColor" onClick="disp.colorWindowShow()" /></td>
-                	<td style="width: 10px;"><input type="submit" value="&bull;" class="submit" OnClick="gateway.parseUserInput($('#input').val())" /></td>
+	                <td style="width: 10px;"><input type="image" src="/styles/img/smiley_mu.png" class="symbols" onClick="disp.symbolWindowShow()" title="Emotikony i symbole" /></td>
+	                <td style="width: 10px;"><input type="image" src="/styles/img/kolorki.png" value="" class="insertColor" onClick="disp.colorWindowShow()" title="Kolory i formatowanie" /></td>
+                	<td style="width: 10px;"><input type="submit" value="&bull;" class="submit" OnClick="gateway.parseUserInput($('#input').val())" title="Wyślij [Enter]" /></td>
                 </tr></table>
             </div>
-            <div id="options">
-                <div class="options-button" onclick="gateway.showOptions()">opcje &#8593;</div>
-                <div class="options-content">
-                    <table>
-                        <tr>
-                            <td class="checkbox"><input id="optionGraphicalPopups" name="optionGraphicalPopups" type="checkbox" /></td>
-                            <td class="desc">Graficzne komunikaty</td>
-                            <td class="checkbox"><input id="optionMsgNewWindow" name="optionMsgNewWindow" type="checkbox" /></td>
-                            <td class="desc">Otwieraj okno rozmowy po /msg</td>
-                            <td class="checkbox"><input id="optionDontCloseWindows" name="optionDontCloseWindows" type="checkbox" /></td>
-                            <td class="desc">Nie zamykaj automatycznie kart</td>
-                        </tr>
-                        <tr>
-                            <td class="checkbox"><input id="optionShowCtcps" name="optionShowCtcps" type="checkbox" /></td>
-                            <td class="desc">Pokazuj wiadomości CTCP</td>
-                            <td class="checkbox"><input type="checkbox" /></td>
-                            <td class="desc">Opis opcji</td>
-                            <td class="checkbox"><input type="checkbox" /></td>
-                            <td class="desc">Opis opcji</td>
-                        </tr>
-                        <tr>
-                            <td class="checkbox"><input type="checkbox" /></td>
-                            <td class="desc">Opis opcji</td>
-                        </tr>
-                    </table>
-                </div>
-            </div>
-        </div>
+         </div>
 
         <div class="notifywindow">
             <div class="notify-close" onclick="gateway.closeNotify()">
@@ -195,6 +194,13 @@
             </div>
         </div>
 
+		<div class="noticewindow">
+            <div class="notice-close" onclick="gateway.closeNotice()">
+                &#215;
+            </div>
+            <div class="notice-text">
+            </div>
+        </div>
 
         <div class="statuswindow">
             <div class="status-close" onclick="gateway.closeStatus()">
@@ -300,4 +306,5 @@
 	/*	document.getElementsByClassName('not-connected-text')[0].getElementsByTagName('h3')[0].innerHTML = 'Coś nie tak';
 		document.getElementsByClassName('not-connected-text')[0].getElementsByTagName('p')[0].innerHTML = 'Twoja przeglądarka nie potrafi wyświetlić bramki. Chyba jest zbyt stara...';*/
 	</script>
+	<div id="sound"></div>
 </html>

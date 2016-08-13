@@ -1,0 +1,122 @@
+#chat-wrapper, #nick-wrapper {
+	background-color: #000000;
+}
+
+ul.nicklist li {
+	border-color: #111111;
+}
+
+.ownNick {
+	color: #555CCC;
+}
+
+body {
+	color: #aaaaaa;
+	background: #555555 !important;
+}
+
+input[type="text"], input[type="text"], input[type="password"] {
+	background: #000000;
+	border-color: #2a2a2a;
+	color: #dddddd;
+}
+
+span.yournick {
+    color: #eeeeee;
+}
+
+span.part {
+	color: #E28947;
+}
+
+span.hilight, span.hilight span.nick {
+	color: #A9AEFF;
+}
+
+span.mode {
+	color: #7BDFE8;
+}
+
+span.nick {
+	color: #9E9E9E;
+}
+
+ul.nicklist li:hover, ul.nicklist li.activeNick {
+	background-color: #2D3A4A;
+}
+
+ul.options li, ul.suboptions li {
+	background-color: #5C738E;
+	color: #BED8FB;
+}
+
+.tsizewindow {
+	background-color: #09294E;
+}
+
+.symbol-text a, .size-text a, .statusbutton {
+	background-color: rgba(51, 51, 51, 0.8) !important;
+}
+
+.symbolwindow, .notifywindow, .colorwindow, #not_connected_div, #options_div, #reconnect_div, .tsizewindow, #about_div, .statuswindow, .noticewindow {
+	background-color: #09294E;
+}
+
+#about_div p {
+	background-color: rgba(6, 6, 6, 0.2);
+}
+
+a {
+	color: #B1CCEF;
+}
+
+.statuswindow div.status-close, div.notify-close, div.color-close, div.symbol-close, div.size-close, div.notice-close {
+	color: #D2E3F9  !important;
+}
+
+.statuswindow div.status-close:hover, div.notify-close:hover, div.color-close:hover, div.symbol-close:hover, div.size-close:hover, div.notice-close:hover {
+	color: #B7CCE3 !important;
+}
+
+
+input[type="text"]:hover, input[type="password"]:hover, input[type="text"]:focus, input[type="password"]:focus {
+	color: #fff;
+}
+
+.symbols, .insertColor, .completion, .submit {
+	background-color: #B3B1B1;
+}
+
+span.notice, span.notice-nick {
+	color: #BD51B8;
+}
+
+span.kick {
+    color: #E25C5C;
+}
+
+ul.options, ul.suboptions {
+	background-color: #1C4679;
+}
+
+b.admin {
+	color: #F97676;
+}
+
+.notify-text p span.info {
+	color: #ACC1DC;
+}
+
+.errorwindow {
+	background-color: #521818;
+	color: #FFE9E9;
+}
+
+.errorwindow div.error-close {
+	color: #E2B8B8;
+}
+
+.symbol-text a:hover, .size-text a:hover {
+	background-color: #0C509E !important;
+}
+

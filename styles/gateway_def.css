@@ -88,7 +88,7 @@ input, button, submit {
 	padding: 14px;
 	position: fixed;
 	top: 50%;
-	width: 25em;
+	width: 36em;
 	z-index: 10;
 }
 
@@ -445,7 +445,7 @@ span.yournickname {
 	padding: 4px;
 }
 	
-.notifywindow {
+.notifywindow, .noticewindow {
 	-moz-border-radius: 10px;
 	-webkit-border-radius: 10px;
 	border-radius: 10px;
@@ -463,6 +463,20 @@ span.yournickname {
 	top: 50%;
 	width: 600px;
 	z-index: 10;
+}
+
+.noticewindow {
+	padding-top: 4px;
+	margin-top: -5em;
+	top: 30%;
+	z-index: 3;
+	background: url("/styles/img/notice.png") no-repeat scroll right top #D7E4F3;
+	min-height: 180px;
+}
+
+.notice-text {
+	max-height: 25em;
+	overflow: auto;
 }
 
 .colorwindow, .symbolwindow {
@@ -508,12 +522,13 @@ span.yournickname {
 	padding: 1px;
 }
 	
-.notifywindow h3, .colorwindow h3, .symbolwindow h3, .tsizewindow h3 {
+.notifywindow h3, .colorwindow h3, .symbolwindow h3, .tsizewindow h3, .noticewindow h3 {
 	font-size: 1.3em;
 	padding-bottom: 10px;
+	padding-top: 10px;
 }
 	
-div.notify-close, div.color-close, div.symbol-close, div.size-close {
+div.notify-close, div.color-close, div.symbol-close, div.size-close, div.notice-close {
 	color: #466999;
 	display: table;
 	float: right;
@@ -528,7 +543,7 @@ div.notify-close, div.color-close, div.symbol-close, div.size-close {
 	cursor: pointer;
 }
 	
-div.notify-close:hover, div.color-close:hover, div.symbol-close:hover, div.size-close:hover {
+div.notify-close:hover, div.color-close:hover, div.symbol-close:hover, div.size-close:hover, div.notice-close:hover {
 	color: #B7CCE3;
 	cursor: pointer;
 }
@@ -666,7 +681,7 @@ ul.options li:hover {
 	float: left;
 /*	width: 400px;*/
 }
-	
+/*
 div#options {
 	bottom: 0;
 	display: none;
@@ -727,7 +742,7 @@ div#options {
 	
 .options-content table tr td.desc {
 	width: 160px;
-}
+}*/
 	
 .kickinput {
 	-moz-border-radius: 10px;
