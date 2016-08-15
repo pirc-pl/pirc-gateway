@@ -53,7 +53,7 @@
 						<td>&nbsp; Informuj dźwiękiem o nowej wiadomości</td>
 					</tr>
 					<tr>
-						<td><input type="checkbox" id="autoDisconnect" onchange="disp.changeSettings()" /></td>
+						<td><input type="checkbox" id="autoDisconnect" onchange="disp.changeSettings()" checked="checked" /></td>
 						<td>&nbsp; Automatycznie rozłączaj przy zamykaniu strony</td>
 					</tr>
 					<tr>

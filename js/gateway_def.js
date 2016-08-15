@@ -2067,7 +2067,7 @@ var gateway = {
     		'<input type="submit" value="Rozłącz" /> '+
 			'<input type="button" onclick="$(\'.notifywindow\').fadeOut(400)" value="Anuluj" />'+
 			'</form>');
-    	$('.notifywindow').fadeIn(400);
+    	$('.notifywindow').show();
     	$('.notifywindow').css('z-index', 10);
     	$('#quit-msg').focus();
     	$('#quit-msg').select();
@@ -3669,15 +3669,13 @@ var conn = {
 	'gatewayInit': function(){
 		$('.not-connected-text p').html('Poczekaj chwilę, trwa ładowanie...');
 		booleanSettings.forEach(function(sname){
-			if(!settings.getCookie(sname)){
+			if(settings.getCookie(sname) == null){
 				return;
 			}
-			if(!$('#'+sname).is(':checked')){
-				$('#'+sname).prop('checked', str2bool(settings.getCookie(sname)));
-			}
+			$('#'+sname).prop('checked', str2bool(settings.getCookie(sname)));
 		});
 		comboSettings.forEach(function(sname){
-			if(!settings.getCookie(sname)){
+			if(settings.getCookie(sname) == null){
 				return;
 			}
 			$('#'+sname).val(settings.getCookie(sname));
