@@ -54,7 +54,7 @@ var messagePatterns = {
 	'youQuit': '<span class="time">%s</span> &nbsp; <span class="part">*** Wyszed\u0142eś z IRC</span><br />',
 	'notConnected': '<span class="time">%s</span> &nbsp; <span class="mode">*** Nie jeste\u015b po\u0142ączony z IRC!</span><br />',
 	'notEnoughParameters': '<span class="time">%s</span> &nbsp; <span class="mode">*** %s: Za ma\u0142o argumentów.</span><br />',
-	'cannotSendToChan': '<span class="time">%s</span> &nbsp; <span class="kick">*** Nie mo\u017cna wys\u0142a\u0107 wiadomo\u015bci na kana\u0142 %s: %s</span><br />',
+	'cannotSendToChan': '<span class="time">%s</span> &nbsp; <span class="kick">*** Nie mo\u017cna wys\u0142a\u0107 na %s: %s. Wiadomość nie została dostarczona.</span><br />',
 	'cannotJoin': '<span class="time">%s</span> &nbsp; <span class="kick">*** Nie mo\u017cna dołączyć do kana\u0142u %s: %s</span><br />',
 	'noPerms': '<span class="time">%s</span> &nbsp; <span class="kick">*** Brak uprawnien.</span><br />',
 	'notice': '<span class="time">%s</span> &nbsp; <span class="notice-nick"><b>%s</b></span><span class="userhost">(<span class="notice-nick">%s</span>@<span class="notice-nick">%s</span>)</span> <span class="notice">%s</span><br />',
@@ -2686,7 +2686,19 @@ var cmdBinds = {
     '404': [	// ERR_CANNOTSENDTOCHAN
         function(msg) {
             if(gateway.findChannel(msg.args[1])) {
-                gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.cannotSendToChan, [gateway.niceTime(), msg.args[1], msg.text])
+            	var reason = '';
+            	if(msg.text.match(/Cannot send to channel \(Newly connected users have to wait before they can send any links\)/)){
+            		reason = 'Twoja wiadomość została rozpoznana jako link. Musisz odczekać kilka minut po połączeniu i spróbować ponownie. Zarejestruj nick, aby uniknąć tego ograniczenia w przyszłości';
+            	} else if(msg.text.match(/You need voice \(\+v\) \(.*\)/)){
+            		reason = 'Potrzebujesz prawa głosu, aby teraz pisać na tym kanale';
+            	} else if(msg.text.match(/You are banned \(.*\)/)){
+            		reason = 'Jesteś zbanowany';
+            	} else if(msg.text.match(/Color is not permitted in this channel \(.*\)/)){
+            		reason = 'Wiadomości zawierające kolory są zabronione na tym kanale';
+            	} else {
+            		reason = msg.text;
+            	}
+                gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.cannotSendToChan, [gateway.niceTime(), msg.args[1], reason])
             }
         }
     ],
