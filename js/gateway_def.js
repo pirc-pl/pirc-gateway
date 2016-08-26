@@ -19,7 +19,7 @@ var alt = [
 
 var reqChannel = '';
 
-var server = 'ws://'+location.host+'/ircsocket';
+var server = 'wss://'+location.host+'/ircsocket';
 
 var booleanSettings = [ 'showPartQuit', 'tabsListBottom', 'showUserHostnames', 'autoReconnect', 'displayLinkWarning', 'blackTheme', 'newMsgSound', 'autoDisconnect' ];
 var comboSettings = [ 'noticeDisplay' ];
@@ -3694,12 +3694,6 @@ var conn = {
 		});
 		disp.setSize(settings.getCookie('tsize'));
 		disp.changeSettings();
-		
-	/*	var ua = navigator.userAgent.toLowerCase();
-		var isAndroid = ua.indexOf("android") > -1;
-		if(isAndroid) {
-			$('body').css('font-family', 'verdana,arial,tahoma,sans-serif');
-		}*/
 		
 		$('#chatbox').click(function() {
 			gateway.closeNotify();
