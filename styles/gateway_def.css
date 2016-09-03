@@ -444,6 +444,11 @@ span.yournickname {
 	cursor: pointer;
 	padding: 4px;
 }
+
+#topicEdit {
+	width: 550px;
+	height: 5em;
+}
 	
 .notifywindow, .noticewindow {
 	-moz-border-radius: 10px;
