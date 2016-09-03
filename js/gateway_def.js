@@ -428,12 +428,12 @@ function Query(nick) {
 	$('#'+this.id+'-topic').html('<h1>'+this.name+'</h1><h2></h2>');
 	$('<li/>').attr('id', this.id+'-tab').html('<a href="javascript:void(0);" class="switchTab" onclick="gateway.switchTab(\''+this.name+'\')">'+$('<div/>').text(this.name).html()+'</a><a href="javascript:void(0);" onclick="gateway.removeQuery(\''+this.name+'\')"><div class="close" title="Zamknij rozmowę prywatną"></div></a>').appendTo('#tabs');
 	
-	var qCookie = settings.getCookie('query'+md5(this.name));
-	if(qCookie){
-		document.cookie = 'query'+md5(this.name) + '=;expires=Thu, 01 Jan 1970 00:00:01 GMT;'; //kasuję ciastka z poprzedniej wersji, TODO usunąć
-	} else {
+//	var qCookie = settings.getCookie('query'+md5(this.name));
+//	if(qCookie){
+//		document.cookie = 'query'+md5(this.name) + '=;expires=Thu, 01 Jan 1970 00:00:01 GMT;'; //kasuję ciastka z poprzedniej wersji, TODO usunąć
+//	} else {
 		var qCookie = localStorage.getItem('query'+md5(this.name));
-	}
+//	}
 	
 	if(qCookie) {
 		qCookie = Base64.decode(qCookie).split('\377').join('<br>');
@@ -3877,6 +3877,27 @@ var conn = {
 		}
 	},
 	'gatewayInit': function(){
+	// USUWANIE BŁĘDNYCH CIASTECZEK TODO skasować jak wszyscy już usuną
+		var arrSplit = document.cookie.split(";");
+
+		for(var i = 0; i < arrSplit.length; i++){
+			var cookie = arrSplit[i].trim();
+			var cookieData = cookie.split("=");
+			var cookieName = cookieData[0];
+			var cookieValue = cookieData[1];
+
+			// If the prefix of the cookie's name matches the one specified, remove it
+			if(cookieName.indexOf("query") === 0) {
+				// kopiuj do LS
+				localStorage.setItem(cookieName, cookieValue);
+
+				// Remove the cookie
+				document.cookie = cookieName + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT";
+			}
+		}
+		
+		
+		
 		$('.not-connected-text p').html('Poczekaj chwilę, trwa ładowanie...');
 
 		booleanSettings.forEach(function(sname){
