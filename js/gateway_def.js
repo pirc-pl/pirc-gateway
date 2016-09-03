@@ -224,7 +224,7 @@ function NicklistUser(usernick, initMode, chan) {
 						'<li onClick="gateway.showKick(\''+this.channel+'\', \''+this.nick+'\')">Wyrzu\u0107 z kana\u0142u</li>'+
 						'<li onClick="gateway.showStatus(\''+this.channel+'\', \''+this.nick+'\')">Daj uprawnienia</li>'+
 						'<li onClick="gateway.showStatusAnti(\''+this.channel+'\', \''+this.nick+'\')">Odbierz uprawnienia</li>'+
-				/*		'<li onClick="gateway.showBan(\''+this.channel+'\', \''+this.nick+'\')">Banuj</li>'+*/
+					/*	'<li onClick="gateway.showBan(\''+this.channel+'\', \''+this.nick+'\')">Banuj</li>'+*/
 					'</ul>'+
 				'</li>'+
 			'</ul>';
@@ -2935,12 +2935,12 @@ var cmdBinds = {
 			$(".errorwindow").css('z-index', 10);
         }
     ],
-    '489' : [	// +z
+    '489' : [	// ERR_SECUREONLYCHAN 
         function(msg) {
 			gateway.iKnowIAmConnected();
             $(".error-text").text(" ");
             $(".error-text").append("<h3>Nie można dołączyć do kanału<br />" + $('<div/>').text(msg.args[1]).html() + "<br /><br /></h3>");
-            $(".error-text").append('<p>Kanał wymaga połączenia z włączonym SSL (tryb +z). Nie jest dostępny z bramki.</p>');
+            $(".error-text").append('<p>Kanał wymaga połączenia z włączonym SSL (tryb +z). Nie jest dostępny z bramki.</p><p>Możesz spróbować użyć programu HexChat według instrukcji z <a href="http://pirc.pl/teksty/p_instalacja_i_konfiguracja" target="_blank">tej strony</a>.</p>');
             gateway.statusWindow.appendMessage(messagePatterns.cannotJoin, [gateway.niceTime(), msg.args[1], "Kanał wymaga połączenia SSL"]);
             $(".errorwindow").fadeIn(250);
 			$(".errorwindow").css('z-index', 10);
