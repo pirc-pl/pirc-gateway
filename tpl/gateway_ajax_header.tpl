@@ -18,6 +18,7 @@
 			var oldGatewayUrl = "{$gateway_url}";
         </script>
         <script type="text/javascript" src="/js/md5.js"></script>
+        <script type="text/javascript" src="/js/foreach.js"></script>
         <script type="text/javascript" src="/js/jquery-1.12.3.min.js"></script>
         <!--<script type="text/javascript" src="/js/jquery-1.12.3.js"></script>-->
         <script type="text/javascript" src="/js/jquery.sprintf.js"></script>

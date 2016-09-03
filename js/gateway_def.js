@@ -104,7 +104,7 @@ function Nicklist(chan, id) {
 	this.channel = chan;
 	this.id = id+'-nicklist';
 	this.list = [];
-
+	
 	this.sortFunc = function(a, b) {
 		if(a.level < b.level) {
 			return 1;
@@ -124,16 +124,6 @@ function Nicklist(chan, id) {
 	this.sort = function() {
 		this.list.sort(this.sortFunc);
 	}
-	this.redraw = function() {
-		this.sort();
-		$('#'+this.id).html('');
-		var str = '';
-		for (i in this.list) {
-			str += this.list[i].makeHTML();
-		}
-		$('<ul/>').addClass('nicklist').appendTo('#'+this.id).html(str);
-		$('.chrank').css('height', 16*disp.size).css('width', 16*disp.size);
-	}
 	this.remove = function() {
 		$('#'+this.id).remove();
 		this.list = [];
@@ -146,27 +136,39 @@ function Nicklist(chan, id) {
 		}
 		return false;
 	}
+	this.insertNick = function(nickListItem) {
+		var userHTML = nickListItem.makeHTML();
+		this.sort();
+		for(i in this.list){
+			if(this.sortFunc(this.list[i], nickListItem) > 0){
+				$('#'+this.id+' .'+this.list[i].nick).before(userHTML);
+				return;
+			}
+		}
+		$('#'+this.id+' .nicklist').append(userHTML);
+	}
 	this.changeNick = function(nick, newnick) {
-		if(this.findNick(nick)) {
-			this.findNick(nick).nick = newnick;
-			this.redraw();
+		var nickListItem = this.findNick(nick);
+		if(nickListItem) {
+			nickListItem.nick = newnick;
+			nickListItem.remove();
+			this.insertNick(nickListItem);
 			return true;
 		} else {
 			return false;
 		}
 	}
-	this.addNick = function(nick, initMode, noredraw) {
-		if(!this.findNick(nick)) {
-			this.list.push(new NicklistUser(nick, initMode, this.channel));
-			if(!noredraw) {
-				this.redraw();
-			}
+	this.addNick = function(nick, initMode) {
+		var nickListItem = this.findNick(nick);
+		if(!nickListItem) {
+			var newNick = new NicklistUser(nick, initMode, this.channel);
+			this.list.push(newNick);
+			this.insertNick(newNick);
 		} else {
 			if(initMode) {
-				this.findNick(nick).setMode(initMode, true);
-				if(!noredraw) {
-					this.redraw();
-				}
+				nickListItem.setMode(initMode, true);
+				nickListItem.remove();
+				this.insertNick(nickListItem);
 			}
 		}
 	}
@@ -182,6 +184,7 @@ function Nicklist(chan, id) {
 	}
 	try {
 		$('<span id="'+this.id+'"></span>').hide().appendTo('#nicklist-main');
+		$('<ul/>').addClass('nicklist').appendTo('#'+this.id);
 	} catch(e) {
 		gateway.send('QUIT :Za stara przeglądarka!');
 		$('.not-connected-text > h3').html('Przestarzała przeglądarka');
@@ -198,12 +201,14 @@ function NicklistUser(usernick, initMode, chan) {
 		voice: false
 	}
 	this.channel = chan;
+	this.ident = false;
+	this.host = false;
 
 	this.makeHTML = function() {
 		return '<li id="'+this.id+'" class="'+$('<div/>').text(this.nick).html()+'">'+
 			'<table><tr onclick="gateway.toggleNickOpt(\''+this.id+'\')">'+
 				'<td valign="top"><img class="chrank" alt="'+alt[this.level]+'" src="'+icons[this.level]+'" /></td>'+
-				'<td valign="top" style="text-align:left;width:100%;"'+((this.nick.toLowerCase()==guser.nick.toLowerCase())?' class="ownNick";':'')+'>&nbsp;&nbsp;'+this.nick+'</td>'+
+				'<td valign="top" style="text-align:left;width:100%;" class="'+((this.nick.toLowerCase()==guser.nick.toLowerCase())?'ownNick ':'')+'nickname">&nbsp;&nbsp;'+this.nick+'</td>'+
 			'</tr></table>'+
 			'<ul class="options" id="'+this.id+'-opt">'+
 				'<li onClick="gateway.queries.push(new Query(\''+this.nick+'\')); gateway.switchTab(\''+this.nick+'\');gateway.toggleNickOpt(\''+this.id+'\');" class="switchTab">Rozmowa Prywatna (QUERY)</li>'+
@@ -214,18 +219,19 @@ function NicklistUser(usernick, initMode, chan) {
 						((this.nick.toLowerCase() == guser.nick.toLowerCase())?'':'<li onClick="gateway.ctcp(\''+this.nick+'\', \'VERSION\');gateway.toggleNickOpt(\''+this.id+'\');">Wersja oprogramowania</li>')+
 					'</ul>'+
 				'</li>'+
-				(gateway.findChannel(chan).haveOper?
-				'<li><div style="width:100%;" onClick="gateway.toggleNickOptAdmin(\''+this.id+'\')">Administracja</div>'+
+				'<li class="' + gateway.findChannel(this.channel).id + '-operActions" style="display:none;"><div style="width:100%;" onClick="gateway.toggleNickOptAdmin(\''+this.id+'\')">Administracja</div>'+
 					'<ul class="suboptions" id="'+this.id+'-opt-admin'+'">'+
 						'<li onClick="gateway.showKick(\''+this.channel+'\', \''+this.nick+'\')">Wyrzu\u0107 z kana\u0142u</li>'+
 						'<li onClick="gateway.showStatus(\''+this.channel+'\', \''+this.nick+'\')">Daj uprawnienia</li>'+
 						'<li onClick="gateway.showStatusAnti(\''+this.channel+'\', \''+this.nick+'\')">Odbierz uprawnienia</li>'+
+				/*		'<li onClick="gateway.showBan(\''+this.channel+'\', \''+this.nick+'\')">Banuj</li>'+*/
 					'</ul>'+
-				'</li>':'')+
+				'</li>'+
 			'</ul>';
 		//}
 	}
 	this.setMode = function(mode, setting) {
+		var oldLevel = this.level;
 		if(mode in this.modes) {
 			this.modes[mode] = setting;
 			if(this.modes.owner) {
@@ -242,12 +248,37 @@ function NicklistUser(usernick, initMode, chan) {
 				this.level = 0;
 			}
 		}
-		if(this.nick.toLowerCase() == guser.nick.toLowerCase() && this.level >= 2){
-			gateway.findChannel(chan).haveOper = true;
+		if(this.nick.toLowerCase() == guser.nick.toLowerCase()){
+			var adminElement = $('.' + gateway.findChannel(this.channel).id + '-operActions');
+			if(this.level >= 2){
+				adminElement.css('display', 'block');
+			} else {
+				adminElement.css('display', 'none');
+			}
+		}
+		if(this.level != oldLevel){
+			var nicklist = gateway.findChannel(this.channel).nicklist;
+			var nickListElement = $('#'+nicklist.id+' .'+this.nick);
+			if(nickListElement.length){
+				nickListElement.remove();
+				nicklist.insertNick(this);
+			}
 		}
 	}
 	this.remove = function() {
 		$('#'+this.id).remove();
+	}
+	this.setIdent = function(ident) {
+		this.ident = ident;
+		if(this.host){
+			$('#'+this.id).attr('title', this.nick+'!'+this.ident+'@'+this.host);
+		}
+	}
+	this.setUserHost = function(host) {
+		this.host = host;
+		if(this.ident){
+			$('#'+this.id).attr('title', this.nick+'!'+this.ident+'@'+this.host);
+		}
 	}
 	this.level = 0;
 	this.nick = usernick;
@@ -331,10 +362,14 @@ function Query(nick) {
 	}
 
 	this.changeNick = function(newnick) {
+		var oldName = this.name.toLowerCase();
 		$('#'+this.id+'-window').vprintf(messagePatterns.nickChange, [gateway.niceTime(), $('<div/>').text(this.name).html(), $('<div/>').text(newnick).html()]);
 		$('#'+this.id+'-topic').html('<h1>'+$('<div/>').text(newnick).html()+'</h1><h2></h2>');
 		$("#"+this.id+'-tab').html('<a href="javascript:void(0);" class="switchTab" onclick="gateway.switchTab(\''+newnick+'\')">'+$('<div/>').text(newnick).html()+'</a><a href="javascript:void(0);" onclick="gateway.removeQuery(\''+newnick+'\')"><div class="close"></div></a>');
 		this.name = newnick;
+		if(oldName == gateway.active.toLowerCase()) {
+			gateway.switchTab(newnick);
+		}
 	}
 	this.restoreScroll = function() {
 		var active = gateway.getActive();
@@ -372,7 +407,6 @@ function Channel(chan) {
 	this.classAdded = false;
 	this.scrollPos = 0;
 	this.scrollSaved = false;
-	this.haveOper = false;
 
 	this.part = function() {
 		this.left = true;
@@ -986,6 +1020,23 @@ var services = {
 	}
 };
 
+var banData = {
+    'nick' : '',
+	'channel' : '',
+	'noIdent' : false,
+	'ident' : '',
+	'hostElements' : [],
+	'hostElementSeparators' : [],
+   	'clear' : function(){
+	    banData.nick = '';
+		banData.channel = '';
+		banData.noIdent = false;
+		banData.ident = '';
+		banData.hostElements = [];
+		banData.hostElementSeparators = [];
+    }
+}
+
 var gateway = {
 	'websock': 0,
 	'whois': '',
@@ -1551,8 +1602,10 @@ var gateway = {
 		var pageFront = 'black';
 		var currBack = pageBack;
 		var currFront = pageFront;
+		var newText = '';
+		message = $('<div />').text(message).html(); 
+		message = gateway.parseLinks(message);
 		var length    = message.length;
-		var newText   = '';
 		
 		var bold = false;
 		var italic = false;
@@ -1619,22 +1672,6 @@ var gateway = {
 					underline = !underline;
 					formatWaiting = true;
 					break;				
-				
-				case '<': // escape
-					isText = true;
-					append = '&lt;';
-					break;
-					
-				case '>':
-					isText = true;
-					append = '&gt;';
-					break;
-				
-				case '&':
-					isText = true;
-					append = '&amp;';
-					break;
-				
 				default:
 					isText = true;
 					append = message.charAt(i);
@@ -1675,18 +1712,20 @@ var gateway = {
 		if(formatSet){
 			newText += '</span><wbr>';
 		}
-		newText = gateway.parseLinks(newText);
 		return newText;
 	},
 	'parseLinks': function(text){
 		var newText = text;
 		var confirm= '';
+		var confirmChan = '';
 		if ($('#displayLinkWarning').is(':checked')) {
 			confirm = " onclick=\"return confirm('Link może być niebezpieczny, czy na pewno chcesz go otworzyć?')\"";
+			confirmChan = " onclick=\"return confirm('Czy chcesz dołączyć do wybranego kanału?')\"";
 		}
 		newText = newText.replace(/(http:\/\/[^ "'<>]+)/ig, "<a href=\"$1\" target=\"_blank\"" + confirm +">$1</a>");
 		newText = newText.replace(/(https:\/\/[^ "'<>]+)/ig, "<a href=\"$1\" target=\"_blank\"" + confirm +">$1</a>");
 		newText = newText.replace(/(ftp:\/\/[^ "'<>]+)/ig, "<a href=\"$1\" target=\"_blank\"" + confirm +">$1</a>");
+		newText = newText.replace(/(#[^, ]+)/g, "<a href=\"javascript:gateway.send('JOIN $1')\"" + confirmChan + ">$1</a>");
 		return newText;
 	},
 	'nextTab': function() {
@@ -1980,6 +2019,115 @@ var gateway = {
         $(".status-text").append("<p class='statusbutton' onClick='if ($(\".kickinput\").val() != \"\") { gateway.send(\"KICK "+channel+" "+nick+" :\" + $(\".kickinput\").val()); } else { gateway.send(\"KICK "+channel+" "+nick+"\"); } gateway.closeStatus()'>Wyrzuć</p>");
         $(".statuswindow").fadeIn(200);
     },
+    'showBan' : function(channel, nick) {
+        $(".status-text").text(" ");
+        banData.clear();
+        banData.nick = nick;
+        banData.channel = channel;
+
+        var nickListItem = gateway.findChannel(channel).nicklist.findNick(nick);
+        var host = nickListItem.host;
+        var ident = nickListItem.ident;
+        var nline = '<td><input type="checkbox" onchange="gateway.banFormatView()" id="banNick" checked="checked"></td><td></td>';
+        var html = '<h3>Ban</h3>' +
+        	"<p>Zablokuj dostęp dla "+$('<div/>').text(nick).html()+" na kanale "+$('<div/>').text(channel).html()+".</p>" +
+        	'<form action="javascript:void"><table>' +
+        		'<tr><td>' + nick + '</td><td>!</td>';
+        if(ident.charAt(0) == '~'){
+        	html += '<td>~</td>';
+        	nline += '<td><input onchange="gateway.banFormatView()" type="checkbox" id="banNoIdent"></td>';
+        	ident = ident.substr(1);
+        	banData.noIdent = true;
+        }
+        banData.ident = ident;
+        html += '<td>'+ident+'</td><td>@</td>'
+        nline += '<td><input type="checkbox" onchange="gateway.banFormatView()" id="banIdentText" checked="checked"></td><td></td>';
+        
+        var i = 0;
+        var cnt = 0;
+        var hostElement = '';
+        
+        do {
+        	var c = host.charAt(i);
+        	switch(c){
+        		default: hostElement += c; break;
+        		case ':': case '.':
+        			html += '<td>'+hostElement+'</td><td>'+c+'</td>';
+        			nline += '<td><input type="checkbox" onchange="gateway.banFormatView()" id="banHostElement'+cnt+'"></td><td></td>';
+        			banData.hostElements.push(hostElement);
+        			banData.hostElementSeparators.push(c);
+        			hostElement = '';
+        			cnt++;
+        			break;
+        	}
+        	i++;
+        } while(host.charAt(i));
+        banData.hostElements.push(hostElement);
+        html += '<td>'+hostElement+'</td>';
+        nline += '<td><input type="checkbox" onchange="gateway.banFormatView()" id="banHostElement'+cnt+'" checked="checked"></td>';
+        html += '</tr><tr>'+nline+'</tr></table></form>' +
+        	'<p>Postać bana: <span id="banFormat"></span></p>' + 
+  //      $(".status-text").append("<input type='text' class='kickinput' maxlenght='307' />");
+        	'<p class="statusbutton" onClick="gateway.banClick()">Banuj</p>';
+        $(".status-text").html(html);
+        if(cnt > 0){
+        	$('#banHostElement'+(cnt-1)).prop('checked', true);
+        }
+        $(".statuswindow").fadeIn(200);
+        gateway.banFormatView();
+    },
+    'banClick': function() {
+    },
+    'banFormatView': function() {
+    	var banFormat = '';
+    	if($('#banNick').is(':checked')){
+    		banFormat += banData.nick;
+    	} else {
+    		banFormat += '*';
+    	}
+    	banFormat += '!';
+    	if(banData.noIdent){
+    		if($('#banNoIdent').is(':checked')){
+    			banFormat += '~';
+    		} else {
+    			banFormat += '*';
+    		}
+    	}
+    	if($('#banIdentText').is(':checked')){
+    		banFormat += banData.ident;
+    	} else {
+    		banFormat += '*';
+    	}
+    	banFormat += '@';
+    	var len = banData.hostElements.length;
+    	var hostElementAdded = false;
+    	for(var i=0;i<len;i++){
+    		if($('#banHostElement' + i).is(':checked')){
+    			if(!hostElementAdded){
+    				hostElementAdded = true;
+    				if(i > 0){
+    					banFormat += '*'+lastSeparator;
+    				}
+    			}
+    			banFormat += banData.hostElements[i];
+    			
+    		} else {
+    			if(hostElementAdded) {
+	    			banFormat += '*';
+	    		} else {
+	    			var lastSeparator = banData.hostElementSeparators[i];
+	    		}
+    		}
+    		if(hostElementAdded && i < len-1){
+    			banFormat += banData.hostElementSeparators[i];
+    		}
+    	}
+    	if(!hostElementAdded){
+    		banFormat += '*';
+    	}
+    	$('#banFormat').text(banFormat);
+    	return banFormat;
+    },
     'getActive': function() {
         if(gateway.active == '--status') {
             return false;
@@ -2155,7 +2303,6 @@ var cmdBinds = {
         function(msg) {
         	var ckNick = settings.getCookie('origNick');
         	if(ckNick){
-        		gateway.send('SETNAME Użytkownik bramki PIRC.pl "' + ckNick + '"');
         		settings.saveCookie('origNick', ckNick);
         	} else {
         		settings.saveCookie('origNick', guser.nick);
@@ -2583,26 +2730,53 @@ var cmdBinds = {
     ],
     '353': [	// RPL_NAMREPLY 
         function(msg) {
+        	var regexp = /^(~)?(&)?(@)?(%)?(\+)?([^~&@%+!]*)(?:!([^@]*)@(.*))?$/
 	        gateway.iKnowIAmConnected();
-	        if(gateway.findChannel(msg.args[2])) {
-	            var names = msg.text.split(' ');
-	            for ( name in names ) {
-	                if (names[name].indexOf("+") == 0) {
-	                    gateway.findChannel(msg.args[2]).nicklist.addNick(names[name].slice(1), 'voice', true);
-	                } else if (names[name].indexOf("%") == 0) {
-	                    gateway.findChannel(msg.args[2]).nicklist.addNick(names[name].slice(1), 'halfop', true);
-	                } else if (names[name].indexOf("@") == 0) {
-	                    gateway.findChannel(msg.args[2]).nicklist.addNick(names[name].slice(1), 'op', true);
-	                } else if (names[name].indexOf("&") == 0) {
-	                    gateway.findChannel(msg.args[2]).nicklist.addNick(names[name].slice(1), 'admin', true);
-	                } else if (names[name].indexOf("~") == 0) {
-	                    gateway.findChannel(msg.args[2]).nicklist.addNick(names[name].slice(1), 'owner', true);
-	                } else {
-	                    gateway.findChannel(msg.args[2]).nicklist.addNick(names[name], false, true);
-	                }
-	            }
-	            gateway.findChannel(msg.args[2]).nicklist.redraw();
+	        var channel = gateway.findChannel(msg.args[2]);
+	        if(!channel){
+	        	return;
 	        }
+            var names = msg.text.split(' ');
+            for ( name in names ) {
+            	var rmatch = regexp.exec(names[name]);
+                /*if (names[name].indexOf("+") == 0) {
+                    gateway.findChannel(msg.args[2]).nicklist.addNick(names[name].slice(1), 'voice');
+                } else if (names[name].indexOf("%") == 0) {
+                    gateway.findChannel(msg.args[2]).nicklist.addNick(names[name].slice(1), 'halfop');
+                } else if (names[name].indexOf("@") == 0) {
+                    gateway.findChannel(msg.args[2]).nicklist.addNick(names[name].slice(1), 'op');
+                } else if (names[name].indexOf("&") == 0) {
+                    gateway.findChannel(msg.args[2]).nicklist.addNick(names[name].slice(1), 'admin');
+                } else if (names[name].indexOf("~") == 0) {
+                    gateway.findChannel(msg.args[2]).nicklist.addNick(names[name].slice(1), 'owner');
+                } else {
+                    gateway.findChannel(msg.args[2]).nicklist.addNick(names[name], false);
+                }*/
+                console.log(rmatch);
+                channel.nicklist.addNick(rmatch[6]);
+                var nickListItem = channel.nicklist.findNick(rmatch[6]);
+                if(rmatch[7]){
+                	nickListItem.setIdent(rmatch[7]);
+                }
+                if(rmatch[8]){
+                	nickListItem.setUserHost(rmatch[8]);
+                }
+                //console.log('user: '+rmatch[7]);
+                //console.log('host: '+rmatch[8]);
+                for(var i=0; i<5; i++){
+                	if(rmatch[i+1]){
+                		var mode = '';
+                		switch(rmatch[i+1]){
+                			case '~': mode = 'owner'; break;
+                			case '&': mode = 'admin'; break;
+                			case '@': mode = 'op'; break;
+                			case '%': mode = 'halfop'; break;
+                			case '+': mode = 'voice'; break;
+                		}
+                		nickListItem.setMode(mode, true);
+                	}
+                }
+            }
 
         }
     ],
@@ -2623,6 +2797,11 @@ var cmdBinds = {
         function(msg) {
             if(gateway.findChannel(msg.args[1])) {
                 gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.topicTime, [gateway.niceTime(), msg.args[2], gateway.parseTime(msg.args[3])]);
+                gateway.send('CAP REQ :multi-prefix userhost-in-names\r\nCAP END\r\nNAMES '+msg.args[1]);
+                var ckNick = settings.getCookie('origNick');
+  	         	if(ckNick){
+	        		gateway.send('SETNAME Użytkownik bramki PIRC.pl "' + ckNick + '"');
+	        	}
             }
         }
     ],
@@ -2756,6 +2935,17 @@ var cmdBinds = {
 			$(".errorwindow").css('z-index', 10);
         }
     ],
+    '489' : [	// +z
+        function(msg) {
+			gateway.iKnowIAmConnected();
+            $(".error-text").text(" ");
+            $(".error-text").append("<h3>Nie można dołączyć do kanału<br />" + $('<div/>').text(msg.args[1]).html() + "<br /><br /></h3>");
+            $(".error-text").append('<p>Kanał wymaga połączenia z włączonym SSL (tryb +z). Nie jest dostępny z bramki.</p>');
+            gateway.statusWindow.appendMessage(messagePatterns.cannotJoin, [gateway.niceTime(), msg.args[1], "Kanał wymaga połączenia SSL"]);
+            $(".errorwindow").fadeIn(250);
+			$(".errorwindow").css('z-index', 10);
+        }
+    ],
     '475' : [	// ERR_BADCHANNELKEY
         function(msg) {
 			gateway.iKnowIAmConnected();
@@ -2763,34 +2953,6 @@ var cmdBinds = {
             $(".error-text").append("<h3>Nie można dołączyć do kanału<br />" + msg.args[1] + "<br /><br /></h3>");
             $(".error-text").append('<p>Musisz podać poprawne hasło.</p>');
             $(".error-text").append('<form onsubmit="gateway.chanPassword(\''+$('<div/>').text(msg.args[1]).html()+'\');" action="javascript:void(0);">Hasło do '+$('<div/>').text(msg.args[1]).html()+': <input type="password" id="chpass" /> <input type="submit" value="Wejdź" /></form>');
-/*	'badNickString': '<div class="table">'+
-		'<form class="tr" onsubmit="services.logIn();" action="javascript:void(0);">'+
-			'<span class="td_right">Twoje hasło:</span>'+
-			'<span class="td"><input type="password" id="nspass" /></span>'+
-			'<span class="td"><input type="submit" value="Zaloguj" /></span>'+
-		'</form>'+
-		'<form class="tr" onsubmit="services.changeNick();" action="javascript:void(0);">'+
-			'<span class="td_right">Nowy nick:</span>'+
-			'<span class="td"><input type="text" id="nnick" /></span>'+
-			'<span class="td"><input type="submit" value="Zmień nick" /></span>'+
-		'</form>'+
-	'</div>',
-	'nickservMessage': function(msg){
-		if (msg.text.match(/^Nieprawid.owe has.o\.$/i)) { // złe hasło nickserv
-			services.nickStore = guser.nickservnick;
-			$(".error-text").text(" ");
-			$(".error-text").append('<h3>Nieprawidłowe hasło</h3><p>Podane hasło do nicka <b>'+guser.nickservnick+'</b> jest błędne. Możesz spróbować ponownie lub zmienić nicka.</p>'+services.badNickString);
-			$(".errorwindow").fadeIn(250);
-			$(".errorwindow").css('z-index', 10);
-		}
-		if(guser.nickservpass == '' && msg.text.match(/^Ten nick jest zarejestrowany i chroniony\.$/i)){
-			services.nickStore = guser.nick;
-			$(".error-text").text(" ");
-			$(".error-text").append('<h3>Nick jest zarejestrowany</h3><p>Wybrany nick <b>'+guser.nick+'</b> jest zarejestrowany. Musisz go zmienić lub podać hasło.</p>'+services.badNickString);
-			$(".errorwindow").fadeIn(250);
-			$(".errorwindow").css('z-index', 10);
-		}
-	},*/
             gateway.statusWindow.appendMessage(messagePatterns.cannotJoin, [gateway.niceTime(), msg.args[1], "Wymagane hasło"]);
             $(".errorwindow").fadeIn(250);
 			$(".errorwindow").css('z-index', 10);
@@ -2966,7 +3128,6 @@ var cmdBinds = {
                                 gateway.findChannel(msg.args[0]).nicklist.findNick(msg.args[nextarg]).setMode(mode, false);
                             }
                         }
-                        gateway.findChannel(msg.args[0]).nicklist.redraw();
                         nextarg++;
                     } else {
                         log += "Mode 'normal' "+plus+modearr[i]+"\n";
@@ -3599,7 +3760,10 @@ function onFocus(){
 	disp.titleBlinkInterval = false;
 	if(document.title == newMessage) document.title = $('<div/>').text(guser.nick).html()+' @ PIRC.pl';
     disp.focused = true;
-    gateway.getActive().markRead();
+    var act = gateway.getActive();
+    if(act){
+    	act.markRead();
+    }
 };
 
 if (/*@cc_on!@*/false) { // check for Internet Explorer
@@ -3608,6 +3772,12 @@ if (/*@cc_on!@*/false) { // check for Internet Explorer
 } else {
     window.onfocus = onFocus;
     window.onblur = onBlur;
+}
+
+function browserTooOld(){
+	$('.not-connected-text > h3').html('Przestarzała przeglądarka');
+	$('.not-connected-text > p').html('Twoja przeglądarka jest przestarzała i nie jest obsługiwana. Należy zainstalować aktualną wersję Internet Explorer, Mozilla Firefox, Chrome, Safari bądź innej wspieranej przeglądarki.');
+	return;
 }
 
 var conn = {
@@ -3680,6 +3850,7 @@ var conn = {
 	},
 	'gatewayInit': function(){
 		$('.not-connected-text p').html('Poczekaj chwilę, trwa ładowanie...');
+
 		booleanSettings.forEach(function(sname){
 			if(settings.getCookie(sname) == null){
 				return;
@@ -3810,9 +3981,7 @@ var conn = {
 		try {
 			$('#not_connected_wrapper').fadeIn(200);
 		} catch(e) {
-			$('.not-connected-text > h3').html('Przestarzała przeglądarka');
-			$('.not-connected-text > p').html('Twoja przeglądarka jest przestarzała i nie jest obsługiwana. Należy zainstalować aktualną wersję Internet Explorer, Mozilla Firefox, Chrome, Safari bądź innej wspieranej przeglądarki.');
-			return;
+			browserTooOld();
 		}
 		$('.not-connected-text > h3').html($('<div/>').text(guser.channels[0]).html() + ' @ PIRC.pl');
 		dnick = $('<div/>').text(guser.nick).html();
