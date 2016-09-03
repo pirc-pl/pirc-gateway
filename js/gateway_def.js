@@ -147,6 +147,9 @@ function Nicklist(chan, id) {
 			}
 		}
 		$('#'+this.id+' .nicklist').append(userHTML);
+		if(nickListItem.host && nickListItem.ident){
+			$('#'+nickListItem.id).attr('title', nickListItem.nick+'!'+nickListItem.ident+'@'+nickListItem.host);
+		}
 	}
 	this.changeNick = function(nick, newnick) {
 		var nickListItem = this.findNick(nick);
@@ -366,10 +369,11 @@ function Query(nick) {
 		if(messageData == '' || messageData.match(/<span class="join">/)){
 			return;
 		}
-		var qCookie = settings.getCookie('query'+md5(this.name));
+	//	var qCookie = settings.getCookie('query'+md5(this.name));
+		var qCookie = localStorage.getItem('query'+md5(this.name));
 		if(qCookie) {
 			qCookie = Base64.decode(qCookie).split('\377');
-			if(qCookie.length >= 10){
+			if(qCookie.length >= 15){
 				qCookie.shift();
 			}
 		} else {
@@ -382,7 +386,11 @@ function Query(nick) {
 			qNewData.push(end);
 		}
 		qCookie = qCookie.concat(qNewData);
-		settings.saveCookie('query'+md5(this.name), Base64.encode(qCookie.join('\377')));
+		//settings.saveCookie('query'+md5(this.name), Base64.encode(qCookie.join('\377')));
+		try {
+			localStorage.setItem('query'+md5(this.name), Base64.encode(qCookie.join('\377')));
+		} catch(e){
+		}
 	}
 
 	this.changeNick = function(newnick) {
@@ -421,6 +429,12 @@ function Query(nick) {
 	$('<li/>').attr('id', this.id+'-tab').html('<a href="javascript:void(0);" class="switchTab" onclick="gateway.switchTab(\''+this.name+'\')">'+$('<div/>').text(this.name).html()+'</a><a href="javascript:void(0);" onclick="gateway.removeQuery(\''+this.name+'\')"><div class="close" title="Zamknij rozmowę prywatną"></div></a>').appendTo('#tabs');
 	
 	var qCookie = settings.getCookie('query'+md5(this.name));
+	if(qCookie){
+		document.cookie = 'query'+md5(this.name) + '=;expires=Thu, 01 Jan 1970 00:00:01 GMT;'; //kasuję ciastka z poprzedniej wersji, TODO usunąć
+	} else {
+		var qCookie = localStorage.getItem('query'+md5(this.name));
+	}
+	
 	if(qCookie) {
 		qCookie = Base64.decode(qCookie).split('\377').join('<br>');
 		$('#'+this.id+'-window').vprintf(messagePatterns.queryBacklog, [gateway.niceTime(), $('<div/>').text(this.name).html()]);
