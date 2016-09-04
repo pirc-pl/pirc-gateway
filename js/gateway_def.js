@@ -50,6 +50,8 @@ var messagePatterns = {
 	'modeChange': '<span class="time">%s</span> &nbsp; <span class="mode">*** %s ustawi\u0142 tryb [%s] dla kana\u0142u %s</span><br />',
 	'startedQuery': '<span class="time">%s</span> &nbsp; <span class="join">&rarr; Rozpocz\u0119to rozmow\u0119 z %s.</span><br />',
 	'queryBacklog': '<span class="time">%s</span> &nbsp; <span class="join">*** Zapis poprzedniej rozmowy z %s:</span><br />',
+	'channelBacklog': '<span class="time">%s</span> &nbsp; <span class="mode">*** Zapis poprzedniej wizyty na %s:</span><br />',
+	'channelBacklogEnd': '<span class="time">%s</span> &nbsp; <span class="mode">*** Koniec zapisu.</span><br />',
 	'noSuchCommand': '<span class="time">%s</span> &nbsp; <span class="mode">*** %s: nieznana komenda.</span><br />',
 	'noSuchNick': '<span class="time">%s</span> &nbsp; <span class="mode">*** %s: nie ma takiego nicku ani kanału</span><br />',
 	'youQuit': '<span class="time">%s</span> &nbsp; <span class="part">*** Wyszed\u0142eś z IRC</span><br />',
@@ -431,12 +433,7 @@ function Query(nick) {
 	$('#'+this.id+'-topic').html('<h1>'+this.name+'</h1><h2></h2>');
 	$('<li/>').attr('id', this.id+'-tab').html('<a href="javascript:void(0);" class="switchTab" onclick="gateway.switchTab(\''+this.name+'\')">'+$('<div/>').text(this.name).html()+'</a><a href="javascript:void(0);" onclick="gateway.removeQuery(\''+this.name+'\')"><div class="close" title="Zamknij rozmowę prywatną"></div></a>').appendTo('#tabs');
 	
-//	var qCookie = settings.getCookie('query'+md5(this.name));
-//	if(qCookie){
-//		document.cookie = 'query'+md5(this.name) + '=;expires=Thu, 01 Jan 1970 00:00:01 GMT;'; //kasuję ciastka z poprzedniej wersji, TODO usunąć
-//	} else {
-		var qCookie = localStorage.getItem('query'+md5(this.name));
-//	}
+	var qCookie = localStorage.getItem('query'+md5(this.name));
 	
 	if(qCookie) {
 		qCookie = Base64.decode(qCookie).split('\377').join('<br>');
@@ -586,13 +583,37 @@ function Channel(chan) {
 
 	this.appendMessage = function(type, args) {
 		var rescroll = false;
+		var messageData = $.vsprintf(type, args);
 		if(this.name.toLowerCase() == gateway.active.toLowerCase() && document.getElementById('chat-wrapper').scrollHeight >= $('#chat-wrapper').scrollTop() + $('#chat-wrapper').innerHeight()) {
 			this.saveScroll();
 			var rescroll = true;
 		}
-		$('#'+this.id+'-window').vprintf(type, args);
+		$('#'+this.id+'-window').append(messageData);
 		if(rescroll && this.name.toLowerCase() == gateway.active.toLowerCase()) {
 			this.restoreScroll();
+		}
+		if(messageData == '' || messageData.match(/<span class="mode">/)){
+			return;
+		}
+		var qCookie = localStorage.getItem('channel'+md5(this.name));
+		if(qCookie) {
+			qCookie = Base64.decode(qCookie).split('\377');
+			if(qCookie.length >= 15){
+				qCookie.shift();
+			}
+		} else {
+			qCookie = [];
+		}
+		messageData = messageData.replace('<br />', '<br>');
+		qNewData = messageData.split('<br>');
+		var end = qNewData.pop();
+		if(end != ''){
+			qNewData.push(end);
+		}
+		qCookie = qCookie.concat(qNewData);
+		try {
+			localStorage.setItem('channel'+md5(this.name), Base64.encode(qCookie.join('\377')));
+		} catch(e){
 		}
 	}
 	this.setTopic = function(topic) {
@@ -606,6 +627,15 @@ function Channel(chan) {
 	$('#'+this.id+'-topic').html('<h1>'+$('<div/>').text(this.name).html()+'</h1><h2></h2>');
 	$('<li/>').attr('id', this.id+'-tab').html('<a href="javascript:void(0);" onclick="gateway.switchTab(\''+this.name+'\')" class="switchTab">'+$('<div/>').text(this.name).html()+'</a>'+
 		'<a href="javascript:void(0);" onclick="gateway.removeChannel(\''+this.name+'\')"><div class="close" title="Wyjdź z kanału"></div></a>').appendTo('#tabs');
+	
+	var qCookie = localStorage.getItem('channel'+md5(this.name));
+	
+	if(qCookie) {
+		qCookie = Base64.decode(qCookie).split('\377').join('<br>');
+		$('#'+this.id+'-window').vprintf(messagePatterns.channelBacklog, [gateway.niceTime(), $('<div/>').text(this.name).html()]);
+		$('#'+this.id+'-window').append(qCookie+'<br>');
+		$('#'+this.id+'-window').vprintf(messagePatterns.channelBacklogEnd, [gateway.niceTime()]);
+	}
 }
 
 function Status() {
@@ -3881,23 +3911,26 @@ var conn = {
 		}
 	},
 	'gatewayInit': function(){
-	// USUWANIE BŁĘDNYCH CIASTECZEK TODO skasować jak wszyscy już usuną
-		var arrSplit = document.cookie.split(";");
+		try {
+		// USUWANIE BŁĘDNYCH CIASTECZEK TODO skasować jak wszyscy już usuną
+			var arrSplit = document.cookie.split(";");
 
-		for(var i = 0; i < arrSplit.length; i++){
-			var cookie = arrSplit[i].trim();
-			var cookieData = cookie.split("=");
-			var cookieName = cookieData[0];
-			var cookieValue = cookieData[1];
+			for(var i = 0; i < arrSplit.length; i++){
+				var cookie = arrSplit[i].trim();
+				var cookieData = cookie.split("=");
+				var cookieName = cookieData[0];
+				var cookieValue = cookieData[1];
 
-			// If the prefix of the cookie's name matches the one specified, remove it
-			if(cookieName.indexOf("query") === 0) {
-				// kopiuj do LS
-				localStorage.setItem(cookieName, cookieValue);
+				// If the prefix of the cookie's name matches the one specified, remove it
+				if(cookieName.indexOf("query") === 0) {
+					// kopiuj do LS
+					localStorage.setItem(cookieName, cookieValue);
 
-				// Remove the cookie
-				document.cookie = cookieName + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT";
+					// Remove the cookie
+					document.cookie = cookieName + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT";
+				}
 			}
+		} catch(e) {
 		}
 		
 		
