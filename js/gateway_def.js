@@ -143,10 +143,13 @@ function Nicklist(chan, id) {
 		for(i in this.list){
 			if(this.sortFunc(this.list[i], nickListItem) > 0){
 				$('#'+this.id+' .'+this.list[i].nick).before(userHTML);
-				return;
+				userHTML = false;
+				break;
 			}
 		}
-		$('#'+this.id+' .nicklist').append(userHTML);
+		if(userHTML){
+			$('#'+this.id+' .nicklist').append(userHTML);
+		}
 		if(nickListItem.host && nickListItem.ident){
 			$('#'+nickListItem.id).attr('title', nickListItem.nick+'!'+nickListItem.ident+'@'+nickListItem.host);
 		}
@@ -1766,7 +1769,8 @@ var gateway = {
 		newText = newText.replace(/(http:\/\/[^ "'<>]+)/ig, "<a href=\"$1\" target=\"_blank\"" + confirm +">$1</a>");
 		newText = newText.replace(/(https:\/\/[^ "'<>]+)/ig, "<a href=\"$1\" target=\"_blank\"" + confirm +">$1</a>");
 		newText = newText.replace(/(ftp:\/\/[^ "'<>]+)/ig, "<a href=\"$1\" target=\"_blank\"" + confirm +">$1</a>");
-		newText = newText.replace(/(#[^, ]+)/g, "<a href=\"javascript:gateway.send('JOIN $1')\"" + confirmChan + ">$1</a>");
+		newText = newText.replace(/([^[])(#[^, ]+)/g, "$1<a href=\"javascript:gateway.send('JOIN $2')\"" + confirmChan + ">$2</a>");
+		newText = newText.replace(/^(#[^, ]+)/g, "<a href=\"javascript:gateway.send('JOIN $1')\"" + confirmChan + ">$1</a>");
 		return newText;
 	},
 	'nextTab': function() {
