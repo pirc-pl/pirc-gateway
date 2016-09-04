@@ -2630,7 +2630,7 @@ var cmdBinds = {
 							$(".notice-text").append("<h3>Komunikat prywatny od "+$('<div/>').text(msg.sender.nick).html()+"</h3>");
 							gateway.lastNoticeNick = msg.sender.nick;
 						}
-           				$(".notice-text").append("<p><span class=\"time\">"+gateway.niceTime()+"</span> "+gateway.colorize($('<div/>').text(msg.text).html())+"</p>");
+           				$(".notice-text").append("<p><span class=\"time\">"+gateway.niceTime()+"</span> "+gateway.colorize(msg.text)+"</p>");
             			$(".noticewindow").fadeIn(250);
             			$('.notice-text').scrollTop($('.notice-text').prop("scrollHeight"));
 					}
@@ -3449,7 +3449,7 @@ var commands = {
 						}
 						gateway.findQuery(command[1]).appendMessage(messagePatterns.yourNotice, [gateway.niceTime(), command[1], reason]);
 					} else if($("#noticeDisplay").val() == 0) { // notice jako okienko
-						$(".notice-text").append("<p><span class=\"time\">"+gateway.niceTime()+"</span> <span class=\"notice\"><b>NOTICE "+$('<div/>').text(guser.nick).html()+"→"+command[1] + "</b></span> " + gateway.colorize($('<div/>').text(reason).html())+"</p>");
+						$(".notice-text").append("<p><span class=\"time\">"+gateway.niceTime()+"</span> <span class=\"notice\"><b>NOTICE "+$('<div/>').text(guser.nick).html()+"→"+command[1] + "</b></span> " + gateway.colorize(reason)+"</p>");
 		    			$(".noticewindow").fadeIn(250);
 		    			$('.notice-text').scrollTop($('.notice-text').prop("scrollHeight"));
 		    		}
@@ -3483,7 +3483,7 @@ var commands = {
 				}
 				var services = [ 'nickserv', 'chanserv', 'hostserv', 'operserv', 'botserv' ];
 				if($("#noticeDisplay").val() == 0 && services.indexOf(command[1].toLowerCase()) > -1){
-					$(".notice-text").append("<p><span class=\"time\">"+gateway.niceTime()+"</span> <span class=\"notice\">[<b>"+$('<div/>').text(guser.nick).html()+" &gt; "+command[1] + "</b>]</span> " + gateway.colorize($('<div/>').text(reason).html())+"</p>");
+					$(".notice-text").append("<p><span class=\"time\">"+gateway.niceTime()+"</span> <span class=\"notice\">[<b>"+$('<div/>').text(guser.nick).html()+" &gt; "+command[1] + "</b>]</span> " + gateway.colorize(reason)+"</p>");
         			$(".noticewindow").fadeIn(250);
         			$('.notice-text').scrollTop($('.notice-text').prop("scrollHeight"));
 				} else if($("#noticeDisplay").val() == 2 && services.indexOf(command[1].toLowerCase()) > -1){
