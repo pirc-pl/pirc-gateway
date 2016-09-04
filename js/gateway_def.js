@@ -437,8 +437,9 @@ function Query(nick) {
 	
 	if(qCookie) {
 		qCookie = Base64.decode(qCookie).split('\377').join('<br>');
-		$('#'+this.id+'-window').vprintf(messagePatterns.queryBacklog, [gateway.niceTime(), $('<div/>').text(this.name).html()]);
-		$('#'+this.id+'-window').append(qCookie+'<br>');
+		$('#'+this.id+'-window').append('<div class="backlog"></div>');
+		$('#'+this.id+'-window .backlog').vprintf(messagePatterns.queryBacklog, [gateway.niceTime(), $('<div/>').text(this.name).html()]);
+		$('#'+this.id+'-window .backlog').append(qCookie);
 	}
 	
 	$('#'+this.id+'-window').vprintf(messagePatterns.startedQuery, [gateway.niceTime(), $('<div/>').text(this.name).html()]);
@@ -632,9 +633,10 @@ function Channel(chan) {
 	
 	if(qCookie) {
 		qCookie = Base64.decode(qCookie).split('\377').join('<br>');
-		$('#'+this.id+'-window').vprintf(messagePatterns.channelBacklog, [gateway.niceTime(), $('<div/>').text(this.name).html()]);
-		$('#'+this.id+'-window').append(qCookie+'<br>');
-		$('#'+this.id+'-window').vprintf(messagePatterns.channelBacklogEnd, [gateway.niceTime()]);
+		$('#'+this.id+'-window').append('<div class="backlog"></div>');
+		$('#'+this.id+'-window .backlog').vprintf(messagePatterns.channelBacklog, [gateway.niceTime(), $('<div/>').text(this.name).html()]);
+		$('#'+this.id+'-window .backlog').append(qCookie+'<br>');
+		$('#'+this.id+'-window .backlog').vprintf(messagePatterns.channelBacklogEnd, [gateway.niceTime()]);
 	}
 }
 

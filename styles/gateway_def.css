@@ -1029,3 +1029,8 @@ span.td_right {
 	height: 1.1em;
 }
 
+.backlog {
+	opacity: 0.4;
+	filter: alpha(opacity=40);
+}
+
