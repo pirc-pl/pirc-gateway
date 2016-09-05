@@ -1,762 +1,13 @@
-var debug = '';
-var icons = [
-	'/styles/img/users.png',
-	'/styles/img/voice.png',
-	'/styles/img/hop.png',
-	'/styles/img/op.png',
-	'/styles/img/prot.png',
-	'/styles/img/owner.png'
-];
-
-var alt = [
-	'',
-	'+',
-	'%',
-	'@',
-	'&',
-	'~'
-];
-
-var reqChannel = '';
-
-var server = 'wss://'+location.host+'/ircsocket';
-
-var booleanSettings = [ 'showPartQuit', 'tabsListBottom', 'showUserHostnames', 'autoReconnect', 'displayLinkWarning', 'blackTheme', 'newMsgSound', 'autoDisconnect' ];
-var comboSettings = [ 'noticeDisplay' ];
-
-var messagePatterns = {
-	'nickChange': '<span class="time">%s</span> &nbsp; <span class="mode">*** %s zmieni\u0142 nick na %s</span><br />',
-	'nickInUse': '<span class="time">%s</span> &nbsp; <span class="kick">*** %s: Nick jest juz uzywany przez kogos innego.</span><br />',
-	'badNick': '<span class="time">%s</span> &nbsp; <span class="kick">*** %s: Nick nie jest dostępny.</span><br />',
-	'nickChangeOwn': '<span class="time">%s</span> &nbsp; <span class="mode">*** Jeste\u015b teraz znany jako %s</span><br />',
-	'joinOwn': '<span class="time">%s</span> &nbsp; <span class="join">&rarr; Do\u0142\u0105czy\u0142e\u015b do kana\u0142u %s.</span><br />',
-	'join': '<span class="time">%s</span> &nbsp; <span class="join">&rarr; <b>%s</b> <i class="userhost">[%s@%s]</i> do\u0142\u0105czy\u0142 do %s.</span><br />',
-	'part': '<span class="time">%s</span> &nbsp; <span class="part">&larr; <b>%s</b> <i class="userhost">[%s@%s]</i> opu\u015bci\u0142 %s [%s]</span><br />',
-	'quit': '<span class="time">%s</span> &nbsp; <span class="part">&larr; <b>%s</b> <i class="userhost">[%s@%s]</i> opu\u015bci\u0142 IRC [%s]</span><br />',
-	'partOwn': '<span class="time">%s</span> &nbsp; <span class="part">&larr; Opu\u015bci\u0142e\u015b kana\u0142 %s. <a href="#" onclick="gateway.send(\'JOIN %s\')">Dołącz ponownie</a></span><br />',
-	'channelMsg': '<span class="time">%s</span> &nbsp; <span class="nick">&lt;%s&gt;</span> %s<br />',
-	'yourMsg': '<span class="time">%s</span> &nbsp; <span class="yournick">&lt;%s&gt;</span> %s<br />',
-	'channelMsgHilight': '<span class="time">%s</span> &nbsp; <span class="hilight"><span class="nick">&lt;%s&gt;</span> %s</span><br />',
-	'channelAction': '<span class="time">%s</span> &nbsp; * <span class="nick">%s</span> %s<br />',
-	'yourAction': '<span class="time">%s</span> &nbsp; * <span class="yournick">%s</span> %s<br />',
-	'channelActionHilight': '<span class="time">%s</span> &nbsp; * <span class="hilight"><span class="nick">%s</span> %s</span><br />',
-	'changeTopic': '<span class="time">%s</span> &nbsp; <span class="mode">*** %s zmieni\u0142 temat na: %s</span><br />',
-	'deleteTopic': '<span class="time">%s</span> &nbsp; <span class="mode">*** %s usun\u0105\u0142 temat %s</span><br />',
-	'topic': '<span class="time">%s</span> &nbsp; <span class="mode">*** Temat kana\u0142u %s: %s</span><br />',
-	'topicNotSet': '<span class="time">%s</span> &nbsp; <span class="mode">*** Temat %s nie jest ustawiony</span><br />',
-	'topicTime': '<span class="time">%s</span> &nbsp; <span class="mode">*** Temat ustawiony przez %s [%s]</span><br />',
-	'kick': '<span class="time">%s</span> &nbsp; <span class="kick">*** %s wyrzuci\u0142 %s z %s [Powód: %s]</span><br />',
-	'kickOwn': '<span class="time">%s</span> &nbsp; <span class="kick">*** %s wyrzuci\u0142 ci\u0119 z %s [Powód: %s]</span><br />',
-	'modeChange': '<span class="time">%s</span> &nbsp; <span class="mode">*** %s ustawi\u0142 tryb [%s] dla kana\u0142u %s</span><br />',
-	'startedQuery': '<span class="time">%s</span> &nbsp; <span class="join">&rarr; Rozpocz\u0119to rozmow\u0119 z %s.</span><br />',
-	'queryBacklog': '<span class="time">%s</span> &nbsp; <span class="join">*** Zapis poprzedniej rozmowy z %s:</span><br />',
-	'channelBacklog': '<span class="time">%s</span> &nbsp; <span class="mode">*** Zapis poprzedniej wizyty na %s:</span><br />',
-	'channelBacklogEnd': '<span class="time">%s</span> &nbsp; <span class="mode">*** Koniec zapisu.</span><br />',
-	'noSuchCommand': '<span class="time">%s</span> &nbsp; <span class="mode">*** %s: nieznana komenda.</span><br />',
-	'noSuchNick': '<span class="time">%s</span> &nbsp; <span class="mode">*** %s: nie ma takiego nicku ani kanału</span><br />',
-	'youQuit': '<span class="time">%s</span> &nbsp; <span class="part">*** Wyszed\u0142eś z IRC</span><br />',
-	'notConnected': '<span class="time">%s</span> &nbsp; <span class="mode">*** Nie jeste\u015b po\u0142ączony z IRC!</span><br />',
-	'notEnoughParameters': '<span class="time">%s</span> &nbsp; <span class="mode">*** %s: Za ma\u0142o argumentów.</span><br />',
-	'cannotSendToChan': '<span class="time">%s</span> &nbsp; <span class="kick">*** Nie mo\u017cna wys\u0142a\u0107 na %s: %s. Wiadomość nie została dostarczona.</span><br />',
-	'cannotJoin': '<span class="time">%s</span> &nbsp; <span class="kick">*** Nie mo\u017cna dołączyć do kana\u0142u %s: %s</span><br />',
-	'noPerms': '<span class="time">%s</span> &nbsp; <span class="kick">*** Brak uprawnien.</span><br />',
-	'notice': '<span class="time">%s</span> &nbsp; <span class="notice-nick"><b>%s</b></span><span class="userhost">(<span class="notice-nick">%s</span>@<span class="notice-nick">%s</span>)</span> <span class="notice">%s</span><br />',
-	'yourNotice': '<span class="time">%s</span> &nbsp; <span class="notice"><b>-NOTICE/%s-</b> %s</span><br />',
-	'notEnoughParams': '<span class="time">%s</span> &nbsp; <span class="mode">*** %s: za mało argumentów: %s</span><br />',
-	'motd': '<span class="time">%s</span> &nbsp; <span class="motd">*** %s</span><br />',
-	'ctcpRequest': '<span class="time">%s</span> &nbsp; <span class="mode">*** %s wysyla CTCP REQUEST: %s</span><br />',
-	'ctcpReply': '<span class="time">%s</span> &nbsp; <span class="notice">*** <b>CTCP REPLY od %s:</b> %s</span><br />',
-	'chanListElement': '<span class="time">%s</span> &nbsp; <span class="notice">*** <b><a href="#" onClick="gateway.send(\'JOIN %s\')">%s</a></b> (%s) - %s </span> <br />',
-	'banListElement': '<span class="time">%s</span> &nbsp; <span class="mode">*** Ban: <b>%s</b> <i>założony przez:</i> <b>%s</b> (%s) </span><br />',
-	'banListEnd': '<span class="time">%s</span> &nbsp; <span class="mode">*** Koniec listy banów.</span><br />',
-	'invexListElement': '<span class="time">%s</span> &nbsp; <span class="mode">*** Invex: <b>%s</b> <i>założony przez:</i> <b>%s</b> (%s) </span><br />',
-	'invexListEnd': '<span class="time">%s</span> &nbsp; <span class="mode">*** Koniec listy invex.</span><br />',
-	'exceptListElement': '<span class="time">%s</span> &nbsp; <span class="mode">*** Except: <b>%s</b> <i>założony przez:</i> <b>%s</b> (%s) </span><br />',
-	'exceptListEnd': '<span class="time">%s</span> &nbsp; <span class="mode">*** Koniec listy except.</span><br />',
-	'mode': '<span class="time">%s</span> &nbsp; <span class="mode">*** Ustawienia kana\u0142u %s: [%s]</span><br />',
-	'error': '<span class="time">%s</span> &nbsp; <span class="mode"> !!! Roz\u0142\u0105czono z serwerem: %s</span><br />',
-	'existingConnection': '<span class="time">%s</span> &nbsp; <span class="mode">*** Połączenie już istnieje, dołączam się do niego.</span><br />',
-	'away': '<span class="time">%s</span> &nbsp; <span class="mode">*** %s otrzymał twoją wiadomość, ale jest teraz nieobecny: %s</span><br />'
-};
-
-var modes = {
-	'single': ['p', 's', 'm', 'n', 't', 'i', 'r', 'R', 'c', 'O', 'A', 'Q', 'K', 'V', 'C', 'u', 'z', 'N', 'S', 'M', 'T', 'G'],
-	'argBoth': ['b', 'e', 'I'],
-	'argAdd': ['k', 'f', 'L', 'l', 'j'],
-	'user': ['q','a','o','h','v']
-};
-var modemap2 = ['owner', 'admin', 'op', 'halfop', 'voice'];
-var newMessage = 'Nowa wiadomość';
-
-function str2bool(b){
-	return (b === 'true');
-}
-
 guser.changeNick = function(newnick, silent) {
 	guser.nick = newnick;
-	$('#usernick').html($('<div/>').text(guser.nick).html());
-	$(document).attr('title', $('<div/>').text(guser.nick).html()+ ' @ PIRC.pl');
+	$('#usernick').he(guser.nick);
+	$(document).attr('title', he(guser.nick)+ ' @ PIRC.pl');
 	if(!silent) {
 		for (i in gateway.channels) {
-			gateway.channels[i].appendMessage(messagePatterns.nickChangeOwn, [gateway.niceTime(), $('<div/>').text(guser.nick).html()]);
+			gateway.channels[i].appendMessage(messagePatterns.nickChangeOwn, [gateway.niceTime(), he(guser.nick)]);
 		}
 	}
 	return true;
-}
-function Nicklist(chan, id) {
-	this.channel = chan;
-	this.id = id+'-nicklist';
-	this.list = [];
-	
-	this.sortFunc = function(a, b) {
-		if(a.level < b.level) {
-			return 1;
-		} else if(a.level > b.level) {
-			return -1;
-		} else {
-			if(a.nick.toLowerCase() < b.nick.toLowerCase()) {
-				return -1;
-			} else if(a.nick.toLowerCase() > b.nick.toLowerCase()) {
-				return 1;
-			} else {
-				return 0; //nigdy nie powinno nastapic ;p
-			}
-		}
-	}
-
-	this.sort = function() {
-		this.list.sort(this.sortFunc);
-	}
-	this.remove = function() {
-		$('#'+this.id).remove();
-		this.list = [];
-	}
-	this.findNick = function(nick) {
-		for (i in this.list) {
-			if(this.list[i].nick.toLowerCase() == nick.toLowerCase()) {
-				return this.list[i];
-			}
-		}
-		return false;
-	}
-	this.insertNick = function(nickListItem) {
-		var userHTML = nickListItem.makeHTML();
-		this.sort();
-		for(i in this.list){
-			if(this.sortFunc(this.list[i], nickListItem) > 0){
-				$('#'+this.id+' .'+this.list[i].nick).before(userHTML);
-				userHTML = false;
-				break;
-			}
-		}
-		if(userHTML){
-			$('#'+this.id+' .nicklist').append(userHTML);
-		}
-		if(nickListItem.host && nickListItem.ident){
-			$('#'+nickListItem.id).attr('title', nickListItem.nick+'!'+nickListItem.ident+'@'+nickListItem.host);
-		}
-	}
-	this.changeNick = function(nick, newnick) {
-		var nickListItem = this.findNick(nick);
-		if(nickListItem) {
-			nickListItem.nick = newnick;
-			nickListItem.remove();
-			this.insertNick(nickListItem);
-			return true;
-		} else {
-			return false;
-		}
-	}
-	this.addNick = function(nick, initMode) {
-		var nickListItem = this.findNick(nick);
-		if(!nickListItem) {
-			var newNick = new NicklistUser(nick, initMode, this.channel);
-			this.list.push(newNick);
-			this.insertNick(newNick);
-		} else {
-			if(initMode) {
-				nickListItem.setMode(initMode, true);
-				nickListItem.remove();
-				this.insertNick(nickListItem);
-			}
-		}
-	}
-	this.removeNick = function(nick) {
-		for (i in this.list) {
-			if(this.list[i].nick == nick) {
-				this.list[i].remove();
-				this.list.splice(i, 1);
-				return true;
-			}
-		}
-		return false;
-	}
-	try {
-		$('<span id="'+this.id+'"></span>').hide().appendTo('#nicklist-main');
-		$('<ul/>').addClass('nicklist').appendTo('#'+this.id);
-	} catch(e) {
-		gateway.send('QUIT :Za stara przeglądarka!');
-		$('.not-connected-text > h3').html('Przestarzała przeglądarka');
-		$('.not-connected-text > p').html('Twoja przeglądarka jest przestarzała i nie jest obsługiwana. Należy zainstalować przeglądarkę (Mozilla Firefox, Internet Explorer, Opera, Safari, Chrome lub inną) w aktualnej wersji.');
-	}
-}
-
-function NicklistUser(usernick, initMode, chan) {
-	this.modes = {
-		owner: false, // lvl = 5;
-		admin: false,
-		op: false,
-		halfop: false,
-		voice: false
-	}
-	this.channel = chan;
-	this.ident = false;
-	this.host = false;
-
-	this.makeHTML = function() {
-		return '<li id="'+this.id+'" class="'+$('<div/>').text(this.nick).html()+'">'+
-			'<table><tr onclick="gateway.toggleNickOpt(\''+this.id+'\')">'+
-				'<td valign="top"><img class="chrank" alt="'+alt[this.level]+'" src="'+icons[this.level]+'" /></td>'+
-				'<td valign="top" style="text-align:left;width:100%;" class="'+((this.nick.toLowerCase()==guser.nick.toLowerCase())?'ownNick ':'')+'nickname">&nbsp;&nbsp;'+this.nick+'</td>'+
-			'</tr></table>'+
-			'<ul class="options" id="'+this.id+'-opt">'+
-				'<li onClick="gateway.queries.push(new Query(\''+this.nick+'\')); gateway.switchTab(\''+this.nick+'\');gateway.toggleNickOpt(\''+this.id+'\');" class="switchTab">Rozmowa Prywatna (QUERY)</li>'+
-				'<li><div style="width:100%;" onClick="gateway.toggleNickOptInfo(\''+this.id+'\')">Informacje</div>'+
-					'<ul class="suboptions" id="'+this.id+'-opt-info'+'">'+
-						'<li onClick="' + ((this.nick.toLowerCase() == guser.nick.toLowerCase())?'gateway.displayOwnWhois = true; ':'') + 'gateway.send(\'WHOIS '+gateway.sescape(this.nick)+' '+gateway.sescape(this.nick)+'\');gateway.toggleNickOpt(\''+this.id+'\');">WHOIS</li>'+
-						'<li onClick="services.nickInfo(\''+this.nick+'\');gateway.toggleNickOpt(\''+this.id+'\');">NickServ</li>'+
-						((this.nick.toLowerCase() == guser.nick.toLowerCase())?'':'<li onClick="gateway.ctcp(\''+this.nick+'\', \'VERSION\');gateway.toggleNickOpt(\''+this.id+'\');">Wersja oprogramowania</li>')+
-					'</ul>'+
-				'</li>'+
-				'<li class="' + gateway.findChannel(this.channel).id + '-operActions" style="display:none;"><div style="width:100%;" onClick="gateway.toggleNickOptAdmin(\''+this.id+'\')">Administracja</div>'+
-					'<ul class="suboptions" id="'+this.id+'-opt-admin'+'">'+
-						'<li onClick="gateway.showKick(\''+this.channel+'\', \''+this.nick+'\')">Wyrzu\u0107 z kana\u0142u</li>'+
-						'<li onClick="gateway.showStatus(\''+this.channel+'\', \''+this.nick+'\')">Daj uprawnienia</li>'+
-						'<li onClick="gateway.showStatusAnti(\''+this.channel+'\', \''+this.nick+'\')">Odbierz uprawnienia</li>'+
-					/*	'<li onClick="gateway.showBan(\''+this.channel+'\', \''+this.nick+'\')">Banuj</li>'+*/
-					'</ul>'+
-				'</li>'+
-			'</ul>';
-		//}
-	}
-	this.setMode = function(mode, setting) {
-		var oldLevel = this.level;
-		if(mode in this.modes) {
-			this.modes[mode] = setting;
-			if(this.modes.owner) {
-				this.level = 5;
-			} else if (this.modes.admin) {
-				this.level = 4;
-			} else if (this.modes.op) {
-				this.level = 3;
-			} else if (this.modes.halfop) {
-				this.level = 2;
-			} else if (this.modes.voice) {
-				this.level = 1;
-			} else {
-				this.level = 0;
-			}
-		}
-		if(this.nick.toLowerCase() == guser.nick.toLowerCase()){
-			var chanId = gateway.findChannel(this.channel).id;
-			if(this.level >= 2){
-				$('#'+chanId+'-displayOperCss').remove();
-				var style = $('<style id="'+chanId+'-displayOperCss">.'+chanId+'-operActions { display:block !important; }</style>');
-				$('html > head').append(style);
-			} else {
-				$('#'+chanId+'-displayOperCss').remove();
-			}
-		}
-		if(this.level != oldLevel){
-			var nicklist = gateway.findChannel(this.channel).nicklist;
-			var nickListElement = $('#'+nicklist.id+' .'+this.nick);
-			if(nickListElement.length){
-				nickListElement.remove();
-				nicklist.insertNick(this);
-			}
-		}
-	}
-	this.remove = function() {
-		$('#'+this.id).remove();
-	}
-	this.setIdent = function(ident) {
-		this.ident = ident;
-		if(this.host){
-			$('#'+this.id).attr('title', this.nick+'!'+this.ident+'@'+this.host);
-		}
-	}
-	this.setUserHost = function(host) {
-		this.host = host;
-		if(this.ident){
-			$('#'+this.id).attr('title', this.nick+'!'+this.ident+'@'+this.host);
-		}
-	}
-	this.level = 0;
-	this.nick = usernick;
-	this.id = usernick.replace(/[^a-z0-9A-Z]+/ig, '-').toLowerCase()+Math.round(Math.random()*10000);
-	if(initMode) {
-		this.setMode(initMode, true);
-	}
-}
-
-function Query(nick) {
-	this.name = nick;
-	this.id = "query-"+this.name.replace(/[^a-z0-9A-Z]+/g, '-').toLowerCase()+Math.round(Math.random()*100);
-	this.hilight = false;
-	this.newmsg = false;
-	this.classAdded = false;
-	this.scrollPos = 0;
-	this.scrollSaved = false;
-	this.toggleClass = function() {
-		if(this.ClassAdded) {
-			$('#'+this.id+'-tab').removeClass('newmsg');
-			this.ClassAdded = false;
-		} else if(this.hilight) {
-			$('#'+this.id+'-tab').addClass('newmsg');
-			this.ClassAdded = true;
-		}
-	}
-	this.markNew = function() {
-		disp.playSound();
-		if(!this.hilight) {
-			this.hilight = window.setInterval('gateway.findQuery(\''+this.name+'\').toggleClass();', 500);
-		}
-		if(!disp.focused){
-			if(disp.titleBlinkInterval){
-				clearInterval(disp.titleBlinkInterval);
-			}
-			disp.titleBlinkInterval = setInterval(function(){
-				var title = document.title;
-				document.title = (title == newMessage ? ($('<div/>').text(guser.nick).html()+' @ PIRC.pl') : newMessage);
-			}, 500);
-		}
-	}
-	this.markBold = function() {
-		$('#'+this.id+'-tab > a').css('font-weight', 'bold');
-		$('#'+this.id+'-tab > a').css('color', '#fff');
-	}
-	this.markRead = function() {
-		if(this.hilight) {
-			window.clearInterval(this.hilight);
-			this.hilight = false;
-		}
-		if(this.classAdded) {
-			this.toggleClass();
-		}
-		clearInterval(disp.titleBlinkInterval);
-		disp.titleBlinkInterval = false;
-		if(document.title == newMessage) document.title = $('<div/>').text(guser.nick).html()+' @ PIRC.pl';
-		$('#'+this.id+'-tab > a').css('font-weight', 'normal');
-		$('#'+this.id+'-tab > a').css('color', '#CECECE');
-		setTimeout("$('#"+this.id+"-tab').removeClass('newmsg')", 100);
-		setTimeout("$('#"+this.id+"-tab').removeClass('newmsg')", 300);
-		setTimeout("$('#"+this.id+"-tab').removeClass('newmsg')", 600);
-	}
-	this.close = function() {
-		$('#'+this.id+'-tab').remove();
-		$('#'+this.id+'-window').remove();
-		$('#'+this.id+'-topic').remove();
-		if(this.name.toLowerCase() == gateway.active.toLowerCase()) {
-			gateway.switchTab(gateway.tabHistoryLast(this.name));
-		}
-	}
-	this.appendMessage = function(type, args) {
-		var rescroll = false;
-		var messageData = $.vsprintf(type, args);
-		if(this.name.toLowerCase() == gateway.active.toLowerCase() && document.getElementById('chat-wrapper').scrollHeight >= $('#chat-wrapper').scrollTop() + $('#chat-wrapper').innerHeight()) {
-			this.saveScroll();
-			var rescroll = true;
-		}
-		$('#'+this.id+'-window').append(messageData);
-		if(rescroll && this.name.toLowerCase() == gateway.active.toLowerCase()) {
-			this.restoreScroll();
-		}
-		if(messageData == '' || messageData.match(/<span class="join">/)){
-			return;
-		}
-	//	var qCookie = settings.getCookie('query'+md5(this.name));
-		var qCookie = localStorage.getItem('query'+md5(this.name));
-		if(qCookie) {
-			qCookie = Base64.decode(qCookie).split('\377');
-			if(qCookie.length >= 15){
-				qCookie.shift();
-			}
-		} else {
-			qCookie = [];
-		}
-		messageData = messageData.replace('<br />', '<br>');
-		qNewData = messageData.split('<br>');
-		var end = qNewData.pop();
-		if(end != ''){
-			qNewData.push(end);
-		}
-		qCookie = qCookie.concat(qNewData);
-		//settings.saveCookie('query'+md5(this.name), Base64.encode(qCookie.join('\377')));
-		try {
-			localStorage.setItem('query'+md5(this.name), Base64.encode(qCookie.join('\377')));
-		} catch(e){
-		}
-	}
-
-	this.changeNick = function(newnick) {
-		var oldName = this.name.toLowerCase();
-		$('#'+this.id+'-window').vprintf(messagePatterns.nickChange, [gateway.niceTime(), $('<div/>').text(this.name).html(), $('<div/>').text(newnick).html()]);
-		$('#'+this.id+'-topic').html('<h1>'+$('<div/>').text(newnick).html()+'</h1><h2></h2>');
-		$("#"+this.id+'-tab').html('<a href="javascript:void(0);" class="switchTab" onclick="gateway.switchTab(\''+newnick+'\')">'+$('<div/>').text(newnick).html()+'</a><a href="javascript:void(0);" onclick="gateway.removeQuery(\''+newnick+'\')"><div class="close"></div></a>');
-		this.name = newnick;
-		if(oldName == gateway.active.toLowerCase()) {
-			gateway.switchTab(newnick);
-		}
-	}
-	this.restoreScroll = function() {
-		var active = gateway.getActive();
-		if(active && this.name != active.name){
-			return;
-		}
-		if(this.scrollSaved) {
-			$('#chat-wrapper').scrollTop(this.scrollPos);
-		} else {
-			$('#chat-wrapper').scrollTop(document.getElementById('chat-wrapper').scrollHeight);
-		}
-	}
-	this.saveScroll = function() {
-		if($('#chat-wrapper').scrollTop()+document.getElementById('chat-wrapper').clientHeight > document.getElementById('chat-wrapper').scrollHeight-150 && $('#chat-wrapper').scrollTop()+document.getElementById('chat-wrapper').clientHeight > document.getElementById('chat-wrapper').scrollHeight*0.97)   {
-			this.scrollSaved = false;
-			this.scrollPos = 0;
-		} else {
-			this.scrollSaved = true;
-			this.scrollPos = $('#chat-wrapper').scrollTop();
-		}
-	}
-	$('<span/>').attr('id', this.id+'-window').hide().appendTo('#main-window');
-	$('<span/>').attr('id', this.id+'-topic').hide().appendTo('#topic');
-	$('#'+this.id+'-topic').html('<h1>'+this.name+'</h1><h2></h2>');
-	$('<li/>').attr('id', this.id+'-tab').html('<a href="javascript:void(0);" class="switchTab" onclick="gateway.switchTab(\''+this.name+'\')">'+$('<div/>').text(this.name).html()+'</a><a href="javascript:void(0);" onclick="gateway.removeQuery(\''+this.name+'\')"><div class="close" title="Zamknij rozmowę prywatną"></div></a>').appendTo('#tabs');
-	
-	var qCookie = localStorage.getItem('query'+md5(this.name));
-	
-	if(qCookie) {
-		qCookie = Base64.decode(qCookie).split('\377').join('<br>');
-		$('#'+this.id+'-window').append('<div class="backlog"></div>');
-		$('#'+this.id+'-window .backlog').vprintf(messagePatterns.queryBacklog, [gateway.niceTime(), $('<div/>').text(this.name).html()]);
-		$('#'+this.id+'-window .backlog').append(qCookie);
-	}
-	
-	$('#'+this.id+'-window').vprintf(messagePatterns.startedQuery, [gateway.niceTime(), $('<div/>').text(this.name).html()]);
-}
-
-function Channel(chan) {
-	this.name = chan;
-	this.id = this.name.replace(/^#/g,'').replace(/[^a-zA-Z0-9]+/g, '-').toLowerCase()+Math.round(Math.random()*100);
-	this.nicklist = new Nicklist(this.name, this.id);
-	this.left = false;
-	this.hilight = false;
-	this.classAdded = false;
-	this.scrollPos = 0;
-	this.scrollSaved = false;
-	this.topic = '';
-
-	this.part = function() {
-		this.left = true;
-		this.nicklist.remove();
-		this.nicklist = new Nicklist(this.name, this.id);
-	}
-
-	this.toggleClass = function() {
-		if(this.ClassAdded) {
-			$('#'+this.id+'-tab').removeClass('newmsg');
-			this.ClassAdded = false;
-		} else if(this.hilight) {
-			$('#'+this.id+'-tab').addClass('newmsg');
-			this.ClassAdded = true;
-		}
-	}
-	this.restoreScroll = function() {
-		var active = gateway.getActive();
-		if(active && this.name != active.name){
-			return;
-		}
-		if(this.scrollSaved) {
-			$('#chat-wrapper').scrollTop(this.scrollPos);
-		} else {
-			$('#chat-wrapper').scrollTop(document.getElementById('chat-wrapper').scrollHeight);
-		}
-	}
-	this.saveScroll = function() {
-		if($('#chat-wrapper').scrollTop()+document.getElementById('chat-wrapper').clientHeight > document.getElementById('chat-wrapper').scrollHeight-150 && $('#chat-wrapper').scrollTop()+document.getElementById('chat-wrapper').clientHeight > document.getElementById('chat-wrapper').scrollHeight*0.97)   {
-			this.scrollSaved = false;
-			this.scrollPos = 0;
-		} else {
-			this.scrollSaved =  true;
-			this.scrollPos = $('#chat-wrapper').scrollTop();
-		}
-	}
-	this.toggleClassMsg = function() {
-		if(this.ClassAddedMsg) {
-			$('#'+this.id+'-tab').removeClass('newmsg2');
-			this.ClassAddedMsg = false;
-		} else {
-			$('#'+this.id+'-tab').addClass('newmsg2');
-			this.ClassAddedMsg = true;
-		}
-	}
-	this.markNew = function() {
-		disp.playSound();
-		if(!this.hilight) {
-			this.hilight = window.setInterval('gateway.findChannel(\''+this.name+'\').toggleClass();', 500);
-		}
-		
-		if (this.hilight2) {
-			window.clearInterval(this.hilight2);
-			this.hilight2 = false;
-			if(this.classAddedMsg) {
-				this.toggleClassMsg();
-			}
-			setTimeout("$('#"+this.id+"-tab').removeClass('newmsg2')", 100);
-			setTimeout("$('#"+this.id+"-tab').removeClass('newmsg2')", 300);
-			setTimeout("$('#"+this.id+"-tab').removeClass('newmsg2')", 500);
-		}
-		if(!disp.focused){
-			if(disp.titleBlinkInterval){
-				clearInterval(disp.titleBlinkInterval);
-			}
-			disp.titleBlinkInterval = setInterval(function(){
-				var title = document.title;
-				document.title = (title == newMessage ? ($('<div/>').text(guser.nick).html()+' @ PIRC.pl') : newMessage);
-			}, 500);
-		}
-	}
-	this.markBold = function() {
-		if(!this.hilight2 && !this.hilight) {
-			this.hilight2 = window.setInterval('gateway.findChannel(\''+this.name+'\').toggleClassMsg();', 500);
-		}
-	}
-	this.markRead = function() {
-		if(this.hilight) {
-			window.clearInterval(this.hilight);
-			this.hilight = false;
-		}
-		
-		if(this.hilight2) {
-			window.clearInterval(this.hilight2);
-			this.hilight2 = false;
-		}
-		
-		if(this.classAdded) {
-			this.toggleClass();
-		}
-		if(this.classAddedMsg) {
-			this.toggleClassMsg();
-		}
-		clearInterval(disp.titleBlinkInterval);
-		disp.titleBlinkInterval = false;
-		if(document.title == newMessage) document.title = $('<div/>').text(guser.nick).html()+' @ PIRC.pl';
-		$('#'+this.id+'-tab > a').css('font-weight', 'normal');
-		setTimeout("$('#"+this.id+"-tab').removeClass('newmsg')", 100);
-		setTimeout("$('#"+this.id+"-tab').removeClass('newmsg')", 300);
-		setTimeout("$('#"+this.id+"-tab').removeClass('newmsg')", 600);
-		
-		setTimeout("$('#"+this.id+"-tab').removeClass('newmsg2')", 100);
-		setTimeout("$('#"+this.id+"-tab').removeClass('newmsg2')", 300);
-		setTimeout("$('#"+this.id+"-tab').removeClass('newmsg2')", 600);
-	}
-	this.close = function() {
-		if(!this.left) {
-			this.part();
-			gateway.send("PART "+this.name+" :Opuścił kanał");
-			gateway.statusWindow.appendMessage(messagePatterns.partOwn, [gateway.niceTime(), this.name, this.name]);
-		}
-		this.nicklist.remove();
-		$('#'+this.id+'-tab').remove();
-		$('#'+this.id+'-window').remove();
-		$('#'+this.id+'-topic').remove();
-		if(this.name.toLowerCase() == gateway.active.toLowerCase()) {
-			gateway.switchTab(gateway.tabHistoryLast(this.name));
-		}
-	}
-	this.rejoin = function() {
-		this.left = false;
-		$('#'+this.id+'-window').vprintf(messagePatterns.joinOwn, [gateway.niceTime(), this.name]);
-		if(this.name == gateway.active) {
-			this.restoreScroll();
-		}
-	}
-
-	this.appendMessage = function(type, args) {
-		var rescroll = false;
-		var messageData = $.vsprintf(type, args);
-		if(this.name.toLowerCase() == gateway.active.toLowerCase() && document.getElementById('chat-wrapper').scrollHeight >= $('#chat-wrapper').scrollTop() + $('#chat-wrapper').innerHeight()) {
-			this.saveScroll();
-			var rescroll = true;
-		}
-		$('#'+this.id+'-window').append(messageData);
-		if(rescroll && this.name.toLowerCase() == gateway.active.toLowerCase()) {
-			this.restoreScroll();
-		}
-		if(messageData == '' || messageData.match(/<span class="mode">/)){
-			return;
-		}
-		var qCookie = localStorage.getItem('channel'+md5(this.name));
-		if(qCookie) {
-			qCookie = Base64.decode(qCookie).split('\377');
-			if(qCookie.length >= 15){
-				qCookie.shift();
-			}
-		} else {
-			qCookie = [];
-		}
-		messageData = messageData.replace('<br />', '<br>');
-		qNewData = messageData.split('<br>');
-		var end = qNewData.pop();
-		if(end != ''){
-			qNewData.push(end);
-		}
-		qCookie = qCookie.concat(qNewData);
-		try {
-			localStorage.setItem('channel'+md5(this.name), Base64.encode(qCookie.join('\377')));
-		} catch(e){
-		}
-	}
-	this.setTopic = function(topic) {
-		$('#'+this.id+'-topic > h2').html(gateway.colorize(topic));
-		$('#'+this.id+'-topic > h2').click(disp.topicClick);
-		this.topic = topic;
-	}
-
-	$('<span/>').attr('id', this.id+'-window').hide().appendTo('#main-window');
-	$('<span/>').attr('id', this.id+'-topic').hide().appendTo('#topic');
-	$('#'+this.id+'-topic').html('<h1>'+$('<div/>').text(this.name).html()+'</h1><h2></h2>');
-	$('<li/>').attr('id', this.id+'-tab').html('<a href="javascript:void(0);" onclick="gateway.switchTab(\''+this.name+'\')" class="switchTab">'+$('<div/>').text(this.name).html()+'</a>'+
-		'<a href="javascript:void(0);" onclick="gateway.removeChannel(\''+this.name+'\')"><div class="close" title="Wyjdź z kanału"></div></a>').appendTo('#tabs');
-	
-	var qCookie = localStorage.getItem('channel'+md5(this.name));
-	
-	if(qCookie) {
-		qCookie = Base64.decode(qCookie).split('\377').join('<br>');
-		$('#'+this.id+'-window').append('<div class="backlog"></div>');
-		$('#'+this.id+'-window .backlog').vprintf(messagePatterns.channelBacklog, [gateway.niceTime(), $('<div/>').text(this.name).html()]);
-		$('#'+this.id+'-window .backlog').append(qCookie+'<br>');
-		$('#'+this.id+'-window .backlog').vprintf(messagePatterns.channelBacklogEnd, [gateway.niceTime()]);
-	}
-}
-
-function Status() {
-	this.name = "--status";
-	this.id = "--status";
-	this.hilight = false;
-	this.classAdded = false;
-	this.scrollPos = 0;
-	this.scrollSaved = false;
-
-	this.toggleClass = function() {
-		if(this.ClassAdded) {
-			$('#'+this.id+'-tab').removeClass('newmsg');
-			this.ClassAdded = false;
-		} else if(this.hilight) {
-			$('#'+this.id+'-tab').addClass('newmsg');
-			this.ClassAdded = true;
-		}
-	}
-	this.restoreScroll = function() {
-		var active = gateway.getActive();
-		if(active){
-			return;
-		}
-		if(this.scrollSaved) {
-			$('#chat-wrapper').scrollTop(this.scrollPos);
-		} else {
-			$('#chat-wrapper').scrollTop(document.getElementById('chat-wrapper').scrollHeight);
-		}
-	}
-	this.saveScroll = function() {
-		if($('#chat-wrapper').scrollTop()+document.getElementById('chat-wrapper').clientHeight > document.getElementById('chat-wrapper').scrollHeight-150 && $('#chat-wrapper').scrollTop()+document.getElementById('chat-wrapper').clientHeight > document.getElementById('chat-wrapper').scrollHeight*0.97)   {
-			this.scrollSaved = false;
-			this.scrollPos = 0;
-		} else {
-			this.scrollSaved =  true;
-			this.scrollPos = $('#chat-wrapper').scrollTop();
-		}
-	}
-	this.toggleClassMsg = function() {
-		if(this.ClassAddedMsg) {
-			$('#'+this.id+'-tab').removeClass('newmsg2');
-			this.ClassAddedMsg = false;
-		} else {
-			$('#'+this.id+'-tab').addClass('newmsg2');
-			this.ClassAddedMsg = true;
-		}
-	}
-	this.markNew = function() {
-		disp.playSound();
-		if(!this.hilight) {
-			this.hilight = window.setInterval('gateway.statusWindow.toggleClass();', 500);
-		}
-		
-		if (this.hilight2) {
-			window.clearInterval(this.hilight2);
-			this.hilight2 = false;
-			if(this.classAddedMsg) {
-				this.toggleClassMsg();
-			}
-			setTimeout("$('#"+this.id+"-tab').removeClass('newmsg2')", 100);
-			setTimeout("$('#"+this.id+"-tab').removeClass('newmsg2')", 300);
-			setTimeout("$('#"+this.id+"-tab').removeClass('newmsg2')", 500);
-		}
-		if(!disp.focused){
-			if(disp.titleBlinkInterval){
-				clearInterval(disp.titleBlinkInterval);
-			}
-			disp.titleBlinkInterval = setInterval(function(){
-				var title = document.title;
-				document.title = (title == newMessage ? ($('<div/>').text(guser.nick).html()+' @ PIRC.pl') : newMessage);
-			}, 500);
-		}
-	}
-	this.markBold = function() {
-		if(!this.hilight2 && !this.hilight) {
-			this.hilight2 = window.setInterval('gateway.statusWindow.toggleClassMsg();', 500);
-		}
-	}
-	this.markRead = function() {
-		if(this.hilight) {
-			window.clearInterval(this.hilight);
-			this.hilight = false;
-		}
-		
-		if(this.hilight2) {
-			window.clearInterval(this.hilight2);
-			this.hilight2 = false;
-		}
-		
-		if(this.classAdded) {
-			this.toggleClass();
-		}
-		if(this.classAddedMsg) {
-			this.toggleClassMsg();
-		}
-		clearInterval(disp.titleBlinkInterval);
-		disp.titleBlinkInterval = false;
-		if(document.title == newMessage) document.title = $('<div/>').text(guser.nick).html()+' @ PIRC.pl';
-		$('#'+this.id+'-tab > a').css('font-weight', 'normal');
-		setTimeout("$('#"+this.id+"-tab').removeClass('newmsg')", 100);
-		setTimeout("$('#"+this.id+"-tab').removeClass('newmsg')", 300);
-		setTimeout("$('#"+this.id+"-tab').removeClass('newmsg')", 600);
-		
-		setTimeout("$('#"+this.id+"-tab').removeClass('newmsg2')", 100);
-		setTimeout("$('#"+this.id+"-tab').removeClass('newmsg2')", 300);
-		setTimeout("$('#"+this.id+"-tab').removeClass('newmsg2')", 600);
-	}
-	this.appendMessage = function(type, args) {
-		var rescroll = false;
-		if(this.name.toLowerCase() == gateway.active.toLowerCase() && document.getElementById('chat-wrapper').scrollHeight >= $('#chat-wrapper').scrollTop() + $('#chat-wrapper').innerHeight()) {
-			this.saveScroll();
-			var rescroll = true;
-		}
-		$('#'+this.id+'-window').vprintf(type, args);
-		if(rescroll && this.name.toLowerCase() == gateway.active.toLowerCase()) {
-			this.restoreScroll();
-		}
-	}
 }
 
 var settings = {
@@ -766,24 +17,17 @@ var settings = {
 		document.cookie = cname+'='+cvalue+'; expires='+expireTime.toGMTString();
 	},
 	'getCookie': function(cname) {
-	    var nameEQ = cname + "=";
-    	var ca = document.cookie.split(';');
-    	for(var i=0;i < ca.length;i++) {
-    	    var c = ca[i];
-    	    while (c.charAt(0)==' ') c = c.substring(1,c.length);
-    	    if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
-    	}
-    	return null;
-	}
+		var nameEQ = cname + "=";
+		var ca = document.cookie.split(';');
+		for(var i=0;i < ca.length;i++) {
+			var c = ca[i];
+			while (c.charAt(0)==' ') c = c.substring(1,c.length);
+			if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+		}
+		return null;
+	},
+	'backlogLength': 15
 }
-
-var statusDisconnected = 0;
-var status001 = 1;
-var statusGhostSent = 2;
-var statusIdentified = 3;
-var statusConnected = 4;
-var statusGhostAndNickSent = 5;
-var statusError = 6;
 
 var disp = {
 	'size': 1,
@@ -841,22 +85,24 @@ var disp = {
 		comboSettings.forEach(function(sname){
 			settings.saveCookie(sname, $('#'+sname).val());
 		});
+
+		numberSettings.forEach(function(sname){
+			var value = $('#'+sname).val();
+			if(isNaN(parseFloat(value)) || value < numberSettingsMinMax[sname]['min'] || value > numberSettingsMinMax[sname]['max']){
+				value = numberSettingsMinMax[sname]['deflt'];
+				$('#'+sname).val(value);
+			}
+			settings.saveCookie(sname, value);
+		});
+		settings.backlogLength = parseInt($('#backlogCount').val());
 		if ($('#tabsListBottom').is(':checked')) {
 			$('#top_menu').detach().insertAfter('#inputbox');
-			$('#top_menu').css('top', 'auto').css('bottom', '0');
-			$('#options-box').css('top', '.8em');
-			$('#info').css('top', '0');
-			$('#chatbox').css('top', '2.2em').css('bottom', '7em');
-			$('#nicklist').css('top', '2.2em').css('bottom', '7em');
-			$('#inputbox').css('bottom', '3.2em');
+			if($('#tabsDownCss').length == 0) {
+				$('head').append('<link rel="stylesheet" type="text/css" href="/styles/gateway_tabs_down.css" id="tabsDownCss">');
+			}
 		} else {
 			$('#top_menu').detach().insertAfter('#options-box');
-			$('#top_menu').css('bottom', 'auto').css('top', '0');
-			$('#options-box').css('top', '');
-			$('#info').css('top', '');
-			$('#chatbox').css('top', '').css('bottom', '');
-			$('#nicklist').css('top', '').css('bottom', '');
-			$('#inputbox').css('bottom', '');
+			$('#tabsDownCss').remove();
 		}
 		if ($('#blackTheme').is(':checked')) {
 			if($('#blackCss').length == 0) {
@@ -874,7 +120,7 @@ var disp = {
 			}
 		}
 	},
-    'showSizes': function() {
+	'showSizes': function() {
 		$('.tsizewindow').fadeIn(200);
 	},
 	'topicClick': function() {
@@ -884,7 +130,7 @@ var disp = {
 		}
 		var html = '<h2>Temat kanału '+channel.name+'</h2><p>'+$('#'+channel.id+'-topic > h2').html()+'</p>' +
 			'<p class="' + channel.id + '-operActions" style="display:none;">' +
-				'<b>Zmodyfikuj temat kanału:</b><textarea name="topicEdit" id="topicEdit">'+gateway.colorsToTags(channel.topic)+'</textarea>' +
+				'<b>Zmodyfikuj temat kanału:</b><textarea name="topicEdit" id="topicEdit">'+$$.colorsToTags(channel.topic)+'</textarea>' +
 				'<button onclick="gateway.changeTopic(\''+channel.name+'\');">Zmień temat</button>' +
 			'</p>';
 		$(".notify-text").html(html);
@@ -899,14 +145,6 @@ var disp = {
 		$('#sound').html('<audio autoplay="autoplay"><source src="' + filename + '.mp3" type="audio/mpeg" /><source src="' + filename + '.ogg" type="audio/ogg" /><embed hidden="true" autostart="true" loop="false" src="' + filename +'.mp3" /></audio>');
 	}
 };
-
-var stateStart = 0;
-var stateSenderNick = 1;
-var stateArgs = 2;
-var stateMessage = 3;
-var stateCommand = 4;
-var stateSenderUser = 5;
-var stateSenderHost = 6;
 
 var irc = {
 	'messagedata': function() {
@@ -1104,23 +342,6 @@ var services = {
 	}
 };
 
-var banData = {
-    'nick' : '',
-	'channel' : '',
-	'noIdent' : false,
-	'ident' : '',
-	'hostElements' : [],
-	'hostElementSeparators' : [],
-   	'clear' : function(){
-	    banData.nick = '';
-		banData.channel = '';
-		banData.noIdent = false;
-		banData.ident = '';
-		banData.hostElements = [];
-		banData.hostElementSeparators = [];
-    }
-}
-
 var gateway = {
 	'websock': 0,
 	'whois': '',
@@ -1157,7 +378,6 @@ var gateway = {
 			$('#reconnect_wrapper').fadeOut(50);
 			gateway.connect(true);
 		}, 500);
-//			$(this).fadeOut(50);
 	},
 	'iKnowIAmConnected': function() { //użytkownik może już pisać na kanale
 		if(!gateway.pingIntervalID){
@@ -1195,10 +415,10 @@ var gateway = {
 			return;
 		}
 		gateway.disconnectMessageShown = 1;
-        for(c in gateway.channels) {
-            gateway.channels[c].part();
+		for(c in gateway.channels) {
+			gateway.channels[c].part();
 			gateway.channels[c].appendMessage(messagePatterns.error, [gateway.niceTime(), text]);
-        }
+		}
 		gateway.statusWindow.appendMessage(messagePatterns.error, [gateway.niceTime(), text]);
 	},
 	'ping': function() { //pytanie IRCD o ping i błąd kiedy brak odpowiedzi
@@ -1214,7 +434,6 @@ var gateway = {
 			} else {
 				$('#reconnect_wrapper').fadeIn(50);
 			}
-	//		gateway.send('QUIT :Błąd bramki >> zbyt długi czas odpowiedzi serwera');
 			gateway.disconnected('Przekroczony czas odpowiedzi serwera');
 			gateway.pingcnt = 0;
 		} else {
@@ -1353,7 +572,7 @@ var gateway = {
 			}
 			if(gateway.connectStatus == statusGhostAndNickSent && guser.nick == guser.nickservnick){ //ghost się udał
 				gateway.send("PRIVMSG NickServ :IDENTIFY "+guser.nickservpass);
-			    $(".notify-text").append('<p>I już nie jest: usunąłem go używając twojego hasła :)</p>');
+				$(".notify-text").append('<p>I już nie jest: usunąłem go używając twojego hasła :)</p>');
 				gateway.connectStatus = statusIdentified;
 			}
 		} else {
@@ -1437,7 +656,7 @@ var gateway = {
 	'toSend': [],
 	'sendDelayCnt': 0,
 	'sendDelayed': function(data){
-	    gateway.toSend.push(data);
+		gateway.toSend.push(data);
 	},
 	'send': function(data) {
 		if(gateway.sendDelayCnt < 3){
@@ -1518,7 +737,7 @@ var gateway = {
 			return;
 		}
 		var newTopic = $('#topicEdit').val().replace(/\n/g, ' ');
-		gateway.send('TOPIC '+channel+' :'+gateway.tagsToColors(newTopic));
+		gateway.send('TOPIC '+channel+' :'+$$.tagsToColors(newTopic));
 		gateway.closeNotify();
 	},
 	'tabHistory': ['--status'],
@@ -1533,10 +752,10 @@ var gateway = {
 		if($("#nicklist").width() > 40) {
 			$("#nicklist").animate({
 				"opacity": "toggle",
-				"width":    "40px"
+				"width":	"40px"
 			}, 400);
 			$("#chatbox").animate({
-				"width":    "97%"
+				"width":	"97%"
 			}, 401, function () {
 				$("#nicklist-closed").fadeIn(200);
 				setTimeout(function(){
@@ -1562,10 +781,10 @@ var gateway = {
 		$("#nicklist-closed").fadeOut(200, function () {
 			$("#nicklist").animate({
 				"opacity": "toggle",
-				"width":    "23%"
+				"width":	"23%"
 			}, 400);
 			$("#chatbox").animate({
-				"width":    "77%"
+				"width":	"77%"
 			}, 401);
 			setTimeout(function(){
 				gateway.getActive().restoreScroll();
@@ -1582,7 +801,6 @@ var gateway = {
 		gateway.insert('[!color]' + (color<10?'0':'') + color.toString());
 	},
 	'insertCode': function(code) {
-/*		gateway.insert(String.fromCharCode(code));*/
 		var text = false;
 		switch(code){
 			case 2: text = '[!bold]'; break;
@@ -1594,236 +812,16 @@ var gateway = {
 		}
 		if(text) gateway.insert(text);
 	},
-	'getColor': function(numeric, what) {
-		var num = parseInt(numeric);
-		/*if (what == "foreground") {    
-			switch (num) {
-				case 0:  return 'white';
-				case 1:  return 'black';
-				case 2:  return '#002AA8';
-				case 3:  return '#1B7800';
-				case 4:  return '#C30003';
-				case 5:  return '#5F0002';
-				case 6:  return '#950093';
-				case 7:  return '#838900';
-				case 8:  return '#CED800';
-				case 9:  return '#07D800';
-				case 10: return '#00837E';
-				case 11: return '#00D5CD';
-				case 12: return '#0010D5';
-				case 13: return '#D500BF';
-				case 14: return '#8B8B8B';
-				default: return '#B9B9B9';
-			}
-		} else {*/
-			switch (num) {
-				case 0:  return 'white';
-				case 1:  return 'black';
-				case 2:  return '#1B54FF';
-				case 3:  return '#4BC128';
-				case 4:  return '#F15254';
-				case 5:  return '#9B4244';
-				case 6:  return '#D749D6';
-				case 7:  return '#AEB32F';
-				case 8:  return '#E7EF3B';
-				case 9:  return '#59FF54';
-				case 10: return '#00DFD6';
-				case 11: return '#60FFF8';
-				case 12: return '#5F6BFF';
-				case 13: return '#FF83F2';
-				case 14: return '#B5B5B5';
-				default: return '#E0E0E0';
-			}
-		//}
-	},
-	'parseTime': function(timestamp) {
-		var nd = new Date();
-		nd.setTime(timestamp*1000);
-		return $.vsprintf("%s, %s %s, %02s:%02s:%02s", [ gateway.dateWeek[nd.getDay()], nd.getDate(), gateway.dateMonth[nd.getMonth()], nd.getHours(), nd.getMinutes(), nd.getSeconds() ] );
-	},
-	'dateWeek': [ 'Niedziela', 'Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota' ],
-	'dateMonth': [ 'sty', 'lut', 'mar', 'kwi', 'maj', 'cze', 'lip', 'sie', 'wrz', 'paź', 'lis', 'gru' ],
-	'parseImages': function(text) {
-        var rmatch = text.match(/(https?:\/\/[^ ]+\.(png|jpeg|jpg|gif))/gi);
-        var html = '';
-        if(rmatch){
-        	rmatch.forEach(function(arg){
-        		var rand = Math.floor(Math.random() * 10000).toString();
-        		var imgurl = encodeURI(arg);
-        		html += '<a onclick="disp.toggleImageView(\''+rand+'\', \''+imgurl+'\')"'+
-        			' class="image_link"><span id="show-'+rand+'" style="display:inline;">Pokaż</span><span id="hide-'+rand+'" style="display:none;">Ukryj</span> obrazek</a>'+
-        			'<div style="display:none;" id="img-'+rand+'"><img id="imgc-'+rand+'" style="max-width:100%;" /></div>';
-        	});
-        }
-        
-        var rexpr = /https?:\/\/www.youtube.com\/watch\?[^ ]*v=([^ ]+)/i;
-        
-        var fmatch = text.match(/(https?:\/\/www.youtube.com\/watch\?[^ ]*v=[^ ?&]+)/gi);
-        if(fmatch){
-        	fmatch.forEach(function(arg){
-			    var rmatch = rexpr.exec(arg);
-			    if(rmatch[1]){
-		    		var rand = Math.floor(Math.random() * 10000).toString();
-		    		var imgurl = encodeURI(rmatch[1]);
-		    		html += '<a onclick="disp.toggleVideoView(\''+rand+'\', \''+imgurl+'\')"'+
-		    			' class="image_link"><span id="show-'+rand+'" style="display:inline;">Pokaż</span><span id="hide-'+rand+'" style="display:none;">Ukryj</span> film</a>'+
-		    			'<div style="display:none;" id="img-'+rand+'"><iframe width="560" height="315" id="vid-'+rand+'" frameborder="0" allowfullscreen></iframe></div>';
-		    	}
-	        });
-	    }
-	    return html;
-	},
-	'colorize': function(message) {
-		var pageBack  = 'white';
-		var pageFront = 'black';
-		var currBack = pageBack;
-		var currFront = pageFront;
-		var newText = '';
-		message = $('<div />').text(message).html(); 
-		message = gateway.parseLinks(message);
-		var length    = message.length;
-		
-		var bold = false;
-		var italic = false;
-		var underline = false;
-		var invert = false;
-		
-		var formatSet = false;
-		var formatWaiting = false;
-		
-		for (var i = 0 ; i < length ; i++) {
-		
-			var isText = false;
-			var append = '';
-			
-			switch (message.charAt(i)) {		
-				case String.fromCharCode(3):
-					if (!isNaN(parseInt(message.charAt(i+1)))) {
-						if (!isNaN(parseInt(message.charAt(++i+1)))) {
-							currFront = gateway.getColor(parseInt(message.charAt(i)) * 10 + parseInt(message.charAt(++i)), "foreground");
-						} else {
-							currFront = gateway.getColor(parseInt(message.charAt(i)), "foreground");
-						}
-						if ((message.charAt(i+1) == ',') && !isNaN(parseInt(message.charAt(++i+1)))) {
-							if (!isNaN(parseInt(message.charAt(++i+1)))) {
-								currBack = gateway.getColor(parseInt(message.charAt(i)) * 10 + parseInt(message.charAt(++i)), "background");
-							} else {
-								currBack = gateway.getColor(parseInt(message.charAt(i)), "background");
-							}
-						}
-					} else {
-						currFront = pageFront;
-						currBack = pageBack;
-					}
-					formatWaiting = true;
-					break;
-
-
-				case String.fromCharCode(15): // wyczyszczenie
-					currFront = pageFront;
-					currBack = pageBack;
-					bold = false;
-					italic = false;
-					underline = false;
-					invert = false;
-					formatWaiting = true;
-					break;
-					
-				case String.fromCharCode(2):
-					bold = !bold;
-					formatWaiting = true;
-					break;
-
-				case String.fromCharCode(22): // inwersja
-					invert = !invert;
-					formatWaiting = true;
-					break;
-				
-				case String.fromCharCode(29): // pochylenie - tylko kto je obsługuje?
-					italic = !italic;
-					formatWaiting = true;
-					break;
-
-				case String.fromCharCode(31): // podkreślenie
-					underline = !underline;
-					formatWaiting = true;
-					break;				
-				default:
-					isText = true;
-					append = message.charAt(i);
-					break;
-			}
-			
-			if(isText && formatWaiting){
-				formatWaiting = false;
-				if(formatSet){
-					newText += '</span>';
-					formatSet = false;
-				}
-				if(invert || italic || underline || bold || currFront != pageFront || currBack != pageBack){
-					formatSet = true;
-					newText += '<span style="';
-					newText += italic?'font-style:italic;':'';
-					newText += underline?'text-decoration:underline;':'';
-					newText += bold?'font-weight:bold;':'';
-					if(invert){
-						newText += 'color:'+currBack+';background-color:'+currFront+';';
-					} else {
-						if(currFront != pageFront){
-							newText += 'color:'+currFront+';';
-						}
-						if(currBack != pageBack){
-							newText += 'background-color:'+currBack+';';
-						}
-					}
-					newText += '"><wbr>';
-				}
-			}
-			if(isText){
-				newText += append;
-			}
-		}
-			
-
-		if(formatSet){
-			newText += '</span><wbr>';
-		}
-		return newText;
-	},
-	'parseLinks': function(text){
-		var newText = text;
-		var confirm= '';
-		var confirmChan = '';
-		if ($('#displayLinkWarning').is(':checked')) {
-			confirm = " onclick=\"return confirm('Link może być niebezpieczny, czy na pewno chcesz go otworzyć?')\"";
-			confirmChan = " onclick=\"return confirm('Czy chcesz dołączyć do wybranego kanału?')\"";
-		}
-		newText = newText.replace(/(http:\/\/[^ "'<>]+)/ig, "<a href=\"$1\" target=\"_blank\"" + confirm +">$1</a>");
-		newText = newText.replace(/(https:\/\/[^ "'<>]+)/ig, "<a href=\"$1\" target=\"_blank\"" + confirm +">$1</a>");
-		newText = newText.replace(/(ftp:\/\/[^ "'<>]+)/ig, "<a href=\"$1\" target=\"_blank\"" + confirm +">$1</a>");
-		newText = newText.replace(/([^[])(#[^, ]+)/g, "$1<a href=\"javascript:gateway.send('JOIN $2')\"" + confirmChan + ">$2</a>");
-		newText = newText.replace(/^(#[^, ]+)/g, "<a href=\"javascript:gateway.send('JOIN $1')\"" + confirmChan + ">$1</a>");
-		return newText;
-	},
 	'nextTab': function() {
 		var swtab = $('li.activeWindow').next().find('a.switchTab');
 		if(swtab){
 			swtab.trigger('click');
-		/*	var container = $('#tab-wrapper'),
-				scrollTo = $('li.activeWindow');
-
-			container.scrollLeft(container.scrollLeft() + scrollTo.width());*/
 		}
 	},
 	'prevTab': function() {
 		var swtab = $('li.activeWindow').prev().find('a.switchTab');
 		if(swtab){
 			swtab.trigger('click');
-	/*		var container = $('#tab-wrapper'),
-				scrollTo = $('li.activeWindow');
-
-			container.scrollLeft(container.scrollLeft() - scrollTo.width());
-			$('#tab-wrapper').scrollTo(swtab);*/
 		}
 	},
 	'switchTab': function(chan) {
@@ -1852,10 +850,10 @@ var gateway = {
 				$("#nicklist-closed").fadeOut(1, function () {
 					$("#nicklist").animate({
 						"opacity": "toggle",
-						"width":    "23%"
+						"width":	"23%"
 					}, 1);
 					$("#chatbox").animate({
-						"width":    "77%"
+						"width":	"77%"
 					}, 1, function() {
 						gateway.findChannel(chan).restoreScroll();
 						setTimeout(function(){
@@ -1886,10 +884,10 @@ var gateway = {
 			if($("#nicklist").width() > 40) {
 				$("#nicklist").animate({
 					"opacity": "toggle",
-					"width":    "40px"
+					"width":	"40px"
 				}, 1);
 				$("#chatbox").animate({
-					"width":    "97%"
+					"width":	"97%"
 				}, 1, function () {
 					$("#nicklist-closed").fadeIn(1);
 					gateway.findQuery(chan).restoreScroll();
@@ -1921,10 +919,10 @@ var gateway = {
 			if($("#nicklist").width() > 40) {
 				$("#nicklist").animate({
 					"opacity": "toggle",
-					"width":    "40px"
+					"width":	"40px"
 				}, 1);
 				$("#chatbox").animate({
-					"width":    "97%"
+					"width":	"97%"
 				}, 1, function () {
 					$("#nicklist-closed").fadeIn(1);
 					gateway.statusWindow.restoreScroll();
@@ -1983,38 +981,20 @@ var gateway = {
 			return false;
 		}
 	},
-	'colorsToTags': function(input){
-		input = input.replace(/\003/g, '[!color]');
-		input = input.replace(/\002/g, '[!bold]');
-		input = input.replace(/\026/g, '[!invert]');
-		input = input.replace(/\017/g, '[!reset]');
-		input = input.replace(/\035/g, '[!italic]');
-		input = input.replace(/\037/g, '[!uline]');
-		return input;
-	},
-	'tagsToColors': function(input){
-		input = input.replace(/\[!color\]/g, String.fromCharCode(3));
-		input = input.replace(/\[!bold\]/g, String.fromCharCode(2));
-		input = input.replace(/\[!invert\]/g, String.fromCharCode(22));
-		input = input.replace(/\[!reset\]/g, String.fromCharCode(15));
-		input = input.replace(/\[!italic\]/g, String.fromCharCode(29));
-		input = input.replace(/\[!uline\]/g, String.fromCharCode(31));
-		return input;
-	},
 	'parseUserInput': function(input) {
 		if(!input){
 			input = '';
 		}
-		input = gateway.tagsToColors(input);
+		input = $$.tagsToColors(input);
 		if (input) {
 			if(gateway.connectStatus > 0) {
 				if(input.charAt(0) == "/") {
 					command = input.slice(1).split(" ");
 					if(!gateway.callCommand(command, input)) {
 						if (gateway.getActive()) {
-							gateway.getActive().appendMessage(messagePatterns.noSuchCommand, [gateway.niceTime(), $('<div/>').text(command[0]).html()]);
+							gateway.getActive().appendMessage(messagePatterns.noSuchCommand, [gateway.niceTime(), he(command[0])]);
 						} else {
-							gateway.statusWindow.appendMessage(messagePatterns.noSuchCommand, [gateway.niceTime(), $('<div/>').text(command[0]).html()]);
+							gateway.statusWindow.appendMessage(messagePatterns.noSuchCommand, [gateway.niceTime(), he(command[0])]);
 						}
 					}
 				} else {
@@ -2024,9 +1004,9 @@ var gateway = {
 							var sendNow = textToSend.substring(0, 420);
 							textToSend = textToSend.substring(420);
 							gateway.send("PRIVMSG " + gateway.getActive().name + " :" + sendNow);
-							gateway.getActive().appendMessage(messagePatterns.yourMsg, [gateway.niceTime(), guser.nick, gateway.colorize(sendNow)]);
+							gateway.getActive().appendMessage(messagePatterns.yourMsg, [gateway.niceTime(), guser.nick, $$.colorize(sendNow)]);
 						} while (textToSend != "");
-						gateway.getActive().appendMessage('%s', [gateway.parseImages(input)]);
+						gateway.getActive().appendMessage('%s', [$$.parseImages(input)]);
 					}
 				}
 			} else {
@@ -2038,7 +1018,7 @@ var gateway = {
 			}
 			$("#input").val("");
 		}
-    },
+	},
 	'commandHistory': [],
 	'commandHistoryPos': -1,
 	'inputFocus': function() {
@@ -2046,243 +1026,245 @@ var gateway = {
 			$("#input").focus();
 		}
 	},
-    'closeNotify': function() {
-        $(".notifywindow").fadeOut(200, function () {
-            $(".notify-text").delay(300).text(" ");
+	'closeNotify': function() {
+		$(".notifywindow").fadeOut(200, function () {
+			$(".notify-text").delay(300).text(" ");
 			gateway.inputFocus();
-        });
-    },
-    'closeNotice': function() {
-        $(".noticewindow").fadeOut(200, function () {
-            $(".notice-text").delay(300).text(" ");
-            gateway.lastNoticeNick = false;
+		});
+	},
+	'closeNotice': function() {
+		$(".noticewindow").fadeOut(200, function () {
+			$(".notice-text").delay(300).text(" ");
+			gateway.lastNoticeNick = false;
 			gateway.inputFocus();
-        });
-    },
-    'closeStatus': function() {
-        $(".statuswindow").fadeOut(200, function () {
-            $(".status-text").delay(300).text(" ");
+		});
+	},
+	'closeStatus': function() {
+		$(".statuswindow").fadeOut(200, function () {
+			$(".status-text").delay(300).text(" ");
 			gateway.inputFocus();
-        });
-    },
-    'closeError': function() {
-        $(".errorwindow").fadeOut(200, function () {
-            $(".error-text").delay(300).text(" ");
+		});
+	},
+	'closeError': function() {
+		$(".errorwindow").fadeOut(200, function () {
+			$(".error-text").delay(300).text(" ");
 			gateway.inputFocus();
-        });
-    },
-    'showStatus': function(channel, nick) {
-        $(".status-text").text(" ");
-        $(".status-text").append("<h3>Daj uprawnienia</h3>");
-        $(".status-text").append("<p>Daj u\u017cytkownikowi "+$('<div/>').text(nick).html()+" uprawnienia na kanale "+$('<div/>').text(channel).html()+":</p><p><br /></p>");
-        $(".status-text").append("<p class='statusbutton' onClick='gateway.send(\"MODE "+channel+" +q "+gateway.sescape(nick)+"\"); gateway.closeStatus()'>FOUNDER (Właściciel kanału)</p>");
-        $(".status-text").append("<p class='statusbutton' onClick='gateway.send(\"MODE "+channel+" +a "+gateway.sescape(nick)+"\"); gateway.closeStatus()'>PROTECT (Ochrona przed kopnięciem)</p>");
-        $(".status-text").append("<p class='statusbutton' onClick='gateway.send(\"MODE "+channel+" +o "+gateway.sescape(nick)+"\"); gateway.closeStatus()'>OP (Operator kanału)</p>");
-        $(".status-text").append("<p class='statusbutton' onClick='gateway.send(\"MODE "+channel+" +h "+gateway.sescape(nick)+"\"); gateway.closeStatus()'>HALFOP (Pół-operator kanału)</p>");
-        $(".status-text").append("<p class='statusbutton' onClick='gateway.send(\"MODE "+channel+" +v "+gateway.sescape(nick)+"\"); gateway.closeStatus()'>VOICE (Uprawnienie do głosu)</p>");
-        $(".statuswindow").fadeIn(200);
-    },
-    'showTopic': function(channel) {
-        $(".status-text").text(" ");
-        $(".status-text").append("<h3>Zmiana tematu</h3>");
-        $(".status-text").append("<p>Zmień temat na kanale"+$('<div/>').text(channel).html()+"</p><p><br /></p>");
-        $(".status-text").append("<input type=\"text\" class=\"topicinput\" />");
-        $(".status-text").append("<input type=\"submit\" value=\"ustaw\" onClick='gateway.send(\"TOPIC "+channel+" :\"+$(\".topicinput\").val()); gateway.closeStatus()' />");
-        $(".statuswindow").fadeIn(200);
-    },
-    'showStatusAnti': function(channel, nick) {
-        $(".status-text").text(" ");
-        $(".status-text").append("<h3>Odbierz uprawnienia</h3>");
-        $(".status-text").append("<p>Odbierz u\u017cytkownikowi "+$('<div/>').text(nick).html()+" uprawnienia na kanale "+$('<div/>').text(channel).html()+":</p><p><br /></p>");
-        $(".status-text").append("<p class='statusbutton' onClick='gateway.send(\"MODE "+channel+" -q "+gateway.sescape(nick)+"\"); gateway.closeStatus()'>FOUNDER (Właściciel kanału)</p>");
-        $(".status-text").append("<p class='statusbutton' onClick='gateway.send(\"MODE "+channel+" -a "+gateway.sescape(nick)+"\"); gateway.closeStatus()'>PROTECT (Ochrona przed kopnięciem)</p>");
-        $(".status-text").append("<p class='statusbutton' onClick='gateway.send(\"MODE "+channel+" -o "+gateway.sescape(nick)+"\"); gateway.closeStatus()'>OP (Operator kanału)</p>");
-        $(".status-text").append("<p class='statusbutton' onClick='gateway.send(\"MODE "+channel+" -h "+gateway.sescape(nick)+"\"); gateway.closeStatus()'>HALFOP (Pół-operator kanału)</p>");
-        $(".status-text").append("<p class='statusbutton' onClick='gateway.send(\"MODE "+channel+" -v "+gateway.sescape(nick)+"\"); gateway.closeStatus()'>VOICE (Uprawnienie do głosu)</p>");
-        $(".statuswindow").fadeIn(200);
-    },
-    'showKick' : function(channel, nick) {
-        $(".status-text").text(" ");
-        $(".status-text").append("<h3>KICK</h3>");
-        $(".status-text").append("<p>Wyrzuć użytkownika "+$('<div/>').text(nick).html()+" z kanału "+$('<div/>').text(channel).html()+". Możesz podać powód dla KICKa, który zostanie wyświetlony dla wszystkich użytkowników kanału.</p>");
-        $(".status-text").append("<input type='text' class='kickinput' maxlenght='307' />");
-        $(".status-text").append("<p class='statusbutton' onClick='if ($(\".kickinput\").val() != \"\") { gateway.send(\"KICK "+channel+" "+nick+" :\" + $(\".kickinput\").val()); } else { gateway.send(\"KICK "+channel+" "+nick+"\"); } gateway.closeStatus()'>Wyrzuć</p>");
-        $(".statuswindow").fadeIn(200);
-    },
-    'showBan' : function(channel, nick) {
-        $(".status-text").text(" ");
-        banData.clear();
-        banData.nick = nick;
-        banData.channel = channel;
+		});
+	},
+	'showStatus': function(channel, nick) {
+	  	var html = "<h3>Daj uprawnienia</h3>" +
+			"<p>Daj użytkownikowi "+he(nick)+" uprawnienia na kanale "+he(channel)+":</p><p><br /></p>" +
+			"<p class='statusbutton' onClick='gateway.send(\"MODE "+channel+" +q "+gateway.sescape(nick)+"\"); gateway.closeStatus()'>FOUNDER (Właściciel kanału)</p>" +
+			"<p class='statusbutton' onClick='gateway.send(\"MODE "+channel+" +a "+gateway.sescape(nick)+"\"); gateway.closeStatus()'>PROTECT (Ochrona przed kopnięciem)</p>" +
+			"<p class='statusbutton' onClick='gateway.send(\"MODE "+channel+" +o "+gateway.sescape(nick)+"\"); gateway.closeStatus()'>OP (Operator kanału)</p>" +
+			"<p class='statusbutton' onClick='gateway.send(\"MODE "+channel+" +h "+gateway.sescape(nick)+"\"); gateway.closeStatus()'>HALFOP (Pół-operator kanału)</p>" +
+			"<p class='statusbutton' onClick='gateway.send(\"MODE "+channel+" +v "+gateway.sescape(nick)+"\"); gateway.closeStatus()'>VOICE (Uprawnienie do głosu)</p>";
+		$(".status-text").html(html);
+		$(".statuswindow").fadeIn(200);
+	},
+	'showStatusAnti': function(channel, nick) {
+		var html = "<h3>Odbierz uprawnienia</h3>" +
+			"<p>Odbierz użytkownikowi "+he(nick)+" uprawnienia na kanale "+he(channel)+":</p><p><br /></p>" +
+			"<p class='statusbutton' onClick='gateway.send(\"MODE "+channel+" -q "+gateway.sescape(nick)+"\"); gateway.closeStatus()'>FOUNDER (Właściciel kanału)</p>" +
+			"<p class='statusbutton' onClick='gateway.send(\"MODE "+channel+" -a "+gateway.sescape(nick)+"\"); gateway.closeStatus()'>PROTECT (Ochrona przed kopnięciem)</p>" +
+			"<p class='statusbutton' onClick='gateway.send(\"MODE "+channel+" -o "+gateway.sescape(nick)+"\"); gateway.closeStatus()'>OP (Operator kanału)</p>" +
+			"<p class='statusbutton' onClick='gateway.send(\"MODE "+channel+" -h "+gateway.sescape(nick)+"\"); gateway.closeStatus()'>HALFOP (Pół-operator kanału)</p>" +
+			"<p class='statusbutton' onClick='gateway.send(\"MODE "+channel+" -v "+gateway.sescape(nick)+"\"); gateway.closeStatus()'>VOICE (Uprawnienie do głosu)</p>";
+			$(".status-text").html(html);
+		$(".statuswindow").fadeIn(200);
+	},
+	'showChannelModes': function(channel) {
+		var html = "<h3>Zmień tryby kanału "+he(channel)+"</h3>" +
+			"<table><tr><th>Litera</th><th>Opis</th></tr>" +
+			'<tr><td>m</td><td>Kanał moderowany</td><td class="button"><button onclick="gateway.send(\'MODE '+channel+' +m\')">Ustaw</button></td><td class="button"><button onclick="gateway.send(\'MODE '+channel+' -m\')">Zdejmij</button></td></tr>' +
+			'<tr><td>i</td><td>Tylko na zaproszenie</td><td class="button"><button onclick="gateway.send(\'MODE '+channel+' +i\')">Ustaw</button></td><td class="button"><button onclick="gateway.send(\'MODE '+channel+' -i\')">Zdejmij</button></td></tr>' +
+			'<tr><td>s</td><td>Kanał ukryty</td><td class="button"><button onclick="gateway.send(\'MODE '+channel+' +s\')">Ustaw</button></td><td class="button"><button onclick="gateway.send(\'MODE '+channel+' -s\')">Zdejmij</button></td></tr>' +
+			'</table>';
+			$(".status-text").html(html);
+		$(".statuswindow").fadeIn(200);
+	},
+	'showKick' : function(channel, nick) {
+		var html = "<h3>KICK</h3>" +
+			"<p>Wyrzuć użytkownika "+he(nick)+" z kanału "+he(channel)+". Możesz podać powód dla KICKa, który zostanie wyświetlony dla wszystkich użytkowników kanału.</p>" +
+			"<input type='text' class='kickinput' maxlenght='307' />" +
+			"<p class='statusbutton' onClick='if ($(\".kickinput\").val() != \"\") { gateway.send(\"KICK "+channel+" "+nick+" :\" + $(\".kickinput\").val()); } else { gateway.send(\"KICK "+channel+" "+nick+"\"); } gateway.closeStatus()'>Wyrzuć</p>";
+		$(".status-text").html(html);
+		$(".statuswindow").fadeIn(200);
+	},
+	'showBan' : function(channel, nick) {
+		$(".status-text").text(" ");
+		banData.clear();
+		banData.nick = nick;
+		banData.channel = channel;
 
-        var nickListItem = gateway.findChannel(channel).nicklist.findNick(nick);
-        var host = nickListItem.host;
-        var ident = nickListItem.ident;
-        var nline = '<td><input type="checkbox" onchange="gateway.banFormatView()" id="banNick" checked="checked"></td><td></td>';
-        var html = '<h3>Ban</h3>' +
-        	"<p>Zablokuj dostęp dla "+$('<div/>').text(nick).html()+" na kanale "+$('<div/>').text(channel).html()+".</p>" +
-        	'<form action="javascript:void"><table>' +
-        		'<tr><td>' + nick + '</td><td>!</td>';
-        if(ident.charAt(0) == '~'){
-        	html += '<td>~</td>';
-        	nline += '<td><input onchange="gateway.banFormatView()" type="checkbox" id="banNoIdent"></td>';
-        	ident = ident.substr(1);
-        	banData.noIdent = true;
-        }
-        banData.ident = ident;
-        html += '<td>'+ident+'</td><td>@</td>'
-        nline += '<td><input type="checkbox" onchange="gateway.banFormatView()" id="banIdentText" checked="checked"></td><td></td>';
-        
-        var i = 0;
-        var cnt = 0;
-        var hostElement = '';
-        
-        do {
-        	var c = host.charAt(i);
-        	switch(c){
-        		default: hostElement += c; break;
-        		case ':': case '.':
-        			html += '<td>'+hostElement+'</td><td>'+c+'</td>';
-        			nline += '<td><input type="checkbox" onchange="gateway.banFormatView()" id="banHostElement'+cnt+'"></td><td></td>';
-        			banData.hostElements.push(hostElement);
-        			banData.hostElementSeparators.push(c);
-        			hostElement = '';
-        			cnt++;
-        			break;
-        	}
-        	i++;
-        } while(host.charAt(i));
-        banData.hostElements.push(hostElement);
-        html += '<td>'+hostElement+'</td>';
-        nline += '<td><input type="checkbox" onchange="gateway.banFormatView()" id="banHostElement'+cnt+'" checked="checked"></td>';
-        html += '</tr><tr>'+nline+'</tr></table></form>' +
-        	'<p>Postać bana: <span id="banFormat"></span></p>' + 
-  //      $(".status-text").append("<input type='text' class='kickinput' maxlenght='307' />");
-        	'<p class="statusbutton" onClick="gateway.banClick()">Banuj</p>';
-        $(".status-text").html(html);
-        if(cnt > 0){
-        	$('#banHostElement'+(cnt-1)).prop('checked', true);
-        }
-        $(".statuswindow").fadeIn(200);
-        gateway.banFormatView();
-    },
-    'banClick': function() {
-    },
-    'banFormatView': function() {
-    	var banFormat = '';
-    	if($('#banNick').is(':checked')){
-    		banFormat += banData.nick;
-    	} else {
-    		banFormat += '*';
-    	}
-    	banFormat += '!';
-    	if(banData.noIdent){
-    		if($('#banNoIdent').is(':checked')){
-    			banFormat += '~';
-    		} else {
-    			banFormat += '*';
-    		}
-    	}
-    	if($('#banIdentText').is(':checked')){
-    		banFormat += banData.ident;
-    	} else {
-    		banFormat += '*';
-    	}
-    	banFormat += '@';
-    	var len = banData.hostElements.length;
-    	var hostElementAdded = false;
-    	for(var i=0;i<len;i++){
-    		if($('#banHostElement' + i).is(':checked')){
-    			if(!hostElementAdded){
-    				hostElementAdded = true;
-    				if(i > 0){
-    					banFormat += '*'+lastSeparator;
-    				}
-    			}
-    			banFormat += banData.hostElements[i];
-    			
-    		} else {
-    			if(hostElementAdded) {
-	    			banFormat += '*';
-	    		} else {
-	    			var lastSeparator = banData.hostElementSeparators[i];
-	    		}
-    		}
-    		if(hostElementAdded && i < len-1){
-    			banFormat += banData.hostElementSeparators[i];
-    		}
-    	}
-    	if(!hostElementAdded){
-    		banFormat += '*';
-    	}
-    	$('#banFormat').text(banFormat);
-    	return banFormat;
-    },
-    'getActive': function() {
-        if(gateway.active == '--status') {
-            return false;
-        } else if(gateway.findChannel(gateway.active)) {
-            return gateway.findChannel(gateway.active);
-        } else if(gateway.findQuery(gateway.active)) {
-            return gateway.findQuery(gateway.active);
-        } else {
-            return false;
-        }
-    },
-    'active': '--status',
-    'toggleNickOpt': function(nicklistid) {
-        if($('#'+nicklistid+'-opt').is(':visible')) {
-    		if($('#'+nicklistid+'-opt-info').is(':visible')){
+		var nickListItem = gateway.findChannel(channel).nicklist.findNick(nick);
+		var host = nickListItem.host;
+		var ident = nickListItem.ident;
+		var nline = '<td><input type="checkbox" onchange="gateway.banFormatView()" id="banNick" checked="checked"></td><td></td>';
+		var html = '<h3>Ban</h3>' +
+			"<p>Zablokuj dostęp dla "+he(nick)+" na kanale "+he(channel)+".</p>" +
+			'<form action="javascript:void"><table>' +
+				'<tr><td>' + nick + '</td><td>!</td>';
+		if(ident.charAt(0) == '~'){
+			html += '<td>~</td>';
+			nline += '<td><input onchange="gateway.banFormatView()" type="checkbox" id="banNoIdent"></td>';
+			ident = ident.substr(1);
+			banData.noIdent = true;
+		}
+		banData.ident = ident;
+		html += '<td>'+ident+'</td><td>@</td>'
+		nline += '<td><input type="checkbox" onchange="gateway.banFormatView()" id="banIdentText" checked="checked"></td><td></td>';
+		
+		var i = 0;
+		var cnt = 0;
+		var hostElement = '';
+		
+		do {
+			var c = host.charAt(i);
+			switch(c){
+				default: hostElement += c; break;
+				case ':': case '.':
+					html += '<td>'+hostElement+'</td><td>'+c+'</td>';
+					nline += '<td><input type="checkbox" onchange="gateway.banFormatView()" id="banHostElement'+cnt+'"></td><td></td>';
+					banData.hostElements.push(hostElement);
+					banData.hostElementSeparators.push(c);
+					hostElement = '';
+					cnt++;
+					break;
+			}
+			i++;
+		} while(host.charAt(i));
+		banData.hostElements.push(hostElement);
+		html += '<td>'+hostElement+'</td>';
+		nline += '<td><input type="checkbox" onchange="gateway.banFormatView()" id="banHostElement'+cnt+'" checked="checked"></td>';
+		html += '</tr><tr>'+nline+'</tr></table></form>' +
+			'<p>Postać bana: <span id="banFormat"></span></p>' + 
+  //	  $(".status-text").append("<input type='text' class='kickinput' maxlenght='307' />");
+			'<p class="statusbutton" onClick="gateway.banClick()">Banuj</p>';
+		$(".status-text").html(html);
+		if(cnt > 0){
+			$('#banHostElement'+(cnt-1)).prop('checked', true);
+		}
+		$(".statuswindow").fadeIn(200);
+		gateway.banFormatView();
+	},
+	'banClick': function() {
+	},
+	'banFormatView': function() {
+		var banFormat = '';
+		if($('#banNick').is(':checked')){
+			banFormat += banData.nick;
+		} else {
+			banFormat += '*';
+		}
+		banFormat += '!';
+		if(banData.noIdent){
+			if($('#banNoIdent').is(':checked')){
+				banFormat += '~';
+			} else {
+				banFormat += '*';
+			}
+		}
+		if($('#banIdentText').is(':checked')){
+			banFormat += banData.ident;
+		} else {
+			banFormat += '*';
+		}
+		banFormat += '@';
+		var len = banData.hostElements.length;
+		var hostElementAdded = false;
+		for(var i=0;i<len;i++){
+			if($('#banHostElement' + i).is(':checked')){
+				if(!hostElementAdded){
+					hostElementAdded = true;
+					if(i > 0){
+						banFormat += '*'+lastSeparator;
+					}
+				}
+				banFormat += banData.hostElements[i];
+				
+			} else {
+				if(hostElementAdded) {
+					banFormat += '*';
+				} else {
+					var lastSeparator = banData.hostElementSeparators[i];
+				}
+			}
+			if(hostElementAdded && i < len-1){
+				banFormat += banData.hostElementSeparators[i];
+			}
+		}
+		if(!hostElementAdded){
+			banFormat += '*';
+		}
+		$('#banFormat').text(banFormat);
+		return banFormat;
+	},
+	'getActive': function() {
+		if(gateway.active == '--status') {
+			return false;
+		} else if(gateway.findChannel(gateway.active)) {
+			return gateway.findChannel(gateway.active);
+		} else if(gateway.findQuery(gateway.active)) {
+			return gateway.findQuery(gateway.active);
+		} else {
+			return false;
+		}
+	},
+	'active': '--status',
+	'toggleNickOpt': function(nicklistid) {
+		if($('#'+nicklistid+'-opt').is(':visible')) {
+			if($('#'+nicklistid+'-opt-info').is(':visible')){
 				 $('#'+nicklistid+'-opt-info').hide('blind', {
-			        direction: "vertical"
-			    }, 300);
-			    $('#'+nicklistid+'-opt').removeClass('activeInfo');
+					direction: "vertical"
+				}, 300);
+				$('#'+nicklistid+'-opt').removeClass('activeInfo');
 			 }
-            $('#'+nicklistid+'-opt').hide('blind', {
-                direction: "vertical"
-            }, 300);
-            $('#'+nicklistid).removeClass('activeNick');
-        } else {
-            $('#'+nicklistid+'-opt').show('blind', {
-                direction: "vertical"
-            }, 300);
-            $('#'+nicklistid).addClass('activeNick');
-        }
-    },
+			$('#'+nicklistid+'-opt').hide('blind', {
+				direction: "vertical"
+			}, 300);
+			$('#'+nicklistid).removeClass('activeNick');
+		} else {
+			$('#'+nicklistid+'-opt').show('blind', {
+				direction: "vertical"
+			}, 300);
+			$('#'+nicklistid).addClass('activeNick');
+		}
+	},
 	'toggleNickOptInfo': function(nicklistid) {
 		if($('#'+nicklistid+'-opt-info').is(':visible')){
-		     $('#'+nicklistid+'-opt-info').hide('blind', {
-                direction: "vertical"
-            }, 300);
-            $('#'+nicklistid+'-opt').removeClass('activeInfo');
-        } else {
-            $('#'+nicklistid+'-opt-info').show('blind', {
-                direction: "vertical"
-            }, 300);
-            $('#'+nicklistid+'-opt').addClass('activeInfo');
-        }
+			 $('#'+nicklistid+'-opt-info').hide('blind', {
+				direction: "vertical"
+			}, 300);
+			$('#'+nicklistid+'-opt').removeClass('activeInfo');
+		} else {
+			$('#'+nicklistid+'-opt-info').show('blind', {
+				direction: "vertical"
+			}, 300);
+			$('#'+nicklistid+'-opt').addClass('activeInfo');
+		}
 	},
 	'toggleNickOptAdmin': function(nicklistid) {
 		if($('#'+nicklistid+'-opt-admin').is(':visible')){
-		     $('#'+nicklistid+'-opt-admin').hide('blind', {
-                direction: "vertical"
-            }, 300);
-            $('#'+nicklistid+'-opt').removeClass('activeAdmin');
-        } else {
-            $('#'+nicklistid+'-opt-admin').show('blind', {
-                direction: "vertical"
-            }, 300);
-            $('#'+nicklistid+'-opt').addClass('activeAdmin');
-        }
+			 $('#'+nicklistid+'-opt-admin').hide('blind', {
+				direction: "vertical"
+			}, 300);
+			$('#'+nicklistid+'-opt').removeClass('activeAdmin');
+		} else {
+			$('#'+nicklistid+'-opt-admin').show('blind', {
+				direction: "vertical"
+			}, 300);
+			$('#'+nicklistid+'-opt').addClass('activeAdmin');
+		}
 	},
-    'showPermError': function(text) {
-        $(".error-text").text(" ");
-        $(".error-text").append("<h3>Brak uprawnień<br /></h3>");
-        $(".error-text").append("<p>Nie masz wystarczających uprawnień aby wykonać żądaną akcję.</p><p>"+text+"</p>");
-        $(".errorwindow").fadeIn(250);
-        $(".errorwindow").css('z-index', 10);
-    },
-    'showAbout': function() {
+	'showPermError': function(text) {
+		var html = '<h3>Brak uprawnień<br /></h3>' +
+			'<p>Nie masz wystarczających uprawnień aby wykonać żądaną akcję.</p><p>'+text+'</p>';
+		$(".error-text").html(html);
+		$(".errorwindow").fadeIn(250);
+		$(".errorwindow").css('z-index', 10);
+	},
+	'showAbout': function() {
 		if($("#about_wrapper").is(":visible")) {
 			$("#about_wrapper").fadeOut(400);
 			$("#input").focus();
@@ -2290,31 +1272,31 @@ var gateway = {
 			$("#about_wrapper").fadeIn(400);
 		}
 	},
-    'showOptions': function() {
+	'showOptions': function() {
 		if($("#options_wrapper").is(":visible")) {
 			$("#options_wrapper").fadeOut(400);
 			$("#input").focus();
 		} else {
 			$("#options_wrapper").fadeIn(400);
 		}
-    },
-    'clickQuit': function() {
-    	$('.notify-text').html('<h3>Wyjście z IRC</h3>'+
-    		'<form onsubmit="gateway.quit();" action="javascript:void(0);">'+
+	},
+	'clickQuit': function() {
+		$('.notify-text').html('<h3>Wyjście z IRC</h3>'+
+			'<form onsubmit="gateway.quit();" action="javascript:void(0);">'+
 			'Wiadomość pożegnalna: <input type="text" id="quit-msg" value="Użytkownik rozłączył się" /><br /><br />'+
-    		'<input type="submit" value="Rozłącz" /> '+
+			'<input type="submit" value="Rozłącz" /> '+
 			'<input type="button" onclick="$(\'.notifywindow\').fadeOut(400)" value="Anuluj" />'+
 			'</form>');
-    	$('.notifywindow').show();
-    	$('.notifywindow').css('z-index', 10);
-    	$('#quit-msg').focus();
-    	$('#quit-msg').select();
-    },
-    'quit': function() {
-    	commands.quit.callback(['quit'], '/quit '+$('#quit-msg').val());
+		$('.notifywindow').show();
+		$('.notifywindow').css('z-index', 10);
+		$('#quit-msg').focus();
+		$('#quit-msg').select();
+	},
+	'quit': function() {
+		commands.quit.callback(['quit'], '/quit '+$('#quit-msg').val());
 		$('.notifywindow').fadeOut(100);
-    },
-    'completion': {
+	},
+	'completion': {
 		'string': '',
 		'rawStr': '',
 		'repeat': 0,
@@ -2387,1416 +1369,7 @@ var gateway = {
 		}
 	}
 }
-
-var cmdBinds = {
-    '001': [	// RPL_WELCOME 
-        function(msg) {
-        	var ckNick = settings.getCookie('origNick');
-        	if(ckNick){
-        		settings.saveCookie('origNick', ckNick);
-        	} else {
-        		settings.saveCookie('origNick', guser.nick);
-        	}
-			
-            if(msg.args[0] != guser.nick) {
-                guser.changeNick(msg.args[0], true);
-   	            $(".notify-text").append("<p>Twój bieżący nick to <b>"+guser.nick+"</b>.</p>");
-            }
-            gateway.statusWindow.appendMessage(messagePatterns.motd, [gateway.niceTime(), $('<div/>').text(msg.text).html()]);
-			gateway.pingcnt = 0;
-			gateway.connectStatus = status001;
-        }
-    ],
-    'CONNECTED': [
-    	function(msg) {
-    		gateway.joinChannels();
-    	}
-    ],
-    '411': [ //	ERR_NORECIPIENT - brzydki sposób na uzyskanie bieżącego nicka
-    	function(msg) {
-    		if(gateway.connectStatus != statusDisconnected){
-    			return;
-    		}
-    		if(msg.args[0] != guser.nick) {
-    			var oldNick = guser.nick;
-    			setTimeout(function(){
-    				gateway.send('NICK '+oldNick);
-    			}, 500);
-    			guser.changeNick(msg.args[0], true);
-    		}
-    		gateway.send('WHOIS '+guser.nick);
-    		gateway.connectStatus = status001;
-    	}
-    ],
-	'PONG': [
-		function(msg) {
-			if(msg.text.match(/JavaScript/i)){
-				gateway.pingcnt = 0;
-			}
-		}
-	],
-    'NICK': [
-        function(msg) {
-            if(msg.sender.nick == guser.nick) {
-                guser.changeNick(msg.text);
-                document.title = $('<div/>').text(msg.text).html()+' @ PIRC.pl';
-                for(c in gateway.channels) {
-                    gateway.channels[c].nicklist.changeNick(msg.sender.nick, msg.text);
-                }
-            } else {
-                for(c in gateway.channels) {
-                    if(gateway.channels[c].nicklist.findNick(msg.sender.nick)) {
-                        gateway.channels[c].nicklist.changeNick(msg.sender.nick, msg.text);
-                        gateway.channels[c].appendMessage(messagePatterns.nickChange, [gateway.niceTime(), $('<div/>').text(msg.sender.nick).html(), $('<div/>').text(msg.text).html()]);
-                    }
-                }
-                if(gateway.findQuery(msg.sender.nick)) {
-                    gateway.findQuery(msg.sender.nick).changeNick(msg.text);
-                }
-            }
-        }
-    ],
-    'QUIT': [
-        function(msg) {
-            if(msg.sender.nick == guser.nick) {
-                for(c in gateway.channels) {
-                    gateway.channels[c].part();
-                    //gateway.channels[c].appendMessage(messagePatterns.nickChange, [gateway.niceTime(), msg.sender.nick, msg.text]);
-                }
-            } else {
-                for(c in gateway.channels) {
-                    if(gateway.channels[c].nicklist.findNick(msg.sender.nick)) {
-                        gateway.channels[c].nicklist.removeNick(msg.sender.nick);
-                        if (!$('#showPartQuit').is(':checked')) {
-							gateway.channels[c].appendMessage(messagePatterns.quit, [gateway.niceTime(), $('<div/>').text(msg.sender.nick).html(), $('<div/>').text(msg.sender.ident).html(), $('<div/>').text(msg.sender.host).html(), gateway.colorize(msg.text)]);
-						}
-                    }
-                }
-                if(gateway.findQuery(msg.sender.nick)) {
-					if (!$('#showPartQuit').is(':checked')) {
-						gateway.findQuery(msg.sender.nick).appendMessage(messagePatterns.quit, [gateway.niceTime(), $('<div/>').text(msg.sender.nick).html(), $('<div/>').text(msg.sender.ident).html(), $('<div/>').text(msg.sender.host).html(), gateway.colorize(msg.text)]);
-					}
-                }
-            }
-        }
-    ],
-    'PRIVMSG': [
-        function(msg) {
-            if (msg.text === false) {
-                msg.text = " ";
-            }
-            
-			var html = gateway.parseImages(msg.text);
-			
-            if(msg.args[0].indexOf('#') == 0) { // wiadomość kanałowa
-            	var channel = gateway.findChannel(msg.args[0]);
-            	if(!channel) {
-            		channel = new Channel(msg.args[0]);
-            		gateway.channels.push(channel);
-            		gateway.switchTab(msg.args[0]);
-            	}
-                if(channel) {
-                    if(msg.text.match(/^\001.*\001$/i)) {
-                        if(msg.text.match(/^\001ACTION.*\001$/i)) {
-                            var acttext = msg.text.replace(/^\001ACTION(.*)\001$/i, '$1');
-                            if(msg.text.indexOf(guser.nick) != -1) {
-                                channel.appendMessage(messagePatterns.channelActionHilight, [gateway.niceTime(), msg.sender.nick, gateway.colorize(acttext)]);
-                                if(gateway.active.toLowerCase() != msg.args[0].toLowerCase() || !disp.focused) {
-                                    channel.markNew();
-                                }
-                            } else {
-                                channel.appendMessage(messagePatterns.channelAction, [gateway.niceTime(), msg.sender.nick, gateway.colorize(acttext)]);
-                                if(gateway.active.toLowerCase() != msg.args[0].toLowerCase() || !disp.focused) {
-                                    channel.markBold();
-                                }
-                            }
-                        }
-                    } else {
-                        if(msg.text.indexOf(guser.nick) != -1) {
-                            channel.appendMessage(messagePatterns.channelMsgHilight, [gateway.niceTime(), msg.sender.nick, gateway.colorize(msg.text)]);
-                            if(gateway.active != msg.args[0].toLowerCase() || !disp.focused) {
-                                channel.markNew();
-                            }
-                        } else {
-                            channel.appendMessage(messagePatterns.channelMsg, [gateway.niceTime(), msg.sender.nick, gateway.colorize(msg.text)]);
-                            if(gateway.active.toLowerCase() != msg.args[0].toLowerCase() || !disp.focused) {
-                                channel.markBold();
-                            }
-                        }
-                    }
-                    channel.appendMessage('%s', [html]);
-                }
-            } else if(!msg.sender.server/* && msg.sender.nick != guser.nick*/){ // wiadomość prywatna
-            	if(msg.sender.nick == guser.nick){
-					var qnick = msg.args[0];
-				} else {
-					var qnick = msg.sender.nick;
-				}
-	            query = gateway.findQuery(qnick);
-                if(msg.text.match(/^\001.*\001$/i)) {	// ctcp
-                    if(msg.text.match(/^\001ACTION.*\001$/i)) { //akcja
-						if(!query) {
-							query = new Query(msg.sender.nick);
-							gateway.queries.push(query);
-						}
-                        var acttext = msg.text.replace(/^\001ACTION(.*)\001$/i, '$1');
-                        query.appendMessage(messagePatterns.channelAction, [gateway.niceTime(), msg.sender.nick, gateway.colorize(acttext)]);
-                        if(gateway.active.toLowerCase() != msg.sender.nick.toLowerCase()) {
-                            gateway.findQuery(msg.sender.nick).markNew();
-                        }
-                        query.appendMessage('%s', [html]);
-                    } else if(msg.text.match(/^\001(VERSION|USERINFO).*\001$/i)) {
-                    	version_string = 'Bramka WWW PIRC.PL, wersja '+gatewayVersion+' na '+navigator.userAgent;
-                    	gateway.sendDelayed('NOTICE '+msg.sender.nick+ ' \001VERSION '+version_string+'\x01');
-                    } else if(msg.text.match(/^\001REFERER\001$/i)) {
-                    	referer_string = document.referrer;
-                    	if(referer_string == ''){
-                    		referer_string = 'Nieznany';
-                    	}
-                    	gateway.sendDelayed('NOTICE '+msg.sender.nick+ ' \001REFERER '+referer_string+'\x01');
-                    } else {	// inny ctcp
-                        var acttext = msg.text.replace(/^\001(.*)\001$/i, '$1');
-                        if(query) {
-                            query.appendMessage(messagePatterns.ctcpRequest, [gateway.niceTime(), msg.sender.nick, gateway.colorize(acttext)]);
-                        } else {
-                            gateway.statusWindow.appendMessage(messagePatterns.ctcpRequest, [gateway.niceTime(), msg.sender.nick, gateway.colorize(acttext)]);
-                            gateway.statusWindow.markBold();
-                        }
-                    }
-                } else { // normalna wiadomość
-					if(!query) {
-						query = new Query(msg.sender.nick);
-						gateway.queries.push(query);
-					}
-                    query.appendMessage(messagePatterns.channelMsg, [gateway.niceTime(), msg.sender.nick, gateway.colorize(msg.text)]);
-                    if(gateway.active.toLowerCase() != msg.sender.nick.toLowerCase() || !disp.focused) {
-                        gateway.findQuery(msg.sender.nick).markNew();
-                    }
-                    query.appendMessage('%s', [html]);
-                }
-            }
-        }
-    ],
-    'NOTICE': [
-        function(msg) {
-            if (msg.text == false) {
-                msg.text = " ";
-            }
-            if(msg.text.match(/^\001.*\001$/i)) { // ctcp
-                var ctcpreg = msg.text.match(/^\001(([^ ]+)( (.*))?)\001$/i);
-                var acttext = ctcpreg[1];
-                var ctcp = ctcpreg[2];
-                var text = ctcpreg[4];
-                if(gateway.findQuery(msg.sender.nick)) {
-                    gateway.findQuery(msg.sender.nick).appendMessage(messagePatterns.ctcpReply, [gateway.niceTime(), $('<div/>').text(msg.sender.nick).html(), gateway.colorize(acttext)]);
-                } else {
-                    gateway.statusWindow.appendMessage(messagePatterns.ctcpReply, [gateway.niceTime(), $('<div/>').text(msg.sender.nick).html(), gateway.colorize(acttext)]);
-                }
-                if(ctcp.toLowerCase() == 'version'){
-				    $(".notify-text").html('<h3>Oprogramowanie użytkownika '+msg.sender.nick+'</h3><p>'+$('<div/>').text(text).html() +'</p>');
-				    $(".notifywindow").fadeIn(250);
-					$(".notifywindow").css('z-index', 10);
-                }
-            } else { // nie-ctcp
-                if(msg.args[0].indexOf('#') == 0) { //kanał
-                    if(gateway.findChannel(msg.args[0])) {
-                        if(msg.text.indexOf(guser.nick) != -1) {
-                            gateway.findChannel(msg.args[0]).appendMessage(messagePatterns.notice, [gateway.niceTime(), $('<div/>').text(msg.sender.nick).html(), $('<div/>').text(msg.sender.ident).html(), $('<div/>').text(msg.sender.host).html(), gateway.colorize(msg.text)]);
-                            if(gateway.active != msg.args[0]) {
-                                gateway.findChannel(msg.args[0]).markBold();
-                            }
-                        } else {
-                            gateway.findChannel(msg.args[0]).appendMessage(messagePatterns.notice, [gateway.niceTime(), $('<div/>').text(msg.sender.nick).html(), $('<div/>').text(msg.sender.ident).html(), $('<div/>').text(msg.sender.host).html(), gateway.colorize(msg.text)]);
-                        }
-                    }
-                } else if(!msg.sender.server && msg.sender.nick != guser.nick) { // użytkownik
-					if(msg.sender.nick.toLowerCase() == 'nickserv'){
-						if(services.nickservMessage(msg)) {
-							return;
-						}
-					}
-					if ($("#noticeDisplay").val() == 2) { // notice w statusie
-						gateway.statusWindow.appendMessage(messagePatterns.notice, [gateway.niceTime(), $('<div/>').text(msg.sender.nick).html(), $('<div/>').text(msg.sender.ident).html(), $('<div/>').text(msg.sender.host).html(), gateway.colorize(msg.text)]);
-						gateway.statusWindow.markBold();
-					} else if($("#noticeDisplay").val() == 1) { // notice jako query
-						if(!gateway.findQuery(msg.sender.nick)) {
-							var query = new Query(msg.sender.nick);
-							gateway.queries.push(query);
-						}
-						gateway.findQuery(msg.sender.nick).appendMessage(messagePatterns.notice, [gateway.niceTime(), $('<div/>').text(msg.sender.nick).html(), $('<div/>').text(msg.sender.ident).html(), $('<div/>').text(msg.sender.host).html(), gateway.colorize(msg.text)]);
-						if(gateway.active.toLowerCase() != msg.sender.nick.toLowerCase()) {
-							gateway.findQuery(msg.sender.nick).markNew();
-						}
-					} else if($("#noticeDisplay").val() == 0) { // notice jako okienko
-						if(!gateway.lastNoticeNick || gateway.lastNoticeNick.toLowerCase() != msg.sender.nick.toLowerCase()) {
-							$(".notice-text").append("<h3>Komunikat prywatny od "+$('<div/>').text(msg.sender.nick).html()+"</h3>");
-							gateway.lastNoticeNick = msg.sender.nick;
-						}
-           				$(".notice-text").append("<p><span class=\"time\">"+gateway.niceTime()+"</span> "+gateway.colorize(msg.text)+"</p>");
-            			$(".noticewindow").fadeIn(250);
-            			$('.notice-text').scrollTop($('.notice-text').prop("scrollHeight"));
-					}
-                }
-            }
-        }
-    ],
-    'JOIN': [
-        function(msg) {
-            if(msg.sender.nick == guser.nick) {
-                if(gateway.findChannel(msg.text)) {
-                    gateway.findChannel(msg.text).rejoin();
-                } else {
-                    var chan = new Channel(msg.text);
-                    gateway.channels.push(chan);
-                    gateway.switchTab(msg.text);
-                    chan.appendMessage(messagePatterns.joinOwn, [gateway.niceTime(), msg.text]);
-                }
-                gateway.send("MODE "+msg.text);
-            }
-        },
-        function(msg) {
-            if(gateway.findChannel(msg.text)) {
-                if(msg.sender.nick != guser.nick) {
-					if (!$('#showPartQuit').is(':checked')) {
-						gateway.findChannel(msg.text).appendMessage(messagePatterns.join, [gateway.niceTime(), $('<div/>').text(msg.sender.nick).html(), $('<div/>').text(msg.sender.ident).html(), $('<div/>').text(msg.sender.host).html(), msg.text]);
-					}
-                }
-                if(!gateway.findChannel(msg.text).nicklist.findNick(msg.sender.nick)) {
-                    gateway.findChannel(msg.text).nicklist.addNick(msg.sender.nick);
-                } else {
-                    gateway.findChannel(msg.text).nicklist.findNick(msg.sender.nick).setMode('owner', false);
-                    gateway.findChannel(msg.text).nicklist.findNick(msg.sender.nick).setMode('admin', false);
-                    gateway.findChannel(msg.text).nicklist.findNick(msg.sender.nick).setMode('op', false);
-                    gateway.findChannel(msg.text).nicklist.findNick(msg.sender.nick).setMode('halfop', false);
-                    gateway.findChannel(msg.text).nicklist.findNick(msg.sender.nick).setMode('voice', false);
-                }
-            }
-        }
-    ],
-    'PART': [
-        function(msg) {
-            if(gateway.findChannel(msg.args[0])) {
-                if(msg.sender.nick != guser.nick) {
-					if (!$('#showPartQuit').is(':checked')) {
-						gateway.findChannel(msg.args[0]).appendMessage(messagePatterns.part, [gateway.niceTime(), $('<div/>').text(msg.sender.nick).html(), $('<div/>').text(msg.sender.ident).html(), $('<div/>').text(msg.sender.host).html(), msg.args[0], gateway.colorize(msg.text)]);
-					}
-                    gateway.findChannel(msg.args[0]).nicklist.removeNick(msg.sender.nick);
-                } else {
-                    gateway.findChannel(msg.args[0]).appendMessage(messagePatterns.partOwn, [gateway.niceTime(), msg.args[0], msg.args[0]]);
-                    gateway.findChannel(msg.args[0]).part();
-                }
-            }
-        }
-    ],
-    'KICK': [
-        function(msg) {
-            if(gateway.findChannel(msg.args[0])) {
-                if(msg.args[1] != guser.nick) {
-                    gateway.findChannel(msg.args[0]).appendMessage(messagePatterns.kick, [gateway.niceTime(), $('<div/>').text(msg.sender.nick).html(), msg.args[1], msg.args[0], gateway.colorize(msg.text)]);
-                    gateway.findChannel(msg.args[0]).nicklist.removeNick(msg.args[1]);
-                } else {
-                    gateway.findChannel(msg.args[0]).appendMessage(messagePatterns.kickOwn, [gateway.niceTime(), $('<div/>').text(msg.sender.nick).html(), msg.args[0], gateway.colorize(msg.text)]);
-                    gateway.findChannel(msg.args[0]).part();
-                }
-            }
-        }
-    ],
-    '307': [	// RPL_USERIP
-        function(msg) {
-            $(".notify-text").append("<p class='whois'><span class='info'><br /></span><span class='data'>Ten nick jest zarejestrowany</span></p>");
-        }
-    ],
-    '311': [	// RPL_WHOISUSER 
-        function(msg) {
-            $(".notify-text").text(" ");
-            $(".notify-text").append("<h3>Informacje o użytkowniku " +$('<div/>').text(msg.args[1]).html()+ "</h3>");
-            $(".notify-text").append("<p class='whois'><span class='info'>Pełna maska:</span><span class='data'> " + $('<div/>').text(msg.args[1]).html() + "!" + msg.args[2] + "@" + msg.args[3] + "</span></p>");
-            $(".notify-text").append("<p class='whois'><span class='info'>Realname:</span><span class='data'> " + $('<div/>').text(msg.text).html() + "</span></p>");
-        }
-    ],
-    '301': [	// RPL_AWAY
-        function(msg) {
-            $(".notify-text").append("<p class='whois'><span class='info'>Nieobecny:</span><span class='data'>" + $('<div/>').text(msg.args[1]).html() + " jest nieobecny(a): " + $('<div/>').text(msg.text).html() + "</span></p>");
-            var query = gateway.findQuery(msg.args[1]);
-            if(query){
-            	query.appendMessage(messagePatterns.away, [gateway.niceTime(), $('<div/>').text(msg.args[1]).html(), $('<div/>').text(msg.text).html()]);
-            }
-        }
-    ],
-    '312': [	// RPL_WHOISSERVER 
-        function(msg) {
-            $(".notify-text").append("<p class='whois'><span class='info'>serwer:</span><span class='data'>" + msg.args[2] + " "+ $('<div/>').text(msg.text).html() + "</span></p>");
-        }
-    ],
-    '313': [	// RPL_WHOISOPERATOR
-        function(msg) {
-            $(".notify-text").append("<p class='whois'><span class='info'><br /></span><span class='data'><b class=admin>ADMINISTRATOR SIECI</b> (" + $('<div/>').text(msg.text.substr(5)).html() +")</span></p>");
-        }
-    ],
-    '317': [    // RPL_WHOISIDLE 
-    	function(msg) {
-    		$(".notify-text").append("<p class='whois'><span class='info'>Połączył się:</span><span class='data'>" + gateway.parseTime(msg.args[3]) + "</span></p>");
-    		var idle = msg.args[2];
-    		var hour = Math.floor(idle/3600);
-    		idle = idle - hour * 3600;
-    		var min = Math.floor(idle/60);
-    		var sec = idle - min * 60;   		
-    		$(".notify-text").append("<p class='whois'><span class='info'>Nieaktywny</span><span class='data'>" + (hour>0? hour + " h " : "") + (min>0? min + " min " : "") + sec + " sek</span></p>");
-    	}
-    ],
-    '318': [	// RPL_ENDOFWHOIS
-        function(msg) {
-		    if(gateway.connectStatus != statusConnected){
-			    return;
-			}
-			if(msg.args[1].toLowerCase() == guser.nick.toLowerCase() && !gateway.displayOwnWhois){
-				return;
-			}
-			gateway.displayOwnWhois = false;
-            $(".notifywindow").fadeIn(250);
-			$(".notifywindow").css('z-index', 10);
-        }
-    ],
-    '319': [	// RPL_WHOISCHANNELS
-        function(msg) {
-            if(gateway.connectStatus == statusConnected){ // normalny whois
-            	var chanlist = msg.text.split(' ');
-            	var chanHtml = '';
-            	chanlist.forEach(function(channel){
-            		var chanPrefix = '';
-            		var chanName = channel;
-            		if(chanName.charAt(0) != '#'){
-            			chanPrefix = chanName.charAt(0);
-            			chanName = chanName.substring(1);
-            		}
-            		chanName = $('<div/>').text(chanName).html();
-            		chanHtml += chanPrefix + '<a href="javascript:gateway.send(\'JOIN ' + chanName + '\')" title="Dołącz do kanału ' + chanName + '">' + chanName + '</a> ';
-            	});
-            	$(".notify-text").append("<p class='whois'><span class='info'>Kanały:</span><span class='data'> "+ chanHtml + "</span></p>");
-            } else {	// sprawdzam, na jakich kanałach sam jestem
-            	gateway.connectStatus = status001;
-		    	if(msg.args[1] == guser.nick){
-					var chans = msg.text.split(' ');
-					chans.forEach( function(channame){
-						var channel = channame.match(/#[^ ]+/);
-						if(channel){
-						    if(gateway.findChannel(channel[0])) {
-						        gateway.findChannel(channel[0]).rejoin();
-						    } else {
-						        var chan = new Channel(channel[0]);
-						        gateway.channels.push(chan);
-						        gateway.switchTab(channel[0]);
-						    }
-						    gateway.send('NAMES '+channel[0]+'\r\nTOPIC '+channel[0]+'\r\nMODE '+channel[0]);
-				        }
-					});
-				}
-		    }
-        }
-    ],
-    '322': [	// RPL_LIST
-		function(msg) {
-			if (!msg.text) {
-				var outtext = "<i>(brak tematu)</i>"; // Na wypadek jakby topic nie był ustawiony.
-			} else {
-				var outtext = gateway.colorize(msg.text);
-			}
-			gateway.statusWindow.appendMessage(messagePatterns.chanListElement, [gateway.niceTime(), msg.args[1], msg.args[1], msg.args[2], outtext]);
-			gateway.statusWindow.markBold();
-		}
-    ],
-    '324': [	// RPL_CHANNELMODEIS
-		function(msg) {
-			if(gateway.findChannel(msg.args[1])) {
-				var chan = msg.args[1];
-				var mody = msg.args;
-				mody.splice(0,2);
-				gateway.findChannel(chan).appendMessage(messagePatterns.mode, [gateway.niceTime(), chan, mody.join(" ")]);
-			}
-		}
-    ],
-    '353': [	// RPL_NAMREPLY 
-        function(msg) {
-        	var regexp = /^(~)?(&)?(@)?(%)?(\+)?([^~&@%+!]*)(?:!([^@]*)@(.*))?$/
-	        gateway.iKnowIAmConnected();
-	        var channel = gateway.findChannel(msg.args[2]);
-	        if(!channel){
-	        	return;
-	        }
-            var names = msg.text.split(' ');
-            for ( name in names ) {
-            	var rmatch = regexp.exec(names[name]);
-                channel.nicklist.addNick(rmatch[6]);
-                var nickListItem = channel.nicklist.findNick(rmatch[6]);
-                if(rmatch[7]){
-                	nickListItem.setIdent(rmatch[7]);
-                }
-                if(rmatch[8]){
-                	nickListItem.setUserHost(rmatch[8]);
-                }
-                for(var i=0; i<5; i++){
-                	if(rmatch[i+1]){
-                		var mode = '';
-                		switch(rmatch[i+1]){
-                			case '~': mode = 'owner'; break;
-                			case '&': mode = 'admin'; break;
-                			case '@': mode = 'op'; break;
-                			case '%': mode = 'halfop'; break;
-                			case '+': mode = 'voice'; break;
-                		}
-                		nickListItem.setMode(mode, true);
-                	}
-                }
-            }
-
-        }
-    ],
-    '332': [	// RPL_TOPIC 
-        function(msg) {
-            if(gateway.findChannel(msg.args[1])) {
-                if(msg.text) {
-                    gateway.findChannel(msg.args[1]).setTopic(msg.text);
-                    gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.topic, [gateway.niceTime(), msg.args[1], gateway.colorize(msg.text)]);
-                } else {
-                    gateway.findChannel(msg.args[1]).setTopic('');
-                    gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.topicNotSet, [gateway.niceTime(), msg.args[1]]);
-                }
-            }
-        }
-    ],
-    '333': [	// RPL_TOPICWHOTIME 
-        function(msg) {
-            if(gateway.findChannel(msg.args[1])) {
-                gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.topicTime, [gateway.niceTime(), msg.args[2], gateway.parseTime(msg.args[3])]);
-                gateway.send('CAP REQ :multi-prefix userhost-in-names\r\nCAP END\r\nNAMES '+msg.args[1]);
-                var ckNick = settings.getCookie('origNick');
-  	         	if(ckNick){
-	        		gateway.send('SETNAME Użytkownik bramki PIRC.pl "' + ckNick + '"');
-	        	}
-            }
-        }
-    ],
-    '346': [	// RPL_INVITELIST
-		function(msg) {
-			if(gateway.findChannel(msg.args[1])) {
-				gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.invexListElement, [gateway.niceTime(), msg.args[2], msg.args[3], gateway.parseTime(msg.args[4])]);
-			}
-		}
-    ],
-    '347': [	// RPL_INVITELIST
-		function(msg) {
-			if(gateway.findChannel(msg.args[1])) {
-				gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.invexListEnd, [gateway.niceTime()]);
-			}
-		}			
-    ],
-    '348': [	// RPL_EXCEPTLIST
-		function(msg) {
-			if(gateway.findChannel(msg.args[1])) {
-				gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.exceptListElement, [gateway.niceTime(), msg.args[2], msg.args[3], gateway.parseTime(msg.args[4])]);
-			}
-		}
-    ],
-    '349': [	// RPL_ENDOFEXCEPTLIST 
-		function(msg) {
-			if(gateway.findChannel(msg.args[1])) {
-				gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.exceptListEnd, [gateway.niceTime()]);
-			}
-		}			
-    ],
-    '367': [	// RPL_BANLIST 
-		function(msg) {
-			if(gateway.findChannel(msg.args[1])) {
-				gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.banListElement, [gateway.niceTime(), msg.args[2], msg.args[3], gateway.parseTime(msg.args[4])]);
-			}
-		}
-    ],
-    '368': [	// RPL_ENDOFBANLIST
-		function(msg) {
-			if(gateway.findChannel(msg.args[1])) {
-				gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.banListEnd, [gateway.niceTime()]);
-			}
-		}			
-    ],
-    '372': [	// RPL_MOTD
-        function(msg) {
-            gateway.statusWindow.appendMessage(messagePatterns.motd, [gateway.niceTime(), msg.text]);
-        }
-    ],
-    '401': [	// ERR_NOSUCHNICK
-        function(msg) {
-            $(".notify-text").text(" ");
-            $(".notify-text").append("<h3>Nie można wykonać żądanej akcji</h3>");
-            $(".notify-text").append("<p>"+$('<div/>').text(msg.args[1]).html()+": nie ma takiego nicku ani kanału.");
-            gateway.statusWindow.appendMessage(messagePatterns.noSuchNick, [gateway.niceTime(), $('<div/>').text(msg.args[1]).html()]);
-            $(".notifywindow").fadeIn(250);
-			$(".notifywindow").css('z-index', 10);
-        }
-    ],
-    '404': [	// ERR_CANNOTSENDTOCHAN
-        function(msg) {
-            if(gateway.findChannel(msg.args[1])) {
-            	var reason = '';
-            	if(msg.text.match(/Cannot send to channel \(Newly connected users have to wait before they can send any links\)/)){
-            		reason = 'Twoja wiadomość została rozpoznana jako link. Musisz odczekać kilka minut po połączeniu i spróbować ponownie. Zarejestruj nick, aby uniknąć tego ograniczenia w przyszłości';
-            	} else if(msg.text.match(/You need voice \(\+v\) \(.*\)/)){
-            		reason = 'Potrzebujesz prawa głosu, aby teraz pisać na tym kanale';
-            	} else if(msg.text.match(/You are banned \(.*\)/)){
-            		reason = 'Jesteś zbanowany';
-            	} else if(msg.text.match(/Color is not permitted in this channel \(.*\)/)){
-            		reason = 'Wiadomości zawierające kolory są zabronione na tym kanale';
-            	} else {
-            		reason = msg.text;
-            	}
-                gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.cannotSendToChan, [gateway.niceTime(), msg.args[1], reason])
-            }
-        }
-    ],
-    '432' : [	// ERR_ERRONEUSNICKNAME 
-        function(msg) {
-            $(".notify-text").text(" ");
-            $(".notify-text").append("<h3>Nie można zmienić nicka </h3>");
-            $(".notify-text").append("<p>Nie można użyć nicka <b>"+ msg.args[1] +"</b>. Spróbuj poczekać kilka minut.</p>");
-            if(gateway.connectStatus != statusDisconnected){
-            	$(".notify-text").append("<p>Twój bieżący nick to <b>"+guser.nick+"</b>.</p>");
-            }
-            $(".notifywindow").fadeIn(250);
-			$(".notifywindow").css('z-index', 10);
-            gateway.statusWindow.appendMessage(messagePatterns.badNick, [gateway.niceTime(), msg.args[1]]);
-        }
-    ],
-    '433' : [	// ERR_NICKNAMEINUSE 
-        function(msg) {
-            $(".notify-text").text(" ");
-            $(".notify-text").append("<h3>Nie można zmienić nicka </h3>");
-            $(".notify-text").append("<p>Nick <b>"+ msg.args[1] +"</b> jest już używany przez kogoś innego.</p>");
-            if(gateway.connectStatus != statusDisconnected){
-            	$(".notify-text").append("<p>Twój bieżący nick to <b>"+guser.nick+"</b>.</p>");
-            }
-            $(".notifywindow").fadeIn(250);
-			$(".notifywindow").css('z-index', 10);
-            gateway.statusWindow.appendMessage(messagePatterns.nickInUse, [gateway.niceTime(), msg.args[1]]);
-        }
-    ],
-    '474' : [	// ERR_BANNEDFROMCHAN
-        function(msg) {
-			gateway.iKnowIAmConnected(); // TODO inne powody, przez które nie można wejść
-            $(".error-text").text(" ");
-            $(".error-text").append("<h3>Nie można dołączyć do kanału<br />" + msg.args[1] + "<br /><br /></h3>");
-            if (msg.text == "Cannot join channel (+b)") {
-                $(".error-text").append("<p>Jesteś zbanowany.</p>");
-                gateway.statusWindow.appendMessage(messagePatterns.cannotJoin, [gateway.niceTime(), msg.args[1], "Jesteś zbanowany"]);
-            }
-            $(".errorwindow").fadeIn(250);
-			$(".errorwindow").css('z-index', 10);
-        }
-    ],
-    '473' : [	// ERR_INVITEONLYCHAN
-        function(msg) {
-			gateway.iKnowIAmConnected();
-            $(".error-text").text(" ");
-            $(".error-text").append("<h3>Nie można dołączyć do kanału<br />" + $('<div/>').text(msg.args[1]).html() + "<br /><br /></h3>");
-            $(".error-text").append('<p>Musisz dostać zaproszenie aby wejść na ten kanał. Wpisz <b>/knock '+$('<div/>').text(msg.args[1]).html()+'</b> aby poprosić operatorów o możliwość wejścia.</p>');
-            gateway.statusWindow.appendMessage(messagePatterns.cannotJoin, [gateway.niceTime(), msg.args[1], "Kanał wymaga zaproszenia"]);
-            $(".errorwindow").fadeIn(250);
-			$(".errorwindow").css('z-index', 10);
-        }
-    ],
-    '489' : [	// ERR_SECUREONLYCHAN 
-        function(msg) {
-			gateway.iKnowIAmConnected();
-            $(".error-text").text(" ");
-            $(".error-text").append("<h3>Nie można dołączyć do kanału<br />" + $('<div/>').text(msg.args[1]).html() + "<br /><br /></h3>");
-            $(".error-text").append('<p>Kanał wymaga połączenia z włączonym SSL (tryb +z). Nie jest dostępny z bramki.</p><p>Możesz spróbować użyć programu HexChat według instrukcji z <a href="http://pirc.pl/teksty/p_instalacja_i_konfiguracja" target="_blank">tej strony</a>.</p>');
-            gateway.statusWindow.appendMessage(messagePatterns.cannotJoin, [gateway.niceTime(), msg.args[1], "Kanał wymaga połączenia SSL"]);
-            $(".errorwindow").fadeIn(250);
-			$(".errorwindow").css('z-index', 10);
-        }
-    ],
-    '475' : [	// ERR_BADCHANNELKEY
-        function(msg) {
-			gateway.iKnowIAmConnected();
-            $(".error-text").text(" ");
-            $(".error-text").append("<h3>Nie można dołączyć do kanału<br />" + msg.args[1] + "<br /><br /></h3>");
-            $(".error-text").append('<p>Musisz podać poprawne hasło.</p>');
-            $(".error-text").append('<form onsubmit="gateway.chanPassword(\''+$('<div/>').text(msg.args[1]).html()+'\');" action="javascript:void(0);">Hasło do '+$('<div/>').text(msg.args[1]).html()+': <input type="password" id="chpass" /> <input type="submit" value="Wejdź" /></form>');
-            gateway.statusWindow.appendMessage(messagePatterns.cannotJoin, [gateway.niceTime(), msg.args[1], "Wymagane hasło"]);
-            $(".errorwindow").fadeIn(250);
-			$(".errorwindow").css('z-index', 10);
-        }
-    ],
-    '482' : [	// ERR_CHANOPRIVSNEEDED 
-        function(msg) {
-            $(".error-text").text(" ");
-            $(".error-text").append("<h3>"+ msg.args[1] + ": brak uprawnień<br /></h3>");
-            $(".error-text").append("<p>Nie masz wystarczających uprawnień aby wykonać żądaną akcję.</p>");
-            if(gateway.findChannel(msg.args[1])) {
-                gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.noPerms, [gateway.niceTime(), msg.args[1]]);
-            }
-            $(".errorwindow").fadeIn(250);
-			$(".errorwindow").css('z-index', 10);
-        }
-    ],
-    '499' : [	// ERR_CHANOPRIVSNEEDED 
-        function(msg) {
-            $(".error-text").text(" ");
-            $(".error-text").append("<h3>"+ msg.args[1] + ": brak uprawnień<br /></h3>");
-            $(".error-text").append("<p>Nie masz wystarczających uprawnień aby wykonać żądaną akcję.</p>");
-            if(gateway.findChannel(msg.args[1])) {
-                gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.noPerms, [gateway.niceTime(), msg.args[1]]);
-            }
-            $(".errorwindow").fadeIn(250);
-			$(".errorwindow").css('z-index', 10);
-        }
-    ],
-    '974' : [	// ERR_CHANOPRIVSNEEDED 
-        function(msg) {
-            gateway.showPermError(msg.text);
-            if(gateway.getActive()) {
-                gateway.getActive().appendMessage(messagePatterns.noPerms, [gateway.niceTime(), msg.args[1]]);
-            }
-        }
-    ],
-    'PING' : [
-    	function(msg) {
-    		gateway.forceSend('PONG :'+msg.text);
-    	}
-    ],
-	'ERROR' : [
-		function(msg) {
-			gateway.lasterror = msg.text;
-
-			gateway.disconnected(msg.text);
-
-			if(gateway.connectStatus == statusDisconnected) {
-				if(gateway.firstConnect){
-					gateway.reconnect();
-				}
-				return;
-			}
-			
-			gateway.connectStatus = statusDisconnected;
-			
-			$(".error-text").text(" ");
-	        $(".error-text").append("<h3>Serwer przerwał połączenie<br /></h3>");
-	        $(".error-text").append("<p>Informacje: "+msg.text+"</p>");
-			$(".errorwindow").fadeIn(400);
-			
-			if($('#autoReconnect').is(':checked')){
-				gateway.reconnect();
-			} else {
-				$('#reconnect_wrapper').fadeIn(50);
-			}
-		}
-	],
-    '972' : [
-        function(msg) {
-            gateway.showPermError(msg.text);
-            if(gateway.getActive()) {
-                gateway.getActive().appendMessage(messagePatterns.noPerms, [gateway.niceTime(), msg.args[1]]);
-            }
-        }
-    ],
-    'TOPIC':  [
-        function(msg) {
-            if(gateway.findChannel(msg.args[0])) {
-                if(msg.text) {
-                    gateway.findChannel(msg.args[0]).setTopic(msg.text);
-                    gateway.findChannel(msg.args[0]).appendMessage(messagePatterns.changeTopic, [gateway.niceTime(), $('<div/>').text(msg.sender.nick).html(), gateway.colorize(msg.text)]);
-                } else {
-                    gateway.findChannel(msg.args[0]).setTopic('');
-                    gateway.findChannel(msg.args[0]).appendMessage(messagePatterns.deleteTopic, [gateway.niceTime(), $('<div/>').text(msg.sender.nick).html(), msg.args[0]]);
-                }
-
-            }
-        }
-    ],
-    'MODE': [
-        function(msg) {
-            if(gateway.findChannel(msg.args[0])) {
-                var modestr = '';
-                for (i in msg.args) {
-                    if(i != 0) {
-                        modestr += msg.args[i]+' ';
-                    }
-                }
-                modestr = modestr.slice(0,-1);
-                gateway.findChannel(msg.args[0]).appendMessage(messagePatterns.modeChange, [gateway.niceTime(), $('<div/>').text(msg.sender.nick).html(), $('<div/>').text(modestr).html(), $('<div/>').text(msg.args[0]).html()]);
-                var plus = true;
-                var nextarg = 2;
-                var modearr = msg.args[1].split('');
-                var log = '';
-                var mode = '';
-                var modechar = '';
-                for (i in modearr) {
-                    if(modearr[i] == '+') {
-                        log += "Change +\n";
-                        plus = true;
-                    } else if(modearr[i] == '-') {
-                        log += "Change -\n";
-                        plus = false;
-                    } else if($.inArray(modearr[i], modes.argBoth) > -1) {
-                        log += "Mode 'both' "+plus+modearr[i]+msg.args[nextarg]+"\n";
-                        nextarg++;
-                    } else if($.inArray(modearr[i], modes.argAdd) > -1 && plus == true) {
-                        log += "Mode 'add' "+plus+modearr[i]+msg.args[nextarg]+"\n";
-                        nextarg++;
-                    } else if($.inArray(modearr[i], modes.user) > -1) {
-                        modechar = modearr[i];
-                        log += "Mode 'user' "+plus+modearr[i]+msg.args[nextarg]+"\n";
-                        if(plus) {
-                            if(gateway.findChannel(msg.args[0]).nicklist.findNick(msg.args[nextarg])) {
-                                mode = '';
-                                switch (modechar) {
-                                    case 'q':
-                                        mode = 'owner'
-                                        break;
-                                    case 'a':
-                                        mode = 'admin'
-                                        break;
-                                    case 'o':
-                                        mode = 'op'
-                                        break;
-                                    case 'h':
-                                        mode = 'halfop'
-                                        break;
-                                    case 'v':
-                                        mode = 'voice'
-                                        break;
-                                    default:
-                                        //i tak nie nastapi
-                                        break;
-                                }
-                                gateway.findChannel(msg.args[0]).nicklist.findNick(msg.args[nextarg]).setMode(mode, true);
-                            }
-                        } else {
-                            if(gateway.findChannel(msg.args[0]).nicklist.findNick(msg.args[nextarg])) {
-                                mode = '';
-                                switch (modechar) {
-                                    case 'q':
-                                        mode = 'owner'
-                                        break;
-                                    case 'a':
-                                        mode = 'admin'
-                                        break;
-                                    case 'o':
-                                        mode = 'op'
-                                        break;
-                                    case 'h':
-                                        mode = 'halfop'
-                                        break;
-                                    case 'v':
-                                        mode = 'voice'
-                                        break;
-                                    default:
-                                        //i tak nie nastapi
-                                        break;
-                                }
-                                gateway.findChannel(msg.args[0]).nicklist.findNick(msg.args[nextarg]).setMode(mode, false);
-                            }
-                        }
-                        nextarg++;
-                    } else {
-                        log += "Mode 'normal' "+plus+modearr[i]+"\n";
-                    }
-                }
-            }
-        }
-    ]
-};
 	
-var commands = {
-	'quit': {
-		'channels': false,
-        'nicks': true,
-		'custom': [],
-		'callback': function(command, input) {
-			gateway.connectStatus = statusDisconnected;
-			$('#not_connected_wrapper').fadeIn(200);
-			$('.not-connected-text > h3').html('Rozłączono');
-			$('.not-connected-text > p').html('Rozłączono z IRC na życzenie. <input type="button" onclick="gateway.reconnect();" value="Połącz ponownie" />');
-			if (input.slice(1).substr(command[0].length+1) != "") {
-				gateway.send("QUIT :" + input.slice(1).substr(command[0].length+1));
-			} else {
-				gateway.send("\r\nQUIT");
-			}
-		}
-	},
-	'exit': {
-		'callback': 'quit'
-	},
-	'quote': {
-		'channels': true,
-		'nicks': true,
-		'custom': [],
-		'callback': function(command, input) {
-            gateway.send(input.slice(1).substr(command[0].length+1));
-		}
-	},
-	'raw': {
-		'callback': 'quote'
-	},
-	'nick': {
-		'channels': false,
-		'nicks': false,
-		'custom': [],
-		'callback': function(command, input) {
-			if(command[1]) {
-				gateway.send("NICK "+command[1]);
-			} else {
-				gateway.notEnoughParams("nick", "musisz podać na co chcesz zmienić swój obecny nick.");
-			}
-		}
-	},
-	'whois': {
-		'channels': false,
-		'nicks': true,
-		'custom': [],
-		'callback': function(command, input) {
-			if(command[1]) {
-				gateway.send("WHOIS "+command[1]);
-				if(command[1].toLowerCase() == guser.nick.toLowerCase()){
-					gateway.displayOwnWhois = true;
-				}
-			} else {
-				gateway.notEnoughParams("whois", "musisz podać nick osoby o której chcesz zdobyć informację.");
-			}
-		}
-	},
-	'wii': {
-		'callback': 'whois'
-	},
-	'query': {
-		'channels': false,
-		'nicks': false,
-		'custom': [],
-		'callback': function(command, input) {
-			if (command[1] != "") {
-				if(!gateway.findQuery(command[1])) {
-					var query = new Query(command[1]);
-					gateway.queries.push(query);
-				}
-				gateway.switchTab(command[1]);
-			} else {
-				gateway.notEnoughParams("query", "musisz podać nick osoby z którą chcesz rozpocząć prywatną rozmowę");
-			}
-		}
-	},
-	'list': {
-		'channels': true,
-		'nicks': false,
-		'custom': [],
-		'callback': function(command, input) {
-			if (command[1]) {
-				if (command[1] != "-YES") {
-					gateway.notEnoughParams("list", "wpisywanie /list nie jest dobrym pomysłem, jako że możesz pobrać bardzo dużą ilość danych. Jeśli chcesz jednak to zrobić, dopisz -YES do polecenia.");
-				} else {
-					gateway.send("LIST"+input.substr(10));
-				}
-			} else {
-				gateway.notEnoughParams("list", "wpisywanie /list nie jest dobrym pomysłem, jako że możesz pobrać bardzo dużą ilość danych. Jeśli chcesz jednak to zrobić, dopisz -YES do polecenia.");
-			}
-		}
-	},
-	'cs': {
-		'channels': true,
-		'nicks': false,
-		'custom': [],
-		'callback': function(command, input) {
-			command.splice(1, 0, 'ChanServ');
-			commands.msg.callback(command, input);
-		}
-	},
-	'ns': {
-		'channels': true,
-		'nicks': false,
-		'custom': [],
-		'callback': function(command, input) {
-			command.splice(1, 0, 'NickServ');
-			commands.msg.callback(command, input);
-		}
-	},
-	'hs': {
-		'channels': true,
-		'nicks': false,
-		'custom': [],
-		'callback': function(command, input) {
-			command.splice(1, 0, 'HostServ');
-			commands.msg.callback(command, input);
-		}
-	},
-	'bs': {
-		'channels': true,
-		'nicks': false,
-		'custom': [],
-		'callback': function(command, input) {
-			command.splice(1, 0, 'BotServ');
-			commands.msg.callback(command, input);
-		}
-	},
-	'topic': {
-		'channels': true,
-		'nicks': false,
-		'custom': [],
-		'callback': function(command, input) {
-			if (command[1]) {
-				if (command[1].indexOf('#') == 0) {
-					if(!command[2]) {
-						gateway.send("TOPIC "+command[1]);
-					} else {
-						var reason = '';
-						if(command[2]) {
-							for(var i = 2; i < command.length; i++) {
-								if(i != 2) {
-									reason += ' ';
-								}
-								reason += command[i];
-							}
-						}
-						if(reason) {
-							gateway.send("TOPIC "+command[1]+" :"+reason);
-						} else {
-							gateway.send("TOPIC "+command[1]);
-						}
-					}
-				} else {
-					if (gateway.getActive()) {
-						var reason = '';
-						if(command[1]) {
-							for(var i = 1; i < command.length; i++) {
-								if(i != 1) {
-									reason += ' ';
-								}
-								reason += command[i];
-							}
-						}
-						if(reason) {
-							gateway.send("TOPIC "+gateway.active+" :"+reason);
-						} else {
-							gateway.send("TOPIC "+gateway.active);
-						}
-					} else {
-						gateway.notEnoughParams("topic", "musisz podać kanał jako pierwszy argument.");
-					}
-				}
-			} else {
-				if (gateway.getActive()) {
-					gateway.send("TOPIC "+gateway.active);
-				} else {
-					gateway.notEnoughParams("topic", "musisz podać kanał jako pierwszy argument.");
-				}
-			}
-		}
-	},
-	't': {
-		'callback': 'topic'
-	},
-	'join': {
-		'channels': true,
-		'nicks': false,
-		'custom': [],
-		'callback': function(command, input) {
-			if (command[1] != "") {
-				if (command[2] && command[2] != '') {
-					gateway.send("JOIN "+command[1]+" "+command[2]);
-				} else {
-					gateway.send("JOIN "+command[1]);
-				}
-				if(gateway.findChannel(command[1].toLowerCase())) {
-					gateway.switchTab(command[1].toLowerCase());
-				}
-			} else {
-				gateway.notEnoughParams("join", "musisz poda\u0107 kana\u0142 do którego chcesz do\u0142\u0105czy\u0107.");
-			}
-		}
-	},
-	'knock': {
-		'channels': true,
-		'nicks': false,
-		'custom': [],
-		'callback': function(command, input) {
-			if (command[1] != "") {
-				gateway.send("KNOCK "+command[1]);
-			} else {
-				gateway.notEnoughParams("knock", "musisz poda\u0107 kana\u0142 do którego chcesz zapukać.");
-			}
-		}
-	},
-	'j': {
-		'callback': 'join'
-	},
-	'notice': {
-		'channels': true,
-		'nicks': true,
-		'custom': [],
-		'callback': function(command, input) {
-			if (command[1]) {
-				var reason = '';
-				if(command[2]) {
-					for(var i = 2; i < command.length; i++) {
-						if(i != 2) {
-							reason += ' ';
-						}
-						reason += command[i];
-					}
-				}
-				if(reason) {
-					gateway.send("NOTICE "+command[1]+" :"+reason);
-					if($("#noticeDisplay").val() == 2) { // notice w statusie
-						gateway.statusWindow.appendMessage(messagePatterns.yourNotice, [gateway.niceTime(), command[1], reason]);
-					} else if($("#noticeDisplay").val() == 1) { // notice jako query
-						if(!gateway.findQuery(command[1].toLowerCase())) {
-							var query = new Query(command[1].toLowerCase());
-							gateway.queries.push(query);
-						}
-						gateway.findQuery(command[1]).appendMessage(messagePatterns.yourNotice, [gateway.niceTime(), command[1], reason]);
-					} else if($("#noticeDisplay").val() == 0) { // notice jako okienko
-						$(".notice-text").append("<p><span class=\"time\">"+gateway.niceTime()+"</span> <span class=\"notice\"><b>NOTICE "+$('<div/>').text(guser.nick).html()+"→"+command[1] + "</b></span> " + gateway.colorize(reason)+"</p>");
-		    			$(".noticewindow").fadeIn(250);
-		    			$('.notice-text').scrollTop($('.notice-text').prop("scrollHeight"));
-		    		}
-				} else {
-					gateway.notEnoughParams("notice", "musisz poda\u0107 treść wiadomości którą chcesz wysłać.");
-				}
-			} else {
-				gateway.notEnoughParams("notice", "musisz poda\u0107 nick osoby do której chcesz napisać i tekst który chcesz jej wysłać.");
-			}
-		}
-	},
-	'msg': {  /// TODO /msg #kanal
-		'channels': true,
-		'nicks': false,
-		'custom': [],
-		'callback': function(command, input) {
-			if (command[1]) {
-				var reason = '';
-				if(command[2]) {
-					for(var i = 2; i < command.length; i++) {
-						if(i != 2) {
-							reason += ' ';
-						}
-						reason += command[i];
-					}
-				}
-				if(reason) {
-					gateway.send("PRIVMSG "+command[1]+" :"+reason);
-				} else {
-					gateway.notEnoughParams("msg", "musisz poda\u0107 treść wiadomości którą chcesz wysłać.");
-				}
-				var services = [ 'nickserv', 'chanserv', 'hostserv', 'operserv', 'botserv' ];
-				if($("#noticeDisplay").val() == 0 && services.indexOf(command[1].toLowerCase()) > -1){
-					$(".notice-text").append("<p><span class=\"time\">"+gateway.niceTime()+"</span> <span class=\"notice\">[<b>"+$('<div/>').text(guser.nick).html()+" &gt; "+command[1] + "</b>]</span> " + gateway.colorize(reason)+"</p>");
-        			$(".noticewindow").fadeIn(250);
-        			$('.notice-text').scrollTop($('.notice-text').prop("scrollHeight"));
-				} else if($("#noticeDisplay").val() == 2 && services.indexOf(command[1].toLowerCase()) > -1){
-					gateway.statusWindow.appendMessage(messagePatterns.yourMsg, [gateway.niceTime(), guser.nick + ' → ' + command[1], gateway.colorize(reason)]);
-        		} else {
-					var query = gateway.findQuery(command[1]);
-					if(!query) {
-						query = new Query(command[1]);
-						gateway.queries.push(query);
-					}
-					query.appendMessage(messagePatterns.yourMsg, [gateway.niceTime(), guser.nick, gateway.colorize(reason)]);
-					query.appendMessage('%s', [gateway.parseImages(reason)]);
-				}
-			} else {
-				gateway.notEnoughParams("msg", "musisz poda\u0107 nick osoby do której chcesz napisać i tekst który chcesz jej wysłać.");
-			}
-		}
-	},
-	'part': {
-		'channels': true,
-		'nicks': false,
-		'custom': [],
-		'callback': function(command, input) {
-			if (command[1]) {
-				if (command[1].indexOf('#') == 0) {
-					if(!command[2]) {
-						gateway.send("PART "+command[1]);
-					} else {
-						var reason = '';
-						if(command[2]) {
-							for(var i = 2; i < command.length; i++) {
-								if(i != 2) {
-									reason += ' ';
-								}
-								reason += command[i];
-							}
-						}
-						if(reason) {
-							gateway.send("PART "+command[1]+" :"+reason);
-						} else {
-							gateway.send("PART "+command[1]);
-						}
-						gateway.removeChannel(command[1].toLowerCase())
-					}
-				} else {
-					if (gateway.getActive()) {
-						var reason = '';
-						if(command[1]) {
-							for(var i = 1; i < command.length; i++) {
-								if(i != 1) {
-									reason += ' ';
-								}
-								reason += command[i];
-							}
-						}
-						if(reason) {
-							gateway.send("PART "+gateway.active+" :"+reason);
-						} else {
-							gateway.send("PART "+gateway.active);
-						}
-						gateway.removeChannel(gateway.active.toLowerCase())
-					} else {
-						gateway.notEnoughParams("part", "musisz poda\u0107 kana\u0142 z którego chcesz wyjść jako pierwszy argument.");
-					}
-				}
-			} else {
-				if (gateway.getActive()) {
-					gateway.send("PART "+gateway.active);
-				} else {
-					gateway.notEnoughParams("part", "musisz poda\u0107 kana\u0142 z którego chcesz wyjść jako pierwszy argument.");
-				}
-			}
-		}
-	},
-	'kick': {
-		'channels': true,
-		'nicks': true,
-		'custom': [],
-		'callback': function(command, input) {
-			if (command[1]) {
-				if (command[1].indexOf('#') == 0) {
-					if(!command[2]) {
-						gateway.notEnoughParams("kick", "musisz poda\u0107 kana\u0142 z którego chcesz wykopa\u0107 t\u0119 osob\u0119 jako pierwszy argument.");
-					} else {
-						var reason = '';
-						if(command[3]) {
-							for(var i = 3; i < command.length; i++) {
-								if(i != 3) {
-									reason += ' ';
-								}
-								reason += command[i];
-							}
-						}
-						if(reason) {
-							gateway.send("KICK "+command[1]+" "+command[2]+" :"+reason);
-						} else {
-							gateway.send("KICK "+command[1]+" "+command[2]);
-						}
-					}
-				} else {
-					if (gateway.getActive()) {
-						var reason = '';
-						if(command[2]) {
-							for(var i = 2; i < command.length; i++) {
-								if(i != 2) {
-									reason += ' ';
-								}
-								reason += command[i];
-							}
-						}
-						if(reason) {
-							gateway.send("KICK "+gateway.active+" "+command[1]+" :"+reason);
-						} else {
-							gateway.send("KICK "+gateway.active+" "+command[1]);
-						}
-					} else {
-						gateway.notEnoughParams("kick", "musisz poda\u0107 kana\u0142 z którego chcesz wykopa\u0107 t\u0119 osob\u0119 jako pierwszy argument.");
-					}
-				}
-			} else {
-				gateway.notEnoughParams("kick", "musisz poda\u0107 nick osoby któr\u0105 chcesz wykopa\u0107 jako pierwszy argument.");
-			}
-		}
-	},
-	'me': {
-		'channels': true,
-		'nicks': true,
-		'custom': [],
-		'callback': function(command, input) {
-			if(command[1]) {
-				if (gateway.getActive()) {
-					var tabToSend = gateway.findChannel(gateway.active);
-					if(!tabToSend){
-						tabToSend = gateway.findQuery(gateway.active);
-					}
-					if(tabToSend){
-						gateway.send("PRIVMSG "+gateway.active+" :\001ACTION "+input.slice(1).substr(3)+"\001");
-						tabToSend.appendMessage(messagePatterns.yourAction, [gateway.niceTime(), guser.nick, gateway.colorize(input.slice(1).substr(3))]);
-						tabToSend.appendMessage('%s', [gateway.parseImages(input.slice(1).substr(3))]);
-					} else {
-						console.log('błąd /me !!!');
-					}
-				} else {
-					gateway.notEnoughParams("me", "musisz być na jakimś kanale aby użyć tej komendy.");
-				}
-			} else {
-				gateway.notEnoughParams("me", "musisz podać tekst do wysłania.");
-			}
-		}
-	},	
-	'deprotect': {
-		'channels': true,
-		'nicks': false,
-		'custom': [],
-		'callback': function(command, input) {
-			if(command[1]) {
-				if(command[2]) {
-					if (command[1].indexOf('#') == 0) {
-						gateway.send("MODE "+command[1]+" -a "+command[2]);
-					}
-				} else {
-					if(gateway.getActive()) {
-						gateway.send("MODE "+gateway.active+" -a "+command[1]);
-					} else {
-						gateway.notEnoughParams("deprotect", "musisz poda\u0107 kanal na ktorym chcesz odebrać uprawnienia tej osobie.");
-					}
-				}
-			} else {
-				gateway.notEnoughParams("deprotect", "musisz poda\u0107 kanał na którym chcesz odebrać uprawnienia i nick osoby której chcesz je dać.");
-			}
-		}
-	},	
-	'protect': {
-		'channels': true,
-		'nicks': false,
-		'custom': [],
-		'callback': function(command, input) {
-			if(command[1]) {
-				if(command[2]) {
-					if (command[1].indexOf('#') == 0) {
-						gateway.send("MODE "+command[1]+" +a "+command[2]);
-					}
-				} else {
-					if(gateway.getActive()) {
-						gateway.send("MODE "+gateway.active+" +a "+command[1]);
-					} else {
-						gateway.notEnoughParams("protect", "musisz poda\u0107 kanal na ktorym chcesz odebrać uprawnienia tej osobie.");
-					}
-				}
-			} else {
-				gateway.notEnoughParams("protect", "musisz poda\u0107 kanał na którym chcesz odebrać uprawnienia i nick osoby której chcesz je dać.");
-			}
-		}
-	},	
-	'op': {
-		'channels': true,
-		'nicks': false,
-		'custom': [],
-		'callback': function(command, input) {
-			if(command[1]) {
-				if(command[2]) {
-					if (command[1].indexOf('#') == 0) {
-						gateway.send("MODE "+command[1]+" +o "+command[2]);
-					}
-				} else {
-					if(gateway.getActive()) {
-						gateway.send("MODE "+gateway.active+" +o "+command[1]);
-					} else {
-						gateway.notEnoughParams("op", "musisz poda\u0107 kanal na ktorym chcesz odebrać uprawnienia tej osobie.");
-					}
-				}
-			} else {
-				gateway.notEnoughParams("op", "musisz poda\u0107 kanał na którym chcesz odebrać uprawnienia i nick osoby której chcesz je dać.");
-			}
-		}
-	},	
-	'deop': {
-		'channels': true,
-		'nicks': false,
-		'custom': [],
-		'callback': function(command, input) {
-			if(command[1]) {
-				if(command[2]) {
-					if (command[1].indexOf('#') == 0) {
-						gateway.send("MODE "+command[1]+" -o "+command[2]);
-					}
-				} else {
-					if(gateway.getActive()) {
-						gateway.send("MODE "+gateway.active+" -o "+command[1]);
-					} else {
-						gateway.notEnoughParams("deop", "musisz poda\u0107 kanal na ktorym chcesz odebrać uprawnienia tej osobie.");
-					}
-				}
-			} else {
-				gateway.notEnoughParams("deop", "musisz poda\u0107 kanał na którym chcesz odebrać uprawnienia i nick osoby której chcesz je dać.");
-			}
-		}
-	},	
-	'voice': {
-		'channels': true,
-		'nicks': false,
-		'custom': [],
-		'callback': function(command, input) {
-			if(command[1]) {
-				if(command[2]) {
-					if (command[1].indexOf('#') == 0) {
-						gateway.send("MODE "+command[1]+" +v "+command[2]);
-					}
-				} else {
-					if(gateway.getActive()) {
-						gateway.send("MODE "+gateway.active+" +v "+command[1]);
-					} else {
-						gateway.notEnoughParams("voice", "musisz poda\u0107 kanal na ktorym chcesz odebrać uprawnienia tej osobie.");
-					}
-				}
-			} else {
-				gateway.notEnoughParams("voice", "musisz poda\u0107 kanał na którym chcesz odebrać uprawnienia i nick osoby której chcesz je dać.");
-			}
-		}
-	},
-	'devoice': {
-		'channels': true,
-		'nicks': false,
-		'custom': [],
-		'callback': function(command, input) {
-			if(command[1]) {
-				if(command[2]) {
-					if (command[1].indexOf('#') == 0) {
-						gateway.send("MODE "+command[1]+" -v "+command[2]);
-					}
-				} else {
-					if(gateway.getActive()) {
-						gateway.send("MODE "+gateway.active+" -v "+command[1]);
-					} else {
-						gateway.notEnoughParams("devoice", "musisz poda\u0107 kanal na ktorym chcesz odebrać uprawnienia tej osobie.");
-					}
-				}
-			} else {
-				gateway.notEnoughParams("devoice", "musisz poda\u0107 kanał na którym chcesz odebrać uprawnienia i nick osoby której chcesz je dać.");
-			}
-		}
-	},	
-	'mode': {
-		'channels': true,
-		'nicks': false,
-		'custom': [],
-		'callback': function(command, input) {
-			if(command[1]) {
-				if (!command[1].indexOf('-') == 0 && !command[1].indexOf('+') == 0) {
-					gateway.send("MODE " + input.slice(1).substr(command[0].length+1));
-				} else {
-					if (gateway.findChannel(gateway.active)) {
-						 gateway.send("MODE " + gateway.active + " " + input.slice(1).substr(command[0].length+1));
-					} else {
-						gateway.notEnoughParams("mode", "musisz podać nick/kanał jako pierwszy argument");
-					}
-				}
-			} else {
-				gateway.notEnoughParams("mode", "musisz podać nick/kanał jako pierwszy argument");
-			}
-		}
-	}
-/*		'join': {
-		'channels': true,
-		'nicks': false,
-		'custom': [],
-		'callback': function(command, input) {
-		}
-	}   */
-}
-
 var loaded = false;
 
 var readyFunc = function(){
@@ -3819,25 +1392,25 @@ var readyFunc = function(){
 $('document').ready(function(){setTimeout(readyFunc, 100);});
 
 function onBlur() {
-    disp.focused = false;
+	disp.focused = false;
 };
 function onFocus(){
-    clearInterval(disp.titleBlinkInterval);
+	clearInterval(disp.titleBlinkInterval);
 	disp.titleBlinkInterval = false;
-	if(document.title == newMessage) document.title = $('<div/>').text(guser.nick).html()+' @ PIRC.pl';
-    disp.focused = true;
-    var act = gateway.getActive();
-    if(act){
-    	act.markRead();
-    }
+	if(document.title == newMessage) document.title = he(guser.nick)+' @ PIRC.pl';
+	disp.focused = true;
+	var act = gateway.getActive();
+	if(act){
+		act.markRead();
+	}
 };
 
 if (/*@cc_on!@*/false) { // check for Internet Explorer
-    document.onfocusin = onFocus;
-    document.onfocusout = onBlur;
+	document.onfocusin = onFocus;
+	document.onfocusout = onBlur;
 } else {
-    window.onfocus = onFocus;
-    window.onblur = onBlur;
+	window.onfocus = onFocus;
+	window.onblur = onBlur;
 }
 
 function browserTooOld(){
@@ -3897,7 +1470,7 @@ var conn = {
 				gateway.recoverConnection();
 			} else {
 				var nconn_html = '<form onsubmit="gateway.initialize();" action="javascript:void(0);"><table>';
-				nconn_html += '<tr><td style="text-align: right; padding-right: 10px;">Kanał:</td><td><input type="text" id="nschan" value="'+$('<div/>').text(reqChannel).html()+'" /></td></tr>';
+				nconn_html += '<tr><td style="text-align: right; padding-right: 10px;">Kanał:</td><td><input type="text" id="nschan" value="'+he(reqChannel)+'" /></td></tr>';
 				nconn_html += '<tr><td style="text-align: right; padding-right: 10px;">Nick:</td><td><input type="text" id="nsnick" value="'+conn.my_nick+'" /></td></tr>';
 				nconn_html += '<tr><td style="text-align: right; padding-right: 10px;">Hasło (jeżeli zarejestrowany):</td><td><input type="password" id="nspass" value="'+conn.my_pass+'" /></td></tr>';
 				nconn_html += '<tr><td></td><td style="text-align: left;"><input type="checkbox" id="save_cookie" /> Zapisz w ciasteczkach</td></tr>';
@@ -3934,9 +1507,7 @@ var conn = {
 			}
 		} catch(e) {
 		}
-		
-		
-		
+
 		$('.not-connected-text p').html('Poczekaj chwilę, trwa ładowanie...');
 
 		booleanSettings.forEach(function(sname){
@@ -3946,6 +1517,12 @@ var conn = {
 			$('#'+sname).prop('checked', str2bool(settings.getCookie(sname)));
 		});
 		comboSettings.forEach(function(sname){
+			if(settings.getCookie(sname) == null){
+				return;
+			}
+			$('#'+sname).val(settings.getCookie(sname));
+		});
+		numberSettings.forEach(function(sname){
 			if(settings.getCookie(sname) == null){
 				return;
 			}
@@ -3980,7 +1557,7 @@ var conn = {
 		$(window).resize(function () {
 			$('#chat-wrapper').scrollTop(document.getElementById('chat-wrapper').scrollHeight);
 		});
-    
+	
 	//	gateway.send("QUIT"); //k4be
 		$('#input').keydown(function(e) {
 			if(e.which == 13 || e.which == 38 || e.which == 40 || e.which == 9) {
@@ -4048,34 +1625,27 @@ var conn = {
 			}
 		});
 
-		$("h2").bind('click', function(){
-		
-			if (gateway.getActive()) {
-				gateway.showTopic(gateway.active) 
-			}
-		});
-
 		try {
 			$('#not_connected_wrapper').fadeIn(200);
 		} catch(e) {
 			browserTooOld();
 		}
-		$('.not-connected-text > h3').html($('<div/>').text(guser.channels[0]).html() + ' @ PIRC.pl');
-		dnick = $('<div/>').text(guser.nick).html();
+		$('.not-connected-text > h3').html(he(guser.channels[0]) + ' @ PIRC.pl');
+		dnick = he(guser.nick);
 		if(guser.nick == '1') {
-		    dnick = ''
-            $(document).attr('title', 'Nieznany @ PIRC.pl');
+			dnick = ''
+			$(document).attr('title', 'Nieznany @ PIRC.pl');
 		}
 		$(window).on('beforeunload', function() {
-        	if (gateway.connectStatus != statusDisconnected) {
-        		if ($('#autoDisconnect').is(':checked')) {
-        			gateway.send('QUIT :Użytkownik zamknął stronę');
-            	} else {
-            		gateway.clickQuit();
-            		return 'Jesteś nadal połączony z IRCem. Kliknij "Zostań na stronie" a następnie "Rozłącz" w okienku poniżej aby się rozłączyć przed wyjściem.';
-            	}
-        	}
-    	});
+			if (gateway.connectStatus != statusDisconnected) {
+				if ($('#autoDisconnect').is(':checked')) {
+					gateway.send('QUIT :Użytkownik zamknął stronę');
+				} else {
+					gateway.clickQuit();
+					return 'Jesteś nadal połączony z IRCem. Kliknij "Zostań na stronie" a następnie "Rozłącz" w okienku poniżej aby się rozłączyć przed wyjściem.';
+				}
+			}
+		});
 		
 		if(!navigator.cookieEnabled){
 			$('.not-connected-text > p').html('Twoja przeglądarka ma wyłączoną obsługę ciasteczek. Niektóre funkcje bramki mogą działać nieprawidłowo.<br /><input type="button" onclick="conn.dispConnectDialog();" value="Kontynuuj" />');
@@ -4089,5 +1659,4 @@ var conn = {
 		}
 	}
 }
-
 

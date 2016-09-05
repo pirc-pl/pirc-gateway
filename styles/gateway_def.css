@@ -594,13 +594,14 @@ ul.options li:hover {
 	border: 1px solid #757575;
 	display: none;
 	left: 50%;
-	margin-left: -214px;
+	margin-left: -15em;
 	margin-top: -50px;
 	padding: 14px;
 	position: fixed;
-	top: 50%;
-	width: 400px;
+	top: 30%;
+	width: 40em;
 	z-index: 10;
+	max-width: 70%;
 }
 	
 .statuswindow div.status-close {
@@ -613,6 +614,19 @@ ul.options li:hover {
 .statuswindow div.status-close:hover {
 	color: #BBBBBB;
 	cursor: pointer;
+}
+
+.statuswindow td {
+	border: 1px solid #aab;
+	padding: 2px 4px 2px 4px;
+}
+
+.statuswindow td.button {
+	border: none;
+}
+
+.statuswindow button {
+	padding: 2px;
 }
 	
 .statusbutton {
@@ -1032,5 +1046,37 @@ span.td_right {
 .backlog {
 	opacity: 0.4;
 	filter: alpha(opacity=40);
+}
+
+#options_wrapper input[type="text"] {
+	width: 3em;
+	margin: 0;
+    margin-right: -.6em;
+    text-align: right;
+}
+
+.optionsCheckBox {
+	text-align: right;
+}
+
+.channelAdmin {
+	border: 1px #88a;
+	border-radius: 5px;
+	width: 95%;
+	padding: .4em;
+	padding-top: 0;
+	background-color: #D5D5DC;
+	text-align: center;
+	font-size: .8em;
+}
+
+.channelAdmin button {
+	padding: 2px;
+	margin-top: .4em;
+}
+
+.beIListContents {
+	overflow-y: auto;
+    max-height: 30em;
 }
 

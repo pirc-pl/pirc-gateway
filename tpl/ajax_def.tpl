@@ -25,36 +25,40 @@
             	<h3>Ustawienia</h3>
             	<table>
 					<tr>
-						<td><input type="checkbox" id="showPartQuit" onchange="disp.changeSettings()" /></td>
+						<td class="optionsCheckBox"><input type="checkbox" id="showPartQuit" onchange="disp.changeSettings()" /></td>
 						<td>&nbsp; Nie pokazuj wiadomości PART/JOIN/QUIT</td>
 					</tr>
 					<tr>
-						<td><input type="checkbox" id="tabsListBottom" onchange="disp.changeSettings()" /></td>
+						<td class="optionsCheckBox"><input type="checkbox" id="tabsListBottom" onchange="disp.changeSettings()" /></td>
 						<td>&nbsp; Listę zakładek pokazuj na dole strony</td>
 					</tr>
 					<tr title="Pokazuje informację user@host przy dołączaniu i opuszczaniu kanałów przez użytkowników">
-						<td><input type="checkbox" id="showUserHostnames" onchange="disp.changeSettings()" /></td>
+						<td class="optionsCheckBox"><input type="checkbox" id="showUserHostnames" onchange="disp.changeSettings()" /></td>
 						<td>&nbsp; Pokazuj nazwy hosta użytkowników</td>
 					</tr>
 					<tr>
-						<td><input type="checkbox" id="autoReconnect" onchange="disp.changeSettings()" checked="checked" /></td>
+						<td class="optionsCheckBox"><input type="checkbox" id="autoReconnect" onchange="disp.changeSettings()" checked="checked" /></td>
 						<td>&nbsp; Automatycznie łącz ponownie po rozłączeniu</td>
 					</tr>
 					<tr title="Ustawienie nie wpływa na linki, które są już wyświetlone">
-						<td><input type="checkbox" id="displayLinkWarning" onchange="disp.changeSettings()" checked="checked" /></td>
+						<td class="optionsCheckBox"><input type="checkbox" id="displayLinkWarning" onchange="disp.changeSettings()" checked="checked" /></td>
 						<td>&nbsp; Pokazuj ostrzeżenia o niebezpiecznych linkach</td>
 					</tr>
 					<tr>
-						<td><input type="checkbox" id="blackTheme" onchange="disp.changeSettings()" /></td>
+						<td class="optionsCheckBox"><input type="checkbox" id="blackTheme" onchange="disp.changeSettings()" /></td>
 						<td>&nbsp; Ciemny motyw bramki (eksperymentalny)</td>
 					</tr>
 					<tr>
-						<td><input type="checkbox" id="newMsgSound" onchange="disp.changeSettings()" /></td>
+						<td class="optionsCheckBox"><input type="checkbox" id="newMsgSound" onchange="disp.changeSettings()" /></td>
 						<td>&nbsp; Informuj dźwiękiem o nowej wiadomości</td>
 					</tr>
 					<tr>
-						<td><input type="checkbox" id="autoDisconnect" onchange="disp.changeSettings()" checked="checked" /></td>
+						<td class="optionsCheckBox"><input type="checkbox" id="autoDisconnect" onchange="disp.changeSettings()" checked="checked" /></td>
 						<td>&nbsp; Automatycznie rozłączaj przy zamykaniu strony</td>
+					</tr>
+					<tr>
+						<td><input type="text" id="backlogCount" onchange="disp.changeSettings()" /></td>
+						<td>&nbsp; Ilość linii w historii rozmów z poprzedniej wizyty</td>
 					</tr>
 					<tr>
 						<td colspan="2">
