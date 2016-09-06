@@ -1083,6 +1083,21 @@ var gateway = {
 			$(".status-text").html(html);
 		$(".statuswindow").fadeIn(200);
 	},
+	'showInvitePrompt': function(channel) {
+		var html = "<h3>Zaproś użytkownika na "+he(channel)+"</h3>" +
+			'<form action="javascript:gateway.performInvite(\''+channel+'\')"><p>Nick: <input id="inviteNick" type="text"> <input type="submit" value="Zaproś"></p></form>';
+			$(".status-text").html(html);
+		$(".statuswindow").fadeIn(200);
+	},
+	'performInvite': function(channel){
+		var nick = $('#inviteNick').val();
+		if(!nick || nick == ''){
+			alert('Musisz podać nicka!');
+			return;
+		}
+		gateway.send('INVITE '+nick+' '+channel);
+		gateway.closeStatus();
+	},
 	'showKick' : function(channel, nick) {
 		var html = "<h3>KICK</h3>" +
 			"<p>Wyrzuć użytkownika "+he(nick)+" z kanału "+he(channel)+". Możesz podać powód dla KICKa, który zostanie wyświetlony dla wszystkich użytkowników kanału.</p>" +
@@ -1255,6 +1270,20 @@ var gateway = {
 				direction: "vertical"
 			}, 300);
 			$('#'+nicklistid+'-opt').addClass('activeAdmin');
+		}
+	},
+	'toggleChannelOpts': function(channel) {
+		var $element = $('#'+gateway.findChannel(channel).id+'-operActions ul');
+		if($element.is(':visible')){
+			$element.hide('blind', {
+				direction: 'vertical'
+			}, 300);
+			$('#'+gateway.findChannel(channel).id+'-operActions').removeClass('channelAdminActive');
+		} else {
+			$element.show('blind', {
+				direction: 'vertical'
+			}, 300);
+			$('#'+gateway.findChannel(channel).id+'-operActions').addClass('channelAdminActive');
 		}
 	},
 	'showPermError': function(text) {

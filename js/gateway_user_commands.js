@@ -203,6 +203,22 @@ var commands = {
 			}
 		}
 	},
+	'invite' : {
+		'channels': true,
+		'nicks': true,
+		'custom': [],
+		'callback': function(command, input) {
+			if(!command[1] || (!command[2] && !gateway.findChannel(gateway.active))){
+				gateway.notEnoughParams("invite", "musisz podać nicka użytkownika, i nazwę kanału, na który chcesz go zaprosić.");
+				return;
+			}
+			if(!command[2]){
+				gateway.send('INVITE '+command[1]+' '+gateway.active);
+			} else {
+				gateway.send('INVITE '+command[1]+' '+command[2]);
+			}
+		}
+	},
 	'knock': {
 		'channels': true,
 		'nicks': false,

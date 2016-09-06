@@ -95,10 +95,14 @@ function Nicklist(chan, id) {
 		$('.not-connected-text > p').html('Twoja przeglądarka jest przestarzała i nie jest obsługiwana. Należy zainstalować przeglądarkę (Mozilla Firefox, Internet Explorer, Opera, Safari, Chrome lub inną) w aktualnej wersji.');
 	}
 	
-	var operHtml = '<div class="'+id+'-operActions channelAdmin" style="display:none">' +
-		'<button onclick="gateway.send(\'MODE '+this.channel+' b\')">Lista banów (b)</button> ' +
-		'<button onclick="gateway.send(\'MODE '+this.channel+' e\')">Lista wyjątków (e)</button> ' +
-		'<button onclick="gateway.showChannelModes(\''+this.channel+'\')">Tryby kanału</button> ' +
+	var operHtml = '<div id="'+id+'-operActions" class="'+id+'-operActions channelAdmin" style="display:none">' +
+		'<div class="channelOperActionsButton" onclick="gateway.toggleChannelOpts(\''+this.channel+'\')">Akcje administracyjne</div>'+
+		'<ul class="channelOperActions">' +
+			'<li onclick="gateway.send(\'MODE '+this.channel+' b\')">Lista banów (b)</li>' +
+			'<li onclick="gateway.send(\'MODE '+this.channel+' e\')">Lista wyjątków (e)</li>' +
+			'<li onclick="gateway.showChannelModes(\''+this.channel+'\')">Tryby kanału</li>' +
+			'<li onclick="gateway.showInvitePrompt(\''+this.channel+'\')">Zaproś na kanał</li>' +
+		'</ul>' +
 		'</div>';
 	$('#'+this.id).prepend(operHtml);
 }

@@ -1061,13 +1061,27 @@ span.td_right {
 
 .channelAdmin {
 	border: 1px #88a;
-	border-radius: 5px;
-	width: 95%;
-	padding: .4em;
-	padding-top: 0;
-	background-color: #D5D5DC;
 	text-align: center;
 	font-size: .8em;
+	margin-bottom: 3px;
+	border: 1px solid #D5D5DC;
+	margin-left: 10px;
+}
+
+.channelAdmin li {
+	list-style: none outside none;
+	margin-top: 3px;
+	border: 1px solid #FFFFFF;
+	background-color: #E6EFFA;
+    margin-left: .4em;
+    margin-right: .4em;
+    margin-bottom: 4px;
+    color: #556A83;
+}
+
+.channelAdminActive {
+	background-color: #E6EFFA;
+	border-color: #7492B6;
 }
 
 .channelAdmin button {
@@ -1080,3 +1094,24 @@ span.td_right {
     max-height: 30em;
 }
 
+.channelOperActionsButton, .channelAdmin li {
+	padding-top: 2px;
+	padding-bottom: 2px;
+}
+
+.channelOperActionsButton:hover, .channelAdmin li:hover, .channelAdminActive ul {
+	background-color: #e6effa;
+    border-color: #7492B6;
+}
+
+.channelOperActionsButton:hover, .channelAdmin li:hover {
+	cursor: pointer;
+}
+
+.channelAdmin li:hover {
+	background-color: rgba(255, 255, 255, 0.6);
+}
+
+.channelOperActions {
+	display: none;
+}

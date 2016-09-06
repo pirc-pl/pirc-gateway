@@ -124,3 +124,25 @@ b.admin {
 	background-color: #3F4B5D;
 }
 
+.channelOperActionsButton:hover, .channelAdminActive ul, .channelAdminActive {
+	background-color: #2D3A4A;
+}
+
+.channelAdmin {
+    border-color: #7492B6;
+}
+
+.channelAdmin:hover, .channelAdminActive {
+	border: 1px solid #7492B6  !important;
+}
+
+.channelAdmin li {
+	background-color: #5C738E;
+    color: #BED8FB;
+    border-color: #111111;
+}
+
+.channelAdmin li:hover {
+	background-color: #2D3A4A;
+}
+

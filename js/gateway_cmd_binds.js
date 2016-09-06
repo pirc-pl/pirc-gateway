@@ -573,12 +573,39 @@ var cmdBinds = {
 			gateway.statusWindow.appendMessage(messagePatterns.motd, [gateway.niceTime(), msg.text]);
 		}
 	],
+	'INVITE': [
+		function(msg) {
+			gateway.lastNoticeNick = false;
+			$(".notice-text").append("<h3>Zaproszenie</h3><p><b>"+he(msg.sender.nick)+"</b> zaprasza Cię na kanał <a href=\"javascript:gateway.send('JOIN "+msg.text+"');gateway.closeNotice();\" onclick=\"return confirm('Czy na pewno chcesz dołączyć do kanału "+msg.text+"?')\">"+he(msg.text)+"</a></p>");
+			$(".noticewindow").fadeIn(250);
+		}
+	],
+	'341': [	// RPL_INVITING
+		function(msg) {
+			var chan = gateway.findChannel(msg.args[2]);
+			if(chan){
+				chan.appendMessage(messagePatterns.yourInvite, [gateway.niceTime(), he(msg.args[1]), he(msg.args[2])]);
+			} else {
+				gateway.statusWindow.appendMessage(messagePatterns.yourInvite, [gateway.niceTime(), he(msg.args[1]), he(msg.args[2])]);
+			}
+		}
+	],
 	'401': [	// ERR_NOSUCHNICK
 		function(msg) {
 			var html = "<h3>Nie można wykonać żądanej akcji</h3>" +
 				"<p>"+he(msg.args[1])+": nie ma takiego nicku ani kanału.";
 			$(".notify-text").html(html);
 			gateway.statusWindow.appendMessage(messagePatterns.noSuchNick, [gateway.niceTime(), he(msg.args[1])]);
+			$(".notifywindow").fadeIn(250);
+			$(".notifywindow").css('z-index', 10);
+		}
+	],
+	'403': [	// ERR_NOSUCHCHANNEL 
+		function(msg) {
+			var html = "<h3>Nie można wykonać żądanej akcji</h3>" +
+				"<p>"+he(msg.args[1])+": nie ma takiego kanału.";
+			$(".notify-text").html(html);
+			gateway.statusWindow.appendMessage(messagePatterns.noSuchChannel, [gateway.niceTime(), he(msg.args[1])]);
 			$(".notifywindow").fadeIn(250);
 			$(".notifywindow").css('z-index', 10);
 		}
@@ -626,6 +653,26 @@ var cmdBinds = {
 			$(".notifywindow").fadeIn(250);
 			$(".notifywindow").css('z-index', 10);
 			gateway.statusWindow.appendMessage(messagePatterns.nickInUse, [gateway.niceTime(), msg.args[1]]);
+		}
+	],
+	'442' : [	// ERR_NOTONCHANNEL
+		function(msg) {
+			var html = "<h3>Nie można wykonać żądanej akcji</h3>" +
+				"<p>"+he(msg.args[1])+": nie jesteś na tym kanale.";
+			$(".notify-text").html(html);
+			gateway.statusWindow.appendMessage(messagePatterns.notOnChannel, [gateway.niceTime(), he(msg.args[1])]);
+			$(".notifywindow").fadeIn(250);
+			$(".notifywindow").css('z-index', 10);
+		}
+	],
+	'443' : [	// ERR_USERONCHANNEL
+		function(msg) {
+			var html = "<h3>Nie można wykonać żądanej akcji</h3>" +
+				"<p>"+he(msg.args[2])+": <b>"+he(msg.args[1])+"</b> jest już na tym kanale.";
+			$(".notify-text").html(html);
+			gateway.statusWindow.appendMessage(messagePatterns.alreadyOnChannel, [gateway.niceTime(), he(msg.args[2]), he(msg.args[1])]);
+			$(".notifywindow").fadeIn(250);
+			$(".notifywindow").css('z-index', 10);
 		}
 	],
 	'474' : [	// ERR_BANNEDFROMCHAN

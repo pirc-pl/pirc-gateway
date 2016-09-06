@@ -75,6 +75,9 @@ var messagePatterns = {
 	'channelBacklogEnd': '<span class="time">%s</span> &nbsp; <span class="mode">*** Koniec zapisu.</span><br />',
 	'noSuchCommand': '<span class="time">%s</span> &nbsp; <span class="mode">*** %s: nieznana komenda.</span><br />',
 	'noSuchNick': '<span class="time">%s</span> &nbsp; <span class="mode">*** %s: nie ma takiego nicku ani kanału</span><br />',
+	'noSuchChannel': '<span class="time">%s</span> &nbsp; <span class="mode">*** %s: nie ma takiego kanału</span><br />',
+	'notOnChannel': '<span class="time">%s</span> &nbsp; <span class="mode">*** %s: nie jesteś na tym kanale</span><br />',
+	'alreadyOnChannel': '<span class="time">%s</span> &nbsp; <span class="mode">*** %s: %s jest już na tym kanale</span><br />',
 	'youQuit': '<span class="time">%s</span> &nbsp; <span class="part">*** Wyszedłeś z IRC</span><br />',
 	'notConnected': '<span class="time">%s</span> &nbsp; <span class="mode">*** Nie jesteś połączony z IRC!</span><br />',
 	'notEnoughParameters': '<span class="time">%s</span> &nbsp; <span class="mode">*** %s: Za mało argumentów.</span><br />',
@@ -85,7 +88,7 @@ var messagePatterns = {
 	'yourNotice': '<span class="time">%s</span> &nbsp; <span class="notice"><b>-NOTICE/%s-</b> %s</span><br />',
 	'notEnoughParams': '<span class="time">%s</span> &nbsp; <span class="mode">*** %s: za mało argumentów: %s</span><br />',
 	'motd': '<span class="time">%s</span> &nbsp; <span class="motd">*** %s</span><br />',
-	'ctcpRequest': '<span class="time">%s</span> &nbsp; <span class="mode">*** %s wysyla CTCP REQUEST: %s</span><br />',
+	'ctcpRequest': '<span class="time">%s</span> &nbsp; <span class="mode">*** %s wysyła CTCP REQUEST: %s</span><br />',
 	'ctcpReply': '<span class="time">%s</span> &nbsp; <span class="notice">*** <b>CTCP REPLY od %s:</b> %s</span><br />',
 	'chanListElement': '<span class="time">%s</span> &nbsp; <span class="notice">*** <b><a href="#" onClick="gateway.send(\'JOIN %s\')">%s</a></b> (%s) - %s </span> <br />',
 	'banListElement': '<span class="time">%s</span> &nbsp; <span class="mode">*** Ban: <b>%s</b> <i>założony przez:</i> <b>%s</b> (%s) </span><br />',
@@ -97,7 +100,8 @@ var messagePatterns = {
 	'mode': '<span class="time">%s</span> &nbsp; <span class="mode">*** Ustawienia kanału %s: [%s]</span><br />',
 	'error': '<span class="time">%s</span> &nbsp; <span class="mode"> !!! Rozłączono z serwerem: %s</span><br />',
 	'existingConnection': '<span class="time">%s</span> &nbsp; <span class="mode">*** Połączenie już istnieje, dołączam się do niego.</span><br />',
-	'away': '<span class="time">%s</span> &nbsp; <span class="mode">*** %s otrzymał twoją wiadomość, ale jest teraz nieobecny: %s</span><br />'
+	'away': '<span class="time">%s</span> &nbsp; <span class="mode">*** %s otrzymał twoją wiadomość, ale jest teraz nieobecny: %s</span><br />',
+	'yourInvite': '<span class="time">%s</span> &nbsp; <span class="mode">*** Zaprosiłeś użytkownika %s na kanał %s</span><br />'
 };
 
 var modes = {
