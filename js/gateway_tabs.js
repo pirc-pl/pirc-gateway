@@ -39,7 +39,7 @@ function Nicklist(chan, id) {
 		this.sort();
 		for(i in this.list){
 			if(this.sortFunc(this.list[i], nickListItem) > 0){
-				$('#'+this.id+' .'+this.list[i].nick).before(userHTML);
+				$('#'+this.id+' .'+md5(this.list[i].nick)).before(userHTML);
 				userHTML = false;
 				break;
 			}
@@ -120,7 +120,7 @@ function NicklistUser(usernick, initMode, chan) {
 	this.host = false;
 
 	this.makeHTML = function() {
-		return '<li id="'+this.id+'" class="'+he(this.nick)+'">'+
+		return '<li id="'+this.id+'" class="'+md5(this.nick)+'">'+
 			'<table><tr onclick="gateway.toggleNickOpt(\''+this.id+'\')">'+
 				'<td valign="top"><img class="chrank" alt="'+alt[this.level]+'" src="'+icons[this.level]+'" /></td>'+
 				'<td valign="top" style="text-align:left;width:100%;" class="'+((this.nick.toLowerCase()==guser.nick.toLowerCase())?'ownNick ':'')+'nickname">&nbsp;&nbsp;'+this.nick+'</td>'+
@@ -175,7 +175,7 @@ function NicklistUser(usernick, initMode, chan) {
 		}
 		if(this.level != oldLevel){
 			var nicklist = gateway.findChannel(this.channel).nicklist;
-			var nickListElement = $('#'+nicklist.id+' .'+this.nick);
+			var nickListElement = $('#'+nicklist.id+' .'+md5(this.nick));
 			if(nickListElement.length){
 				nickListElement.remove();
 				nicklist.insertNick(this);

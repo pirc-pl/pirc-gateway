@@ -1115,3 +1115,7 @@ span.td_right {
 .channelOperActions {
 	display: none;
 }
+
+.notice-text button, .error-text button {
+	padding: 4px;
+}

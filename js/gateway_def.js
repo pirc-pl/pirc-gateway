@@ -1098,6 +1098,13 @@ var gateway = {
 		gateway.send('INVITE '+nick+' '+channel);
 		gateway.closeStatus();
 	},
+	'knocking': function(channel, nick, reason) {
+		$(".notice-text").append("<h3> Komunikat od serwera</h3>");
+		gateway.lastNoticeNick = false;
+		$(".notice-text").append('<p><b>'+nick+'</b> prosi o dostęp na <b>'+he(channel)+'</b>. <button onclick="gateway.send(\'INVITE '+nick+' '+channel+'\');gateway.closeNotice()">Zaproś</button></p>');
+		$(".noticewindow").fadeIn(250);
+		$('.notice-text').scrollTop($('.notice-text').prop("scrollHeight"));
+	},
 	'showKick' : function(channel, nick) {
 		var html = "<h3>KICK</h3>" +
 			"<p>Wyrzuć użytkownika "+he(nick)+" z kanału "+he(channel)+". Możesz podać powód dla KICKa, który zostanie wyświetlony dla wszystkich użytkowników kanału.</p>" +

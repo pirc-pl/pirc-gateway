@@ -246,6 +246,41 @@ var cmdBinds = {
 						$(".noticewindow").fadeIn(250);
 						$('.notice-text').scrollTop($('.notice-text').prop("scrollHeight"));
 					}
+				} else if(msg.sender.server){
+					var expressions = [/^Your "real name" is now set to be/, / invited [^ ]+ into the channel.$/];
+					for(var i=0; i<expressions.length; i++){
+						if(msg.text.match(expressions[i])){
+							return;
+						}
+					}
+				//	if(msg.args[0] == guser.nick){
+				//		gateway.statusWindow.appendMessage(messagePatterns.serverNotice, [gateway.niceTime(), he(msg.sender.nick), $$.colorize(msg.text)]);
+				//	} else {
+						var expr = /^\[Knock\] by ([^ !]+)![^ ]+ \(([^)]+)\)$/;
+						var match = expr.exec(msg.text);
+						if(match){
+							gateway.knocking(msg.args[0].substring(msg.args[0].indexOf('#')), match[1], match[2]);
+							return;
+						}
+						expr = /^Knocked on (.*)$/;
+						var match = expr.exec(msg.text);
+						if(match){
+							var chan = gateway.findChannel(match[1]);
+							if(chan){
+								chan.appendMessage(messagePatterns.knocked, [gateway.niceTime(), match[1]]);
+							} else {
+								gateway.statusWindow.appendMessage(messagePatterns.knocked, [gateway.niceTime(), match[1]]);
+							}
+							return;
+						}
+						if(!gateway.lastNoticeNick || gateway.lastNoticeNick.toLowerCase() != msg.sender.nick.toLowerCase()) {
+							$(".notice-text").append("<h3>Komunikat prywatny od serwera "+he(msg.sender.nick)+" do "+he(msg.args[0])+"</h3>");
+							gateway.lastNoticeNick = msg.sender.nick;
+						}
+		   				$(".notice-text").append("<p><span class=\"time\">"+gateway.niceTime()+"</span> "+$$.colorize(msg.text)+"</p>");
+						$(".noticewindow").fadeIn(250);
+						$('.notice-text').scrollTop($('.notice-text').prop("scrollHeight"));
+				//	}
 				}
 			}
 		}
@@ -692,11 +727,21 @@ var cmdBinds = {
 		function(msg) {
 			gateway.iKnowIAmConnected();
 			var html = "<h3>Nie można dołączyć do kanału<br />" + he(msg.args[1]) + "<br /><br /></h3>" +
-				'<p>Musisz dostać zaproszenie aby wejść na ten kanał. Wpisz <b>/knock '+he(msg.args[1])+'</b> aby poprosić operatorów o możliwość wejścia.</p>';
+				'<p>Musisz dostać zaproszenie aby wejść na ten kanał. <button onclick="gateway.send(\'KNOCK '+msg.args[1]+' :Proszę o możliwość wejścia na kanał\');gateway.closeError()">Poproś operatorów o możliwość wejścia</button></p>';
 			gateway.statusWindow.appendMessage(messagePatterns.cannotJoin, [gateway.niceTime(), msg.args[1], "Kanał wymaga zaproszenia"]);
 			$(".error-text").html(html);
 			$(".errorwindow").fadeIn(250);
 			$(".errorwindow").css('z-index', 10);
+		}
+	],
+	'480' : [	// ERR_CANNOTKNOCK
+		function(msg) {
+			var html = "<h3>Nie można wykonać żądanej akcji</h3>" +
+				"<p>Komunikat serwera: "+he(msg.text)+"</p>";
+			$(".notify-text").html(html);
+			gateway.statusWindow.appendMessage(messagePatterns.alreadyOnChannel, [gateway.niceTime(), 'Komunikat serwera', he(msg.text)]);
+			$(".notifywindow").fadeIn(250);
+			$(".notifywindow").css('z-index', 10);
 		}
 	],
 	'489' : [	// ERR_SECUREONLYCHAN 
