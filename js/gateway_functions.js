@@ -84,7 +84,7 @@ var messagePatterns = {
 	'cannotSendToChan': '<span class="time">%s</span> &nbsp; <span class="kick">*** Nie możcna wysłać na %s: %s. Wiadomość nie została dostarczona.</span><br />',
 	'cannotJoin': '<span class="time">%s</span> &nbsp; <span class="kick">*** Nie możcna dołączyć do kanału %s: %s</span><br />',
 	'noPerms': '<span class="time">%s</span> &nbsp; <span class="kick">*** Brak uprawnien.</span><br />',
-	'notice': '<span class="time">%s</span> &nbsp; <span class="notice-nick"><b>%s</b></span><span class="userhost">(<span class="notice-nick">%s</span>@<span class="notice-nick">%s</span>)</span> <span class="notice">%s</span><br />',
+	'notice': '<span class="time">%s</span> &nbsp; <span class="notice-nick"><b>-%s-</b></span><span class="userhost">(<span class="notice-nick">%s</span>@<span class="notice-nick">%s</span>)</span> <span class="notice">%s</span><br />',
 	'serverNotice': '<span class="time">%s</span> &nbsp; <span class="notice-nick">Wiadomość od serwera <b>%s</b>:</span> <span class="notice">%s</span><br />',
 	'yourNotice': '<span class="time">%s</span> &nbsp; <span class="notice"><b>-NOTICE/%s-</b> %s</span><br />',
 	'notEnoughParams': '<span class="time">%s</span> &nbsp; <span class="mode">*** %s: za mało argumentów: %s</span><br />',
@@ -143,6 +143,162 @@ var stateMessage = 3;
 var stateCommand = 4;
 var stateSenderUser = 5;
 var stateSenderHost = 6;
+
+var settings = {
+	'saveCookie': function(cname, cvalue){
+		var expireTime = new Date();
+		expireTime.setFullYear(expireTime.getFullYear() + 3);
+		document.cookie = cname+'='+cvalue+'; expires='+expireTime.toGMTString();
+	},
+	'getCookie': function(cname) {
+		var nameEQ = cname + "=";
+		var ca = document.cookie.split(';');
+		for(var i=0;i < ca.length;i++) {
+			var c = ca[i];
+			while (c.charAt(0)==' ') c = c.substring(1,c.length);
+			if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+		}
+		return null;
+	},
+	'backlogLength': 15
+}
+
+var disp = {
+	'size': 1,
+	'focused': true,
+	'titleBlinkInterval': false,
+	'setSize': function(s) {
+		if(!s) return;
+		$('body').css('font-size', s+'em');
+		$('input[type="checkbox"]').css('transform', 'scale('+s+')');
+		disp.size = s;
+		settings.saveCookie('tsize', s);
+	},
+	'displaySpecialDialog': function(name, button) {
+		$('#'+name).dialog({
+			resizable: false,
+			draggable: true,
+			close: function(){
+				$(this).dialog('destroy');
+			},
+			width: 600
+		});
+		if(button) {
+			$('#'+name).dialog('option', 'buttons', [ {
+				text: button,
+				click: function(){
+					$(this).dialog('close');
+				}
+			} ]);
+		}
+	},
+	'colorWindowShow': function() {
+		disp.displaySpecialDialog('color-dialog');
+	},
+	'symbolWindowShow': function() {
+		disp.displaySpecialDialog('symbol-dialog');
+	},
+	'toggleImageView': function(id, url) {
+		$('#img-'+id).fadeToggle(200);
+		setTimeout(function(){
+			if($('#img-'+id).css('display') == 'none'){
+				$('#show-'+id).css('display', 'inline');
+				$('#hide-'+id).css('display', 'none');
+			} else {
+				if($('#imgc-'+id).prop('src') == ''){
+					$('#imgc-'+id).prop('src', url);
+				}
+				$('#show-'+id).css('display', 'none');
+				$('#hide-'+id).css('display', 'inline');
+			}
+		}, 250);
+	},
+	'toggleVideoView': function(id, video) {
+		$('#img-'+id).fadeToggle(200);
+		setTimeout(function(){
+			if($('#img-'+id).css('display') == 'none'){
+				$('#show-'+id).css('display', 'inline');
+				$('#hide-'+id).css('display', 'none');
+			} else {
+				if($('#vid-'+id).prop('src') == ''){
+					$('#vid-'+id).prop('src', 'https://www.youtube.com/embed/'+video);
+				}
+				$('#show-'+id).css('display', 'none');
+				$('#hide-'+id).css('display', 'inline');
+			}
+		}, 250);
+	},
+	'changeSettings': function() {
+		booleanSettings.forEach(function(sname){
+			settings.saveCookie(sname, $('#'+sname).is(':checked'));
+		});
+		comboSettings.forEach(function(sname){
+			settings.saveCookie(sname, $('#'+sname).val());
+		});
+
+		numberSettings.forEach(function(sname){
+			var value = $('#'+sname).val();
+			if(isNaN(parseFloat(value)) || value < numberSettingsMinMax[sname]['min'] || value > numberSettingsMinMax[sname]['max']){
+				value = numberSettingsMinMax[sname]['deflt'];
+				$('#'+sname).val(value);
+			}
+			settings.saveCookie(sname, value);
+		});
+		settings.backlogLength = parseInt($('#backlogCount').val());
+		if ($('#tabsListBottom').is(':checked')) {
+			$('#top_menu').detach().insertAfter('#inputbox');
+			if($('#tabsDownCss').length == 0) {
+				$('head').append('<link rel="stylesheet" type="text/css" href="/styles/gateway_tabs_down.css" id="tabsDownCss">');
+			}
+		} else {
+			$('#top_menu').detach().insertAfter('#options-box');
+			$('#tabsDownCss').remove();
+		}
+		if ($('#blackTheme').is(':checked')) {
+			if($('#blackCss').length == 0) {
+				$('head').append('<link rel="stylesheet" type="text/css" href="/styles/gateway_black.css" id="blackCss">');
+			}
+		} else {
+			$('#blackCss').remove();
+		}
+		if ($('#showUserHostnames').is(':checked')) {
+			$('#userhost_hidden').remove();
+		} else {
+			if($('#userhost_hidden').length == 0){
+				var style = $('<style id="userhost_hidden">.userhost { display:none; }</style>');
+				$('html > head').append(style);
+			}
+		}
+	},
+	'showAbout': function() {
+		disp.displaySpecialDialog('about-dialog', 'OK');
+	},
+	'showOptions': function() {
+		disp.displaySpecialDialog('options-dialog', 'OK');
+	},
+	'showSizes': function() {
+		disp.displaySpecialDialog('size-dialog', 'Zamknij');
+	},
+	'topicClick': function() {
+		var channel = gateway.findChannel(gateway.active);
+		if(!channel){
+			return;
+		}
+		var html = $('#'+channel.id+'-topic > h2').html() +
+			'<p class="' + channel.id + '-operActions" style="display:none;">' +
+				'<b>Zmodyfikuj temat kanału:</b><textarea name="topicEdit" id="topicEdit">'+$$.colorsToTags(channel.topic)+'</textarea>' +
+				'<button onclick="gateway.changeTopic(\''+channel.name+'\');">Zmień temat</button>' +
+			'</p>';
+		$$.displayDialog('confirm', 'topic', 'Temat kanału '+channel.name, html);
+	},
+	'playSound': function() {
+		if ( ! $('#newMsgSound').is(':checked')) {
+			return;
+		}
+		var filename = '/styles/audio/served';
+		$('#sound').html('<audio autoplay="autoplay"><source src="' + filename + '.mp3" type="audio/mpeg" /><source src="' + filename + '.ogg" type="audio/ogg" /><embed hidden="true" autostart="true" loop="false" src="' + filename +'.mp3" /></audio>');
+	}
+};
 
 //funkcje do obrabiania tekstów i podobne
 var $$ = {
@@ -375,5 +531,76 @@ var $$ = {
 		newText = newText.replace(/^(#[^, ]+)/g, "<a href=\"javascript:gateway.send('JOIN $1')\"" + confirmChan + ">$1</a>");
 		return newText;
 	},
+	'displayReconnect': function(){
+		var button = [ {
+			text: 'Połącz ponownie',
+			click: function(){
+				gateway.reconnect();
+			}
+		} ];
+		$$.displayDialog('connect', 'reconnect', 'Utracono połączenie.', 'Utracono połączenie z siecią.', button);
+	},
+	'displayDialog': function(type, sender, title, message, button){
+		switch(type){ //specyficzne dla typu okna
+			case 'whois':
+				if(gateway.connectStatus != statusConnected){
+					return;
+				}
+				if(sender.toLowerCase() == guser.nick.toLowerCase() && !gateway.displayOwnWhois){
+					return;
+				}
+			case 'warning': case 'error': case 'confirm': case 'connect':
+				var html = message;
+				break;
+			default:
+				var html = "<p><span class=\"time\">"+gateway.niceTime()+"</span> "+message+"</p>";
+				break;
+		}	
+	
+		var id = type+'Dialog-'+md5(sender.toLowerCase());
+		var $dialog = $('#'+id);
+		if($dialog.length == 0){
+			if(!title){
+				title = type;
+			}
+			$dialog = $('<div id="'+id+'" class="dialog '+type+'-dialog" title="'+title+'" />');
+			$dialog.appendTo('html');
+		}
+
+		$dialog.append(html);
+		$dialog.scrollTop($dialog.prop("scrollHeight"));
+		if(type == 'connect'){
+			$dialog.dialog({ modal: true, dialogClass: 'no-close' });
+		}
+		if(type == 'error'){
+			$dialog.dialog({ dialogClass: 'error-dialog-spec' });
+		}
+		$dialog.dialog({
+			resizable: false,
+			draggable: true,
+			close: function(){
+				$('#'+id).dialog('destroy');
+				$('#'+id).remove();
+			},
+			width: 600
+		});
+		if(button){
+			$dialog.dialog('option', 'buttons', button);
+		}
+		if($dialog.find('input').length == 0){
+			gateway.inputFocus();
+		}
+		if(type != 'error'){
+			$('.connect-dialog').dialog('moveToTop');
+		}
+	},
+	'closeDialog': function(type, nick){
+		var id = type+'Dialog-'+md5(nick.toLowerCase());
+		var $dialog = $('#'+id);
+		$dialog.dialog('close');
+	},
+	'sescape': function(val) {
+		return val.replace('\\', '\\\\');
+	}
 }
 

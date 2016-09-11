@@ -4,10 +4,16 @@ var commands = {
 		'nicks': true,
 		'custom': [],
 		'callback': function(command, input) {
+			clearTimeout(gateway.connectTimeoutID);
+			gateway.userQuit = true;
 			gateway.connectStatus = statusDisconnected;
-			$('#not_connected_wrapper').fadeIn(200);
-			$('.not-connected-text > h3').html('Rozłączono');
-			$('.not-connected-text > p').html('Rozłączono z IRC na życzenie. <input type="button" onclick="gateway.reconnect();" value="Połącz ponownie" />');
+			var button = [ {
+				text: 'Połącz ponownie',
+				click: function(){
+					gateway.reconnect();
+				}
+			} ];
+			$$.displayDialog('connect', 'reconnect', 'Rozłączono', '<p>Rozłączono z IRC na życzenie.<p>', button);
 			if (input.slice(1).substr(command[0].length+1) != "") {
 				gateway.send("QUIT :" + input.slice(1).substr(command[0].length+1));
 			} else {
@@ -260,9 +266,8 @@ var commands = {
 						}
 						gateway.findQuery(command[1]).appendMessage(messagePatterns.yourNotice, [gateway.niceTime(), command[1], reason]);
 					} else if($("#noticeDisplay").val() == 0) { // notice jako okienko
-						$(".notice-text").append("<p><span class=\"time\">"+gateway.niceTime()+"</span> <span class=\"notice\"><b>NOTICE "+he(guser.nick)+"→"+command[1] + "</b></span> " + $$.colorize(reason)+"</p>");
-						$(".noticewindow").fadeIn(250);
-						$('.notice-text').scrollTop($('.notice-text').prop("scrollHeight"));
+						var html = "<span class=\"notice\">[<b>"+he(guser.nick)+" → "+command[1] + "</b>]</span> " + $$.colorize(reason);
+						$$.displayDialog('notice', command[1], 'Komunikat prywatny od '+command[1], html);
 					}
 				} else {
 					gateway.notEnoughParams("notice", "musisz podać treść wiadomości którą chcesz wysłać.");
@@ -289,24 +294,31 @@ var commands = {
 				}
 				if(reason) {
 					gateway.send("PRIVMSG "+command[1]+" :"+reason);
+					
+					var serviceNicks = [ 'nickserv', 'chanserv', 'hostserv', 'operserv', 'botserv' ];
+					
+					if(serviceNicks.indexOf(command[1].toLowerCase()) > -1){
+						var query = gateway.findQuery(command[1]);
+						var displayAsQuery = Boolean(query);
+					
+						if(displayAsQuery || $("#noticeDisplay").val() == 1){ // query
+							if(!query) {
+								query = new Query(command[1]);
+								gateway.queries.push(query);
+							}
+							query.appendMessage(messagePatterns.yourMsg, [gateway.niceTime(), guser.nick, $$.colorize(reason)]);
+							query.appendMessage('%s', [$$.parseImages(reason)]);
+						} else if($("#noticeDisplay").val() == 0){ // okienko
+							var html = "<span class=\"notice\">[<b>"+he(guser.nick)+" → "+command[1] + "</b>]</span> " + $$.colorize(reason);
+							$$.displayDialog('notice', command[1], 'Komunikat prywatny od '+command[1], html);
+						} else { // status
+							gateway.statusWindow.appendMessage(messagePatterns.yourMsg, [gateway.niceTime(), guser.nick + ' → ' + command[1], $$.colorize(reason)]);
+						}
+					}
+					
+					
 				} else {
 					gateway.notEnoughParams("msg", "musisz podać treść wiadomości którą chcesz wysłać.");
-				}
-				var services = [ 'nickserv', 'chanserv', 'hostserv', 'operserv', 'botserv' ];
-				if($("#noticeDisplay").val() == 0 && services.indexOf(command[1].toLowerCase()) > -1){
-					$(".notice-text").append("<p><span class=\"time\">"+gateway.niceTime()+"</span> <span class=\"notice\">[<b>"+he(guser.nick)+" &gt; "+command[1] + "</b>]</span> " + $$.colorize(reason)+"</p>");
-					$(".noticewindow").fadeIn(250);
-					$('.notice-text').scrollTop($('.notice-text').prop("scrollHeight"));
-				} else if($("#noticeDisplay").val() == 2 && services.indexOf(command[1].toLowerCase()) > -1){
-					gateway.statusWindow.appendMessage(messagePatterns.yourMsg, [gateway.niceTime(), guser.nick + ' → ' + command[1], $$.colorize(reason)]);
-				} else {
-					var query = gateway.findQuery(command[1]);
-					if(!query) {
-						query = new Query(command[1]);
-						gateway.queries.push(query);
-					}
-					query.appendMessage(messagePatterns.yourMsg, [gateway.niceTime(), guser.nick, $$.colorize(reason)]);
-					query.appendMessage('%s', [$$.parseImages(reason)]);
 				}
 			} else {
 				gateway.notEnoughParams("msg", "musisz podać nick osoby do której chcesz napisać i tekst który chcesz jej wysłać.");

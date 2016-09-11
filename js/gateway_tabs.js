@@ -129,7 +129,7 @@ function NicklistUser(usernick, initMode, chan) {
 				'<li onClick="gateway.queries.push(new Query(\''+this.nick+'\')); gateway.switchTab(\''+this.nick+'\');gateway.toggleNickOpt(\''+this.id+'\');" class="switchTab">Rozmowa Prywatna (QUERY)</li>'+
 				'<li><div style="width:100%;" onClick="gateway.toggleNickOptInfo(\''+this.id+'\')">Informacje</div>'+
 					'<ul class="suboptions" id="'+this.id+'-opt-info'+'">'+
-						'<li onClick="' + ((this.nick.toLowerCase() == guser.nick.toLowerCase())?'gateway.displayOwnWhois = true; ':'') + 'gateway.send(\'WHOIS '+gateway.sescape(this.nick)+' '+gateway.sescape(this.nick)+'\');gateway.toggleNickOpt(\''+this.id+'\');">WHOIS</li>'+
+						'<li onClick="' + ((this.nick.toLowerCase() == guser.nick.toLowerCase())?'gateway.displayOwnWhois = true; ':'') + 'gateway.send(\'WHOIS '+$$.sescape(this.nick)+' '+$$.sescape(this.nick)+'\');gateway.toggleNickOpt(\''+this.id+'\');">WHOIS</li>'+
 						'<li onClick="services.nickInfo(\''+this.nick+'\');gateway.toggleNickOpt(\''+this.id+'\');">NickServ</li>'+
 						((this.nick.toLowerCase() == guser.nick.toLowerCase())?'':'<li onClick="gateway.ctcp(\''+this.nick+'\', \'VERSION\');gateway.toggleNickOpt(\''+this.id+'\');">Wersja oprogramowania</li>')+
 					'</ul>'+

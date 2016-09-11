@@ -9,8 +9,8 @@ var cmdBinds = {
 			}
 			
 			if(msg.args[0] != guser.nick) {
-				guser.changeNick(msg.args[0], true);
-   				$(".notify-text").append("<p>Twój bieżący nick to <b>"+guser.nick+"</b>.</p>");
+				guser.nick = msg.args[0];
+				$$.displayDialog('warning', 'warning', 'Ostrzeżenie', '<p>Twój bieżący nick to <b>'+guser.nick+'</b>.</p>');
 			}
 			gateway.statusWindow.appendMessage(messagePatterns.motd, [gateway.niceTime(), he(msg.text)]);
 			gateway.pingcnt = 0;
@@ -203,9 +203,7 @@ var cmdBinds = {
 					gateway.statusWindow.appendMessage(messagePatterns.ctcpReply, [gateway.niceTime(), he(msg.sender.nick), $$.colorize(acttext)]);
 				}
 				if(ctcp.toLowerCase() == 'version'){
-					$(".notify-text").html('<h3>Oprogramowanie użytkownika '+msg.sender.nick+'</h3><p>'+he(text) +'</p>');
-					$(".notifywindow").fadeIn(250);
-					$(".notifywindow").css('z-index', 10);
+					$$.displayDialog('whois', msg.sender.nick, 'Informacje o użytkowniku '+he(msg.sender.nick), 'Oprogramowanie użytkownika <b>'+msg.sender.nick+'</b>:<br>'+he(text));
 				}
 			} else { // nie-ctcp
 				if(msg.args[0].indexOf('#') == 0) { //kanał
@@ -225,26 +223,22 @@ var cmdBinds = {
 							return;
 						}
 					}
-					if ($("#noticeDisplay").val() == 2) { // notice w statusie
-						gateway.statusWindow.appendMessage(messagePatterns.notice, [gateway.niceTime(), he(msg.sender.nick), he(msg.sender.ident), he(msg.sender.host), $$.colorize(msg.text)]);
-						gateway.statusWindow.markBold();
-					} else if($("#noticeDisplay").val() == 1) { // notice jako query
-						if(!gateway.findQuery(msg.sender.nick)) {
-							var query = new Query(msg.sender.nick);
+					var query = gateway.findQuery(msg.sender.nick);
+					var displayAsQuery = Boolean(query);
+					if(displayAsQuery || $("#noticeDisplay").val() == 1){ // notice jako query
+						if(!query) {
+							query = new Query(msg.sender.nick);
 							gateway.queries.push(query);
 						}
-						gateway.findQuery(msg.sender.nick).appendMessage(messagePatterns.notice, [gateway.niceTime(), he(msg.sender.nick), he(msg.sender.ident), he(msg.sender.host), $$.colorize(msg.text)]);
+						query.appendMessage(messagePatterns.notice, [gateway.niceTime(), he(msg.sender.nick), he(msg.sender.ident), he(msg.sender.host), $$.colorize(msg.text)]);
 						if(gateway.active.toLowerCase() != msg.sender.nick.toLowerCase()) {
-							gateway.findQuery(msg.sender.nick).markNew();
+							query.markNew();
 						}
+					} else if ($("#noticeDisplay").val() == 2) { // notice w statusie
+						gateway.statusWindow.appendMessage(messagePatterns.notice, [gateway.niceTime(), he(msg.sender.nick), he(msg.sender.ident), he(msg.sender.host), $$.colorize(msg.text)]);
+						gateway.statusWindow.markBold();
 					} else if($("#noticeDisplay").val() == 0) { // notice jako okienko
-						if(!gateway.lastNoticeNick || gateway.lastNoticeNick.toLowerCase() != msg.sender.nick.toLowerCase()) {
-							$(".notice-text").append("<h3>Komunikat prywatny od "+he(msg.sender.nick)+"</h3>");
-							gateway.lastNoticeNick = msg.sender.nick;
-						}
-		   				$(".notice-text").append("<p><span class=\"time\">"+gateway.niceTime()+"</span> "+$$.colorize(msg.text)+"</p>");
-						$(".noticewindow").fadeIn(250);
-						$('.notice-text').scrollTop($('.notice-text').prop("scrollHeight"));
+						$$.displayDialog('notice', msg.sender.nick, 'Komunikat prywatny od '+msg.sender.nick, $$.colorize(msg.text));
 					}
 				} else if(msg.sender.server){
 					var expressions = [/^Your "real name" is now set to be/, / invited [^ ]+ into the channel.$/];
@@ -273,13 +267,10 @@ var cmdBinds = {
 							}
 							return;
 						}
-						if(!gateway.lastNoticeNick || gateway.lastNoticeNick.toLowerCase() != msg.sender.nick.toLowerCase()) {
-							$(".notice-text").append("<h3>Komunikat prywatny od serwera "+he(msg.sender.nick)+" do "+he(msg.args[0])+"</h3>");
-							gateway.lastNoticeNick = msg.sender.nick;
+						if(msg.args[0] == 'AUTH'){
+							return;
 						}
-		   				$(".notice-text").append("<p><span class=\"time\">"+gateway.niceTime()+"</span> "+$$.colorize(msg.text)+"</p>");
-						$(".noticewindow").fadeIn(250);
-						$('.notice-text').scrollTop($('.notice-text').prop("scrollHeight"));
+						$$.displayDialog('notice', msg.sender.nick, 'Komunikat prywatny od serwera '+he(msg.sender.nick)+' do '+he(msg.args[0]), $$.colorize(msg.text));
 				//	}
 				}
 			}
@@ -347,59 +338,51 @@ var cmdBinds = {
 		}
 	],
 	'307': [	// RPL_USERIP
-		function(msg) {
-			$(".notify-text").append("<p class='whois'><span class='info'><br /></span><span class='data'>Ten nick jest zarejestrowany</span></p>");
+		function(msg) { //	'displayDialog': function(type, sender, title, message, button){
+			$$.displayDialog('whois', msg.args[1], false, '<p class="whois"><span class="info"><br /></span><span class="data">Ten nick jest zarejestrowany</span></p>');
 		}
 	],
 	'311': [	// RPL_WHOISUSER 
 		function(msg) {
-			var html = "<h3>Informacje o użytkowniku " +he(msg.args[1])+ "</h3>" +
-				"<p class='whois'><span class='info'>Pełna maska:</span><span class='data'> " + he(msg.args[1]) + "!" + msg.args[2] + "@" + msg.args[3] + "</span></p>" +
+			var html = "<p class='whois'><span class='info'>Pełna maska:</span><span class='data'> " + he(msg.args[1]) + "!" + msg.args[2] + "@" + msg.args[3] + "</span></p>" +
 				"<p class='whois'><span class='info'>Realname:</span><span class='data'> " + he(msg.text) + "</span></p>";
-			$(".notify-text").html(html);
+			$$.displayDialog('whois', msg.args[1], 'Informacje o użytkowniku '+he(msg.args[1]), html);
 		}
 	],
 	'301': [	// RPL_AWAY
 		function(msg) {
-			$(".notify-text").append("<p class='whois'><span class='info'>Nieobecny:</span><span class='data'>" + he(msg.args[1]) + " jest nieobecny(a): " + he(msg.text) + "</span></p>");
 			var query = gateway.findQuery(msg.args[1]);
 			if(query){
 				query.appendMessage(messagePatterns.away, [gateway.niceTime(), he(msg.args[1]), he(msg.text)]);
+			} else {
+				$$.displayDialog('whois', msg.args[1], false, "<p class='whois'><span class='info'>Nieobecny:</span><span class='data'>" + he(msg.args[1]) + " jest nieobecny(a): " + he(msg.text) + "</span></p>");
 			}
 		}
 	],
 	'312': [	// RPL_WHOISSERVER 
 		function(msg) {
-			$(".notify-text").append("<p class='whois'><span class='info'>serwer:</span><span class='data'>" + msg.args[2] + " "+ he(msg.text) + "</span></p>");
+			$$.displayDialog('whois', msg.args[1], false, "<p class='whois'><span class='info'>serwer:</span><span class='data'>" + msg.args[2] + " "+ he(msg.text) + "</span></p>");
 		}
 	],
 	'313': [	// RPL_WHOISOPERATOR
 		function(msg) {
-			$(".notify-text").append("<p class='whois'><span class='info'><br /></span><span class='data'><b class=admin>ADMINISTRATOR SIECI</b> (" + he(msg.text.substr(5)) +")</span></p>");
+			$$.displayDialog('whois', msg.args[1], false, "<p class='whois'><span class='info'><br /></span><span class='data'><b class=admin>ADMINISTRATOR SIECI</b> (" + he(msg.text.substr(5)) +")</span></p>");
 		}
 	],
 	'317': [	// RPL_WHOISIDLE 
 		function(msg) {
-			$(".notify-text").append("<p class='whois'><span class='info'>Połączył się:</span><span class='data'>" + $$.parseTime(msg.args[3]) + "</span></p>");
+			$$.displayDialog('whois', msg.args[1], false, "<p class='whois'><span class='info'>Połączył się:</span><span class='data'>" + $$.parseTime(msg.args[3]) + "</span></p>");
 			var idle = msg.args[2];
 			var hour = Math.floor(idle/3600);
 			idle = idle - hour * 3600;
 			var min = Math.floor(idle/60);
 			var sec = idle - min * 60;   		
-			$(".notify-text").append("<p class='whois'><span class='info'>Nieaktywny</span><span class='data'>" + (hour>0? hour + " h " : "") + (min>0? min + " min " : "") + sec + " sek</span></p>");
+			$$.displayDialog('whois', msg.args[1], false, "<p class='whois'><span class='info'>Nieaktywny</span><span class='data'>" + (hour>0? hour + " h " : "") + (min>0? min + " min " : "") + sec + " sek</span></p>");
 		}
 	],
 	'318': [	// RPL_ENDOFWHOIS
 		function(msg) {
-			if(gateway.connectStatus != statusConnected){
-				return;
-			}
-			if(msg.args[1].toLowerCase() == guser.nick.toLowerCase() && !gateway.displayOwnWhois){
-				return;
-			}
 			gateway.displayOwnWhois = false;
-			$(".notifywindow").fadeIn(250);
-			$(".notifywindow").css('z-index', 10);
 		}
 	],
 	'319': [	// RPL_WHOISCHANNELS
@@ -417,7 +400,7 @@ var cmdBinds = {
 					chanName = he(chanName);
 					chanHtml += chanPrefix + '<a href="javascript:gateway.send(\'JOIN ' + chanName + '\')" title="Dołącz do kanału ' + chanName + '">' + chanName + '</a> ';
 				});
-				$(".notify-text").append("<p class='whois'><span class='info'>Kanały:</span><span class='data'> "+ chanHtml + "</span></p>");
+				$$.displayDialog('whois', msg.args[1], false, "<p class='whois'><span class='info'>Kanały:</span><span class='data'> "+ chanHtml + "</span></p>");
 			} else {	// sprawdzam, na jakich kanałach sam jestem
 				gateway.connectStatus = status001;
 				if(msg.args[1] == guser.nick){
@@ -610,9 +593,20 @@ var cmdBinds = {
 	],
 	'INVITE': [
 		function(msg) {
-			gateway.lastNoticeNick = false;
-			$(".notice-text").append("<h3>Zaproszenie</h3><p><b>"+he(msg.sender.nick)+"</b> zaprasza Cię na kanał <a href=\"javascript:gateway.send('JOIN "+msg.text+"');gateway.closeNotice();\" onclick=\"return confirm('Czy na pewno chcesz dołączyć do kanału "+msg.text+"?')\">"+he(msg.text)+"</a></p>");
-			$(".noticewindow").fadeIn(250);
+			var html = '<b>'+he(msg.sender.nick)+'</b> zaprasza Cię na kanał <b>'+he(msg.text);
+			var button = [ {
+				text: 'Wejdź',
+				click: function(){
+					gateway.send('JOIN '+msg.text);
+					$(this).dialog('close');
+				}
+			}, {
+				text: 'Zignoruj',
+				click: function(){
+					$(this).dialog('close');
+				}
+			} ];
+			$$.displayDialog('invite', msg.sender.nick+msg.text, 'Zaproszenie', html, button);
 		}
 	],
 	'341': [	// RPL_INVITING
@@ -627,22 +621,14 @@ var cmdBinds = {
 	],
 	'401': [	// ERR_NOSUCHNICK
 		function(msg) {
-			var html = "<h3>Nie można wykonać żądanej akcji</h3>" +
-				"<p>"+he(msg.args[1])+": nie ma takiego nicku ani kanału.";
-			$(".notify-text").html(html);
+			$$.displayDialog('error', 'error', 'Błąd', 'Nie można wykonać żądanej akcji: nie ma takiego nicku ani kanału.');
 			gateway.statusWindow.appendMessage(messagePatterns.noSuchNick, [gateway.niceTime(), he(msg.args[1])]);
-			$(".notifywindow").fadeIn(250);
-			$(".notifywindow").css('z-index', 10);
 		}
 	],
 	'403': [	// ERR_NOSUCHCHANNEL 
 		function(msg) {
-			var html = "<h3>Nie można wykonać żądanej akcji</h3>" +
-				"<p>"+he(msg.args[1])+": nie ma takiego kanału.";
-			$(".notify-text").html(html);
+			$$.displayDialog('error', 'error', 'Błąd', 'Nie można wykonać żądanej akcji: nie ma takiego kanału.');
 			gateway.statusWindow.appendMessage(messagePatterns.noSuchChannel, [gateway.niceTime(), he(msg.args[1])]);
-			$(".notifywindow").fadeIn(250);
-			$(".notifywindow").css('z-index', 10);
 		}
 	],
 	'404': [	// ERR_CANNOTSENDTOCHAN
@@ -666,129 +652,114 @@ var cmdBinds = {
 	],
 	'432' : [	// ERR_ERRONEUSNICKNAME 
 		function(msg) {
-			var html = "<h3>Nie można zmienić nicka </h3>" +
-				"<p>Nie można użyć nicka <b>"+ msg.args[1] +"</b>. Spróbuj poczekać kilka minut.</p>";
-			if(gateway.connectStatus != statusDisconnected){
-				html += "<p>Twój bieżący nick to <b>"+guser.nick+"</b>.</p>";
+			if(gateway.connectStatus == statusDisconnected){
+				gateway.send('NICK PIRC-'+Math.round(Math.random()*100));
 			}
-			$(".notify-text").html(html);
-			$(".notifywindow").fadeIn(250);
-			$(".notifywindow").css('z-index', 10);
+			var html = 'Nick <b>'+he(msg.args[1])+'</b> jest niedostępny. Spróbuj poczekać kilka minut.';
+			if(gateway.connectStatus != statusDisconnected){
+				html += "<br>Twój bieżący nick to <b>"+guser.nick+"</b>.";
+			}
+			$$.displayDialog('warning', 'warning', 'Ostrzeżenie', html);
 			gateway.statusWindow.appendMessage(messagePatterns.badNick, [gateway.niceTime(), msg.args[1]]);
 		}
 	],
 	'433' : [	// ERR_NICKNAMEINUSE 
 		function(msg) {
-			var html = "<h3>Nie można zmienić nicka </h3>" +
-				"<p>Nick <b>"+ msg.args[1] +"</b> jest już używany przez kogoś innego.</p>";
+			var html = '<p>Nick <b>'+he(msg.args[1])+'</b> jest już używany przez kogoś innego.</p>';
 			if(gateway.connectStatus != statusDisconnected){
-				html += "<p>Twój bieżący nick to <b>"+guser.nick+"</b>.</p>";
+				html += "<p>Twój bieżący nick to <b>"+guser.nick+".</p>";
 			}
-			$(".notify-text").html(html);
-			$(".notifywindow").fadeIn(250);
-			$(".notifywindow").css('z-index', 10);
+			$$.displayDialog('warning', 'warning', 'Ostrzeżenie', html);
 			gateway.statusWindow.appendMessage(messagePatterns.nickInUse, [gateway.niceTime(), msg.args[1]]);
 		}
 	],
 	'442' : [	// ERR_NOTONCHANNEL
 		function(msg) {
-			var html = "<h3>Nie można wykonać żądanej akcji</h3>" +
-				"<p>"+he(msg.args[1])+": nie jesteś na tym kanale.";
-			$(".notify-text").html(html);
+			var html = he(msg.args[1])+": nie jesteś na tym kanale.";
+			$$.displayDialog('error', 'error', 'Błąd', html);
 			gateway.statusWindow.appendMessage(messagePatterns.notOnChannel, [gateway.niceTime(), he(msg.args[1])]);
-			$(".notifywindow").fadeIn(250);
-			$(".notifywindow").css('z-index', 10);
 		}
 	],
 	'443' : [	// ERR_USERONCHANNEL
 		function(msg) {
-			var html = "<h3>Nie można wykonać żądanej akcji</h3>" +
-				"<p>"+he(msg.args[2])+": <b>"+he(msg.args[1])+"</b> jest już na tym kanale.";
-			$(".notify-text").html(html);
+			var html = he(msg.args[2])+": <b>"+he(msg.args[1])+"</b> jest już na tym kanale.";
+			$$.displayDialog('error', 'error', 'Błąd', html);
 			gateway.statusWindow.appendMessage(messagePatterns.alreadyOnChannel, [gateway.niceTime(), he(msg.args[2]), he(msg.args[1])]);
-			$(".notifywindow").fadeIn(250);
-			$(".notifywindow").css('z-index', 10);
 		}
 	],
 	'474' : [	// ERR_BANNEDFROMCHAN
 		function(msg) {
 			gateway.iKnowIAmConnected(); // TODO inne powody, przez które nie można wejść
-			var html =  "<h3>Nie można dołączyć do kanału<br />" + msg.args[1] + "<br /><br /></h3>";
+			var html =  "Nie można dołączyć do kanału <b>" + msg.args[1] + "</b>";
 			if (msg.text == "Cannot join channel (+b)") {
-				html += "<p>Jesteś zbanowany.</p>";
+				html += "<br>Jesteś zbanowany.";
 				gateway.statusWindow.appendMessage(messagePatterns.cannotJoin, [gateway.niceTime(), msg.args[1], "Jesteś zbanowany"]);
 			}
-			$(".error-text").html(html);
-			$(".errorwindow").fadeIn(250);
-			$(".errorwindow").css('z-index', 10);
+			$$.displayDialog('error', 'error', 'Błąd', html);
 		}
 	],
 	'473' : [	// ERR_INVITEONLYCHAN
 		function(msg) {
 			gateway.iKnowIAmConnected();
-			var html = "<h3>Nie można dołączyć do kanału<br />" + he(msg.args[1]) + "<br /><br /></h3>" +
-				'<p>Musisz dostać zaproszenie aby wejść na ten kanał. <button onclick="gateway.send(\'KNOCK '+msg.args[1]+' :Proszę o możliwość wejścia na kanał\');gateway.closeError()">Poproś operatorów o możliwość wejścia</button></p>';
+			var html = 'Nie można dołączyć do kanału <b>' + he(msg.args[1]) + '</b>' +
+				'<br>Musisz dostać zaproszenie aby wejść na ten kanał.';
+			var button = [ {
+				text: 'Poproś operatorów o możliwość wejścia',
+				click: function(){
+					gateway.send('KNOCK '+msg.args[1]+' :Proszę o możliwość wejścia na kanał');
+					$(this).dialog('close');
+				}
+			} ];
 			gateway.statusWindow.appendMessage(messagePatterns.cannotJoin, [gateway.niceTime(), msg.args[1], "Kanał wymaga zaproszenia"]);
-			$(".error-text").html(html);
-			$(".errorwindow").fadeIn(250);
-			$(".errorwindow").css('z-index', 10);
+			$$.displayDialog('warning', 'warning', 'Ostrzeżenie', html, button);
 		}
 	],
 	'480' : [	// ERR_CANNOTKNOCK
 		function(msg) {
-			var html = "<h3>Nie można wykonać żądanej akcji</h3>" +
-				"<p>Komunikat serwera: "+he(msg.text)+"</p>";
-			$(".notify-text").html(html);
+			var html = "Nie można zapukać do kanału.<br>" +
+				"Komunikat serwera: "+he(msg.text);
 			gateway.statusWindow.appendMessage(messagePatterns.alreadyOnChannel, [gateway.niceTime(), 'Komunikat serwera', he(msg.text)]);
-			$(".notifywindow").fadeIn(250);
-			$(".notifywindow").css('z-index', 10);
+			$$.displayDialog('error', 'error', 'Błąd', html);
 		}
 	],
 	'489' : [	// ERR_SECUREONLYCHAN 
 		function(msg) {
 			gateway.iKnowIAmConnected();
-			var html = "<h3>Nie można dołączyć do kanału<br />" + he(msg.args[1]) + "<br /><br /></h3>" +
-				'<p>Kanał wymaga połączenia z włączonym SSL (tryb +z). Nie jest dostępny z bramki.</p><p>Możesz spróbować użyć programu HexChat według instrukcji z <a href="http://pirc.pl/teksty/p_instalacja_i_konfiguracja" target="_blank">tej strony</a>.</p>';
-			$(".error-text").html(html);
+			var html = "Nie można dołączyć do kanału <b>" + he(msg.args[1]) + "</b>" +
+				'<br>Kanał wymaga połączenia z włączonym SSL (tryb +z). Nie jest dostępny z bramki.<br>Możesz spróbować użyć programu HexChat według instrukcji z <a href="http://pirc.pl/teksty/p_instalacja_i_konfiguracja" target="_blank">tej strony</a>.';
 			gateway.statusWindow.appendMessage(messagePatterns.cannotJoin, [gateway.niceTime(), msg.args[1], "Kanał wymaga połączenia SSL"]);
-			$(".errorwindow").fadeIn(250);
-			$(".errorwindow").css('z-index', 10);
+			$$.displayDialog('error', 'error', 'Błąd', html);
 		}
 	],
 	'475' : [	// ERR_BADCHANNELKEY
 		function(msg) {
 			gateway.iKnowIAmConnected();
-			var html = "<h3>Nie można dołączyć do kanału<br />" + msg.args[1] + "<br /><br /></h3>" +
-				'<p>Musisz podać poprawne hasło.</p>' +
-				'<form onsubmit="gateway.chanPassword(\''+he(msg.args[1])+'\');" action="javascript:void(0);">Hasło do '+he(msg.args[1])+': <input type="password" id="chpass" /> <input type="submit" value="Wejdź" /></form>';
-			$(".error-text").html(html);
+			var html = "Nie można dołączyć do kanału <b>" + msg.args[1] + "</b>" +
+				'<br>Musisz podać poprawne hasło.' +
+				'<br><form onsubmit="gateway.chanPassword(\''+he(msg.args[1])+'\');$$.closeDialog(\'warning\', \'warning\')" action="javascript:void(0);">' +
+				'Hasło do '+he(msg.args[1])+': <input type="password" id="chpass" /> <input type="submit" value="Wejdź" /></form>';
 			gateway.statusWindow.appendMessage(messagePatterns.cannotJoin, [gateway.niceTime(), msg.args[1], "Wymagane hasło"]);
-			$(".errorwindow").fadeIn(250);
-			$(".errorwindow").css('z-index', 10);
+			$$.displayDialog('warning', 'warning', 'Ostrzeżenie', html);
 		}
 	],
 	'482' : [	// ERR_CHANOPRIVSNEEDED 
 		function(msg) {
-			var html = "<h3>"+ msg.args[1] + ": brak uprawnień<br /></h3>" +
-				"<p>Nie masz wystarczających uprawnień aby wykonać żądaną akcję.</p>";
-			$(".error-text").html(html);
+			var html = msg.args[1] + ": brak uprawnień." +
+				"<br>Nie masz wystarczających uprawnień aby wykonać żądaną akcję.";
 			if(gateway.findChannel(msg.args[1])) {
 				gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.noPerms, [gateway.niceTime(), msg.args[1]]);
 			}
-			$(".errorwindow").fadeIn(250);
-			$(".errorwindow").css('z-index', 10);
+			$$.displayDialog('error', 'error', 'Błąd', html);
 		}
 	],
 	'499' : [	// ERR_CHANOWNPRIVNEEDED
 		function(msg) {
-			var html = "<h3>"+ msg.args[1] + ": brak uprawnień<br /></h3>" +
-				"<p>Nie masz wystarczających uprawnień aby wykonać żądaną akcję.</p>";
-			$(".error-text").html(html);
+			var html = msg.args[1] + ": brak uprawnień." +
+				"<br>Nie masz wystarczających uprawnień aby wykonać żądaną akcję.";
 			if(gateway.findChannel(msg.args[1])) {
 				gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.noPerms, [gateway.niceTime(), msg.args[1]]);
 			}
-			$(".errorwindow").fadeIn(250);
-			$(".errorwindow").css('z-index', 10);
+			$$.displayDialog('error', 'error', 'Błąd', html);
 		}
 	],
 	'974' : [	// ERR_CHANOPRIVSNEEDED 
@@ -818,17 +789,16 @@ var cmdBinds = {
 			}
 			
 			gateway.connectStatus = statusDisconnected;
-			
-			var html = "<h3>Serwer przerwał połączenie<br /></h3>" +
-				"<p>Informacje: "+msg.text+"</p>";
-			$(".error-text").html(html);
-			$(".errorwindow").fadeIn(400);
-			
+
 			if($('#autoReconnect').is(':checked')){
 				gateway.reconnect();
 			} else {
-				$('#reconnect_wrapper').fadeIn(50);
+				$$.displayReconnect();
 			}
+
+			var html = "<h3>Serwer przerwał połączenie</h3>" +
+				"Informacje: "+msg.text+"</p>";
+			$$.displayDialog('error', 'error', 'Błąd', html);
 		}
 	],
 	'972' : [	// ERR_CANNOTDOCOMMAND 

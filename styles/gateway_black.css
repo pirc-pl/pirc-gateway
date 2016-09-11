@@ -11,7 +11,7 @@ ul.nicklist li {
 }
 
 body {
-	color: #aaaaaa;
+	color: #E6E6E6;
 	background: #555555 !important;
 }
 
@@ -22,7 +22,7 @@ input[type="text"], input[type="text"], input[type="password"] {
 }
 
 span.yournick {
-    color: #eeeeee;
+	color: #eeeeee;
 }
 
 span.part {
@@ -50,34 +50,25 @@ ul.options li, ul.suboptions li {
 	color: #BED8FB;
 }
 
-.tsizewindow {
+#size-dialog {
 	background-color: #09294E;
 }
 
-.symbol-text a, .size-text a, .statusbutton {
+#symbol-dialog a, #size-dialog a, .statusbutton {
 	background-color: rgba(51, 51, 51, 0.8) !important;
 }
 
-.symbolwindow, .notifywindow, .colorwindow, #not_connected_div, #options_div, #reconnect_div, .tsizewindow, #about_div, .statuswindow, .noticewindow {
+#symbol-dialog, #color-dialog, #not_connected_div, #options-dialog, #reconnect_div, #size-dialog, #about-dialog {
 	background-color: #09294E;
 }
 
-#about_div p {
+#about-dialog p {
 	background-color: rgba(6, 6, 6, 0.2);
 }
 
 a {
 	color: #B1CCEF;
 }
-
-.statuswindow div.status-close, div.notify-close, div.color-close, div.symbol-close, div.size-close, div.notice-close {
-	color: #D2E3F9  !important;
-}
-
-.statuswindow div.status-close:hover, div.notify-close:hover, div.color-close:hover, div.symbol-close:hover, div.size-close:hover, div.notice-close:hover {
-	color: #B7CCE3 !important;
-}
-
 
 input[type="text"]:hover, input[type="password"]:hover, input[type="text"]:focus, input[type="password"]:focus {
 	color: #fff;
@@ -92,7 +83,7 @@ span.notice, span.notice-nick {
 }
 
 span.kick {
-    color: #E25C5C;
+	color: #E25C5C;
 }
 
 ul.options, ul.suboptions {
@@ -103,17 +94,13 @@ b.admin {
 	color: #F97676;
 }
 
-.notify-text p span.info {
+.whois-dialog p span.info {
 	color: #ACC1DC;
 }
 
-.errorwindow {
-	background-color: #521818;
-	color: #FFE9E9;
-}
-
-.errorwindow div.error-close {
-	color: #E2B8B8;
+.error-dialog {
+	background-color: #521818 !important;
+	color: #FFE9E9 !important;
 }
 
 .symbol-text a:hover, .size-text a:hover {
@@ -129,7 +116,7 @@ b.admin {
 }
 
 .channelAdmin {
-    border-color: #7492B6;
+	border-color: #7492B6;
 }
 
 .channelAdmin:hover, .channelAdminActive {
@@ -138,11 +125,70 @@ b.admin {
 
 .channelAdmin li {
 	background-color: #5C738E;
-    color: #BED8FB;
-    border-color: #111111;
+	color: #BED8FB;
+	border-color: #111111;
 }
 
 .channelAdmin li:hover {
 	background-color: #2D3A4A;
+}
+
+.ui-widget-content {
+	background: #042377;
+	color: inherit;
+	border-color: #192348;
+}
+
+.ui-widget-header {
+	border-color: #627592;
+	background: #293D77;
+	color: #9CB1FF;
+}
+
+.whois-dialog, .warning-dialog, .notice-dialog, .confirm-dialog {
+	background-color: #031B38 !important;
+}
+
+span.data {
+	color: #DAF6FF;
+}
+
+.ui-widget-content a {
+	color: #F9FFA3;
+}
+
+.ui-dialog-buttonpane {
+	background: #0A1929;
+}
+
+.ui-button {
+	background: #030382;
+	color: #BFBFBF;
+}
+
+.ui-widget-overlay {
+	background: #0C0C0C;
+}
+
+.ui-button:hover, .ui-button:focus {
+	background: #7274BF;
+}
+
+.error-dialog-spec .ui-widget-header {
+	border-color: #943232;
+	background: #3E1212;
+	color: #EC8C8C;
+}
+
+.error-dialog-spec .ui-button {
+	background: #6B1515;
+}
+
+.error-dialog-spec .ui-button:hover, .error-dialog-spec  .ui-button:focus {
+	background: #CE4A4A;
+}
+
+.connect-dialog {
+	background-color: #062B65 !important;
 }
 
