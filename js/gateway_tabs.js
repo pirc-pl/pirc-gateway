@@ -99,7 +99,8 @@ function Nicklist(chan, id) {
 		'<div class="channelOperActionsButton" onclick="gateway.toggleChannelOpts(\''+this.channel+'\')">Akcje administracyjne</div>'+
 		'<ul class="channelOperActions">' +
 			'<li onclick="gateway.send(\'MODE '+this.channel+' b\')">Lista banów (b)</li>' +
-			'<li onclick="gateway.send(\'MODE '+this.channel+' e\')">Lista wyjątków (e)</li>' +
+			'<li onclick="gateway.send(\'MODE '+this.channel+' e\')" title="Znajdujący się na liście nie są obejmowani przez bany">Lista wyjątków b (e)</li>' +
+			'<li onclick="gateway.send(\'MODE '+this.channel+' I\')" title="Znajdujący się na liście nie potrzebują zaproszenia, gdy jest ustawiony tryb +i">Lista wyjątków i (I)</li>' +
 			'<li onclick="gateway.showChannelModes(\''+this.channel+'\')">Tryby kanału</li>' +
 			'<li onclick="gateway.showInvitePrompt(\''+this.channel+'\')">Zaproś na kanał</li>' +
 		'</ul>' +

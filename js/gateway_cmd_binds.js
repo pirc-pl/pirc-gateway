@@ -504,22 +504,8 @@ var cmdBinds = {
 			}
 		}
 	],
-	'346': [	// RPL_INVITELIST
-		function(msg) {
-			if(gateway.findChannel(msg.args[1])) {
-				gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.invexListElement, [gateway.niceTime(), msg.args[2], msg.args[3], $$.parseTime(msg.args[4])]);
-			}
-		}
-	],
-	'347': [	// RPL_INVITELIST
-		function(msg) {
-			if(gateway.findChannel(msg.args[1])) {
-				gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.invexListEnd, [gateway.niceTime()]);
-			}
-		}			
-	],
 	'348': [	// RPL_EXCEPTLIST
-		function(msg) {
+		function(msg) { // TODO zmienić na dialog
 		/*	if(gateway.findChannel(msg.args[1])) {
 				gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.exceptListElement, [gateway.niceTime(), msg.args[2], msg.args[3], $$.parseTime(msg.args[4])]);
 			}*/
@@ -541,7 +527,7 @@ var cmdBinds = {
 		}
 	],
 	'349': [	// RPL_ENDOFEXCEPTLIST 
-		function(msg) {
+		function(msg) { // TODO zmienić na dialog
 			/*if(gateway.findChannel(msg.args[1])) {
 				gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.exceptListEnd, [gateway.niceTime()]);
 			}*/
@@ -552,8 +538,42 @@ var cmdBinds = {
 			$('.statuswindow').fadeIn(250);
 		}
 	],
+	'346': [	// RPL_INVITELIST
+		function(msg) { // TODO zmienić na dialog
+			if($('.statuswindow').is(':visible') || $('.status-text table').length == 0){
+				$('.statuswindow').hide();
+				var html = '<h3>Lista wyjątków zaproszenia na kanale '+he(msg.args[1])+'</h3><table><tr><th>Maska</th><th>Założony przez</th><th>Data</th></tr></table>';
+				$('.status-text').html(html);
+			}
+			var chanId = gateway.findChannel(msg.args[1]).id;
+			var html = '<tr><td>'+he(msg.args[2])+'</td><td>'+he(msg.args[3])+'</td><td>'+$$.parseTime(msg.args[4])+'</td>' +
+				'<td class="'+chanId+'-operActions button" style="display:none">' +
+				'<button id="unex-'+chanId+'-'+md5(msg.args[2])+'">Usuń</button>' +
+				'</td></tr>';
+			$('.status-text table').append(html);
+			$('#unex-'+chanId+'-'+md5(msg.args[2])).click(function(){
+				gateway.send('MODE '+msg.args[1]+' -I '+msg.args[2]+'\r\nMODE '+msg.args[1]+' I');
+				$('.status-text table').remove();
+			});
+			/*if(gateway.findChannel(msg.args[1])) {
+				gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.invexListElement, [gateway.niceTime(), msg.args[2], msg.args[3], $$.parseTime(msg.args[4])]);
+			}*/
+		}
+	],
+	'347': [	// RPL_INVITELISTEND
+		function(msg) { // TODO zmienić na dialog
+			/*if(gateway.findChannel(msg.args[1])) {
+				gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.invexListEnd, [gateway.niceTime()]);
+			}*/
+			if($('.status-text table').length == 0){
+				var html = '<h3>Lista wyjątków zaproszenia na kanale '+he(msg.args[1])+'</h3><p>Lista jest pusta.</p>';
+				$('.status-text').html(html);
+			}
+			$('.statuswindow').fadeIn(250);
+		}			
+	],
 	'367': [	// RPL_BANLIST 
-		function(msg) {
+		function(msg) { // TODO zmienić na dialog
 		/*	if(gateway.findChannel(msg.args[1])) {
 				gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.banListElement, [gateway.niceTime(), msg.args[2], msg.args[3], $$.parseTime(msg.args[4])]);
 			}*/
@@ -575,7 +595,7 @@ var cmdBinds = {
 		}
 	],
 	'368': [	// RPL_ENDOFBANLIST
-		function(msg) {
+		function(msg) { // TODO zmienić na dialog
 		/*	if(gateway.findChannel(msg.args[1])) {
 				gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.banListEnd, [gateway.niceTime()]);
 			}*/

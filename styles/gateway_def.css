@@ -15,7 +15,7 @@ a:active {
 }
 
 body {
-	font-family: verdana,arial,tahoma,Symbola;
+	font-family: verdana,arial,tahoma,Symbola,sans-serif;
 	font-size: 1em;
 	margin: 0;
 	padding: 0;
@@ -902,6 +902,10 @@ span.td_right {
 }
 
 /* JQUERY DIALOG */
+
+.ui-widget {
+	font-family: inherit;
+}
 
 #options-dialog {
 	display: none;
