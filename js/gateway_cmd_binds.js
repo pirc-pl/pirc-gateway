@@ -511,7 +511,7 @@ var cmdBinds = {
 			}*/
 			if($('.statuswindow').is(':visible') || $('.status-text table').length == 0){
 				$('.statuswindow').hide();
-				var html = '<h3>Lista wyjątków od banów na kanale '+he(msg.args[1])+'</h3><table><tr><th>Maska</th><th>Założony przez</th><th>Data</th></tr></table>';
+				var html = '<h3>Lista wyjątków od banów na kanale '+he(msg.args[1])+'</h3><div class="beIListContents"><table><tr><th>Maska</th><th>Założony przez</th><th>Data</th></tr></table></div>';
 				$('.status-text').html(html);
 			}
 			var chanId = gateway.findChannel(msg.args[1]).id;
@@ -542,7 +542,7 @@ var cmdBinds = {
 		function(msg) { // TODO zmienić na dialog
 			if($('.statuswindow').is(':visible') || $('.status-text table').length == 0){
 				$('.statuswindow').hide();
-				var html = '<h3>Lista wyjątków zaproszenia na kanale '+he(msg.args[1])+'</h3><table><tr><th>Maska</th><th>Założony przez</th><th>Data</th></tr></table>';
+				var html = '<h3>Lista wyjątków zaproszenia na kanale '+he(msg.args[1])+'</h3><div class="beIListContents"><table><tr><th>Maska</th><th>Założony przez</th><th>Data</th></tr></table></div>';
 				$('.status-text').html(html);
 			}
 			var chanId = gateway.findChannel(msg.args[1]).id;
@@ -693,6 +693,13 @@ var cmdBinds = {
 			gateway.statusWindow.appendMessage(messagePatterns.nickInUse, [gateway.niceTime(), msg.args[1]]);
 		}
 	],
+	'447' : [	// ERR_NONICKCHANGE 
+		function(msg) {
+			var html = "Nie można zmienić nicka.<br>Komunikat od serwera: " + he(msg.text);
+			$$.displayDialog('error', 'error', 'Błąd', html);
+			gateway.statusWindow.appendMessage(messagePatterns.notOnChannel, [gateway.niceTime(), he(msg.args[1])]);
+		}
+	],
 	'442' : [	// ERR_NOTONCHANNEL
 		function(msg) {
 			var html = he(msg.args[1])+": nie jesteś na tym kanale.";
@@ -748,6 +755,15 @@ var cmdBinds = {
 			var html = "Nie można dołączyć do kanału <b>" + he(msg.args[1]) + "</b>" +
 				'<br>Kanał wymaga połączenia z włączonym SSL (tryb +z). Nie jest dostępny z bramki.<br>Możesz spróbować użyć programu HexChat według instrukcji z <a href="http://pirc.pl/teksty/p_instalacja_i_konfiguracja" target="_blank">tej strony</a>.';
 			gateway.statusWindow.appendMessage(messagePatterns.cannotJoin, [gateway.niceTime(), msg.args[1], "Kanał wymaga połączenia SSL"]);
+			$$.displayDialog('error', 'error', 'Błąd', html);
+		}
+	],
+	'477' : [	// ERR_NEEDREGGEDNICK
+		function(msg) {
+			gateway.iKnowIAmConnected();
+			var html = "Nie można dołączyć do kanału <b>" + he(msg.args[1]) + "</b>" +
+				'<br>Kanał wymaga, aby Twój nick był zarejestrowany. Zastosuj się do instrukcji otrzymanych od NickServ lub zajrzyj <a href="http://pirc.pl/teksty/p_nickserv" target="_blank">tutaj</a>.';
+			gateway.statusWindow.appendMessage(messagePatterns.cannotJoin, [gateway.niceTime(), msg.args[1], "Kanał wymaga zarejestrowanego nicka"]);
 			$$.displayDialog('error', 'error', 'Błąd', html);
 		}
 	],

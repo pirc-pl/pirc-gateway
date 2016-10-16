@@ -127,7 +127,7 @@ var irc = {
 				ircmsg.sender.user = true;
 			}
 		
-			console.log(line);
+		//	console.log(line);
 			console.log(ircmsg);
 		
 			packets[packetcnt] = ircmsg;
@@ -624,6 +624,7 @@ var gateway = {
 		}
 	},
 	'forceSend': function(data){
+		console.log('← '+data);
 		sdata = Base64.encode(data+'\r\n');
 		gateway.websock.send(sdata);
 	},

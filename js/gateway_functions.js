@@ -82,7 +82,7 @@ var messagePatterns = {
 	'notConnected': '<span class="time">%s</span> &nbsp; <span class="mode">*** Nie jesteś połączony z IRC!</span><br />',
 	'notEnoughParameters': '<span class="time">%s</span> &nbsp; <span class="mode">*** %s: Za mało argumentów.</span><br />',
 	'cannotSendToChan': '<span class="time">%s</span> &nbsp; <span class="kick">*** Nie możcna wysłać na %s: %s. Wiadomość nie została dostarczona.</span><br />',
-	'cannotJoin': '<span class="time">%s</span> &nbsp; <span class="kick">*** Nie możcna dołączyć do kanału %s: %s</span><br />',
+	'cannotJoin': '<span class="time">%s</span> &nbsp; <span class="kick">*** Nie można dołączyć do kanału %s: %s</span><br />',
 	'noPerms': '<span class="time">%s</span> &nbsp; <span class="kick">*** Brak uprawnien.</span><br />',
 	'notice': '<span class="time">%s</span> &nbsp; <span class="notice-nick"><b>-%s-</b></span><span class="userhost">(<span class="notice-nick">%s</span>@<span class="notice-nick">%s</span>)</span> <span class="notice">%s</span><br />',
 	'serverNotice': '<span class="time">%s</span> &nbsp; <span class="notice-nick">Wiadomość od serwera <b>%s</b>:</span> <span class="notice">%s</span><br />',
