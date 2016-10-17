@@ -110,10 +110,34 @@ var modes = {
 	'single': ['p', 's', 'm', 'n', 't', 'i', 'r', 'R', 'c', 'O', 'A', 'Q', 'K', 'V', 'C', 'u', 'z', 'N', 'S', 'M', 'T', 'G'],
 	'argBoth': ['b', 'e', 'I'],
 	'argAdd': ['k', 'f', 'L', 'l', 'j'],
-	'user': ['q','a','o','h','v']
+	'user': ['q','a','o','h','v'],
+	'changeableSingle': [
+		['m', 'Kanał moderowany'],
+		['i', 'Tylko na zaproszenie'],
+		['s', 'Kanał ukryty'],
+		['R', 'Tylko dla zarejestrowanych nicków'],
+		['N', 'Zakaz zmiany nicków'],
+		['Q', 'Zakaz kopania'],
+		['M', 'Do mówienia wymagany zarejestrowany nick lub co najmniej +v'],
+		['t', 'Tylko operator może zmieniać temat'],
+		['n', 'Nie można wysyłać wiadomości nie będąc na kanale']
+	],
+	'changeableArg': [
+		['k', 'Hasło do kanału'],
+		['l', 'Maksymalna ilość użytkowników']
+	]
 };
 var modemap2 = ['owner', 'admin', 'op', 'halfop', 'voice'];
 var newMessage = 'Nowa wiadomość';
+
+function ChannelModes() {
+	modes.single.forEach(function(mode){
+		this[mode] =  false;
+	}, this);
+	modes.argAdd.forEach(function(mode){
+		this[mode] = false;
+	}, this);
+}
 
 // pomocnicze funkcje globalne
 function str2bool(b){
@@ -549,7 +573,7 @@ var $$ = {
 				if(sender.toLowerCase() == guser.nick.toLowerCase() && !gateway.displayOwnWhois){
 					return;
 				}
-			case 'warning': case 'error': case 'confirm': case 'connect':
+			case 'warning': case 'error': case 'confirm': case 'connect': case 'admin': // nie wyświetlamy czasu
 				var html = message;
 				break;
 			default:

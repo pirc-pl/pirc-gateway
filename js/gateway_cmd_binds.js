@@ -439,7 +439,12 @@ var cmdBinds = {
 				var chan = msg.args[1];
 				var mody = msg.args;
 				mody.splice(0,2);
-				gateway.findChannel(chan).appendMessage(messagePatterns.mode, [gateway.niceTime(), chan, mody.join(" ")]);
+				mody = mody.join(" ");
+				var chanO = gateway.findChannel(chan);
+				chanO.appendMessage(messagePatterns.mode, [gateway.niceTime(), chan, mody]);
+				console.log('324');
+				console.log(msg.args);
+				gateway.parseChannelMode(msg.args, chanO);
 			}
 		}
 	],
@@ -869,85 +874,11 @@ var cmdBinds = {
 					}
 				}
 				modestr = modestr.slice(0,-1);
-				gateway.findChannel(msg.args[0]).appendMessage(messagePatterns.modeChange, [gateway.niceTime(), he(msg.sender.nick), he(modestr), he(msg.args[0])]);
-				var plus = true;
-				var nextarg = 2;
-				var modearr = msg.args[1].split('');
-				var log = '';
-				var mode = '';
-				var modechar = '';
-				for (i in modearr) {
-					if(modearr[i] == '+') {
-						log += "Change +\n";
-						plus = true;
-					} else if(modearr[i] == '-') {
-						log += "Change -\n";
-						plus = false;
-					} else if($.inArray(modearr[i], modes.argBoth) > -1) {
-						log += "Mode 'both' "+plus+modearr[i]+msg.args[nextarg]+"\n";
-						nextarg++;
-					} else if($.inArray(modearr[i], modes.argAdd) > -1 && plus == true) {
-						log += "Mode 'add' "+plus+modearr[i]+msg.args[nextarg]+"\n";
-						nextarg++;
-					} else if($.inArray(modearr[i], modes.user) > -1) {
-						modechar = modearr[i];
-						log += "Mode 'user' "+plus+modearr[i]+msg.args[nextarg]+"\n";
-						if(plus) {
-							if(gateway.findChannel(msg.args[0]).nicklist.findNick(msg.args[nextarg])) {
-								mode = '';
-								switch (modechar) {
-									case 'q':
-										mode = 'owner'
-										break;
-									case 'a':
-										mode = 'admin'
-										break;
-									case 'o':
-										mode = 'op'
-										break;
-									case 'h':
-										mode = 'halfop'
-										break;
-									case 'v':
-										mode = 'voice'
-										break;
-									default:
-										//i tak nie nastapi
-										break;
-								}
-								gateway.findChannel(msg.args[0]).nicklist.findNick(msg.args[nextarg]).setMode(mode, true);
-							}
-						} else {
-							if(gateway.findChannel(msg.args[0]).nicklist.findNick(msg.args[nextarg])) {
-								mode = '';
-								switch (modechar) {
-									case 'q':
-										mode = 'owner'
-										break;
-									case 'a':
-										mode = 'admin'
-										break;
-									case 'o':
-										mode = 'op'
-										break;
-									case 'h':
-										mode = 'halfop'
-										break;
-									case 'v':
-										mode = 'voice'
-										break;
-									default:
-										//i tak nie nastapi
-										break;
-								}
-								gateway.findChannel(msg.args[0]).nicklist.findNick(msg.args[nextarg]).setMode(mode, false);
-							}
-						}
-						nextarg++;
-					} else {
-						log += "Mode 'normal' "+plus+modearr[i]+"\n";
-					}
-				}
+				var chan = gateway.findChannel(msg.args[0]);
+				chan.appendMessage(messagePatterns.modeChange, [gateway.niceTime(), he(msg.sender.nick), he(modestr), he(msg.args[0])]);
+				var args2 = msg.args;
+				args2.shift();
+				gateway.parseChannelMode(args2, chan);
 			}
 		}
 	]

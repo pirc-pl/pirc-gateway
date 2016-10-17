@@ -354,6 +354,7 @@ function Channel(chan) {
 	this.name = chan;
 	this.id = this.name.replace(/^#/g,'').replace(/[^a-zA-Z0-9]+/g, '-').toLowerCase()+Math.round(Math.random()*100);
 	this.nicklist = new Nicklist(this.name, this.id);
+	this.modes = new ChannelModes();
 	this.left = false;
 	this.hilight = false;
 	this.classAdded = false;

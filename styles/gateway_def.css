@@ -521,9 +521,17 @@ ul.options li:hover {
 	cursor: pointer;
 }
 
-.statuswindow td {
+.admin-dialog {
+	background: url("/styles/img/techbg.png") no-repeat scroll right top #E8E8E8 !important;
+}
+
+.statuswindow td, .admin-dialog td {
 	border: 1px solid #aab;
 	padding: 2px 4px 2px 4px;
+}
+
+.admin-dialog td input[type="text"] {
+	width: 5em;
 }
 
 .statuswindow td.button {

@@ -992,36 +992,123 @@ var gateway = {
 		});
 	},
 	'showStatus': function(channel, nick) {
-	  	var html = "<h3>Daj uprawnienia</h3>" +
-			"<p>Daj użytkownikowi "+he(nick)+" uprawnienia na kanale "+he(channel)+":</p><p><br /></p>" +
+	  	var html = 
+			"<p>Daj użytkownikowi "+he(nick)+" uprawnienia na kanale "+he(channel)+":</p>" +
 			"<p class='statusbutton' onClick='gateway.send(\"MODE "+channel+" +q "+$$.sescape(nick)+"\"); gateway.closeStatus()'>FOUNDER (Właściciel kanału)</p>" +
 			"<p class='statusbutton' onClick='gateway.send(\"MODE "+channel+" +a "+$$.sescape(nick)+"\"); gateway.closeStatus()'>PROTECT (Ochrona przed kopnięciem)</p>" +
 			"<p class='statusbutton' onClick='gateway.send(\"MODE "+channel+" +o "+$$.sescape(nick)+"\"); gateway.closeStatus()'>OP (Operator kanału)</p>" +
 			"<p class='statusbutton' onClick='gateway.send(\"MODE "+channel+" +h "+$$.sescape(nick)+"\"); gateway.closeStatus()'>HALFOP (Pół-operator kanału)</p>" +
 			"<p class='statusbutton' onClick='gateway.send(\"MODE "+channel+" +v "+$$.sescape(nick)+"\"); gateway.closeStatus()'>VOICE (Uprawnienie do głosu)</p>";
-		$(".status-text").html(html);
-		$(".statuswindow").fadeIn(200);
+		$$.displayDialog('admin', channel, 'Zarządzanie '+he(channel), html);
 	},
 	'showStatusAnti': function(channel, nick) {
-		var html = "<h3>Odbierz uprawnienia</h3>" +
-			"<p>Odbierz użytkownikowi "+he(nick)+" uprawnienia na kanale "+he(channel)+":</p><p><br /></p>" +
+		var html =
+			"<p>Odbierz użytkownikowi "+he(nick)+" uprawnienia na kanale "+he(channel)+":</p>" +
 			"<p class='statusbutton' onClick='gateway.send(\"MODE "+channel+" -q "+$$.sescape(nick)+"\"); gateway.closeStatus()'>FOUNDER (Właściciel kanału)</p>" +
 			"<p class='statusbutton' onClick='gateway.send(\"MODE "+channel+" -a "+$$.sescape(nick)+"\"); gateway.closeStatus()'>PROTECT (Ochrona przed kopnięciem)</p>" +
 			"<p class='statusbutton' onClick='gateway.send(\"MODE "+channel+" -o "+$$.sescape(nick)+"\"); gateway.closeStatus()'>OP (Operator kanału)</p>" +
 			"<p class='statusbutton' onClick='gateway.send(\"MODE "+channel+" -h "+$$.sescape(nick)+"\"); gateway.closeStatus()'>HALFOP (Pół-operator kanału)</p>" +
 			"<p class='statusbutton' onClick='gateway.send(\"MODE "+channel+" -v "+$$.sescape(nick)+"\"); gateway.closeStatus()'>VOICE (Uprawnienie do głosu)</p>";
-			$(".status-text").html(html);
-		$(".statuswindow").fadeIn(200);
+		$$.displayDialog('admin', channel, 'Zarządzanie '+he(channel), html);
 	},
 	'showChannelModes': function(channel) {
-		var html = "<h3>Zmień tryby kanału "+he(channel)+"</h3>" +
-			"<table><tr><th>Litera</th><th>Opis</th></tr>" +
-			'<tr><td>m</td><td>Kanał moderowany</td><td class="button"><button onclick="gateway.send(\'MODE '+channel+' +m\')">Ustaw</button></td><td class="button"><button onclick="gateway.send(\'MODE '+channel+' -m\')">Zdejmij</button></td></tr>' +
-			'<tr><td>i</td><td>Tylko na zaproszenie</td><td class="button"><button onclick="gateway.send(\'MODE '+channel+' +i\')">Ustaw</button></td><td class="button"><button onclick="gateway.send(\'MODE '+channel+' -i\')">Zdejmij</button></td></tr>' +
-			'<tr><td>s</td><td>Kanał ukryty</td><td class="button"><button onclick="gateway.send(\'MODE '+channel+' +s\')">Ustaw</button></td><td class="button"><button onclick="gateway.send(\'MODE '+channel+' -s\')">Zdejmij</button></td></tr>' +
-			'</table>';
-			$(".status-text").html(html);
-		$(".statuswindow").fadeIn(200);
+		var channame = channel.substring(1);
+		
+		var html = "<p>Zmień tryby kanału "+he(channel)+":</p>" +
+			"<table><tr><th></th><th>Litera</th><th>Opis</th></tr>";
+		//generacja HTML z tabelą z wszystkimi trybami
+		modes.changeableSingle.forEach(function(mode){
+			html += '<tr><td><input type="checkbox" id="'+channame+'_mode_'+mode[0]+'"></td><td>'+mode[0]+'</td><td>'+mode[1]+'</td></tr>';
+		}, this);
+		modes.changeableArg.forEach(function(mode){
+			html += '<tr><td><input type="checkbox" id="'+channame+'_mode_'+mode[0]+'"></td><td>'+mode[0]+'</td><td>'+mode[1]+'</td><td><input type="text" id="'+channame+'_mode_'+mode[0]+'_text"></td></tr>';
+		}, this);
+		html += '</table>';
+
+		var button = [ {
+			text: 'Zatwierdź',
+			click: function(){
+				gateway.changeChannelModes(channel);
+				$(this).dialog('close');
+			}
+		} ];
+
+		$$.displayDialog('admin', channel, 'Zarządzanie '+he(channel), html, button);
+			
+		var chanModes = gateway.findChannel(channel).modes;
+		if(!chanModes){
+			return;
+		}
+		//uzupełnianie tabeli trybami już ustawionymi
+		modes.changeableSingle.forEach(function(mode){
+			if(chanModes[mode[0]]){
+				$('#'+channame+'_mode_'+mode[0]).prop('checked', true);
+			}
+		}, this);
+		modes.changeableArg.forEach(function(mode){
+			if(chanModes[mode[0]]){
+				$('#'+channame+'_mode_'+mode[0]).prop('checked', true);
+				$('#'+channame+'_mode_'+mode[0]+'_text').val(chanModes[mode[0]]);
+			}
+		}, this);
+	},
+	'changeChannelModes': function(channel) {
+		var modesw = '';
+		var modeop = '';
+		var modearg = '';
+		var chanModes = gateway.findChannel(channel).modes;
+		var channame = channel.substring(1);
+		
+		modes.changeableSingle.forEach(function(mode){
+			mode = mode[0];
+			var set = chanModes[mode];
+			var checked = $('#'+channame+'_mode_'+mode).prop('checked');
+			if(set != checked){
+				if(checked){
+					if(modeop != '+'){
+						modeop = '+';
+						modesw += '+';
+					}
+					modesw += mode;
+				} else {
+					if(modeop != '-'){
+						modeop = '-';
+						modesw += '-';
+					}
+					modesw += mode;
+				}
+			}
+		}, this);
+		
+		modes.changeableArg.forEach(function(mode){
+			mode = mode[0];
+			var set = chanModes[mode];
+			var checked = $('#'+channame+'_mode_'+mode).prop('checked');
+			var text = $('#'+channame+'_mode_'+mode+'_text').val();
+			if(set != checked || (set && set != text)){
+				if(checked){
+					if(modeop != '+'){
+						modeop = '+';
+						modesw += '+';
+					}
+					modesw += mode;
+					modearg += text + ' ';
+				} else {
+					if(modeop != '-'){
+						modeop = '-';
+						modesw += '-';
+					}
+					modesw += mode;
+					if(mode == 'k'){
+						modearg += text + ' ';
+					}
+				}
+			}
+		}, this);
+		
+		var modeStr = 'MODE '+channel+' '+modesw+' '+modearg;
+		gateway.send(modeStr);
+		setTimeout(function(){ gateway.showChannelModes(channel); }, 2000);
 	},
 	'showInvitePrompt': function(channel) {
 		var html = "<h3>Zaproś użytkownika na "+he(channel)+"</h3>" +
@@ -1337,6 +1424,89 @@ var gateway = {
 				$('#input').val(str.join(" "));
 			}
 		}
+	},
+	'parseChannelMode': function(args, chan) {
+		var plus = true;
+		var nextarg = 1;
+		var modearr = args[0].split('');
+		var log = '';
+		var mode = '';
+		var modechar = '';
+		for (i in modearr) {
+			if(modearr[i] == '+') {
+				log += "Change +\n";
+				plus = true;
+			} else if(modearr[i] == '-') {
+				log += "Change -\n";
+				plus = false;
+			} else if($.inArray(modearr[i], modes.argBoth) > -1) {
+				log += "Mode 'both' "+plus+' '+modearr[i]+' '+args[nextarg]+"\n";
+				nextarg++;
+			} else if($.inArray(modearr[i], modes.argAdd) > -1 && plus == true) {
+				log += "Mode 'add' "+plus+' '+modearr[i]+' '+args[nextarg]+"\n";
+				chan.modes[modearr[i]] = args[nextarg];
+				nextarg++;
+			} else if($.inArray(modearr[i], modes.user) > -1) {
+				modechar = modearr[i];
+				log += "Mode 'user' "+plus+' '+modearr[i]+' '+args[nextarg]+"\n";
+				if(plus) {
+					if(chan.nicklist.findNick(args[nextarg])) {
+						mode = '';
+						switch (modechar) {
+							case 'q':
+								mode = 'owner'
+								break;
+							case 'a':
+								mode = 'admin'
+								break;
+							case 'o':
+								mode = 'op'
+								break;
+							case 'h':
+								mode = 'halfop'
+								break;
+							case 'v':
+								mode = 'voice'
+								break;
+							default:
+								//i tak nie nastapi
+								break;
+						}
+						chan.nicklist.findNick(args[nextarg]).setMode(mode, true);
+					}
+				} else {
+					if(chan.nicklist.findNick(args[nextarg])) {
+						mode = '';
+						switch (modechar) {
+							case 'q':
+								mode = 'owner'
+								break;
+							case 'a':
+								mode = 'admin'
+								break;
+							case 'o':
+								mode = 'op'
+								break;
+							case 'h':
+								mode = 'halfop'
+								break;
+							case 'v':
+								mode = 'voice'
+								break;
+							default:
+								//i tak nie nastapi
+								break;
+						}
+						chan.nicklist.findNick(args[nextarg]).setMode(mode, false);
+					}
+				}
+				nextarg++;
+			} else {
+				log += "Mode 'normal' "+plus+' '+modearr[i]+"\n";
+				chan.modes[modearr[i]] = plus;
+			}
+		}
+		console.log(log);
 	}
 }
 	
