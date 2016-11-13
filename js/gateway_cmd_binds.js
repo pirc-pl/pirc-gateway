@@ -267,7 +267,7 @@ var cmdBinds = {
 							}
 							return;
 						}
-						if(msg.args[0] == 'AUTH'){
+						if(msg.args[0] == 'AUTH' || msg.args[0] == '*'){
 							return;
 						}
 						$$.displayDialog('notice', msg.sender.nick, 'Komunikat prywatny od serwera '+he(msg.sender.nick)+' do '+he(msg.args[0]), $$.colorize(msg.text));
@@ -691,6 +691,7 @@ var cmdBinds = {
 	'433' : [	// ERR_NICKNAMEINUSE 
 		function(msg) {
 			var html = '<p>Nick <b>'+he(msg.args[1])+'</b> jest już używany przez kogoś innego.</p>';
+			gateway.nickWasInUse = true;
 			if(gateway.connectStatus != statusDisconnected){
 				html += "<p>Twój bieżący nick to <b>"+guser.nick+".</p>";
 			}

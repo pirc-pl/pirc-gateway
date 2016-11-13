@@ -168,7 +168,7 @@ var services = {
 			$$.displayDialog('error', 'nickserv', 'Błąd', html);
 			return true;
 		}
-		if(msg.text.match(/^Ten nick jest zarejestrowany i chroniony\.$/i)){
+		if(msg.text.match(/^Ten nick jest zarejestrowany i chroniony\.( Jeśli należy do Ciebie,)?$/i)){
 			if(guser.nickservpass == ''){
 				services.showTimeToChange = true;
 				services.nickStore = guser.nick;
@@ -180,7 +180,10 @@ var services = {
 		if(msg.text.match(/^Zidentyfikuj się pisząc: /i)
 			|| msg.text.match(/^jeśli nick należy do Ciebie, w przeciwnym razie zmień go\.$/i)
 			|| msg.text.match(/^Nick .* nie jest zajęty przez serwisy\.$/i)
-			|| msg.text.match(/^Nick .* nie jest aktualnie używany\.$/i)){
+			|| msg.text.match(/^Nick .* nie jest aktualnie używany\.$/i)
+
+			|| msg.text.match(/^wpisz .\/msg NickServ IDENTIFY .hasło..\. W przeciwnym wypadku$/i)
+			|| msg.text.match(/^wybierz proszę inny nick.$/i)){
 				return true;
 		}
 		if(msg.text.match(/^Odmowa dostępu\.$/i)){
@@ -199,25 +202,30 @@ var services = {
 			}
 			return false;
 		}
-		if(msg.text.match(/^Nick został usunięty z sieci\.$/i) || msg.text.match(/^Serwisy właśnie zwolniły twojego nicka\.$/i)){
+		if(msg.text.match(/^Nick został usunięty z sieci\.$/i) || msg.text.match(/^Serwisy właśnie zwolniły.*nicka.*\.$/i)){
 			if(gateway.connectStatus == statusGhostSent){
 				gateway.send("NICK "+guser.nickservnick);
 				gateway.connectStatus = statusGhostAndNickSent;
 			}
 			return true;
 		}
-		var expr = /^Masz (.*) na zmianę nicka, potem zostanie zmieniony siłą\.$/i
+		var time = false;
+		var expr = /^Masz (.*) na zmianę nicka, potem zostanie zmieniony siłą\.$/i;
 		var match = expr.exec(msg.text);
+		if(!match){
+			var expr = /^Jeśli go nie zmienisz w ciągu (.*) sekund\(y\), zostanie zmieniony siłą\.$/i;
+			match = expr.exec(msg.text);
+		}
 		if(match){
 			if(services.showTimeToChange){
 				var html = '<br>Masz <span id="nickserv_timer"></span> na zmianę nicka, potem zostanie zmieniony siłą. Bez obaw: gdy wpiszesz poprawne hasło, to odzyskasz swojego nicka.';
 				$$.displayDialog('error', 'nickserv', 'Błąd', html);
 				var countStart = false;
-				if(match[1] == 'jedną minutę'){
+				if(match[1] == 'jedną minutę' || match[1] == '60'){
 					$('#nickserv_timer').text('60 sekund');
 					services.badNickCounter = 59;
 					var countStart = true;
-				} else if(match[1] == '20 sekund') {
+				} else if(match[1] == '20 sekund' || match[1] == '20') {
 					$('#nickserv_timer').text('20 sekund');
 					services.badNickCounter = 19;
 					var countStart = true;
@@ -502,7 +510,8 @@ var gateway = {
 			if(gateway.connectStatus == status001) {
 				if(guser.nick != guser.nickservnick) { //auto-ghost
 					gateway.connectStatus = statusGhostSent;
-					gateway.send("PRIVMSG NickServ :GHOST "+guser.nickservnick+" "+guser.nickservpass+"\r\nPRIVMSG NickServ :RELEASE "+guser.nickservnick+" "+guser.nickservpass);
+					//gateway.send("PRIVMSG NickServ :GHOST "+guser.nickservnick+" "+guser.nickservpass+"\r\nPRIVMSG NickServ :RELEASE "+guser.nickservnick+" "+guser.nickservpass);
+					gateway.send("PRIVMSG NickServ :RECOVER "+guser.nickservnick+" "+guser.nickservpass);
 				} else {
 					gateway.send("PRIVMSG NickServ :IDENTIFY "+guser.nickservpass);
 					gateway.connectStatus = statusIdentified;
@@ -519,8 +528,11 @@ var gateway = {
 			}*/
 			if(gateway.connectStatus == statusGhostAndNickSent && guser.nick == guser.nickservnick){ //ghost się udał
 				gateway.send("PRIVMSG NickServ :IDENTIFY "+guser.nickservpass);
-				var html = '<br>I już nie jest: usunąłem go używając twojego hasła :)';
-				$$.displayDialog('warning', 'warning', 'Ostrzeżenie', html);
+				if(gateway.nickWasInUse){
+					var html = '<br>I już nie jest: usunąłem go używając twojego hasła :)';
+					$$.displayDialog('warning', 'warning', 'Ostrzeżenie', html);
+					gateway.nickWasInUse = false;
+				}
 				gateway.connectStatus = statusIdentified;
 			}
 		} else {
