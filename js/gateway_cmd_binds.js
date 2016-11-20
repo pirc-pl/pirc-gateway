@@ -1,11 +1,9 @@
 var cmdBinds = {
 	'001': [	// RPL_WELCOME 
 		function(msg) {
-			var ckNick = settings.getCookie('origNick');
-			if(ckNick){
-				settings.saveCookie('origNick', ckNick);
-			} else {
-				settings.saveCookie('origNick', guser.nick);
+			var ckNick = localStorage.getItem('origNick');
+			if(!ckNick){
+				localStorage.setItem('origNick', guser.nick);
 			}
 			
 			if(msg.args[0] != guser.nick) {
@@ -27,7 +25,9 @@ var cmdBinds = {
 			if(gateway.connectStatus != statusDisconnected){
 				return;
 			}
-			if(msg.args[0] != guser.nick) {
+			if(guser.nick == ''){
+				guser.nick = msg.args[0];
+			} else if(msg.args[0] != guser.nick) {
 				var oldNick = guser.nick;
 				setTimeout(function(){
 					gateway.send('NICK '+oldNick);
@@ -406,7 +406,7 @@ var cmdBinds = {
 				if(msg.args[1] == guser.nick){
 					var chans = msg.text.split(' ');
 					chans.forEach( function(channame){
-						var channel = channame.match(/#[^ ]+/);
+						var channel = channame.match(/#[^ ]*/);
 						if(channel){
 							if(gateway.findChannel(channel[0])) {
 								gateway.findChannel(channel[0]).rejoin();
@@ -442,8 +442,6 @@ var cmdBinds = {
 				mody = mody.join(" ");
 				var chanO = gateway.findChannel(chan);
 				chanO.appendMessage(messagePatterns.mode, [gateway.niceTime(), chan, mody]);
-				console.log('324');
-				console.log(msg.args);
 				gateway.parseChannelMode(msg.args, chanO);
 			}
 		}
@@ -502,7 +500,7 @@ var cmdBinds = {
 			if(gateway.findChannel(msg.args[1])) {
 				gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.topicTime, [gateway.niceTime(), msg.args[2], $$.parseTime(msg.args[3])]);
 				gateway.send('CAP REQ :multi-prefix userhost-in-names\r\nCAP END\r\nNAMES '+msg.args[1]);
-				var ckNick = settings.getCookie('origNick');
+				var ckNick = localStorage.getItem('origNick');
   			 	if(ckNick){
 					gateway.send('SETNAME Użytkownik bramki PIRC.pl "' + ckNick + '"');
 				}

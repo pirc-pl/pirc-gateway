@@ -169,21 +169,6 @@ var stateSenderUser = 5;
 var stateSenderHost = 6;
 
 var settings = {
-	'saveCookie': function(cname, cvalue){
-		var expireTime = new Date();
-		expireTime.setFullYear(expireTime.getFullYear() + 3);
-		document.cookie = cname+'='+cvalue+'; expires='+expireTime.toGMTString();
-	},
-	'getCookie': function(cname) {
-		var nameEQ = cname + "=";
-		var ca = document.cookie.split(';');
-		for(var i=0;i < ca.length;i++) {
-			var c = ca[i];
-			while (c.charAt(0)==' ') c = c.substring(1,c.length);
-			if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
-		}
-		return null;
-	},
 	'backlogLength': 15
 }
 
@@ -196,7 +181,7 @@ var disp = {
 		$('body').css('font-size', s+'em');
 		$('input[type="checkbox"]').css('transform', 'scale('+s+')');
 		disp.size = s;
-		settings.saveCookie('tsize', s);
+		localStorage.setItem('tsize', s);
 	},
 	'displaySpecialDialog': function(name, button) {
 		$('#'+name).dialog({
@@ -254,10 +239,10 @@ var disp = {
 	},
 	'changeSettings': function() {
 		booleanSettings.forEach(function(sname){
-			settings.saveCookie(sname, $('#'+sname).is(':checked'));
+			localStorage.setItem(sname, $('#'+sname).is(':checked'));
 		});
 		comboSettings.forEach(function(sname){
-			settings.saveCookie(sname, $('#'+sname).val());
+			localStorage.setItem(sname, $('#'+sname).val());
 		});
 
 		numberSettings.forEach(function(sname){
@@ -266,7 +251,7 @@ var disp = {
 				value = numberSettingsMinMax[sname]['deflt'];
 				$('#'+sname).val(value);
 			}
-			settings.saveCookie(sname, value);
+			localStorage.setItem(sname, value);
 		});
 		settings.backlogLength = parseInt($('#backlogCount').val());
 		if ($('#tabsListBottom').is(':checked')) {
@@ -540,19 +525,73 @@ var $$ = {
 		}
 		return html;
 	},
+	'checkLinkStart': function(text, stubs){
+		var ret = { 'found' : false, 'linkBegin' : '', 'beginLength' : 0 };
+		stubs.forEach(function(stub){
+			if(text.substring(0, stub.length) == stub){
+				ret.found = true;
+				ret.linkBegin = stub;
+				ret.beginLength = stub.length;
+			}
+		});
+		return ret;
+	},
 	'parseLinks': function(text){
-		var newText = text;
+		var newText = '';
+		var currLink = '';
 		var confirm= '';
 		var confirmChan = '';
 		if ($('#displayLinkWarning').is(':checked')) {
 			confirm = " onclick=\"return confirm('Link może być niebezpieczny, czy na pewno chcesz go otworzyć?')\"";
 			confirmChan = " onclick=\"return confirm('Czy chcesz dołączyć do wybranego kanału?')\"";
 		}
-		newText = newText.replace(/(http:\/\/[^ "'<>]+)/ig, "<a href=\"$1\" target=\"_blank\"" + confirm +">$1</a>");
-		newText = newText.replace(/(https:\/\/[^ "'<>]+)/ig, "<a href=\"$1\" target=\"_blank\"" + confirm +">$1</a>");
-		newText = newText.replace(/(ftp:\/\/[^ "'<>]+)/ig, "<a href=\"$1\" target=\"_blank\"" + confirm +">$1</a>");
-		newText = newText.replace(/([^[])(#[^, ]+)/g, "$1<a href=\"javascript:gateway.send('JOIN $2')\"" + confirmChan + ">$2</a>");
-		newText = newText.replace(/^(#[^, ]+)/g, "<a href=\"javascript:gateway.send('JOIN $1')\"" + confirmChan + ">$1</a>");
+		var stateText = 0;
+		var stateChannel = 1;
+		var stateUrl = 2;
+		var state = stateText;
+
+		for(var i=0; i < text.length; i++){
+			switch(state){
+				case stateText:
+					var stub = text.substring(i);
+					var found = $$.checkLinkStart(stub, ['ftp://', 'http://', 'www.']);
+					if(found.found){
+						currLink = found.linkBegin;
+						i += found.beginLength-1;
+						state = stateUrl;
+					} else if(text.charAt(i) == '#' && text.charAt(i-1) != '[') {
+						state = stateChannel;
+						currLink = '#';
+					} else {
+						newText += text.charAt(i);
+					}
+					break;
+				case stateChannel:
+					var c = text.charAt(i);
+					if(c != ' '){
+						currLink += c;
+					} else {
+						newText += '<a href="javascript:gateway.send(\'JOIN '+currLink+'\')"' + confirmChan + '>'+currLink+'</a> ';
+						state = stateText;
+					}
+					break;
+				case stateUrl:
+					var c = text.charAt(i);
+					if(c != ' '){
+						currLink += c;
+					} else {
+						newText += '<a href="'+currLink+'" target="_blank"' + confirm + '>'+currLink+'</a> ';
+						state = stateText;
+					}
+					break;
+			}			
+		}
+		if(state == stateUrl){
+			newText += '<a href="'+currLink+'" target="_blank"' + confirm + '>'+currLink+'</a>';
+		}
+		if(state == stateChannel){
+			newText += '<a href="javascript:gateway.send(\'JOIN '+currLink+'\')"' + confirmChan + '>'+currLink+'</a>';
+		}
 		return newText;
 	},
 	'displayReconnect': function(){
@@ -622,6 +661,7 @@ var $$ = {
 		var id = type+'Dialog-'+md5(nick.toLowerCase());
 		var $dialog = $('#'+id);
 		$dialog.dialog('close');
+		gateway.inputFocus();
 	},
 	'sescape': function(val) {
 		return val.replace('\\', '\\\\');

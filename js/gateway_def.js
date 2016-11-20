@@ -461,9 +461,9 @@ var gateway = {
 		gateway.statusWindow.appendMessage(messagePatterns.existingConnection, [gateway.niceTime()]);
 		gateway.send('PRIVMSG');
 			
-		if(guser.nick == settings.getCookie('nick') && settings.getCookie('password')){
+		if(guser.nick == localStorage.getItem('nick') && localStorage.getItem('password')){
 			guser.nickservnick = guser.nick;
-			guser.nickservpass = atob(settings.getCookie('password'));
+			guser.nickservpass = atob(localStorage.getItem('password'));
 		}
 			
 		setTimeout(function(){
@@ -479,8 +479,10 @@ var gateway = {
 		for (i in data.packets) { //wywoływanie funkcji 'handlerów' od poleceń
 			if(data.packets[i].command in cmdBinds) {
 				for(func in cmdBinds[data.packets[i].command]) {
-					if(typeof(cmdBinds[data.packets[i].command]) != 'undefined' && typeof(cmdBinds[data.packets[i].command][func]) == 'function') {
+					if(data.packets[i].command && cmdBinds[data.packets[i].command] && typeof(cmdBinds[data.packets[i].command][func]) == 'function') {
 						cmdBinds[data.packets[i].command][func](data.packets[i]);
+					} else {
+						console.log(data.packets[i]);
 					}
 				}
 			}
@@ -510,22 +512,12 @@ var gateway = {
 			if(gateway.connectStatus == status001) {
 				if(guser.nick != guser.nickservnick) { //auto-ghost
 					gateway.connectStatus = statusGhostSent;
-					//gateway.send("PRIVMSG NickServ :GHOST "+guser.nickservnick+" "+guser.nickservpass+"\r\nPRIVMSG NickServ :RELEASE "+guser.nickservnick+" "+guser.nickservpass);
 					gateway.send("PRIVMSG NickServ :RECOVER "+guser.nickservnick+" "+guser.nickservpass);
 				} else {
 					gateway.send("PRIVMSG NickServ :IDENTIFY "+guser.nickservpass);
 					gateway.connectStatus = statusIdentified;
 				}
 			}
-		/*	if(gateway.connectStatus == statusGhostSent) {
-				setTimeout(function(){ //czekam trochę żeby nickserv miał czas zadziałać, TODO spróbować poczekać na komunikat
-					if(gateway.connectStatus != statusGhostSent) {
-						return;
-					}
-					gateway.send("NICK "+guser.nickservnick);
-					gateway.connectStatus = statusGhostAndNickSent;
-				}, 1500);
-			}*/
 			if(gateway.connectStatus == statusGhostAndNickSent && guser.nick == guser.nickservnick){ //ghost się udał
 				gateway.send("PRIVMSG NickServ :IDENTIFY "+guser.nickservpass);
 				if(gateway.nickWasInUse){
@@ -589,31 +581,38 @@ var gateway = {
 		$$.displayDialog('connect', '1', 'Łączenie', html);
 	},
 	'initialize': function() {
-		if(!$('#nsnick').val().match(/^[\^\|0-9a-z_`\[\]\-]+$/i)) {
+		var nickInput = $('#nsnick').val();
+		var chanInput = $('#nschan').val();
+		var passInput = $('#nspass').val();
+		if(!nickInput.match(/^[\^\|0-9a-z_`\[\]\-]+$/i)) {
 			alert('Nick zawiera niedozwolone znaki!');
 			return false;
 		}
-		if(!$('#nschan').val().match(/^[#,a-z0-9_\.\-]+$/i)) {
+		if(!chanInput.match(/^[#,a-z0-9_\.\-]+$/i)) {
 			alert('Kanał zawiera niedozwolone znaki!');
 			return false;
 		}
-		if($('#nspass').val().match(/[ ]+/i)) {
+		if(passInput.match(/[ ]+/i)) {
 			alert('Hasło nie powinno zawierać spacji!');
 			return false;
 		}
-		if($('#nsnick').val() != guser.nick) {
-			guser.changeNick($('#nsnick').val());
+		if(nickInput != guser.nick) {
+			guser.changeNick(nickInput);
 		}
-		guser.channels = [ $('#nschan').val() ];
-		if($('#nspass').val() != '') {
-			guser.nickservnick = $('#nsnick').val();
+		guser.channels = [ chanInput ];
+		if(passInput != '') {
+			guser.nickservnick = nickInput;
 			guser.nickservpass = $('#nspass').val();
 		}
-		if($('#save_cookie').is(":checked")){
-			settings.saveCookie('channel', $('#nschan').val());
-			settings.saveCookie('nick', $('#nsnick').val());
-			if(guser.nickservpass){
-				settings.saveCookie('password', btoa(guser.nickservpass));
+		if(chanInput){
+			localStorage.setItem('channel', chanInput);
+		}
+		if(nickInput){
+			localStorage.setItem('nick', nickInput);
+		}
+		if($('#save_password').is(":checked")){
+			if(guser.nickservnick && guser.nickservpass){
+				localStorage.setItem('password', btoa(guser.nickservpass));
 			}
 		}
 		gateway.initSys();
@@ -1518,7 +1517,7 @@ var gateway = {
 				chan.modes[modearr[i]] = plus;
 			}
 		}
-		console.log(log);
+	//	console.log(log);
 	}
 }
 	
@@ -1583,18 +1582,18 @@ var conn = {
 		conn.my_nick = dnick;
 
 		if(reqChannel == '#'){
-			if(settings.getCookie('channel')){
-				reqChannel = settings.getCookie('channel');
+			if(localStorage.getItem('channel')){
+				reqChannel = localStorage.getItem('channel');
 			}
 		}
 		if(conn.my_nick == ''){
-			if(settings.getCookie('nick')){
-				conn.my_nick = settings.getCookie('nick');
+			if(localStorage.getItem('nick')){
+				conn.my_nick = localStorage.getItem('nick');
 			}
 		}
-		if(conn.my_nick == settings.getCookie('nick')){
-			if(settings.getCookie('password')){
-				conn.my_pass = atob(settings.getCookie('password'));
+		if(conn.my_nick == localStorage.getItem('nick')){
+			if(localStorage.getItem('password')){
+				conn.my_pass = atob(localStorage.getItem('password'));
 			}
 		}
 	
@@ -1629,7 +1628,7 @@ var conn = {
 				nconn_html += '<tr><td style="text-align: right; padding-right: 10px;">Kanał:</td><td><input type="text" id="nschan" value="'+he(reqChannel)+'" /></td></tr>';
 				nconn_html += '<tr><td style="text-align: right; padding-right: 10px;">Nick:</td><td><input type="text" id="nsnick" value="'+conn.my_nick+'" /></td></tr>';
 				nconn_html += '<tr><td style="text-align: right; padding-right: 10px;">Hasło (jeżeli zarejestrowany):</td><td><input type="password" id="nspass" value="'+conn.my_pass+'" /></td></tr>';
-				nconn_html += '<tr><td></td><td style="text-align: left;"><input type="checkbox" id="save_cookie" /> Zapisz w ciasteczkach</td></tr>';
+				nconn_html += '<tr><td></td><td style="text-align: left;"><input type="checkbox" id="save_password" /> Zapisz hasło</td></tr>';
 				nconn_html += '</table><input type="submit" style="display:none"></form>';
 				var button = [ {
 					text: 'Połącz z IRC',
@@ -1650,7 +1649,7 @@ var conn = {
 	},
 	'gatewayInit': function(){
 		try {
-		// USUWANIE BŁĘDNYCH CIASTECZEK TODO skasować jak wszyscy już usuną
+		// USUWANIE CIASTECZEK i przenoszenie do LocalStorage TODO skasować jak wszyscy już usuną
 			var arrSplit = document.cookie.split(";");
 
 			for(var i = 0; i < arrSplit.length; i++){
@@ -1659,12 +1658,26 @@ var conn = {
 				var cookieName = cookieData[0];
 				var cookieValue = cookieData[1];
 
-				// If the prefix of the cookie's name matches the one specified, remove it
-				if(cookieName.indexOf("query") === 0) {
-					// kopiuj do LS
+				booleanSettings.forEach(function(name){
+					if(cookieName == name){
+						localStorage.setItem(cookieName, cookieValue);
+						document.cookie = cookieName + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT";
+					}
+				});
+				comboSettings.forEach(function(name){
+					if(cookieName == name){
+						localStorage.setItem(cookieName, cookieValue);
+						document.cookie = cookieName + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT";
+					}
+				});
+				numberSettings.forEach(function(name){
+					if(cookieName == name){
+						localStorage.setItem(cookieName, cookieValue);
+						document.cookie = cookieName + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT";
+					}
+				});
+				if(cookieName == 'origNick'){
 					localStorage.setItem(cookieName, cookieValue);
-
-					// Remove the cookie
 					document.cookie = cookieName + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT";
 				}
 			}
@@ -1674,24 +1687,24 @@ var conn = {
 		$('.not-connected-text p').html('Poczekaj chwilę, trwa ładowanie...');
 
 		booleanSettings.forEach(function(sname){
-			if(settings.getCookie(sname) == null){
+			if(localStorage.getItem(sname) == null){
 				return;
 			}
-			$('#'+sname).prop('checked', str2bool(settings.getCookie(sname)));
+			$('#'+sname).prop('checked', str2bool(localStorage.getItem(sname)));
 		});
 		comboSettings.forEach(function(sname){
-			if(settings.getCookie(sname) == null){
+			if(localStorage.getItem(sname) == null){
 				return;
 			}
-			$('#'+sname).val(settings.getCookie(sname));
+			$('#'+sname).val(localStorage.getItem(sname));
 		});
 		numberSettings.forEach(function(sname){
-			if(settings.getCookie(sname) == null){
+			if(localStorage.getItem(sname) == null){
 				return;
 			}
-			$('#'+sname).val(settings.getCookie(sname));
+			$('#'+sname).val(localStorage.getItem(sname));
 		});
-		disp.setSize(settings.getCookie('tsize'));
+		disp.setSize(localStorage.getItem('tsize'));
 		disp.changeSettings();
 		
 		$('#chatbox').click(function() {
