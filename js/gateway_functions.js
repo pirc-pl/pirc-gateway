@@ -554,7 +554,7 @@ var $$ = {
 			switch(state){
 				case stateText:
 					var stub = text.substring(i);
-					var found = $$.checkLinkStart(stub, ['ftp://', 'http://', 'www.']);
+					var found = $$.checkLinkStart(stub, ['ftp://', 'http://', 'https://']);
 					if(found.found){
 						currLink = found.linkBegin;
 						i += found.beginLength-1;
