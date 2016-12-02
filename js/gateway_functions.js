@@ -102,6 +102,8 @@ var messagePatterns = {
 	'error': '<span class="time">%s</span> &nbsp; <span class="mode"> !!! Rozłączono z serwerem: %s</span><br />',
 	'existingConnection': '<span class="time">%s</span> &nbsp; <span class="mode">*** Połączenie już istnieje, dołączam się do niego.</span><br />',
 	'away': '<span class="time">%s</span> &nbsp; <span class="mode">*** %s otrzymał twoją wiadomość, ale jest teraz nieobecny: %s</span><br />',
+	'yourAwayEnabled': '<span class="time">%s</span> &nbsp; <span class="mode">*** Jesteś teraz oznaczony jako nieobecny</span><br />',
+	'yourAwayDisabled': '<span class="time">%s</span> &nbsp; <span class="mode">*** Nie jesteś już oznaczony jako nieobecny</span><br />',
 	'yourInvite': '<span class="time">%s</span> &nbsp; <span class="mode">*** Zaprosiłeś użytkownika %s na kanał %s</span><br />',
 	'knocked': '<span class="time">%s</span> &nbsp; <span class="mode">*** Poprosiłeś o dostęp ("zapukałeś") na %s, czekaj na zaproszenie od operatora</span><br />'
 };
@@ -502,7 +504,7 @@ var $$ = {
 			rmatch.forEach(function(arg){
 				var rand = Math.floor(Math.random() * 10000).toString();
 				var imgurl = encodeURI(arg);
-				html += '<a onclick="disp.toggleImageView(\''+rand+'\', \''+imgurl+'\')"'+
+				html += '<a onclick="disp.toggleImageView(\''+rand+'\', \''+decodeURIComponent(imgurl)+'\')"'+
 					' class="image_link"><span id="show-'+rand+'" style="display:inline;">Pokaż</span><span id="hide-'+rand+'" style="display:none;">Ukryj</span> obrazek</a>'+
 					'<div style="display:none;" id="img-'+rand+'"><img id="imgc-'+rand+'" style="max-width:100%;" /></div>';
 			});
@@ -626,7 +628,11 @@ var $$ = {
 			if(!title){
 				title = type;
 			}
-			$dialog = $('<div id="'+id+'" class="dialog '+type+'-dialog" title="'+title+'" />');
+			var additionalClasses = '';
+			if(type == 'notice' && sender.toLowerCase() == 'memoserv'){ // specjalny styl dla MemoServ
+				additionalClasses += 'notice-dialog-memoserv';
+			}
+			$dialog = $('<div id="'+id+'" class="dialog '+type+'-dialog '+additionalClasses+'" title="'+title+'" />');
 			$dialog.appendTo('html');
 		}
 

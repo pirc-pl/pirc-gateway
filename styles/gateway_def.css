@@ -416,6 +416,10 @@ span.yournickname {
 	background: url("/styles/img/notice.png") no-repeat scroll right top #D7E4F3 !important;
 }
 
+.notice-dialog-memoserv {
+	background-color: #F3F3D7 !important;
+}
+
 #color-dialog {
 	background: url("/styles/img/kolory.png") no-repeat scroll right top #D7E4F3;
 	display: none;

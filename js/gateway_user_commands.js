@@ -32,6 +32,18 @@ var commands = {
 			gateway.send(input.slice(1).substr(command[0].length+1));
 		}
 	},
+	'away': {
+		'channels': true,
+		'nicks': true,
+		'custom': [],
+		'callback': function(command, input) {
+			if(!command[1]){
+				gateway.send('AWAY');
+			} else {
+				gateway.send('AWAY '+input.substring(input.indexOf(' ')));
+			}
+		}
+	},
 	'raw': {
 		'callback': 'quote'
 	},
@@ -130,6 +142,15 @@ var commands = {
 		'custom': [],
 		'callback': function(command, input) {
 			command.splice(1, 0, 'BotServ');
+			commands.msg.callback(command, input);
+		}
+	},
+	'ms': {
+		'channels': true,
+		'nicks': false,
+		'custom': [],
+		'callback': function(command, input) {
+			command.splice(1, 0, 'MemoServ');
 			commands.msg.callback(command, input);
 		}
 	},

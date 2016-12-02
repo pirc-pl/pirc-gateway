@@ -62,18 +62,15 @@ function Nicklist(chan, id) {
 			return false;
 		}
 	}
-	this.addNick = function(nick, initMode) {
+	this.addNick = function(nick) {
 		var nickListItem = this.findNick(nick);
 		if(!nickListItem) {
-			var newNick = new NicklistUser(nick, initMode, this.channel);
+			var newNick = new NicklistUser(nick, this.channel);
 			this.list.push(newNick);
 			this.insertNick(newNick);
 		} else {
-			if(initMode) {
-				nickListItem.setMode(initMode, true);
-				nickListItem.remove();
-				this.insertNick(nickListItem);
-			}
+			nickListItem.remove();
+			this.insertNick(nickListItem);
 		}
 	}
 	this.removeNick = function(nick) {
@@ -108,7 +105,7 @@ function Nicklist(chan, id) {
 	$('#'+this.id).prepend(operHtml);
 }
 
-function NicklistUser(usernick, initMode, chan) {
+function NicklistUser(usernick, chan) {
 	this.modes = {
 		owner: false, // lvl = 5;
 		admin: false,
@@ -119,6 +116,9 @@ function NicklistUser(usernick, initMode, chan) {
 	this.channel = chan;
 	this.ident = false;
 	this.host = false;
+	this.realname = false;
+	this.away = false;
+	this.awayReason = false;
 
 	this.makeHTML = function() {
 		return '<li id="'+this.id+'" class="'+md5(this.nick)+'">'+
@@ -188,22 +188,60 @@ function NicklistUser(usernick, initMode, chan) {
 	}
 	this.setIdent = function(ident) {
 		this.ident = ident;
-		if(this.host){
-			$('#'+this.id).attr('title', this.nick+'!'+this.ident+'@'+this.host);
-		}
+		this.showTitle();
 	}
 	this.setUserHost = function(host) {
 		this.host = host;
-		if(this.ident){
-			$('#'+this.id).attr('title', this.nick+'!'+this.ident+'@'+this.host);
+		this.showTitle();
+	}
+	this.setRealname = function(realname) {
+		this.realname = realname;
+		this.showTitle();
+	}
+	this.setAway = function(away) {
+		if(this.away != away){			
+			this.away = away;
+			this.showTitle();
+			if(away){
+				$('#'+this.id+' .nickname').css('opacity', '0.3');
+			} else {
+				$('#'+this.id+' .nickname').css('opacity', '');
+				this.awayReason = false;
+			}
+		}
+	}
+	this.setAwayReason = function(reason) {
+		if(this.away){
+			this.awayReason = reason;
+		} else {
+			this.awayReason = false;
+		}
+		this.showTitle();
+	}
+	this.showTitle = function() {
+		var text = '';
+		if(this.ident && this.host){
+			text = this.nick+'!'+this.ident+'@'+this.host;
+			if(this.realname){
+				text += ' \n'+this.realname;
+			}
+		}
+		if(this.away){
+			if(text != ''){
+				text += ' \n';
+			}
+			text += 'Ten użytkownik jest nieobecny';
+			if(this.awayReason){
+				text += ' (powód: '+this.awayReason+')';
+			}
+		}
+		if(text != ''){
+			$('#'+this.id).attr('title', text);
 		}
 	}
 	this.level = 0;
 	this.nick = usernick;
 	this.id = usernick.replace(/[^a-z0-9A-Z]+/ig, '-').toLowerCase()+Math.round(Math.random()*10000);
-	if(initMode) {
-		this.setMode(initMode, true);
-	}
 }
 
 function Query(nick) {
@@ -619,6 +657,9 @@ function Status() {
 		}
 	}
 	this.markBold = function() {
+		if(gateway.active == '--status'){
+			return;
+		}
 		if(!this.hilight2 && !this.hilight) {
 			this.hilight2 = window.setInterval('gateway.statusWindow.toggleClassMsg();', 500);
 		}

@@ -149,6 +149,10 @@ b.admin {
 	background-color: #031B38 !important;
 }
 
+.notice-dialog-memoserv {
+	background-color: #292912 !important;
+}
+
 span.data {
 	color: #DAF6FF;
 }
@@ -191,4 +195,5 @@ span.data {
 .connect-dialog {
 	background-color: #062B65 !important;
 }
+
 

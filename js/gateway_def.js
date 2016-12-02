@@ -300,6 +300,7 @@ var gateway = {
 	'setConnectedWhenIdentified': 0,
 	'connectTimeoutID': 0,
 	'pingIntervalID': false,
+	'whoChannelsIntervalID': false,
 	'disconnectMessageShown': 0,
 	'displayOwnWhois': false,
 	'firstConnect': 1, //jeśli dostanę ERROR gdy to jest nadal 1 = błąd z poprzedniej sesji, od razu łączę ponownie
@@ -333,6 +334,13 @@ var gateway = {
 				gateway.ping();
 			}, 20000);
 		}
+		/*if(!gateway.whoChannelsIntervalID){
+			gateway.whoChannelsIntervalID = setInterval(function(){
+				gateway.channels.forEach(function(channel){
+					gateway.send('WHO '+channel.name);
+				});
+			}, 10000);
+		}*/
 	/*	if(gateway.connectStatus == statusIdentified){
 			gateway.connectStatus = statusConnected;
 			if(guser.nickservnick != '' && guser.nick != guser.nickservnick) { //ostatnia próba zmiany nicka na właściwy

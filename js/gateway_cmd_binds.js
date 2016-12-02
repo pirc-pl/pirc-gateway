@@ -287,7 +287,7 @@ var cmdBinds = {
 					gateway.switchTab(msg.text);
 					chan.appendMessage(messagePatterns.joinOwn, [gateway.niceTime(), msg.text]);
 				}
-				gateway.send("MODE "+msg.text);
+				gateway.send("MODE "+msg.text+"\r\nWHO "+msg.text);
 			}
 		},
 		function(msg) {
@@ -415,7 +415,7 @@ var cmdBinds = {
 								gateway.channels.push(chan);
 								gateway.switchTab(channel[0]);
 							}
-							gateway.send('NAMES '+channel[0]+'\r\nTOPIC '+channel[0]+'\r\nMODE '+channel[0]);
+							gateway.send('NAMES '+channel[0]+'\r\nTOPIC '+channel[0]+'\r\nMODE '+channel[0]+'\r\nWHO '+channel[0]);
 						}
 					});
 				}
@@ -443,7 +443,71 @@ var cmdBinds = {
 				var chanO = gateway.findChannel(chan);
 				chanO.appendMessage(messagePatterns.mode, [gateway.niceTime(), chan, mody]);
 				gateway.parseChannelMode(msg.args, chanO);
+				gateway.send('CAP REQ :multi-prefix userhost-in-names away-notify\r\nCAP END');//\r\nNAMES '+chan);
+				var ckNick = localStorage.getItem('origNick');
+  			 	if(ckNick){
+					gateway.send('SETNAME Użytkownik bramki PIRC.pl "' + ckNick + '"');
+				}
 			}
+		}
+	],
+	'352': [	// RPL_WHOREPLY
+		function(msg) {
+			var channel = gateway.findChannel(msg.args[1]);
+			if(!channel){
+				return;
+			}
+			var nickListItem = channel.nicklist.findNick(msg.args[5]);
+			if(!nickListItem){
+				return;
+			}
+			nickListItem.setIdent(msg.args[2]);
+			nickListItem.setUserHost(msg.args[3]);
+			nickListItem.setRealname(msg.text.substr(msg.text.indexOf(' ') + 1));
+			if(msg.args[6].charAt(0) == 'G'){
+				nickListItem.setAway(true);
+			} else {
+				nickListItem.setAway(false);
+			}
+		}
+	],
+	'AWAY': [
+		function(msg) {
+			if(msg.text == ''){
+				var away = false;
+			} else {
+				var away = true;
+				var reason = msg.text;
+			}
+			gateway.channels.forEach(function(channel){
+				var nickListItem = channel.nicklist.findNick(msg.sender.nick);
+				if(nickListItem){
+					nickListItem.setAway(away);
+					if(away){
+						nickListItem.setAwayReason(reason);
+					}
+				}
+			});
+		}
+	],
+	'305': [	// RPL_UNAWAY 
+		function(msg) {
+			gateway.channels.forEach(function(channel){
+				var nickListItem = channel.nicklist.findNick(guser.nick);
+				nickListItem.setAway(false);
+			});
+			gateway.statusWindow.appendMessage(messagePatterns.yourAwayDisabled, [gateway.niceTime()]);
+			gateway.statusWindow.markBold();
+		}
+	],
+	'306': [	// RPL_NOWAWAY
+		function(msg) {
+			gateway.channels.forEach(function(channel){
+				var nickListItem = channel.nicklist.findNick(guser.nick);
+				nickListItem.setAway(true);
+			});
+			gateway.statusWindow.appendMessage(messagePatterns.yourAwayEnabled, [gateway.niceTime()]);
+			gateway.statusWindow.markBold();
 		}
 	],
 	'353': [	// RPL_NAMREPLY 
@@ -499,11 +563,6 @@ var cmdBinds = {
 		function(msg) {
 			if(gateway.findChannel(msg.args[1])) {
 				gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.topicTime, [gateway.niceTime(), msg.args[2], $$.parseTime(msg.args[3])]);
-				gateway.send('CAP REQ :multi-prefix userhost-in-names\r\nCAP END\r\nNAMES '+msg.args[1]);
-				var ckNick = localStorage.getItem('origNick');
-  			 	if(ckNick){
-					gateway.send('SETNAME Użytkownik bramki PIRC.pl "' + ckNick + '"');
-				}
 			}
 		}
 	],
@@ -666,6 +725,8 @@ var cmdBinds = {
 					reason = 'Jesteś zbanowany';
 				} else if(msg.text.match(/Color is not permitted in this channel \(.*\)/)){
 					reason = 'Wiadomości zawierające kolory są zabronione na tym kanale';
+				} else if(msg.text.match(/No external channel messages \(.*\)/)){
+					reason = 'Musisz być na tym kanale, aby móc pisać';
 				} else {
 					reason = msg.text;
 				}
