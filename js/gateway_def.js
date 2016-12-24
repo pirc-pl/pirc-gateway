@@ -23,117 +23,130 @@ var irc = {
 			'user': false
 		};
 	},
+	'oldData': '',
 	'parseMessage': function(msg){
-		lines = msg.split("\n");
-		packets = [];
-		packetcnt = 0;
-		lines.forEach(function(line){
-			var ircmsg = new irc.messagedata();
-
-			while(line.charAt(0) == "\r" || line.charAt(0) == "\n"){
-				line = line.substr(1);
+		var packets = [];
+		var packetcnt = 0;
+		var msglen = msg.length;
+		var line = irc.oldData;
+		irc.oldData = '';
+		for(var i = 0; i < msglen; i++){
+			var c = msg.charAt(i);
+			if(c == '\r' || c == '\n'){
 				if(line == ''){
-					return;
+					continue;
 				}
-			}
-			while(line.slice(-1) == "\r" || line.slice(-1) == " "){
-				line = line.slice(0, -1);
-				if(line == ''){
-					return;
+				var ircmsg = irc.parseLine(line);
+				if(ircmsg){
+					packets[packetcnt] = ircmsg;
+					packetcnt++;
 				}
-			}
-			
-			line.replace(/^\s+|\s+$/gm,'');
-			
-			if(line == ''){
-				return;
-			}
-			
-			var msglen = line.length;
-		
-			var pstate = stateStart;
-			var currArg = '';
-
-			for(var i = 0; i < msglen; i++){
-				var cchar = line.charAt(i);
-				switch(pstate){
-					case stateStart:
-						switch(cchar){
-							case ':': pstate = stateSenderNick; break;
-							default:
-								pstate = stateCommand; 
-								ircmsg.command += cchar;
-								break;
-						}
-						break;
-					case stateSenderNick:
-						switch(cchar){
-							case '!': pstate = stateSenderUser; break;
-							case '@': pstate = stateSenderHost; break;
-							case ' ': pstate = stateCommand; break;
-							default: ircmsg.sender.nick += cchar; break;
-						}
-						break;
-					case stateSenderUser:
-						switch(cchar){
-							case '@': pstate = stateSenderHost; break;
-							case ' ': pstate = stateCommand; break;
-							default: ircmsg.sender.ident += cchar; break;
-						}
-						break;
-					case stateSenderHost:
-						switch(cchar){
-							case ' ': pstate = stateCommand; break;
-							default: ircmsg.sender.host += cchar; break;
-						}
-						break;
-					case stateCommand:
-						switch(cchar){
-							case ' ': pstate = stateArgs; break;
-							default: ircmsg.command += cchar; break;
-						}
-						break;
-					case stateArgs:
-						switch(cchar){
-							case ' ':
-								if(currArg != ''){
-									ircmsg.args.push(currArg);
-								}
-								currArg = '';
-								break;
-							case ':':
-								if(prevChar == ' '){
-									pstate = stateMessage;
-								} else {
-									currArg += cchar;
-								}
-								break;
-							default: currArg += cchar; break;
-						}
-						break;
-					case stateMessage:
-						ircmsg.text += cchar;
-						break;
-				}
-				var prevChar = cchar;
-			}
-			if(pstate == stateArgs){
-				ircmsg.args.push(currArg);
-			}
-		
-			if(ircmsg.sender.ident == '' && ircmsg.sender.host == '' && ircmsg.sender.nick.indexOf('.')!=-1){
-				ircmsg.sender.server = true;
+				line = '';
 			} else {
-				ircmsg.sender.user = true;
+				line += c;
 			}
-		
-		//	console.log(line);
-			console.log(ircmsg);
-		
-			packets[packetcnt] = ircmsg;
-			packetcnt++;
-		});
+		}
+		if(line.length > 0){
+			irc.oldData = line;
+		}
 		return {'status': 2, 'packets': packets };
+	},
+	'parseLine': function(line){
+		var ircmsg = new irc.messagedata();
+
+		var line = line.trim();
+		line.replace(/^\s+|\s+$/gm,'');
+		
+		if(line == ''){
+			return;
+		}
+		
+		var msglen = line.length;
+	
+		var pstate = stateStart;
+		var currArg = '';
+
+		for(var i = 0; i < msglen; i++){
+			var cchar = line.charAt(i);
+			switch(pstate){
+				case stateStart:
+					switch(cchar){
+						case ':': pstate = stateSenderNick; break;
+						default:
+							pstate = stateCommand; 
+							ircmsg.command += cchar;
+							break;
+					}
+					break;
+				case stateSenderNick:
+					switch(cchar){
+						case '!': pstate = stateSenderUser; break;
+						case '@': pstate = stateSenderHost; break;
+						case ' ': pstate = stateCommand; break;
+						default: ircmsg.sender.nick += cchar; break;
+					}
+					break;
+				case stateSenderUser:
+					switch(cchar){
+						case '@': pstate = stateSenderHost; break;
+						case ' ': pstate = stateCommand; break;
+						default: ircmsg.sender.ident += cchar; break;
+					}
+					break;
+				case stateSenderHost:
+					switch(cchar){
+						case ' ': pstate = stateCommand; break;
+						default: ircmsg.sender.host += cchar; break;
+					}
+					break;
+				case stateCommand:
+					switch(cchar){
+						case ' ': pstate = stateArgs; break;
+						default: ircmsg.command += cchar; break;
+					}
+					break;
+				case stateArgs:
+					switch(cchar){
+						case ' ':
+							if(currArg != ''){
+								ircmsg.args.push(currArg);
+							}
+							currArg = '';
+							break;
+						case ':':
+							if(prevChar == ' '){
+								pstate = stateMessage;
+							} else {
+								currArg += cchar;
+							}
+							break;
+						default: currArg += cchar; break;
+					}
+					break;
+				case stateMessage:
+					ircmsg.text += cchar;
+					break;
+			}
+			var prevChar = cchar;
+		}
+		if(pstate == stateArgs){
+			ircmsg.args.push(currArg);
+		}
+	
+		if(ircmsg.sender.ident == '' && ircmsg.sender.host == '' && ircmsg.sender.nick.indexOf('.')!=-1){
+			ircmsg.sender.server = true;
+		} else {
+			ircmsg.sender.user = true;
+		}
+	
+	//	console.log(line);
+		console.log(ircmsg);
+	
+	/*	packets[packetcnt] = ircmsg;
+		packetcnt++;*/
+
+//		return {'status': 2, 'packets': packets };
+		return ircmsg;
 	}
 };
 
