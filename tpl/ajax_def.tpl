@@ -37,6 +37,10 @@
 					<td>&nbsp; Ciemny motyw bramki (eksperymentalny)</td>
 				</tr>
 				<tr>
+					<td class="optionsCheckBox"><input type="checkbox" id="coloredNicks" onchange="disp.changeSettings()" checked="checked" /></td>
+					<td>&nbsp; Koloruj nicki w oknie rozmowy</td>
+				</tr>
+				<tr>
 					<td class="optionsCheckBox"><input type="checkbox" id="newMsgSound" onchange="disp.changeSettings()" /></td>
 					<td>&nbsp; Informuj dźwiękiem o nowej wiadomości</td>
 				</tr>

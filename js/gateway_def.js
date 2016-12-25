@@ -500,6 +500,14 @@ var gateway = {
 		for (i in data.packets) { //wywoływanie funkcji 'handlerów' od poleceń
 			if(data.packets[i].command in cmdBinds) {
 				for(func in cmdBinds[data.packets[i].command]) {
+					if(typeof data.packets[i] === undefined || data.packets[i] == undefined){
+						console.log('Undefined packet!');
+						continue;
+					}
+					if(typeof data.packets[i].command === undefined){
+						console.log('Undefined command!');
+						continue;
+					}
 					if(data.packets[i].command && cmdBinds[data.packets[i].command] && typeof(cmdBinds[data.packets[i].command][func]) == 'function') {
 						cmdBinds[data.packets[i].command][func](data.packets[i]);
 					} else {

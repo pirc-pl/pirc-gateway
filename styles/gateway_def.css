@@ -967,3 +967,13 @@ span.td_right {
 	border-color: #B73A3A;
 	background: #D89191;
 }
+
+.nicklistRefresh {
+	background: url('/styles/img/refresh.png');
+    width: 20px;
+    height: 20px;
+    position: relative;
+    float: right;
+   	cursor: pointer;
+}
+

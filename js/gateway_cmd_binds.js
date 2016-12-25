@@ -128,7 +128,7 @@ var cmdBinds = {
 								channel.markNew();
 							}
 						} else {
-							channel.appendMessage(messagePatterns.channelMsg, [gateway.niceTime(), msg.sender.nick, $$.colorize(msg.text)]);
+							channel.appendMessage(messagePatterns.channelMsg, [gateway.niceTime(), $$.nickColor(msg.sender.nick), msg.sender.nick, $$.colorize(msg.text)]);
 							if(gateway.active.toLowerCase() != msg.args[0].toLowerCase() || !disp.focused) {
 								channel.markBold();
 							}
@@ -178,7 +178,7 @@ var cmdBinds = {
 						query = new Query(msg.sender.nick);
 						gateway.queries.push(query);
 					}
-					query.appendMessage(messagePatterns.channelMsg, [gateway.niceTime(), msg.sender.nick, $$.colorize(msg.text)]);
+					query.appendMessage(messagePatterns.channelMsg, [gateway.niceTime(), '', msg.sender.nick, $$.colorize(msg.text)]);
 					if(gateway.active.toLowerCase() != msg.sender.nick.toLowerCase() || !disp.focused) {
 						gateway.findQuery(msg.sender.nick).markNew();
 					}

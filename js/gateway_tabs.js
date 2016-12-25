@@ -101,7 +101,8 @@ function Nicklist(chan, id) {
 			'<li onclick="gateway.showChannelModes(\''+this.channel+'\')">Tryby kanału</li>' +
 			'<li onclick="gateway.showInvitePrompt(\''+this.channel+'\')">Zaproś na kanał</li>' +
 		'</ul>' +
-		'</div>';
+		'</div>'+
+		'<div class="nicklistRefresh" title="Odśwież listę" onclick="disp.refreshNickList(\''+this.channel+'\')"></div>';
 	$('#'+this.id).prepend(operHtml);
 }
 
@@ -201,13 +202,10 @@ function NicklistUser(usernick, chan) {
 	this.setAway = function(away) {
 		if(this.away != away){			
 			this.away = away;
-			this.showTitle();
-			if(away){
-				$('#'+this.id+' .nickname').css('opacity', '0.3');
-			} else {
-				$('#'+this.id+' .nickname').css('opacity', '');
+			if(!away){
 				this.awayReason = false;
 			}
+			this.showTitle();
 		}
 	}
 	this.setAwayReason = function(reason) {
@@ -234,6 +232,9 @@ function NicklistUser(usernick, chan) {
 			if(this.awayReason){
 				text += ' (powód: '+this.awayReason+')';
 			}
+			$('#'+this.id+' .nickname').css('opacity', '0.3');
+		} else {
+			$('#'+this.id+' .nickname').css('opacity', '');
 		}
 		if(text != ''){
 			$('#'+this.id).attr('title', text);

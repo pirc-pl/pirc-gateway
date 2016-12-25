@@ -21,7 +21,7 @@ var reqChannel = '';
 
 var server = 'wss://'+location.host+'/ircsocket';
 
-var booleanSettings = [ 'showPartQuit', 'tabsListBottom', 'showUserHostnames', 'autoReconnect', 'displayLinkWarning', 'blackTheme', 'newMsgSound', 'autoDisconnect' ];
+var booleanSettings = [ 'showPartQuit', 'tabsListBottom', 'showUserHostnames', 'autoReconnect', 'displayLinkWarning', 'blackTheme', 'newMsgSound', 'autoDisconnect', 'coloredNicks' ];
 var comboSettings = [ 'noticeDisplay' ];
 var numberSettings = [ 'backlogCount' ];
 var numberSettingsMinMax = {
@@ -55,7 +55,7 @@ var messagePatterns = {
 	'part': '<span class="time">%s</span> &nbsp; <span class="part">&larr; <b>%s</b> <i class="userhost">[%s@%s]</i> opuścił %s [%s]</span><br />',
 	'quit': '<span class="time">%s</span> &nbsp; <span class="part">&larr; <b>%s</b> <i class="userhost">[%s@%s]</i> opuścił IRC [%s]</span><br />',
 	'partOwn': '<span class="time">%s</span> &nbsp; <span class="part">&larr; Opuściłeś kanał %s. <a href="#" onclick="gateway.send(\'JOIN %s\')">Dołącz ponownie</a></span><br />',
-	'channelMsg': '<span class="time">%s</span> &nbsp; <span class="nick">&lt;%s&gt;</span> %s<br />',
+	'channelMsg': '<span class="time">%s</span> &nbsp; <span class="nick">&lt;<span %s>%s</span>&gt;</span> %s<br />',
 	'yourMsg': '<span class="time">%s</span> &nbsp; <span class="yournick">&lt;%s&gt;</span> %s<br />',
 	'channelMsgHilight': '<span class="time">%s</span> &nbsp; <span class="hilight"><span class="nick">&lt;%s&gt;</span> %s</span><br />',
 	'channelAction': '<span class="time">%s</span> &nbsp; * <span class="nick">%s</span> %s<br />',
@@ -184,6 +184,9 @@ var disp = {
 		$('input[type="checkbox"]').css('transform', 'scale('+s+')');
 		disp.size = s;
 		localStorage.setItem('tsize', s);
+	},
+	'refreshNickList': function(channel) {
+		gateway.send('NAMES '+channel+'\r\nWHO '+channel);
 	},
 	'displaySpecialDialog': function(name, button) {
 		$('#'+name).dialog({
@@ -320,6 +323,34 @@ var $$ = {
 	},
 	'dateWeek': [ 'Niedziela', 'Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota' ],
 	'dateMonth': [ 'sty', 'lut', 'mar', 'kwi', 'maj', 'cze', 'lip', 'sie', 'wrz', 'paź', 'lis', 'gru' ],
+	'nickColor': function(nick) {
+		if (!$('#coloredNicks').is(':checked')){
+			return '';
+		}
+		var color;
+		var colorid = nick.length;
+		for(var i = 0; i<nick.length; i++){
+			colorid += nick.charCodeAt(i);
+		}
+		switch(colorid % 15){
+			case 0: color = '#515185'; break;
+			case 1: color = '#623c00'; break;
+			case 2: color = '#c86c00'; break;
+			case 3: color = '#ff6500'; break;
+			case 4: color = '#ff0000'; break;
+			case 5: color = '#e40f0f'; break;
+			case 6: color = '#990033'; break;
+			case 7: color = '#8800ab'; break;
+			case 8: color = '#ce00ff'; break;
+			case 9: color = '#0f2ab1'; break;
+			case 10: color = '#3030ce'; break;
+			case 11: color = '#006699'; break;
+			case 12: color = '#1a866e'; break;
+			case 13: color = '#008100'; break;
+			case 14: color = '#959595'; break;
+		}
+		return 'style="color:' + color +'"';
+	},
 	'colorize': function(message) {
 		var pageBack  = 'white';
 		var pageFront = 'black';
