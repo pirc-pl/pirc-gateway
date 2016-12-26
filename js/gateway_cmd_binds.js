@@ -888,18 +888,25 @@ var cmdBinds = {
 				}
 				return;
 			}
-			
+		
 			gateway.connectStatus = statusDisconnected;
 
-			if($('#autoReconnect').is(':checked')){
-				gateway.reconnect();
-			} else {
+			if(msg.text.match(/\(NickServ \(RECOVER command used by [^ ]+\)\)$/)){
 				$$.displayReconnect();
-			}
+				var html = "<h2>Błąd ogólny</h2>" +
+					"<br>Inna sesja rozłączyła Cię używając polecenia RECOVER. Może masz otwartą więcej niż jedną bramkę?";
+				$$.displayDialog('error', 'error', 'Błąd', html);
+			} else {
 
-			var html = "<h3>Serwer przerwał połączenie</h3>" +
-				"Informacje: "+msg.text+"</p>";
-			$$.displayDialog('error', 'error', 'Błąd', html);
+				var html = "<h3>Serwer przerwał połączenie</h3>" +
+					"Informacje: "+msg.text+"</p>";
+				$$.displayDialog('error', 'error', 'Błąd', html);
+				if($('#autoReconnect').is(':checked')){
+					gateway.reconnect();
+				} else {
+					$$.displayReconnect();
+				}
+			}
 		}
 	],
 	'972' : [	// ERR_CANNOTDOCOMMAND 
