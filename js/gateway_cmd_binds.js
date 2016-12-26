@@ -337,7 +337,7 @@ var cmdBinds = {
 			}
 		}
 	],
-	'307': [	// RPL_USERIP
+	'307': [	// RPL_WHOISREGNICK 
 		function(msg) { //	'displayDialog': function(type, sender, title, message, button){
 			$$.displayDialog('whois', msg.args[1], false, '<p class="whois"><span class="info"><br /></span><span class="data">Ten nick jest zarejestrowany</span></p>');
 		}

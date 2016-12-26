@@ -134,9 +134,9 @@ b.admin {
 }
 
 .ui-widget-content {
-	background: #042377;
+	background: #042377 !important;
 	color: inherit;
-	border-color: #192348;
+	border-color: #192348 !important;
 }
 
 .ui-widget-header {
