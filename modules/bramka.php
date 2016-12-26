@@ -4,7 +4,7 @@ class Module extends ModuleT {
 	private static $nick = '';
 
 	public static function run() {
-		$gateway_url = '<a href="http://widget01.mibbit.com/?promptPass=true&settings=10db5282f0641bc847a88fc71f2bc200&server=irc.pirc.pl&autoConnect=true&charset=UTF-8';
+		$gateway_url = '<a href=\"http://widget01.mibbit.com/?promptPass=true&settings=10db5282f0641bc847a88fc71f2bc200&server=irc.pirc.pl&autoConnect=true&charset=UTF-8';
 		if(isset(Dispatcher::$args['.0'])){
 			$channel = Dispatcher::$args['.0'];
 			$gateway_url .= '&channel=%23'.$channel;
@@ -21,7 +21,7 @@ class Module extends ModuleT {
 			$addcssdec = Dispatcher::$args['.3'];
 			$gateway_url .= $addcssdec . '/';
 		}*/
-		$gateway_url .= '">starej wersji bramki</a>.';
+		$gateway_url .= '\">starej wersji bramki</a>.';
 
 
 		$nick = htmlspecialchars($nick);
