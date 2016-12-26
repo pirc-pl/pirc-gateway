@@ -1603,7 +1603,7 @@ var conn = {
 	'my_nick': '',
 	'my_pass': '',
 	'connectTimeout': function(){
-			$('.not-connected-text > p').html('Łączenie z serwerem trwa zbyt długo, serwer bramki nie działa lub twoja przeglądarka nie funkcjonuje prawidłowo.<br />Spróbuj ponownie później lub spróbuj '+old_gateway_html);
+			$('.not-connected-text > p').html('Łączenie z serwerem trwa zbyt długo, serwer bramki nie działa lub twoja przeglądarka nie funkcjonuje prawidłowo.<br />Spróbuj ponownie później lub spróbuj '+oldGatewayHtml);
 	},
 	'dispConnectDialog': function(){
 		reqChannel = guser.channels[0];
@@ -1858,7 +1858,7 @@ var conn = {
 			return;
 		} else {
 			if(window.WebSocket == null){
-				$('.not-connected-text > p').html('Twoja przeglądarka nie obsługuje WebSocket. Nie można uruchomić bramki.<br />Spróbuj '+old_gateway_html);
+				$('.not-connected-text > p').html('Twoja przeglądarka nie obsługuje WebSocket. Nie można uruchomić bramki.<br />Spróbuj '+oldGatewayHtml);
 				return;
 			}
 			conn.dispConnectDialog();

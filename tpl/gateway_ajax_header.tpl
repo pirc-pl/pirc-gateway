@@ -17,7 +17,7 @@
 			};
 			var sessionid = "{$sid}";
 			var gatewayVersion = "{$gateway_version}";
-			var oldGatewayUrl = "{$old_gateway_html}";
+			var oldGatewayHtml = "{$old_gateway_html}";
 		</script>
 		<script type="text/javascript" src="/js/md5.js"></script>
 		<script type="text/javascript" src="/js/foreach.js"></script>
