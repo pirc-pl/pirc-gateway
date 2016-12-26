@@ -15,11 +15,6 @@ var cmdBinds = {
 			gateway.connectStatus = status001;
 		}
 	],
-	'CONNECTED': [
-		function(msg) {
-			gateway.joinChannels();
-		}
-	],
 	'411': [ //	ERR_NORECIPIENT - brzydki sposób na uzyskanie bieżącego nicka
 		function(msg) {
 			if(gateway.connectStatus != statusDisconnected){
@@ -673,6 +668,11 @@ var cmdBinds = {
 			gateway.statusWindow.appendMessage(messagePatterns.motd, [gateway.niceTime(), msg.text]);
 		}
 	],
+	'376': [	// RPL_ENDOFMOTD
+		function(msg) {
+			gateway.joinChannels()
+		}
+	],
 	'INVITE': [
 		function(msg) {
 			var html = '<b>'+he(msg.sender.nick)+'</b> zaprasza Cię na kanał <b>'+he(msg.text);
@@ -925,7 +925,7 @@ var cmdBinds = {
 		}
 	],
 	'MODE': [
-		function(msg) {
+		function(msg) {;
 			if(gateway.findChannel(msg.args[0])) {
 				var modestr = '';
 				for (i in msg.args) {
