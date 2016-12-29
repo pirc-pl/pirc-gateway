@@ -1193,10 +1193,32 @@ var gateway = {
 	'showKick' : function(channel, nick) {
 		var html = "<h3>KICK</h3>" +
 			"<p>Wyrzuć użytkownika "+he(nick)+" z kanału "+he(channel)+". Możesz podać powód dla KICKa, który zostanie wyświetlony dla wszystkich użytkowników kanału.</p>" +
-			"<input type='text' class='kickinput' maxlenght='307' />" +
-			"<p class='statusbutton' onClick='if ($(\".kickinput\").val() != \"\") { gateway.send(\"KICK "+channel+" "+nick+" :\" + $(\".kickinput\").val()); } else { gateway.send(\"KICK "+channel+" "+nick+"\"); } gateway.closeStatus()'>Wyrzuć</p>";
+			"<input type='text' class='kbinput' maxlength='307' />" +
+			"<p class='statusbutton' onClick='if ($(\".kbinput\").val() != \"\") { gateway.send(\"KICK "+channel+" "+nick+" :\" + $(\".kickinput\").val()); } else { gateway.send(\"KICK "+channel+" "+nick+"\"); } gateway.closeStatus()'>Wyrzuć</p>";
 		$(".status-text").html(html);
 		$(".statuswindow").fadeIn(200);
+	},
+	'showCSBan': function(channel, nick) {
+		var html = "<h3>BAN</h3>" +
+			'<p>Zbanuj i wyrzuć użytkownika '+he(nick)+' z kanału '+he(channel)+
+				'. Możesz podać powód dla KICKa, który zostanie wyświetlony dla wszystkich użytkowników kanału.<br>Aby skorzystać z tej funkcji, musisz posiadać odpowiednie uprawnienia w ChanServ.</p>' +
+			'<input type="text" class="kickinput" maxlength="307" /><br>' +
+			'<input type="checkbox" id="kbtime"> Zdejmij bana automatycznie po 1 dniu' +
+			'<p class="statusbutton" onClick="gateway.processCSBan(\''+channel+'\', \''+nick+'\')">Zbanuj</p>';
+		$(".status-text").html(html);
+		$(".statuswindow").fadeIn(200);
+	},
+	'processCSBan': function(channel, nick) {
+		var banString = 'CS BAN '+channel;
+		if($('#kbtime').is(':checked')){
+			banString += ' +1d';
+		}
+		banString += ' '+nick;
+		if ($(".kickinput").val() != "") {
+			banString += ' '+$(".kickinput").val();
+		}
+		gateway.performCommand(banString);
+		gateway.closeStatus()
 	},
 	'showBan' : function(channel, nick) {
 		$(".status-text").text(" ");

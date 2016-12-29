@@ -139,6 +139,7 @@ function NicklistUser(usernick, chan) {
 				'<li class="' + gateway.findChannel(this.channel).id + '-operActions" style="display:none;"><div style="width:100%;" onClick="gateway.toggleNickOptAdmin(\''+this.id+'\')">Administracja</div>'+
 					'<ul class="suboptions" id="'+this.id+'-opt-admin'+'">'+
 						'<li onClick="gateway.showKick(\''+this.channel+'\', \''+this.nick+'\')">Wyrzuć z kanału</li>'+
+						'<li onClick="gateway.showCSBan(\''+this.channel+'\', \''+this.nick+'\')">Banuj (ChanServ)</li>'+
 						'<li onClick="gateway.showStatus(\''+this.channel+'\', \''+this.nick+'\')">Daj uprawnienia</li>'+
 						'<li onClick="gateway.showStatusAnti(\''+this.channel+'\', \''+this.nick+'\')">Odbierz uprawnienia</li>'+
 					/*	'<li onClick="gateway.showBan(\''+this.channel+'\', \''+this.nick+'\')">Banuj</li>'+*/
