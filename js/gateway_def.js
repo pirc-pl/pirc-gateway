@@ -480,6 +480,7 @@ var gateway = {
 		// już jest połączenie
 		gateway.configureConnection();
 		gateway.statusWindow.appendMessage(messagePatterns.existingConnection, [gateway.niceTime()]);
+		$$.displayDialog('error', 'error', 'Ostrzeżenie', 'UWAGA: jeśli posiadasz już otwartą bramkę, zamknij ją, aby uniknąć problemów!');
 		gateway.send('PRIVMSG');
 			
 		if(guser.nick == localStorage.getItem('nick') && localStorage.getItem('password')){
@@ -1018,6 +1019,13 @@ var gateway = {
 			$("#input").val("");
 		}
 	},
+	'performCommand': function(input){
+		input = '/' + input;
+		var command = input.slice(1).split(" ");
+		if(!gateway.callCommand(command, input)) {
+			console.log('Invalid performCommand: '+command[0]);
+		}
+	},
 	'commandHistory': [],
 	'commandHistoryPos': -1,
 	'inputFocus': function() {
@@ -1033,12 +1041,18 @@ var gateway = {
 	},
 	'showStatus': function(channel, nick) {
 	  	var html = 
-			"<p>Daj użytkownikowi "+he(nick)+" uprawnienia na kanale "+he(channel)+":</p>" +
+			"<p>Daj użytkownikowi "+he(nick)+" bieżące uprawnienia na kanale "+he(channel)+":</p>" +
 			"<p class='statusbutton' onClick='gateway.send(\"MODE "+channel+" +q "+$$.sescape(nick)+"\"); gateway.closeStatus()'>FOUNDER (Właściciel kanału)</p>" +
 			"<p class='statusbutton' onClick='gateway.send(\"MODE "+channel+" +a "+$$.sescape(nick)+"\"); gateway.closeStatus()'>PROTECT (Ochrona przed kopnięciem)</p>" +
 			"<p class='statusbutton' onClick='gateway.send(\"MODE "+channel+" +o "+$$.sescape(nick)+"\"); gateway.closeStatus()'>OP (Operator kanału)</p>" +
 			"<p class='statusbutton' onClick='gateway.send(\"MODE "+channel+" +h "+$$.sescape(nick)+"\"); gateway.closeStatus()'>HALFOP (Pół-operator kanału)</p>" +
-			"<p class='statusbutton' onClick='gateway.send(\"MODE "+channel+" +v "+$$.sescape(nick)+"\"); gateway.closeStatus()'>VOICE (Uprawnienie do głosu)</p>";
+			"<p class='statusbutton' onClick='gateway.send(\"MODE "+channel+" +v "+$$.sescape(nick)+"\"); gateway.closeStatus()'>VOICE (Uprawnienie do głosu)</p>" +
+			"<p>Daj użytkownikowi "+he(nick)+" uprawnienia w ChanServ (na stałe) na kanale "+he(channel)+"<br>(musisz posiadać odpowiedni dostęp do serwisów):</p>" +
+			"<p class='statusbutton' onClick='gateway.performCommand(\"CS QOP "+channel+" ADD "+$$.sescape(nick)+"\"); gateway.closeStatus()'>QOP: FOUNDER (Właściciel kanału)</p>" +
+			"<p class='statusbutton' onClick='gateway.performCommand(\"CS SOP "+channel+" ADD "+$$.sescape(nick)+"\"); gateway.closeStatus()'>SOP: PROTECT (Ochrona przed kopnięciem)</p>" +
+			"<p class='statusbutton' onClick='gateway.performCommand(\"CS AOP "+channel+" ADD "+$$.sescape(nick)+"\"); gateway.closeStatus()'>AOP: OP (Operator kanału)</p>" +
+			"<p class='statusbutton' onClick='gateway.performCommand(\"CS HOP "+channel+" ADD "+$$.sescape(nick)+"\"); gateway.closeStatus()'>HOP: HALFOP (Pół-operator kanału)</p>" +
+			"<p class='statusbutton' onClick='gateway.performCommand(\"CS VOP "+channel+" ADD "+$$.sescape(nick)+"\"); gateway.closeStatus()'>VOP: VOICE (Uprawnienie do głosu)</p>";
 		$$.displayDialog('admin', channel, 'Zarządzanie '+he(channel), html);
 	},
 	'showStatusAnti': function(channel, nick) {
