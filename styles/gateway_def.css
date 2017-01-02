@@ -73,10 +73,6 @@ input, button, submit {
 	z-index: 10;
 }
 
-#options-dialog {
-	background: url("/styles/img/techbg.png") no-repeat scroll right top #E8E8E8;
-}
-
 #not_connected_div {
 	width: 28.5em !important;
 }
@@ -434,7 +430,8 @@ span.yournickname {
 	background: #D7E4F3;
 	display: none;
 }
-	
+
+
 #size-dialog p, .whois-dialog p, #color-dialog p, #symbol-dialog p {
 	background: none repeat scroll 0 0 rgba(255, 255, 255, 0.2);
 	margin-top: 2px;
@@ -919,8 +916,9 @@ span.td_right {
 	font-family: inherit;
 }
 
-#options-dialog {
+#options-dialog, #list-dialog {
 	display: none;
+	background: url("/styles/img/techbg.png") no-repeat scroll right top #E8E8E8;
 }
 
 .dialog {

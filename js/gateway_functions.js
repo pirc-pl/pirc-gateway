@@ -206,6 +206,9 @@ var disp = {
 			} ]);
 		}
 	},
+	'listWindowShow': function() {
+		disp.displaySpecialDialog('list-dialog', 'OK');
+	},
 	'colorWindowShow': function() {
 		disp.displaySpecialDialog('color-dialog');
 	},
