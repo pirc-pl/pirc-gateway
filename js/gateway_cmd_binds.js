@@ -264,6 +264,9 @@ var cmdBinds = {
 						}
 						if(msg.args[0] == 'AUTH' || msg.args[0] == '*'){
 							return;
+						}// *** You are connected to bramka2.pirc.pl with TLSv1.2-AES128-GCM-SHA256-128bits
+						if(msg.text.match(/^\*\*\* You are connected to .+ with .+$/)){
+							return;
 						}
 						$$.displayDialog('notice', msg.sender.nick, 'Komunikat prywatny od serwera '+he(msg.sender.nick)+' do '+he(msg.args[0]), $$.colorize(msg.text));
 				//	}

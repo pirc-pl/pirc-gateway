@@ -432,7 +432,7 @@ var gateway = {
 	'connect': function(force) {
 		gateway.userQuit = false;
 		gateway.connectTimeoutID = setTimeout(gateway.connectTimeout, 20000);
-		if(!gateway.websock || gateway.websock.readyState == WebSocket.CLOSING || gateway.websock.readyState == WebSocket.CLOSED){
+		/*if(!gateway.websock || gateway.websock.readyState == WebSocket.CLOSING || gateway.websock.readyState == WebSocket.CLOSED){
 			gateway.websock = new WebSocket(server);
 			gateway.websock.onmessage = function(e){
 				var regexp = /^SYNC ([^ ]+)$/i
@@ -469,9 +469,16 @@ var gateway = {
 				gateway.configureConnection();
 				gateway.forceSend('NEW '+sessionid+' ' + guser.nick + ' x');
 			}
+		}*/
+		gateway.websock = new WebSocket(server);
+		gateway.websock.onopen = function(e){
+			gateway.configureConnection();
+			gateway.send('USER pirc * * :Użytkownik bramki PIRC.pl\r\n');
+			gateway.send('NICK '+guser.nick);
 		}
+
 	},
-	'recoverConnection': function() {
+	/*'recoverConnection': function() {
 		$('#not_connected_wrapper').fadeOut(400);
 		if(gateway.connectTimeoutID){
 			clearTimeout(gateway.connectTimeoutID);
@@ -496,7 +503,7 @@ var gateway = {
 				gateway.send('JOIN '+guser.channels[0]);
 			}
 		}, 500);
-	},
+	},*/
 	'processData': function(data) {
 		for (i in data.packets) { //wywoływanie funkcji 'handlerów' od poleceń
 			if(data.packets[i].command in cmdBinds) {
@@ -531,9 +538,19 @@ var gateway = {
 		}
 	},
 	'onRecv': function(sdata) {
-		data = irc.parseMessage(Base64.decode(sdata.data));
-		gateway.processData(data);
-		gateway.processStatus();
+		//data = irc.parseMessage(Base64.decode(sdata.data));
+		var reader = new FileReader();
+		reader.addEventListener("loadend", function() {
+		   // reader.result contains the contents of blob as a typed array
+			data = irc.parseMessage(reader.result);
+			gateway.processData(data);
+			gateway.processStatus();
+		});
+		reader.readAsText(sdata.data);
+
+//		data = irc.parseMessage(sdata.data);
+//		gateway.processData(data);
+//		gateway.processStatus();
 	},
 	'ctcp': function(dest, text) {
 		gateway.send('PRIVMSG '+dest+' :\001'+text+'\001');
@@ -668,7 +685,8 @@ var gateway = {
 	'forceSend': function(data){
 		if(gateway.websock.readyState === gateway.websock.OPEN){
 			console.log('← '+data);
-			sdata = Base64.encode(data+'\r\n');
+			//sdata = Base64.encode(data+'\r\n');
+			sdata = data + '\r\n';
 			gateway.websock.send(sdata);
 		} else {
 			console.log('Outmsg delayed: '+data);
@@ -1667,16 +1685,12 @@ var conn = {
 			}
 		}
 	
-		gateway.websock = new WebSocket(server);
+	/*	gateway.websock = new WebSocket(server);
 		if(gateway.connectTimeoutID){
 			clearTimeout(gateway.connectTimeoutID);
 		}
 		gateway.connectTimeoutID = setTimeout(conn.connectTimeout, 20000);
 		gateway.websock.onmessage = conn.processReply;
-	/*	gateway.websock.onerror = function(e){
-			$('.not-connected-text > p').html('');
-		};
-		gateway.websock.onclose = gateway.websock.onerror;*/
 		gateway.websock.onerror = conn.connectTimeout;
 		gateway.websock.onclose = conn.connectTimeout;
 		gateway.websock.onopen = function(e) {
@@ -1693,7 +1707,7 @@ var conn = {
 			gateway.websock.onclose = undefined;
 			if(rmatch[1] == '1'){
 				gateway.recoverConnection();
-			} else {
+			} else {*/
 				var nconn_html = '<h3>' + he(guser.channels[0]) + ' @ PIRC.pl</h3><form onsubmit="gateway.initialize();$$.closeDialog(\'connect\', \'0\')" action="javascript:void(0);"><table>';
 				nconn_html += '<tr><td style="text-align: right; padding-right: 10px;">Kanał:</td><td><input type="text" id="nschan" value="'+he(reqChannel)+'" /></td></tr>';
 				nconn_html += '<tr><td style="text-align: right; padding-right: 10px;">Nick:</td><td><input type="text" id="nsnick" value="'+conn.my_nick+'" /></td></tr>';
@@ -1714,8 +1728,8 @@ var conn = {
 				} else {
 					$('#nspass').focus();
 				}
-			}
-		}
+		/*	}
+		}*/
 	},
 	'gatewayInit': function(){
 		try {
