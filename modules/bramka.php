@@ -6,7 +6,7 @@ class Module extends ModuleT {
 	public static function run() {
 //		$gateway_url = '<a href=\"';
 		$gateway_url = '';
-		$gateway_url .= 'http://widget01.mibbit.com/?promptPass=true&settings=10db5282f0641bc847a88fc71f2bc200&server=irc.pirc.pl&autoConnect=true&charset=UTF-8';
+		$gateway_url .= 'https://widget01.mibbit.com/?promptPass=true&settings=10db5282f0641bc847a88fc71f2bc200&server=irc.pirc.pl&autoConnect=true&charset=UTF-8';
 		if(isset(Dispatcher::$args['.0'])){
 			$channel = Dispatcher::$args['.0'];
 			$gateway_url .= '&channel=%23'.$channel;
