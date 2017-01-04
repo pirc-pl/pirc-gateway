@@ -4,7 +4,9 @@ class Module extends ModuleT {
 	private static $nick = '';
 
 	public static function run() {
-		$gateway_url = '<a href=\"http://widget01.mibbit.com/?promptPass=true&settings=10db5282f0641bc847a88fc71f2bc200&server=irc.pirc.pl&autoConnect=true&charset=UTF-8';
+//		$gateway_url = '<a href=\"';
+		$gateway_url = '';
+		$gateway_url .= 'http://widget01.mibbit.com/?promptPass=true&settings=10db5282f0641bc847a88fc71f2bc200&server=irc.pirc.pl&autoConnect=true&charset=UTF-8';
 		if(isset(Dispatcher::$args['.0'])){
 			$channel = Dispatcher::$args['.0'];
 			$gateway_url .= '&channel=%23'.$channel;
@@ -21,10 +23,10 @@ class Module extends ModuleT {
 			$addcssdec = Dispatcher::$args['.3'];
 			$gateway_url .= $addcssdec . '/';
 		}*/
-		$gateway_url .= '\">starej wersji bramki</a>.';
+//		$gateway_url .= '\">starej wersji bramki</a>.';
 
 
-		$nick = htmlspecialchars($nick);
+/*		$nick = htmlspecialchars($nick);
 		if(isset($channel)) $channel = '#'.htmlspecialchars($channel); else $channel = '#';
 
 		if(isset($addcssdec)){
@@ -51,7 +53,9 @@ class Module extends ModuleT {
 		Template::assign('old_gateway_html', $gateway_url);
 		
 		Template::display('gateway_ajax_header');
-		Template::display('ajax_'.$glayout);
+		Template::display('ajax_'.$glayout);*/
+		Template::assign('gateway_url', $gateway_url);
+		Template::display('ajax_mibbit');
 	}
 }
 

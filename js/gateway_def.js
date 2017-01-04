@@ -519,6 +519,7 @@ var gateway = {
 		}
 	},
 	'sockError': function(e) {
+		console.log('WebSocket error!');
 		if(gateway.connectStatus != statusDisconnected && gateway.connectStatus != statusError){
 			gateway.connectStatus = statusError;
 			gateway.disconnected('Błąd serwera bramki');
@@ -657,7 +658,7 @@ var gateway = {
 		gateway.toSend.push(data);
 	},
 	'send': function(data) {
-		if(gateway.sendDelayCnt < 3){
+		if(gateway.websock.readyState === gateway.websock.OPEN && gateway.sendDelayCnt < 3){
 			gateway.forceSend(data);
 			gateway.sendDelayCnt++;
 		} else {
@@ -665,9 +666,14 @@ var gateway = {
 		}
 	},
 	'forceSend': function(data){
-		console.log('← '+data);
-		sdata = Base64.encode(data+'\r\n');
-		gateway.websock.send(sdata);
+		if(gateway.websock.readyState === gateway.websock.OPEN){
+			console.log('← '+data);
+			sdata = Base64.encode(data+'\r\n');
+			gateway.websock.send(sdata);
+		} else {
+			console.log('Outmsg delayed: '+data);
+			gateway.toSend.push(data);
+		}
 	},
 	'niceTime': function() {
 		dateobj = new Date();
