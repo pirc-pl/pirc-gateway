@@ -98,7 +98,7 @@ var commands = {
 		'nicks': false,
 		'custom': [],
 		'callback': function(command, input) {
-		/*	if (command[1]) {
+			/*if (command[1]) {
 				if (command[1] != "-YES") {
 					gateway.notEnoughParams("list", "wpisywanie /list nie jest dobrym pomysłem, jako że możesz pobrać bardzo dużą ilość danych. Jeśli chcesz jednak to zrobić, dopisz -YES do polecenia.");
 				} else {
@@ -107,7 +107,15 @@ var commands = {
 			} else {
 				gateway.notEnoughParams("list", "wpisywanie /list nie jest dobrym pomysłem, jako że możesz pobrać bardzo dużą ilość danych. Jeśli chcesz jednak to zrobić, dopisz -YES do polecenia.");
 			}*/
-			disp.listWindowShow();
+			if(!command[1] || command[1] == '-YES'){
+				gateway.send('LIST');
+			} else {
+				gateway.send('LIST '+input.substring(input.indexOf(' ')));
+			}
+			if(gateway.active != '--status'){
+				gateway.getActive().appendMessage(messagePatterns.listShown, [gateway.niceTime()]);
+			}
+		//	disp.listWindowShow();
 		}
 	},
 	'cs': {

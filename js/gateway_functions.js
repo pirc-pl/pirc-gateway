@@ -105,7 +105,8 @@ var messagePatterns = {
 	'yourAwayEnabled': '<span class="time">%s</span> &nbsp; <span class="mode">*** Jesteś teraz oznaczony jako nieobecny</span><br />',
 	'yourAwayDisabled': '<span class="time">%s</span> &nbsp; <span class="mode">*** Nie jesteś już oznaczony jako nieobecny</span><br />',
 	'yourInvite': '<span class="time">%s</span> &nbsp; <span class="mode">*** Zaprosiłeś użytkownika %s na kanał %s</span><br />',
-	'knocked': '<span class="time">%s</span> &nbsp; <span class="mode">*** Poprosiłeś o dostęp ("zapukałeś") na %s, czekaj na zaproszenie od operatora</span><br />'
+	'knocked': '<span class="time">%s</span> &nbsp; <span class="mode">*** Poprosiłeś o dostęp ("zapukałeś") na %s, czekaj na zaproszenie od operatora</span><br />',
+	'listShown': '<span class="time">%s</span> &nbsp; <span class="mode">*** Lista kanałów będzie wyświetlona w zakładce statusu.</span><br />'
 };
 
 var modes = {

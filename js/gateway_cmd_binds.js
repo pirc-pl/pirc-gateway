@@ -752,6 +752,9 @@ var cmdBinds = {
 	],
 	'433' : [	// ERR_NICKNAMEINUSE 
 		function(msg) {
+			if(gateway.connectStatus == statusDisconnected){
+				gateway.send('NICK '+guser.nick+Math.floor(Math.random() * 9999));
+			}
 			var html = '<p>Nick <b>'+he(msg.args[1])+'</b> jest już używany przez kogoś innego.</p>';
 			gateway.nickWasInUse = true;
 			if(gateway.connectStatus != statusDisconnected){
