@@ -336,13 +336,13 @@ var commands = {
 								query = new Query(command[1]);
 								gateway.queries.push(query);
 							}
-							query.appendMessage(messagePatterns.yourMsg, [gateway.niceTime(), guser.nick, $$.colorize(reason)]);
+							query.appendMessage(messagePatterns.yourMsg, [gateway.niceTime(), $$.nickColor(guser.nick), guser.nick, $$.colorize(reason)]);
 							query.appendMessage('%s', [$$.parseImages(reason)]);
 						} else if($("#noticeDisplay").val() == 0){ // okienko
 							var html = "<span class=\"notice\">[<b>"+he(guser.nick)+" → "+command[1] + "</b>]</span> " + $$.colorize(reason);
 							$$.displayDialog('notice', command[1], 'Komunikat prywatny od '+command[1], html);
 						} else { // status
-							gateway.statusWindow.appendMessage(messagePatterns.yourMsg, [gateway.niceTime(), guser.nick + ' → ' + command[1], $$.colorize(reason)]);
+							gateway.statusWindow.appendMessage(messagePatterns.yourMsg, [gateway.niceTime(), $$.nickColor(guser.nick), guser.nick + ' → ' + command[1], $$.colorize(reason)]);
 						}
 					}
 					
@@ -486,7 +486,37 @@ var commands = {
 				gateway.notEnoughParams("me", "musisz podać tekst do wysłania.");
 			}
 		}
-	},	
+	},
+	'ignore': {
+		'channels': true,
+		'nicks': true,
+		'custom': [],
+		'callback': function(command, input) {
+			console.log(command);
+			if(!command[1]){ //brak argumentu - listuj wszystkie
+				var data = gateway.getIgnoreList();
+				if(data.length == 0){
+					gateway.statusWindow.appendMessage(messagePatterns.ignoreListEmpty, [gateway.niceTime()]);
+				} else {
+					gateway.statusWindow.appendMessage(messagePatterns.ignoreListStart, [gateway.niceTime()]);
+					for(var i=0; i<data.length; i++){
+						if(data[i][0] == 'channel'){
+							var ignoreType = 'kanał';
+						} else {
+							var ignoreType = 'rozmowa prywatna';
+						}
+						var ignoreMask = data[i][1];
+						gateway.statusWindow.appendMessage(messagePatterns.ignoreListItem, [gateway.niceTime(), ignoreType, ignoreMask]);
+					}
+					gateway.statusWindow.appendMessage(messagePatterns.ignoreListEnd, [gateway.niceTime()]);
+				}
+			} else { //są argumenty
+				if(command[3] != null){
+			//		gateway.notEnoughParams("ignore", "Za dużo parametrów.");
+				}
+			}
+		}
+	},
 	'deprotect': {
 		'channels': true,
 		'nicks': false,

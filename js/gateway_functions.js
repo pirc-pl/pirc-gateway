@@ -56,7 +56,7 @@ var messagePatterns = {
 	'quit': '<span class="time">%s</span> &nbsp; <span class="part">&larr; <b>%s</b> <i class="userhost">[%s@%s]</i> opuścił IRC [%s]</span><br />',
 	'partOwn': '<span class="time">%s</span> &nbsp; <span class="part">&larr; Opuściłeś kanał %s. <a href="#" onclick="gateway.send(\'JOIN %s\')">Dołącz ponownie</a></span><br />',
 	'channelMsg': '<span class="time">%s</span> &nbsp; <span class="nick">&lt;<span %s>%s</span>&gt;</span> %s<br />',
-	'yourMsg': '<span class="time">%s</span> &nbsp; <span class="yournick">&lt;%s&gt;</span> %s<br />',
+	'yourMsg': '<span class="time">%s</span> &nbsp; <span class="yournick">&lt;<span %s>%s</span>&gt;</span> %s<br />',
 	'channelMsgHilight': '<span class="time">%s</span> &nbsp; <span class="hilight"><span class="nick">&lt;%s&gt;</span> %s</span><br />',
 	'channelAction': '<span class="time">%s</span> &nbsp; * <span class="nick">%s</span> %s<br />',
 	'yourAction': '<span class="time">%s</span> &nbsp; * <span class="yournick">%s</span> %s<br />',
@@ -69,7 +69,7 @@ var messagePatterns = {
 	'kick': '<span class="time">%s</span> &nbsp; <span class="kick">*** %s wyrzucił %s z %s [Powód: %s]</span><br />',
 	'kickOwn': '<span class="time">%s</span> &nbsp; <span class="kick">*** %s wyrzucił cię z %s [Powód: %s]</span><br />',
 	'modeChange': '<span class="time">%s</span> &nbsp; <span class="mode">*** %s ustawił tryb [%s] dla kanału %s</span><br />',
-	'startedQuery': '<span class="time">%s</span> &nbsp; <span class="join">&rarr; Rozpoczęto rozmowę z %s.</span><br />',
+	'startedQuery': '<span class="time">%s</span> &nbsp; <span class="join">&rarr; Rozpoczęto rozmowę z %s. <a onclick="gateway.askIgnore(\'%s\');">Ignoruj tego użytkownika</a></span><br />',
 	'queryBacklog': '<span class="time">%s</span> &nbsp; <span class="join">*** Zapis poprzedniej rozmowy z %s:</span><br />',
 	'channelBacklog': '<span class="time">%s</span> &nbsp; <span class="mode">*** Zapis poprzedniej wizyty na %s:</span><br />',
 	'channelBacklogEnd': '<span class="time">%s</span> &nbsp; <span class="mode">*** Koniec zapisu.</span><br />',
@@ -81,7 +81,7 @@ var messagePatterns = {
 	'youQuit': '<span class="time">%s</span> &nbsp; <span class="part">*** Wyszedłeś z IRC</span><br />',
 	'notConnected': '<span class="time">%s</span> &nbsp; <span class="mode">*** Nie jesteś połączony z IRC!</span><br />',
 	'notEnoughParameters': '<span class="time">%s</span> &nbsp; <span class="mode">*** %s: Za mało argumentów.</span><br />',
-	'cannotSendToChan': '<span class="time">%s</span> &nbsp; <span class="kick">*** Nie możcna wysłać na %s: %s. Wiadomość nie została dostarczona.</span><br />',
+	'cannotSendToChan': '<span class="time">%s</span> &nbsp; <span class="kick">*** Nie można wysłać na %s: %s. Wiadomość nie została dostarczona.</span><br />',
 	'cannotJoin': '<span class="time">%s</span> &nbsp; <span class="kick">*** Nie można dołączyć do kanału %s: %s</span><br />',
 	'noPerms': '<span class="time">%s</span> &nbsp; <span class="kick">*** Brak uprawnien.</span><br />',
 	'notice': '<span class="time">%s</span> &nbsp; <span class="notice-nick"><b>-%s-</b></span><span class="userhost">(<span class="notice-nick">%s</span>@<span class="notice-nick">%s</span>)</span> <span class="notice">%s</span><br />',
@@ -106,7 +106,15 @@ var messagePatterns = {
 	'yourAwayDisabled': '<span class="time">%s</span> &nbsp; <span class="mode">*** Nie jesteś już oznaczony jako nieobecny</span><br />',
 	'yourInvite': '<span class="time">%s</span> &nbsp; <span class="mode">*** Zaprosiłeś użytkownika %s na kanał %s</span><br />',
 	'knocked': '<span class="time">%s</span> &nbsp; <span class="mode">*** Poprosiłeś o dostęp ("zapukałeś") na %s, czekaj na zaproszenie od operatora</span><br />',
-	'listShown': '<span class="time">%s</span> &nbsp; <span class="mode">*** Lista kanałów będzie wyświetlona w zakładce statusu.</span><br />'
+	'listShown': '<span class="time">%s</span> &nbsp; <span class="mode">*** Lista kanałów będzie wyświetlona w zakładce statusu.</span><br />',
+	'channelIgnoreAdded': '<span class="time">%s</span> &nbsp; <span class="mode">*** Dodano <b>%s</b> do ignorowanych na kanałach.</span><br />',
+	'channelIgnoreRemoved': '<span class="time">%s</span> &nbsp; <span class="mode">*** Usunięto <b>%s</b> z ignorowanych na kanałach.</span><br />',
+	'queryIgnoreAdded': '<span class="time">%s</span> &nbsp; <span class="mode">*** Dodano <b>%s</b> do ignorowanych prywatnie.</span><br />',
+	'queryIgnoreRemoved': '<span class="time">%s</span> &nbsp; <span class="mode">*** Usunięto <b>%s</b> z ignorowanych prywatnie.</span><br />',
+	'ignoreListStart': '<span class="time">%s</span> &nbsp; <span class="mode">*** Lista ignorowanych:</span><br />',
+	'ignoreListEnd': '<span class="time">%s</span> &nbsp; <span class="mode">*** Koniec listy.</span><br />',
+	'ignoreListEmpty': '<span class="time">%s</span> &nbsp; <span class="mode">*** Lista ignorowanych jest pusta.</span><br />',
+	'ignoreListItem': '<span class="time">%s</span> &nbsp; <span class="mode">*** Typ: <b>%s</b>, maska: <b>%s</b></span><br />'
 };
 
 var modes = {
@@ -130,8 +138,22 @@ var modes = {
 		['l', 'Maksymalna ilość użytkowników']
 	]
 };
+
+var servicesNicks = ['NickServ', 'ChanServ', 'HostServ', 'OperServ', 'Global', 'BotServ'];
+
 var modemap2 = ['owner', 'admin', 'op', 'halfop', 'voice'];
 var newMessage = 'Nowa wiadomość';
+
+var ignoreData = {
+	'full': {
+		'channel': [],
+		'query': []
+	},
+	'wildcard': {
+		'channel': [],
+		'query': []
+	}
+};
 
 function ChannelModes() {
 	modes.single.forEach(function(mode){
@@ -149,6 +171,16 @@ function str2bool(b){
 
 function he(text) { //HTML Escape
 	return $('<div/>').text(text).html();
+}
+
+if (!String.prototype.isInList) {
+   String.prototype.isInList = function(list) {
+      var value = this.valueOf();
+      for (var i = 0, l = list.length; i < l; i += 1) {
+         if (list[i] === value) return true;
+      }
+      return false;
+   }
 }
 
 // zmienna gateway.connectStatus
@@ -640,6 +672,9 @@ var $$ = {
 		} ];
 		$$.displayDialog('connect', 'reconnect', 'Utracono połączenie.', 'Utracono połączenie z siecią.', button);
 	},
+	'getDialogSelector': function(type, sender) {
+		return $('#'+type+'Dialog-'+md5(sender.toLowerCase()));
+	},
 	'displayDialog': function(type, sender, title, message, button){
 		switch(type){ //specyficzne dla typu okna
 			case 'whois':
@@ -649,7 +684,7 @@ var $$ = {
 				if(sender.toLowerCase() == guser.nick.toLowerCase() && !gateway.displayOwnWhois){
 					return;
 				}
-			case 'warning': case 'error': case 'confirm': case 'connect': case 'admin': // nie wyświetlamy czasu
+			case 'warning': case 'error': case 'confirm': case 'connect': case 'admin': case 'ignore': case 'list': case 'alert': // nie wyświetlamy czasu
 				var html = message;
 				break;
 			default:
@@ -675,9 +710,12 @@ var $$ = {
 		$dialog.scrollTop($dialog.prop("scrollHeight"));
 		if(type == 'connect'){
 			$dialog.dialog({ modal: true, dialogClass: 'no-close' });
+		} else {
+			$dialog.dialog({ dialogClass: type+'-dialog-spec' });
 		}
-		if(type == 'error'){
-			$dialog.dialog({ dialogClass: 'error-dialog-spec' });
+		var dWidth = 600;
+		if(type == 'alert'){
+			dWidth = 400;
 		}
 		$dialog.dialog({
 			resizable: false,
@@ -686,15 +724,23 @@ var $$ = {
 				$('#'+id).dialog('destroy');
 				$('#'+id).remove();
 			},
-			width: 600
+			width: dWidth
 		});
+		if(button == 'OK'){
+			var button = [{
+				text: 'OK',
+				click: function(){
+					$(this).dialog('close');
+				}
+			}];
+		}
 		if(button){
 			$dialog.dialog('option', 'buttons', button);
 		}
 		if($dialog.find('input').length == 0){
 			gateway.inputFocus();
 		}
-		if(type != 'error'){
+		if(type != 'error' && type != 'alert'){
 			$('.connect-dialog').dialog('moveToTop');
 		}
 	},
@@ -706,6 +752,25 @@ var $$ = {
 	},
 	'sescape': function(val) {
 		return val.replace('\\', '\\\\');
+	},
+	'alert': function(text) {
+		var button = [ {
+			text: 'OK',
+			click: function(){
+				$(this).dialog('close');
+			}
+		} ];
+		$$.displayDialog('alert', 'alert', 'Komunikat', text, button);
+	},
+	'wildcardToRegex': function(regex){
+		regex = regex.replace(/[-[\]{}()+,.\\^$|#\s]/g, "\\$&");
+		regex = regex.replace(/[*?]/g, ".$&");
+		return '^'+regex+'$';
+	},
+	'regexToWildcard': function(regex){
+		regex = regex.replace(/\.\*/g, "*");
+		regex = regex.replace(/\.\?/g, "?");
+		return regex.slice(1, -1);
 	}
 }
 

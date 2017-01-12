@@ -58,8 +58,24 @@ ul.options li, ul.suboptions li {
 	background-color: rgba(51, 51, 51, 0.8) !important;
 }
 
-#symbol-dialog, #color-dialog, #not_connected_div, #options-dialog, #reconnect_div, #size-dialog, #about-dialog {
+#color-dialog, #not_connected_div, #options-dialog, #reconnect_div, #size-dialog {
 	background-color: #09294E;
+}
+
+#color-dialog {
+	background: url("/styles/img/kolory.png") no-repeat scroll right top #09294E !important;
+}
+
+#symbol-dialog {
+	background: url("/styles/img/emotikony.png") no-repeat scroll right top #09294E !important;
+}
+
+#about-dialog {
+	background: url("/styles/img/info.png") no-repeat scroll right top #09294E !important;
+}
+
+#options-dialog {
+	background: url("/styles/img/techbg.png") no-repeat scroll right top #09294E !important;
 }
 
 #about-dialog p {
@@ -96,11 +112,6 @@ b.admin {
 
 .whois-dialog p span.info {
 	color: #ACC1DC;
-}
-
-.error-dialog {
-	background-color: #521818 !important;
-	color: #FFE9E9 !important;
 }
 
 .symbol-text a:hover, .size-text a:hover {
@@ -145,8 +156,26 @@ b.admin {
 	color: #9CB1FF;
 }
 
-.whois-dialog, .warning-dialog, .notice-dialog, .confirm-dialog {
-	background-color: #031B38 !important;
+.error-dialog {
+	background: url("/styles/img/errorbg.png") no-repeat scroll right top #521818 !important;
+	color: #FFE9E9 !important;
+}
+
+.alert-dialog {
+	background: url("/styles/img/warningbg.png") no-repeat scroll right top #521818 !important;
+	color: #FFE9E9 !important;
+}
+
+.whois-dialog, .warning-dialog, .confirm-dialog {
+	background: url("/styles/img/info.png") no-repeat scroll right top #031B38 !important;
+}
+
+.notice-dialog {
+	background: url("/styles/img/notice.png") no-repeat scroll right top #031B38 !important;
+}
+
+.admin-dialog, .ignore-dialog {
+	background: url("/styles/img/techbg.png") no-repeat scroll right top #09294E !important;
 }
 
 .notice-dialog-memoserv {
@@ -178,22 +207,22 @@ span.data {
 	background: #7274BF;
 }
 
-.error-dialog-spec .ui-widget-header {
+.error-dialog-spec .ui-widget-header, .alert-dialog-spec .ui-widget-header {
 	border-color: #943232;
 	background: #3E1212;
 	color: #EC8C8C;
 }
 
-.error-dialog-spec .ui-button {
+.error-dialog-spec .ui-button, .alert-dialog-spec .ui-button {
 	background: #6B1515;
 }
 
-.error-dialog-spec .ui-button:hover, .error-dialog-spec  .ui-button:focus {
+.error-dialog-spec .ui-button:hover, .error-dialog-spec  .ui-button:focus, .alert-dialog-spec .ui-button:hover, .alert-dialog-spec .ui-button:focus {
 	background: #CE4A4A;
 }
 
 .connect-dialog {
-	background-color: #062B65 !important;
+	background: url("/styles/img/techbg.png") no-repeat scroll right top #062B65 !important;
 }
 
 

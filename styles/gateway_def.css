@@ -279,6 +279,12 @@ span.kick {
 span.mode {
 	color: #007D89;
 }
+
+span.join a {
+	color: #000055;
+	cursor: pointer;
+	text-decoration: underline;
+}
 	
 #chat-wrapper br {
 	margin-top: 2px;
@@ -522,24 +528,29 @@ ul.options li:hover {
 	cursor: pointer;
 }
 
-.admin-dialog {
+.admin-dialog, .ignore-dialog {
 	background: url("/styles/img/techbg.png") no-repeat scroll right top #E8E8E8 !important;
 }
 
-.statuswindow td, .admin-dialog td {
+.statuswindow td, .list-dialog td, .admin-dialog td, .ignore-dialog td {
 	border: 1px solid #aab;
 	padding: 2px 4px 2px 4px;
+}
+
+.ignore-dialog th {
+	padding-left: 6px;
+	padding-right: 6px;
 }
 
 .admin-dialog td input[type="text"] {
 	width: 5em;
 }
 
-.statuswindow td.button {
+.statuswindow td.button, .list-dialog td.button {
 	border: none;
 }
 
-.statuswindow button {
+.statuswindow button, .list-dialog button {
 	padding: 2px;
 }
 	
@@ -563,7 +574,15 @@ ul.options li:hover {
 }
 
 .error-dialog {
-		background: url("/styles/img/errorbg.png") no-repeat scroll right top #FFC7C7 !important;
+	background: url("/styles/img/errorbg.png") no-repeat scroll right top #FFC7C7 !important;
+}
+
+.alert-dialog {
+	background: url("/styles/img/warningbg.png") no-repeat scroll right top #FFC7C7 !important;
+}
+
+.error-dialog-spec .ui-dialog-buttonpane, .alert-dialog-spec .ui-dialog-buttonpane {
+	background-color: #FBE7E7;
 }
 
 .connect-dialog {
@@ -916,9 +935,13 @@ span.td_right {
 	font-family: inherit;
 }
 
-#options-dialog, #list-dialog {
+#options-dialog {
 	display: none;
 	background: url("/styles/img/techbg.png") no-repeat scroll right top #E8E8E8;
+}
+
+.list-dialog, .invite-dialog {
+	background: url("/styles/img/techbg.png") no-repeat scroll right top #E8E8E8 !important;
 }
 
 .dialog {
@@ -957,11 +980,11 @@ span.td_right {
    filter: Alpha(Opacity=65);
 }
 
-.error-dialog-spec .ui-button {
+.error-dialog-spec .ui-button, .alert-dialog-spec .ui-button {
 	background: #EFBDBD;
 }
 
-.error-dialog-spec .ui-widget-header {
+.error-dialog-spec .ui-widget-header, .alert-dialog-spec .ui-widget-header {
 	border-color: #B73A3A;
 	background: #D89191;
 }

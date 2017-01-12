@@ -62,6 +62,7 @@
 						</select>
 					</td>
 				</tr>
+				<tr><td colspan="2"><a href="javascript:gateway.showIgnoreManagement();">Zarządzaj ignorowanymi nickami</a></td></tr>
 			</table>
 		</div>
 		
@@ -243,10 +244,10 @@
 			<a onclick="javascript:disp.setSize(1.8)" style="font-size:1.8em">A</a> 
 		 	<a onclick="javascript:disp.setSize(2.0)" style="font-size:2.0em">A</a>
 		</div>
-		<div id="list-dialog" title="Lista kanałów sieci PIRC">
+		<!--<div id="chanlist-dialog" title="Lista kanałów sieci PIRC">
 			<a href="http://pirc.pl/statystyki/kanaly" target="_blank">Skrócona lista kanałów</a><br>
 			<a href="http://pirc.pl/statystyki/kanaly/full" target="_blank">Pełna lista kanałów</a>
-		</div>
+		</div>-->
 		<div id="sound"></div>
 	</body>
 </html>

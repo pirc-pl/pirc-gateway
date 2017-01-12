@@ -128,7 +128,8 @@ function NicklistUser(usernick, chan) {
 				'<td valign="top" style="text-align:left;width:100%;" class="'+((this.nick.toLowerCase()==guser.nick.toLowerCase())?'ownNick ':'')+'nickname">&nbsp;&nbsp;'+this.nick+'</td>'+
 			'</tr></table>'+
 			'<ul class="options" id="'+this.id+'-opt">'+
-				'<li onClick="gateway.queries.push(new Query(\''+this.nick+'\')); gateway.switchTab(\''+this.nick+'\');gateway.toggleNickOpt(\''+this.id+'\');" class="switchTab">Rozmowa Prywatna (QUERY)</li>'+
+				'<li onClick="gateway.openQuery(\''+this.nick+'\', \''+this.id+'\')" class="switchTab">Rozmowa Prywatna (QUERY)</li>'+
+				((this.nick.toLowerCase() == guser.nick.toLowerCase())?'':'<li onClick="gateway.askIgnore(\''+this.nick+'\');">Ignoruj</li>')+
 				'<li><div style="width:100%;" onClick="gateway.toggleNickOptInfo(\''+this.id+'\')">Informacje</div>'+
 					'<ul class="suboptions" id="'+this.id+'-opt-info'+'">'+
 						'<li onClick="' + ((this.nick.toLowerCase() == guser.nick.toLowerCase())?'gateway.displayOwnWhois = true; ':'') + 'gateway.send(\'WHOIS '+$$.sescape(this.nick)+' '+$$.sescape(this.nick)+'\');gateway.toggleNickOpt(\''+this.id+'\');">WHOIS</li>'+
@@ -387,7 +388,7 @@ function Query(nick) {
 		$('#'+this.id+'-window .backlog').append(qCookie);
 	}
 	
-	$('#'+this.id+'-window').vprintf(messagePatterns.startedQuery, [gateway.niceTime(), he(this.name)]);
+	$('#'+this.id+'-window').vprintf(messagePatterns.startedQuery, [gateway.niceTime(), he(this.name), this.name]);
 }
 
 function Channel(chan) {

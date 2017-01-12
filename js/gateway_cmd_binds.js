@@ -94,48 +94,54 @@ var cmdBinds = {
 			var html = $$.parseImages(msg.text);
 			
 			if(msg.args[0].indexOf('#') == 0) { // wiadomość kanałowa
+				if(gateway.ignoring(msg.sender.nick, 'channel')){
+					console.log('Ignoring message on '+msg.args[0]+' by '+msg.sender.nick);
+					return;
+				}
 				var channel = gateway.findChannel(msg.args[0]);
 				if(!channel) {
 					channel = new Channel(msg.args[0]);
 					gateway.channels.push(channel);
 					gateway.switchTab(msg.args[0]);
 				}
-				if(channel) {
-					if(msg.text.match(/^\001.*\001$/i)) {
-						if(msg.text.match(/^\001ACTION.*\001$/i)) {
-							var acttext = msg.text.replace(/^\001ACTION(.*)\001$/i, '$1');
-							if(msg.text.indexOf(guser.nick) != -1) {
-								channel.appendMessage(messagePatterns.channelActionHilight, [gateway.niceTime(), msg.sender.nick, $$.colorize(acttext)]);
-								if(gateway.active.toLowerCase() != msg.args[0].toLowerCase() || !disp.focused) {
-									channel.markNew();
-								}
-							} else {
-								channel.appendMessage(messagePatterns.channelAction, [gateway.niceTime(), msg.sender.nick, $$.colorize(acttext)]);
-								if(gateway.active.toLowerCase() != msg.args[0].toLowerCase() || !disp.focused) {
-									channel.markBold();
-								}
-							}
-						}
-					} else {
+				if(msg.text.match(/^\001.*\001$/i)) { //CTCP
+					if(msg.text.match(/^\001ACTION.*\001$/i)) {
+						var acttext = msg.text.replace(/^\001ACTION(.*)\001$/i, '$1');
 						if(msg.text.indexOf(guser.nick) != -1) {
-							channel.appendMessage(messagePatterns.channelMsgHilight, [gateway.niceTime(), msg.sender.nick, $$.colorize(msg.text)]);
-							if(gateway.active != msg.args[0].toLowerCase() || !disp.focused) {
+							channel.appendMessage(messagePatterns.channelActionHilight, [gateway.niceTime(), msg.sender.nick, $$.colorize(acttext)]);
+							if(gateway.active.toLowerCase() != msg.args[0].toLowerCase() || !disp.focused) {
 								channel.markNew();
 							}
 						} else {
-							channel.appendMessage(messagePatterns.channelMsg, [gateway.niceTime(), $$.nickColor(msg.sender.nick), msg.sender.nick, $$.colorize(msg.text)]);
+							channel.appendMessage(messagePatterns.channelAction, [gateway.niceTime(), msg.sender.nick, $$.colorize(acttext)]);
 							if(gateway.active.toLowerCase() != msg.args[0].toLowerCase() || !disp.focused) {
 								channel.markBold();
 							}
 						}
 					}
-					channel.appendMessage('%s', [html]);
+					return;
 				}
+				if(msg.text.indexOf(guser.nick) != -1) { //hajlajt
+					channel.appendMessage(messagePatterns.channelMsgHilight, [gateway.niceTime(), msg.sender.nick, $$.colorize(msg.text)]);
+					if(gateway.active != msg.args[0].toLowerCase() || !disp.focused) {
+						channel.markNew();
+					}
+				} else { //bez hajlajtu
+					channel.appendMessage(messagePatterns.channelMsg, [gateway.niceTime(), $$.nickColor(msg.sender.nick), msg.sender.nick, $$.colorize(msg.text)]);
+					if(gateway.active.toLowerCase() != msg.args[0].toLowerCase() || !disp.focused) {
+						channel.markBold();
+					}
+				}
+				channel.appendMessage('%s', [html]);
 			} else if(!msg.sender.server/* && msg.sender.nick != guser.nick*/){ // wiadomość prywatna
 				if(msg.sender.nick == guser.nick){
 					var qnick = msg.args[0];
 				} else {
 					var qnick = msg.sender.nick;
+				}
+				if(gateway.ignoring(qnick, 'query')){
+					console.log('Ignoring private message by '+msg.sender.nick);
+					return;
 				}
 				query = gateway.findQuery(qnick);
 				if(msg.text.match(/^\001.*\001$/i)) {	// ctcp
@@ -168,17 +174,17 @@ var cmdBinds = {
 							gateway.statusWindow.markBold();
 						}
 					}
-				} else { // normalna wiadomość
-					if(!query) {
-						query = new Query(msg.sender.nick);
-						gateway.queries.push(query);
-					}
-					query.appendMessage(messagePatterns.channelMsg, [gateway.niceTime(), '', msg.sender.nick, $$.colorize(msg.text)]);
-					if(gateway.active.toLowerCase() != msg.sender.nick.toLowerCase() || !disp.focused) {
-						gateway.findQuery(msg.sender.nick).markNew();
-					}
-					query.appendMessage('%s', [html]);
+					return;
+				} // normalna wiadomość
+				if(!query) {
+					query = new Query(msg.sender.nick);
+					gateway.queries.push(query);
 				}
+				query.appendMessage(messagePatterns.channelMsg, [gateway.niceTime(), '', msg.sender.nick, $$.colorize(msg.text)]);
+				if(gateway.active.toLowerCase() != msg.sender.nick.toLowerCase() || !disp.focused) {
+					gateway.findQuery(msg.sender.nick).markNew();
+				}
+				query.appendMessage('%s', [html]);
 			}
 		}
 	],
@@ -188,6 +194,10 @@ var cmdBinds = {
 				msg.text = " ";
 			}
 			if(msg.text.match(/^\001.*\001$/i)) { // ctcp
+				if(gateway.ignoring(msg.sender.nick, 'query')){
+					console.log('Ignoring CTCP reply by '+msg.sender.nick);
+					return;
+				}
 				var ctcpreg = msg.text.match(/^\001(([^ ]+)( (.*))?)\001$/i);
 				var acttext = ctcpreg[1];
 				var ctcp = ctcpreg[2];
@@ -202,6 +212,10 @@ var cmdBinds = {
 				}
 			} else { // nie-ctcp
 				if(msg.args[0].indexOf('#') == 0) { //kanał
+					if(gateway.ignoring(msg.sender.nick, 'channel')){
+						console.log('Ignoring notice on '+msg.args[0]+' by '+msg.sender.nick);
+						return;
+					}
 					if(gateway.findChannel(msg.args[0])) {
 						if(msg.text.indexOf(guser.nick) != -1) {
 							gateway.findChannel(msg.args[0]).appendMessage(messagePatterns.notice, [gateway.niceTime(), he(msg.sender.nick), he(msg.sender.ident), he(msg.sender.host), $$.colorize(msg.text)]);
@@ -213,6 +227,10 @@ var cmdBinds = {
 						}
 					}
 				} else if(!msg.sender.server && msg.sender.nick != guser.nick) { // użytkownik
+					if(gateway.ignoring(msg.sender.nick, 'query')){
+						console.log('Ignoring notice by '+msg.sender.nick);
+						return;
+					}
 					if(msg.sender.nick.toLowerCase() == 'nickserv'){
 						if(services.nickservMessage(msg)) {
 							return;
@@ -565,92 +583,82 @@ var cmdBinds = {
 		}
 	],
 	'348': [	// RPL_EXCEPTLIST
-		function(msg) { // TODO zmienić na dialog
+		function(msg) {
 		/*	if(gateway.findChannel(msg.args[1])) {
 				gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.exceptListElement, [gateway.niceTime(), msg.args[2], msg.args[3], $$.parseTime(msg.args[4])]);
 			}*/
-			if($('.statuswindow').is(':visible') || $('.status-text table').length == 0){
-				$('.statuswindow').hide();
-				var html = '<h3>Lista wyjątków od banów na kanale '+he(msg.args[1])+'</h3><div class="beIListContents"><table><tr><th>Maska</th><th>Założony przez</th><th>Data</th></tr></table></div>';
-				$('.status-text').html(html);
-			}
 			var chanId = gateway.findChannel(msg.args[1]).id;
+			if($$.getDialogSelector('list', 'except-'+msg.args[1]).length == 0){
+				var html = '<div class="beIListContents"><table><tr><th>Maska</th><th>Założony przez</th><th>Data</th></tr></table></div>';
+				$$.displayDialog('list', 'except-'+msg.args[1], 'Lista wyjątków na kanale '+he(msg.args[1]), html);
+			}
 			var html = '<tr><td>'+he(msg.args[2])+'</td><td>'+he(msg.args[3])+'</td><td>'+$$.parseTime(msg.args[4])+'</td>' +
 				'<td class="'+chanId+'-operActions button" style="display:none">' +
 				'<button id="unex-'+chanId+'-'+md5(msg.args[2])+'">Usuń</button>' +
 				'</td></tr>';
-			$('.status-text table').append(html);
+			$('table', $$.getDialogSelector('list', 'except-'+msg.args[1])).append(html);
 			$('#unex-'+chanId+'-'+md5(msg.args[2])).click(function(){
 				gateway.send('MODE '+msg.args[1]+' -e '+msg.args[2]+'\r\nMODE '+msg.args[1]+' e');
-				$('.status-text table').remove();
+				$$.closeDialog('list', 'except-'+msg.args[1]);
 			});
 		}
 	],
 	'349': [	// RPL_ENDOFEXCEPTLIST 
-		function(msg) { // TODO zmienić na dialog
+		function(msg) {
 			/*if(gateway.findChannel(msg.args[1])) {
 				gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.exceptListEnd, [gateway.niceTime()]);
 			}*/
-			if($('.status-text table').length == 0){
-				var html = '<h3>Lista wyjątków na kanale '+he(msg.args[1])+'</h3><p>Lista jest pusta.</p>';
-				$('.status-text').html(html);
+			if($$.getDialogSelector('list', 'except-'+msg.args[1]).length == 0){
+				$$.displayDialog('list', 'except-'+msg.args[1], 'Lista wyjątków na kanale '+he(msg.args[1]), 'Lista jest pusta.');
 			}
-			$('.statuswindow').fadeIn(250);
 		}
 	],
 	'346': [	// RPL_INVITELIST
-		function(msg) { // TODO zmienić na dialog
-			if($('.statuswindow').is(':visible') || $('.status-text table').length == 0){
-				$('.statuswindow').hide();
-				var html = '<h3>Lista wyjątków zaproszenia na kanale '+he(msg.args[1])+'</h3><div class="beIListContents"><table><tr><th>Maska</th><th>Założony przez</th><th>Data</th></tr></table></div>';
-				$('.status-text').html(html);
-			}
-			var chanId = gateway.findChannel(msg.args[1]).id;
-			var html = '<tr><td>'+he(msg.args[2])+'</td><td>'+he(msg.args[3])+'</td><td>'+$$.parseTime(msg.args[4])+'</td>' +
-				'<td class="'+chanId+'-operActions button" style="display:none">' +
-				'<button id="unex-'+chanId+'-'+md5(msg.args[2])+'">Usuń</button>' +
-				'</td></tr>';
-			$('.status-text table').append(html);
-			$('#unex-'+chanId+'-'+md5(msg.args[2])).click(function(){
-				gateway.send('MODE '+msg.args[1]+' -I '+msg.args[2]+'\r\nMODE '+msg.args[1]+' I');
-				$('.status-text table').remove();
-			});
+		function(msg) {
 			/*if(gateway.findChannel(msg.args[1])) {
 				gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.invexListElement, [gateway.niceTime(), msg.args[2], msg.args[3], $$.parseTime(msg.args[4])]);
 			}*/
+			var chanId = gateway.findChannel(msg.args[1]).id;
+			if($$.getDialogSelector('list', 'invex-'+msg.args[1]).length == 0){
+				var html = '<div class="beIListContents"><table><tr><th>Maska</th><th>Założony przez</th><th>Data</th></tr></table></div>';
+				$$.displayDialog('list', 'invex-'+msg.args[1], 'Lista wyjątków zaproszenia na kanale '+he(msg.args[1]), html);
+			}
+			var html = '<tr><td>'+he(msg.args[2])+'</td><td>'+he(msg.args[3])+'</td><td>'+$$.parseTime(msg.args[4])+'</td>' +
+				'<td class="'+chanId+'-operActions button" style="display:none">' +
+				'<button id="uninvex-'+chanId+'-'+md5(msg.args[2])+'">Usuń</button>' +
+				'</td></tr>';
+			$('table', $$.getDialogSelector('list', 'invex-'+msg.args[1])).append(html);
+			$('#uninvex-'+chanId+'-'+md5(msg.args[2])).click(function(){
+				gateway.send('MODE '+msg.args[1]+' -I '+msg.args[2]+'\r\nMODE '+msg.args[1]+' I');
+				$$.closeDialog('list', 'invex-'+msg.args[1]);
+			});
 		}
 	],
 	'347': [	// RPL_INVITELISTEND
-		function(msg) { // TODO zmienić na dialog
+		function(msg) {
 			/*if(gateway.findChannel(msg.args[1])) {
 				gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.invexListEnd, [gateway.niceTime()]);
 			}*/
-			if($('.status-text table').length == 0){
-				var html = '<h3>Lista wyjątków zaproszenia na kanale '+he(msg.args[1])+'</h3><p>Lista jest pusta.</p>';
-				$('.status-text').html(html);
+			if($$.getDialogSelector('list', 'invex-'+msg.args[1]).length == 0){
+				$$.displayDialog('list', 'invex-'+msg.args[1], 'Lista wyjątków zaproszenia na kanale '+he(msg.args[1]), 'Lista jest pusta.');
 			}
-			$('.statuswindow').fadeIn(250);
 		}			
 	],
 	'367': [	// RPL_BANLIST 
-		function(msg) { // TODO zmienić na dialog
-		/*	if(gateway.findChannel(msg.args[1])) {
-				gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.banListElement, [gateway.niceTime(), msg.args[2], msg.args[3], $$.parseTime(msg.args[4])]);
-			}*/
-			if($('.statuswindow').is(':visible') || $('.status-text table').length == 0){
-				$('.statuswindow').hide();
-				var html = '<h3>Lista banów na kanale '+he(msg.args[1])+'</h3><div class="beIListContents"><table><tr><th>Maska</th><th>Założony przez</th><th>Data</th></tr></table></div>';
-				$('.status-text').html(html);
-			}
+		function(msg) {
 			var chanId = gateway.findChannel(msg.args[1]).id;
+			if($$.getDialogSelector('list', 'ban-'+msg.args[1]).length == 0){
+				var html = '<div class="beIListContents"><table><tr><th>Maska</th><th>Założony przez</th><th>Data</th></tr></table></div>';
+				$$.displayDialog('list', 'ban-'+msg.args[1], 'Lista banów na kanale '+he(msg.args[1]), html);
+			}
 			var html = '<tr><td>'+he(msg.args[2])+'</td><td>'+he(msg.args[3])+'</td><td>'+$$.parseTime(msg.args[4])+'</td>' +
 				'<td class="'+chanId+'-operActions button" style="display:none">' +
 				'<button id="unban-'+chanId+'-'+md5(msg.args[2])+'">Usuń</button>' +
 				'</td></tr>';
-			$('.status-text table').append(html);
-			$('#unban-'+chanId+'-'+md5(msg.args[2])).click(function(){
-				gateway.send('MODE '+msg.args[1]+' -b '+msg.args[2]+'\r\nMODE '+msg.args[1]+' b');
-				$('.status-text table').remove();
+			$('table', $$.getDialogSelector('list', 'ban-'+msg.args[1])).append(html);
+			$('#unex-'+chanId+'-'+md5(msg.args[2])).click(function(){
+				gateway.send('MODE '+msg.args[1]+' -I '+msg.args[2]+'\r\nMODE '+msg.args[1]+' b');
+				$$.closeDialog('list', 'ban-'+msg.args[1]);
 			});
 		}
 	],
@@ -659,11 +667,9 @@ var cmdBinds = {
 		/*	if(gateway.findChannel(msg.args[1])) {
 				gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.banListEnd, [gateway.niceTime()]);
 			}*/
-			if($('.status-text table').length == 0){
-				var html = '<h3>Lista banów na kanale '+he(msg.args[1])+'</h3><p>Lista jest pusta.</p>';
-				$('.status-text').html(html);
+			if($$.getDialogSelector('list', 'ban-'+msg.args[1]).length == 0){
+				$$.displayDialog('list', 'ban-'+msg.args[1], 'Lista banów na kanale '+he(msg.args[1]), 'Lista jest pusta.');
 			}
-			$('.statuswindow').fadeIn(250);
 		}			
 	],
 	'372': [	// RPL_MOTD
