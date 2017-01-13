@@ -19,7 +19,7 @@ var alt = [
 
 var reqChannel = '';
 
-var server = 'wss://bramka2.pirc.pl:8082/';
+var server = 'wss://bramka.pirc.pl:8082/';
 
 var booleanSettings = [ 'showPartQuit', 'tabsListBottom', 'showUserHostnames', 'autoReconnect', 'displayLinkWarning', 'blackTheme', 'newMsgSound', 'autoDisconnect', 'coloredNicks' ];
 var comboSettings = [ 'noticeDisplay' ];
