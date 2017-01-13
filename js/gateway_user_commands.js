@@ -511,9 +511,10 @@ var commands = {
 					gateway.statusWindow.appendMessage(messagePatterns.ignoreListEnd, [gateway.niceTime()]);
 				}
 			} else { //są argumenty
-				if(command[3] != null){
+				gateway.askIgnore(command[1]);
+		/*		if(command[3] != null){
 			//		gateway.notEnoughParams("ignore", "Za dużo parametrów.");
-				}
+				}*/
 			}
 		}
 	},
