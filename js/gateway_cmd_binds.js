@@ -490,6 +490,14 @@ var cmdBinds = {
 			} else {
 				nickListItem.setAway(false);
 			}
+			if(msg.args[6].indexOf('*') > -1){
+				nickListItem.setIrcOp();
+			}
+			if(msg.args[6].indexOf('B') > -1){
+				nickListItem.setBot(true);
+			} else {
+				nickListItem.setBot(false);
+			}
 		}
 	],
 	'AWAY': [

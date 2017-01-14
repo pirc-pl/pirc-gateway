@@ -120,6 +120,8 @@ function NicklistUser(usernick, chan) {
 	this.realname = false;
 	this.away = false;
 	this.awayReason = false;
+	this.ircOp = false;
+	this.isBot = false;
 
 	this.makeHTML = function() {
 		return '<li id="'+this.id+'" class="'+md5(this.nick)+'">'+
@@ -218,6 +220,14 @@ function NicklistUser(usernick, chan) {
 		}
 		this.showTitle();
 	}
+	this.setIrcOp = function() {
+		this.ircOp = true;
+		this.showTitle();
+	}
+	this.setBot = function(val) {
+		this.isBot = val;
+		this.showTitle();
+	}
 	this.showTitle = function() {
 		var text = '';
 		if(this.ident && this.host){
@@ -237,6 +247,18 @@ function NicklistUser(usernick, chan) {
 			$('#'+this.id+' .nickname').css('opacity', '0.3');
 		} else {
 			$('#'+this.id+' .nickname').css('opacity', '');
+		}
+		if(this.ircOp){
+			if(text != ''){
+				text += '\n';
+			}
+			text += 'Ten użytkownik jest IRCOperatorem';
+		}
+		if(this.isBot){
+			if(text != ''){
+				text += '\n';
+			}
+			text += 'Ten użytkownik jest botem';
 		}
 		if(text != ''){
 			$('#'+this.id).attr('title', text);

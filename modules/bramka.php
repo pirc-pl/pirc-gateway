@@ -23,7 +23,7 @@ class Module extends ModuleT {
 			$addcssdec = Dispatcher::$args['.3'];
 			$gateway_url .= $addcssdec . '/';
 		}*/
-		$gateway_url .= '\">starej wersji bramki</a>.';
+		$gateway_url .= '\">innej bramki</a> (Mibbit).';
 
 
 		$nick = htmlspecialchars($nick);
