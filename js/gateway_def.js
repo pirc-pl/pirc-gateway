@@ -660,17 +660,19 @@ var gateway = {
 			guser.nickservnick = nickInput;
 			guser.nickservpass = $('#nspass').val();
 		}
-		if(chanInput){
-			localStorage.setItem('channel', chanInput);
-		}
-		if(nickInput){
-			localStorage.setItem('nick', nickInput);
-		}
-		if($('#save_password').is(":checked")){
-			if(guser.nickservnick && guser.nickservpass){
-				localStorage.setItem('password', btoa(guser.nickservpass));
+		try {
+			if(chanInput){
+				localStorage.setItem('channel', chanInput);
 			}
-		}
+			if(nickInput){
+				localStorage.setItem('nick', nickInput);
+			}
+			if($('#save_password').is(":checked")){
+				if(guser.nickservnick && guser.nickservpass){
+					localStorage.setItem('password', btoa(guser.nickservpass));
+				}
+			}
+		} catch(e) {}
 		gateway.initSys();
 		gateway.connect(false);
 
@@ -1178,41 +1180,45 @@ var gateway = {
 			var wildcard = true;
 			var regex = $$.wildcardToRegex(mask);
 		}
-		if(add){
-			if(gateway.ignoring(mask, type, true)){
-				return; //już jest
-			}
-			if(wildcard){
-				ignoreData.wildcard[type].push(regex);
-			} else {
-				ignoreData.full[type].push(mask);
-			}
-			if(type == 'channel'){
-				var pattern = messagePatterns.channelIgnoreAdded;
-			} else {
-				var pattern = messagePatterns.queryIgnoreAdded;
-			}
-		} else {
-			if(!gateway.ignoring(mask, type, true)){
-				return; //nie ma czego usuwać
-			}
-			//try {
-				if(wildcard){
-					ignoreData.wildcard[type].splice(ignoreData.wildcard[type].indexOf(regex), 1);
-				} else {
-					ignoreData.full[type].splice(ignoreData.full[type].indexOf(mask), 1);
+		try {
+			if(add){
+				if(gateway.ignoring(mask, type, true)){
+					return; //już jest
 				}
-		//	} catch (e) {
-		//	}
-			if(type == 'channel'){
-				var pattern = messagePatterns.channelIgnoreRemoved;
+				if(wildcard){
+					ignoreData.wildcard[type].push(regex);
+				} else {
+					ignoreData.full[type].push(mask);
+				}
+				if(type == 'channel'){
+					var pattern = messagePatterns.channelIgnoreAdded;
+				} else {
+					var pattern = messagePatterns.queryIgnoreAdded;
+				}
 			} else {
-				var pattern = messagePatterns.queryIgnoreRemoved;
+				if(!gateway.ignoring(mask, type, true)){
+					return; //nie ma czego usuwać
+				}
+				//try {
+					if(wildcard){
+						ignoreData.wildcard[type].splice(ignoreData.wildcard[type].indexOf(regex), 1);
+					} else {
+						ignoreData.full[type].splice(ignoreData.full[type].indexOf(mask), 1);
+					}
+			//	} catch (e) {
+			//	}
+				if(type == 'channel'){
+					var pattern = messagePatterns.channelIgnoreRemoved;
+				} else {
+					var pattern = messagePatterns.queryIgnoreRemoved;
+				}
 			}
+			gateway.statusWindow.appendMessage(pattern, [gateway.niceTime(), he(mask)]);
+			gateway.statusWindow.markBold();
+			localStorage.setItem('ignore', JSON.stringify(ignoreData));
+		} catch(e){
+			$$.displayDialog('error', 'ignore', 'Błąd', 'Operacja nieudana.');
 		}
-		gateway.statusWindow.appendMessage(pattern, [gateway.niceTime(), he(mask)]);
-		gateway.statusWindow.markBold();
-		localStorage.setItem('ignore', JSON.stringify(ignoreData));
 	},
 	'ignoreClickInput': function() {
 		var channel = $('#new_ignore_channel').prop('checked');
@@ -1896,45 +1902,52 @@ var gateway = {
 		if(conn.waitForAlive && evt.key == 'checkAliveReply'){
 			var nick = evt.newValue;
 			conn.waitForAlive = false;
-			localStorage.removeItem(evt.key);
-			$('#not_connected_wrapper').fadeOut(400);
+			
 			var chan = guser.channels[0];
 			var html = 'Masz już otwartą bramkę w innej karcie przeglądarki i jesteś połączony jako <strong>'+he(evt.newValue)+'</strong>! Nie można otworzyć drugiej bramki.';
+			$('#not_connected_wrapper').fadeOut(400);
+			
+			try {
+				localStorage.removeItem(evt.key);
+				if(chan && chan != '#'){
+					html += '<br>Przejdź do tamtej karty, aby wejść na <strong>'+chan+'</strong>.';
+					localStorage.setItem('reqChannelJoin', guser.channels[0]);
+				}
+			} catch(e) {}
 
-			if(chan && chan != '#'){
-				html += '<br>Przejdź do tamtej karty, aby wejść na <strong>'+chan+'</strong>.';
-				localStorage.setItem('reqChannelJoin', guser.channels[0]);
-			}
+
 			$$.displayDialog('connect', '0', 'Już połączony!', html);
 		}
 		if(gateway.connectStatus == statusConnected){
-			if(evt.key == 'checkAlive'){
-				localStorage.removeItem(evt.key);
-				localStorage.setItem('checkAliveReply', guser.nick);
-			}
-			if(evt.key == 'reqChannelJoin'){
-				var chan = evt.newValue;
-				localStorage.removeItem(evt.key);
-				for(var i=0; i<gateway.channels.length; i++){
-					if(gateway.channels[i].name.toLowerCase() == chan.toLowerCase()){
-						return;
-					}
+			try {
+				if(evt.key == 'checkAlive'){
+					localStorage.removeItem(evt.key);
+					localStorage.setItem('checkAliveReply', guser.nick);
 				}
-				var html = 'Inna karta chce dołączyć do kanału <strong>'+chan+'</strong>.';
-				var button = [ {
-					text: 'Anuluj',
-					click: function(){
-						$(this).dialog('close');
+				if(evt.key == 'reqChannelJoin'){
+					var chan = evt.newValue;
+					localStorage.removeItem(evt.key);
+					for(var i=0; i<gateway.channels.length; i++){
+						if(gateway.channels[i].name.toLowerCase() == chan.toLowerCase()){
+							return;
+						}
 					}
-				}, {
-					text: 'Dołącz',
-					click: function(){
-						gateway.send('JOIN '+chan);
-						$(this).dialog('close');
-					}
-				} ];
-				$$.displayDialog('confirm', 'join', 'Potwierdź', html, button);
-			}
+					var html = 'Inna karta chce dołączyć do kanału <strong>'+chan+'</strong>.';
+					var button = [ {
+						text: 'Anuluj',
+						click: function(){
+							$(this).dialog('close');
+						}
+					}, {
+						text: 'Dołącz',
+						click: function(){
+							gateway.send('JOIN '+chan);
+							$(this).dialog('close');
+						}
+					} ];
+					$$.displayDialog('confirm', 'join', 'Potwierdź', html, button);
+				}
+			} catch(e) {}
 		}
 	}
 }
@@ -1998,21 +2011,23 @@ var conn = {
 		reqChannel = guser.channels[0];
 		conn.my_nick = dnick;
 
-		if(reqChannel == '#'){
-			if(localStorage.getItem('channel')){
-				reqChannel = localStorage.getItem('channel');
+		try {
+			if(reqChannel == '#'){
+				if(localStorage.getItem('channel')){
+					reqChannel = localStorage.getItem('channel');
+				}
 			}
-		}
-		if(conn.my_nick == ''){
-			if(localStorage.getItem('nick')){
-				conn.my_nick = localStorage.getItem('nick');
+			if(conn.my_nick == ''){
+				if(localStorage.getItem('nick')){
+					conn.my_nick = localStorage.getItem('nick');
+				}
 			}
-		}
-		if(conn.my_nick == localStorage.getItem('nick')){
-			if(localStorage.getItem('password')){
-				conn.my_pass = atob(localStorage.getItem('password'));
+			if(conn.my_nick == localStorage.getItem('nick')){
+				if(localStorage.getItem('password')){
+					conn.my_pass = atob(localStorage.getItem('password'));
+				}
 			}
-		}
+		} catch(e) {}
 	
 	/*	gateway.websock = new WebSocket(server);
 		if(gateway.connectTimeoutID){
@@ -2064,34 +2079,37 @@ var conn = {
 	'gatewayInit': function(){
 		$('.not-connected-text p').html('Poczekaj chwilę, trwa ładowanie...');
 		
+		try {
+			localStorage.removeItem('checkAliveReply');
+			localStorage.removeItem('checkAlive');
+			localStorage.removeItem('reqChannelJoin');
 
-		localStorage.removeItem('checkAliveReply');
-		localStorage.removeItem('checkAlive');
-		localStorage.removeItem('reqChannelJoin');
-
-		booleanSettings.forEach(function(sname){
-			if(localStorage.getItem(sname) == null){
-				return;
+			booleanSettings.forEach(function(sname){
+				if(localStorage.getItem(sname) == null){
+					return;
+				}
+				$('#'+sname).prop('checked', str2bool(localStorage.getItem(sname)));
+			});
+			comboSettings.forEach(function(sname){
+				if(localStorage.getItem(sname) == null){
+					return;
+				}
+				$('#'+sname).val(localStorage.getItem(sname));
+			});
+			numberSettings.forEach(function(sname){
+				if(localStorage.getItem(sname) == null){
+					return;
+				}
+				$('#'+sname).val(localStorage.getItem(sname));
+			});
+			disp.setSize(localStorage.getItem('tsize'));
+			disp.changeSettings();
+			var ignoreList = localStorage.getItem('ignore');
+			if(ignoreList){
+				ignoreData = JSON.parse(ignoreList);
 			}
-			$('#'+sname).prop('checked', str2bool(localStorage.getItem(sname)));
-		});
-		comboSettings.forEach(function(sname){
-			if(localStorage.getItem(sname) == null){
-				return;
-			}
-			$('#'+sname).val(localStorage.getItem(sname));
-		});
-		numberSettings.forEach(function(sname){
-			if(localStorage.getItem(sname) == null){
-				return;
-			}
-			$('#'+sname).val(localStorage.getItem(sname));
-		});
-		disp.setSize(localStorage.getItem('tsize'));
-		disp.changeSettings();
-		var ignoreList = localStorage.getItem('ignore');
-		if(ignoreList){
-			ignoreData = JSON.parse(ignoreList);
+		} catch(e){
+			//za mało miejsca na dysku?
 		}
 		
 		$('#chatbox').click(function() {
@@ -2223,10 +2241,14 @@ var conn = {
 		
 		window.addEventListener('storage', gateway.storageHandler);
 		conn.waitForAlive = true;
-		localStorage.setItem('checkAlive', Math.random().toString());
+		try {
+			localStorage.setItem('checkAlive', Math.random().toString());
+		} catch(e) {}
 		conn.aliveWaitTimeout = setTimeout(function(){
 			if(conn.waitForAlive){
-				localStorage.removeItem('checkAlive');
+				try {
+					localStorage.removeItem('checkAlive');
+				} catch(e) {}
 				conn.dispConnectDialog();
 				conn.waitForAlive = false;
 			}

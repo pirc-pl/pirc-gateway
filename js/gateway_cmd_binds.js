@@ -1,9 +1,12 @@
 var cmdBinds = {
 	'001': [	// RPL_WELCOME 
 		function(msg) {
-			var ckNick = localStorage.getItem('origNick');
-			if(!ckNick){
-				localStorage.setItem('origNick', guser.nick);
+			try {
+				var ckNick = localStorage.getItem('origNick');
+				if(!ckNick){
+					localStorage.setItem('origNick', guser.nick);
+				}
+			} catch(e){
 			}
 			
 			if(msg.args[0] != guser.nick) {
@@ -460,10 +463,12 @@ var cmdBinds = {
 				chanO.appendMessage(messagePatterns.mode, [gateway.niceTime(), chan, mody]);
 				gateway.parseChannelMode(msg.args, chanO);
 				gateway.send('CAP REQ :multi-prefix userhost-in-names away-notify\r\nCAP END');//\r\nNAMES '+chan);
-				var ckNick = localStorage.getItem('origNick');
-  			 	if(ckNick){
-					gateway.send('SETNAME Użytkownik bramki PIRC.pl "' + ckNick + '"');
-				}
+				try {
+					var ckNick = localStorage.getItem('origNick');
+  				 	if(ckNick){
+						gateway.send('SETNAME Użytkownik bramki PIRC.pl "' + ckNick + '"');
+					}
+				} catch(e) {}
 			}
 		}
 	],

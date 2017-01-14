@@ -322,26 +322,25 @@ function Query(nick) {
 		if(messageData == '' || messageData.match(/<span class="join">/)){
 			return;
 		}
-		var qCookie = localStorage.getItem('query'+md5(this.name));
-		if(qCookie) {
-			qCookie = Base64.decode(qCookie).split('\377');
-			if(qCookie.length >= settings.backlogLength){
-				qCookie.shift();
-			}
-		} else {
-			qCookie = [];
-		}
-		messageData = messageData.replace('<br />', '<br>');
-		qNewData = messageData.split('<br>');
-		var end = qNewData.pop();
-		if(end != ''){
-			qNewData.push(end);
-		}
-		qCookie = qCookie.concat(qNewData);
 		try {
+			var qCookie = localStorage.getItem('query'+md5(this.name));
+			if(qCookie) {
+				qCookie = Base64.decode(qCookie).split('\377');
+				if(qCookie.length >= settings.backlogLength){
+					qCookie.shift();
+				}
+			} else {
+				qCookie = [];
+			}
+			messageData = messageData.replace('<br />', '<br>');
+			qNewData = messageData.split('<br>');
+			var end = qNewData.pop();
+			if(end != ''){
+				qNewData.push(end);
+			}
+			qCookie = qCookie.concat(qNewData);
 			localStorage.setItem('query'+md5(this.name), Base64.encode(qCookie.join('\377')));
-		} catch(e){
-		}
+		} catch(e) {}
 	}
 
 	this.changeNick = function(newnick) {
@@ -379,14 +378,16 @@ function Query(nick) {
 	$('#'+this.id+'-topic').html('<h1>'+this.name+'</h1><h2></h2>');
 	$('<li/>').attr('id', this.id+'-tab').html('<a href="javascript:void(0);" class="switchTab" onclick="gateway.switchTab(\''+this.name+'\')">'+he(this.name)+'</a><a href="javascript:void(0);" onclick="gateway.removeQuery(\''+this.name+'\')"><div class="close" title="Zamknij rozmowę prywatną"></div></a>').appendTo('#tabs');
 	
-	var qCookie = localStorage.getItem('query'+md5(this.name));
+	try {
+		var qCookie = localStorage.getItem('query'+md5(this.name));
 	
-	if(qCookie) {
-		qCookie = Base64.decode(qCookie).split('\377').join('<br>');
-		$('#'+this.id+'-window').append('<div class="backlog"></div>');
-		$('#'+this.id+'-window .backlog').vprintf(messagePatterns.queryBacklog, [gateway.niceTime(), he(this.name)]);
-		$('#'+this.id+'-window .backlog').append(qCookie);
-	}
+		if(qCookie) {
+			qCookie = Base64.decode(qCookie).split('\377').join('<br>');
+			$('#'+this.id+'-window').append('<div class="backlog"></div>');
+			$('#'+this.id+'-window .backlog').vprintf(messagePatterns.queryBacklog, [gateway.niceTime(), he(this.name)]);
+			$('#'+this.id+'-window .backlog').append(qCookie);
+		}
+	} catch(e) {}
 	
 	$('#'+this.id+'-window').vprintf(messagePatterns.startedQuery, [gateway.niceTime(), he(this.name), this.name]);
 }
@@ -543,23 +544,23 @@ function Channel(chan) {
 		if(messageData == '' || messageData.match(/<span class="mode">/)){
 			return;
 		}
-		var qCookie = localStorage.getItem('channel'+md5(this.name));
-		if(qCookie) {
-			qCookie = Base64.decode(qCookie).split('\377');
-			if(qCookie.length >= settings.backlogLength){
-				qCookie.shift();
-			}
-		} else {
-			qCookie = [];
-		}
-		messageData = messageData.replace('<br />', '<br>');
-		qNewData = messageData.split('<br>');
-		var end = qNewData.pop();
-		if(end != ''){
-			qNewData.push(end);
-		}
-		qCookie = qCookie.concat(qNewData);
 		try {
+			var qCookie = localStorage.getItem('channel'+md5(this.name));
+			if(qCookie) {
+				qCookie = Base64.decode(qCookie).split('\377');
+				if(qCookie.length >= settings.backlogLength){
+					qCookie.shift();
+				}
+			} else {
+				qCookie = [];
+			}
+			messageData = messageData.replace('<br />', '<br>');
+			qNewData = messageData.split('<br>');
+			var end = qNewData.pop();
+			if(end != ''){
+				qNewData.push(end);
+			}
+			qCookie = qCookie.concat(qNewData);
 			localStorage.setItem('channel'+md5(this.name), Base64.encode(qCookie.join('\377')));
 		} catch(e){
 		}
@@ -576,15 +577,17 @@ function Channel(chan) {
 	$('<li/>').attr('id', this.id+'-tab').html('<a href="javascript:void(0);" onclick="gateway.switchTab(\''+this.name+'\')" class="switchTab">'+he(this.name)+'</a>'+
 		'<a href="javascript:void(0);" onclick="gateway.removeChannel(\''+this.name+'\')"><div class="close" title="Wyjdź z kanału"></div></a>').appendTo('#tabs');
 	
-	var qCookie = localStorage.getItem('channel'+md5(this.name));
+	try {
+		var qCookie = localStorage.getItem('channel'+md5(this.name));
 	
-	if(qCookie) {
-		qCookie = Base64.decode(qCookie).split('\377').join('<br>');
-		$('#'+this.id+'-window').append('<div class="backlog"></div>');
-		$('#'+this.id+'-window .backlog').vprintf(messagePatterns.channelBacklog, [gateway.niceTime(), he(this.name)]);
-		$('#'+this.id+'-window .backlog').append(qCookie+'<br>');
-		$('#'+this.id+'-window .backlog').vprintf(messagePatterns.channelBacklogEnd, [gateway.niceTime()]);
-	}
+		if(qCookie) {
+			qCookie = Base64.decode(qCookie).split('\377').join('<br>');
+			$('#'+this.id+'-window').append('<div class="backlog"></div>');
+			$('#'+this.id+'-window .backlog').vprintf(messagePatterns.channelBacklog, [gateway.niceTime(), he(this.name)]);
+			$('#'+this.id+'-window .backlog').append(qCookie+'<br>');
+			$('#'+this.id+'-window .backlog').vprintf(messagePatterns.channelBacklogEnd, [gateway.niceTime()]);
+		}
+	} catch(e) {}
 }
 
 function Status() {
