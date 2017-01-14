@@ -1888,12 +1888,58 @@ var gateway = {
 			}
 		}
 	//	console.log(log);
+	},
+	'storageHandler': function(evt) {
+		if(!evt.newValue){
+			return;
+		}
+		if(conn.waitForAlive && evt.key == 'checkAliveReply'){
+			var nick = evt.newValue;
+			conn.waitForAlive = false;
+			localStorage.removeItem(evt.key);
+			$('#not_connected_wrapper').fadeOut(400);
+			var chan = guser.channels[0];
+			var html = 'Masz już otwartą bramkę w innej karcie przeglądarki i jesteś połączony jako <strong>'+he(evt.newValue)+'</strong>! Nie można otworzyć drugiej bramki.';
+
+			if(chan && chan != '#'){
+				html += '<br>Przejdź do tamtej karty, aby wejść na <strong>'+chan+'</strong>.';
+				localStorage.setItem('reqChannelJoin', guser.channels[0]);
+			}
+			$$.displayDialog('connect', '0', 'Już połączony!', html);
+		}
+		if(gateway.connectStatus == statusConnected){
+			if(evt.key == 'checkAlive'){
+				localStorage.removeItem(evt.key);
+				localStorage.setItem('checkAliveReply', guser.nick);
+			}
+			if(evt.key == 'reqChannelJoin'){
+				var chan = evt.newValue;
+				localStorage.removeItem(evt.key);
+				for(var i=0; i<gateway.channels.length; i++){
+					if(gateway.channels[i].name.toLowerCase() == chan.toLowerCase()){
+						return;
+					}
+				}
+				var html = 'Inna karta chce dołączyć do kanału <strong>'+chan+'</strong>.';
+				var button = [ {
+					text: 'Anuluj',
+					click: function(){
+						$(this).dialog('close');
+					}
+				}, {
+					text: 'Dołącz',
+					click: function(){
+						gateway.send('JOIN '+chan);
+						$(this).dialog('close');
+					}
+				} ];
+				$$.displayDialog('confirm', 'join', 'Potwierdź', html, button);
+			}
+		}
 	}
 }
 	
 var loaded = false;
-
-document.domain = "pirc.pl";
 
 var readyFunc = function(){
 	if(loaded) return;
@@ -2017,6 +2063,11 @@ var conn = {
 	},
 	'gatewayInit': function(){
 		$('.not-connected-text p').html('Poczekaj chwilę, trwa ładowanie...');
+		
+
+		localStorage.removeItem('checkAliveReply');
+		localStorage.removeItem('checkAlive');
+		localStorage.removeItem('reqChannelJoin');
 
 		booleanSettings.forEach(function(sname){
 			if(localStorage.getItem(sname) == null){
@@ -2164,13 +2215,24 @@ var conn = {
 		if(!navigator.cookieEnabled){
 			$('.not-connected-text > p').html('Twoja przeglądarka ma wyłączoną obsługę ciasteczek. Niektóre funkcje bramki mogą działać nieprawidłowo.<br /><input type="button" onclick="conn.dispConnectDialog();" value="Kontynuuj" />');
 			return;
-		} else {
-			if(window.WebSocket == null){
-				$('.not-connected-text > p').html('Twoja przeglądarka nie obsługuje WebSocket. Nie można uruchomić bramki.<br />Spróbuj '+oldGatewayHtml);
-				return;
-			}
-			conn.dispConnectDialog();
 		}
-	}
+		if(window.WebSocket == null){
+			$('.not-connected-text > p').html('Twoja przeglądarka nie obsługuje WebSocket. Nie można uruchomić bramki.<br />Spróbuj '+oldGatewayHtml);
+			return;
+		}
+		
+		window.addEventListener('storage', gateway.storageHandler);
+		conn.waitForAlive = true;
+		localStorage.setItem('checkAlive', Math.random().toString());
+		conn.aliveWaitTimeout = setTimeout(function(){
+			if(conn.waitForAlive){
+				localStorage.removeItem('checkAlive');
+				conn.dispConnectDialog();
+				conn.waitForAlive = false;
+			}
+		}, 100);
+	},
+	'aliveWaitTimeout': false,
+	'waitForAlive': false
 }
 
