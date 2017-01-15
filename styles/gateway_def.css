@@ -140,7 +140,7 @@ input, button, submit {
 	bottom: 4em;
 	position: absolute;
 	right: 10px;
-	top: 5.4em;
+	top: 6.7em;
 	width: 23%;
 }
 	
@@ -148,7 +148,7 @@ input, button, submit {
 	bottom: 4em;
 	left: 0;
 	position: absolute;
-	top: 5.4em;
+	top: 6.7em;
 	width: 77%;
 }
 	
@@ -291,13 +291,14 @@ span.join a {
 }
 	
 #info {
-	height: 2.2em;
+	height: 3.7em;
 	left: 0;
 	margin-left: 25px;
 	overflow: hidden;
 	position: absolute;
 	top: 3.2em;
-	width: 80%;
+	width: 82%;
+	overflow-y: auto;
 }
 	
 #info h1 {
@@ -307,21 +308,25 @@ span.join a {
 	
 #info h2 {
 	display: inline;
-	font-size: 1.2em;
+	font-size: 1.1em;
 	font-weight: normal;
 	padding: 5px;
 	margin-left: 10px;
 }
+
+#info > span {
+	display: block;
+	padding: 4px;
+	min-height: 3em;
+}
 	
-#info h2:hover, #info h2:focus, yournickname:focus, yournickname:hover {
-	-moz-border-radius: 8px;
-	-webkit-border-radius: 8px;
+#info > span:hover, #info > span:focus {
 	border-radius: 8px;
 	border-color: #FFFFFF #CECECE #CECECE #FFFFFF;
 	border-style: solid;
 	border-width: 1px;
 	cursor: pointer;
-	padding: 4px;
+	padding: 3px;
 }
 	
 #top_menu ul li:hover, #top_menu ul li:focus {
@@ -394,17 +399,6 @@ span.yournickname {
 	padding: 5px;
 }
 	
-#info h2:hover, #info h2:focus, yournickname:focus, yournickname:hover {
-	-moz-border-radius: 8px;
-	-webkit-border-radius: 8px;
-	border-radius: 8px;
-	border-color: #FFFFFF #CECECE #CECECE #FFFFFF;
-	border-style: solid;
-	border-width: 1px;
-	cursor: pointer;
-	padding: 4px;
-}
-
 #topicEdit {
 	width: 550px;
 	height: 5em;

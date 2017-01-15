@@ -96,13 +96,10 @@
 
 		<div id="wrapper">
 			<div id="info">
-				<table style="height: 100%;"><tr><td valign="middle" id="topic">
-							<span id="--status-topic">
-								<h1>Status</h1>
-								<h2>------</h2>
-							</span>
-
-						</td></tr></table>
+				<span id="--status-topic">
+					<h1>Status</h1>
+					<h2>------</h2>
+				</span>
 			</div>
 			<div id="chatbox">
 				<div id="chat-wrapper">

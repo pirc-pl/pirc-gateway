@@ -396,7 +396,7 @@ function Query(nick) {
 		}
 	}
 	$('<span/>').attr('id', this.id+'-window').hide().appendTo('#main-window');
-	$('<span/>').attr('id', this.id+'-topic').hide().appendTo('#topic');
+	$('<span/>').attr('id', this.id+'-topic').hide().appendTo('#info');
 	$('#'+this.id+'-topic').html('<h1>'+this.name+'</h1><h2></h2>');
 	$('<li/>').attr('id', this.id+'-tab').html('<a href="javascript:void(0);" class="switchTab" onclick="gateway.switchTab(\''+this.name+'\')">'+he(this.name)+'</a><a href="javascript:void(0);" onclick="gateway.removeQuery(\''+this.name+'\')"><div class="close" title="Zamknij rozmowę prywatną"></div></a>').appendTo('#tabs');
 	
@@ -589,12 +589,12 @@ function Channel(chan) {
 	}
 	this.setTopic = function(topic) {
 		$('#'+this.id+'-topic > h2').html($$.colorize(topic));
-		$('#'+this.id+'-topic > h2').click(disp.topicClick);
+		$('#'+this.id+'-topic').click(disp.topicClick);
 		this.topic = topic;
 	}
 
 	$('<span/>').attr('id', this.id+'-window').hide().appendTo('#main-window');
-	$('<span/>').attr('id', this.id+'-topic').hide().appendTo('#topic');
+	$('<span/>').attr('id', this.id+'-topic').hide().appendTo('#info');
 	$('#'+this.id+'-topic').html('<h1>'+he(this.name)+'</h1><h2></h2>');
 	$('<li/>').attr('id', this.id+'-tab').html('<a href="javascript:void(0);" onclick="gateway.switchTab(\''+this.name+'\')" class="switchTab">'+he(this.name)+'</a>'+
 		'<a href="javascript:void(0);" onclick="gateway.removeChannel(\''+this.name+'\')"><div class="close" title="Wyjdź z kanału"></div></a>').appendTo('#tabs');

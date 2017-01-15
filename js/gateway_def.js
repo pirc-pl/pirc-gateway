@@ -872,13 +872,13 @@ var gateway = {
 		if(chan != "--status" && gateway.findChannel(chan)) {
 			$('#main-window > span').hide();
 			$('#nicklist-main > span').hide();
-			$('#topic > span').hide();
+			$('#info > span').hide();
 			$('#'+gateway.findChannel(chan).id+'-nicklist').show();
 			$('#tabs > li').removeClass("activeWindow");
 			$('#'+gateway.findChannel(chan).id+'-tab').addClass("activeWindow");
 			$('#'+gateway.findChannel(chan).id+'-window').show();
 			$('#'+gateway.findChannel(chan).id+'-topic').show();
-			$('#info h2').prop('title', 'Kliknij aby zobaczyć cały temat');
+			$('#'+gateway.findChannel(chan).id+'-topic').prop('title', 'Kliknij aby zobaczyć cały temat');
 			gateway.findChannel(chan).markRead();
 			gateway.active = chan;
 			gateway.tabHistory.push(chan);
@@ -908,13 +908,13 @@ var gateway = {
 		} else if(chan != "--status" && gateway.findQuery(chan)) {
 			$('#main-window > span').hide();
 			$('#nicklist-main > span').hide();
-			$('#topic > span').hide();
+			$('#info > span').hide();
 			$('#--status-nicklist').show();
 			$('#tabs > li').removeClass("activeWindow");
 			$('#'+gateway.findQuery(chan).id+'-tab').addClass("activeWindow");
 			$('#'+gateway.findQuery(chan).id+'-window').show();
 			$('#'+gateway.findQuery(chan).id+'-topic').show();
-			$('#info h2').prop('title', '');
+			$('#'+gateway.findChannel(chan).id+'-topic').prop('title', '');
 			gateway.active = chan;
 			gateway.tabHistory.push(chan);
 			$('#input').focus();
@@ -942,13 +942,13 @@ var gateway = {
 		} else if(chan == "--status") {
 			$('#main-window > span').hide();
 			$('#nicklist-main > span').hide();
-			$('#topic > span').hide();
+			$('#info > span').hide();
 			$('#--status-nicklist').show();
 			$('#tabs > li').removeClass("activeWindow");
 			$('#--status-tab').addClass("activeWindow");
 			$('#--status-window').show();
 			$('#--status-topic').show();
-			$('#info h2').prop('title', '');
+			$('#'+gateway.findChannel(chan).id+'-topic').prop('title', '');
 			gateway.statusWindow.markRead();
 			gateway.active = chan;
 			gateway.tabHistory.push(chan);
