@@ -669,8 +669,8 @@ var cmdBinds = {
 				'<button id="unban-'+chanId+'-'+md5(msg.args[2])+'">Usuń</button>' +
 				'</td></tr>';
 			$('table', $$.getDialogSelector('list', 'ban-'+msg.args[1])).append(html);
-			$('#unex-'+chanId+'-'+md5(msg.args[2])).click(function(){
-				gateway.send('MODE '+msg.args[1]+' -I '+msg.args[2]+'\r\nMODE '+msg.args[1]+' b');
+			$('#unban-'+chanId+'-'+md5(msg.args[2])).click(function(){
+				gateway.send('MODE '+msg.args[1]+' -b '+msg.args[2]+'\r\nMODE '+msg.args[1]+' b');
 				$$.closeDialog('list', 'ban-'+msg.args[1]);
 			});
 		}
