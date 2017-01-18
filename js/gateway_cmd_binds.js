@@ -315,22 +315,27 @@ var cmdBinds = {
 			}
 		},
 		function(msg) {
-			if(gateway.findChannel(msg.text)) {
-				if(msg.sender.nick != guser.nick) {
-					if (!$('#showPartQuit').is(':checked')) {
-						gateway.findChannel(msg.text).appendMessage(messagePatterns.join, [gateway.niceTime(), he(msg.sender.nick), he(msg.sender.ident), he(msg.sender.host), msg.text]);
-					}
-				}
-				if(!gateway.findChannel(msg.text).nicklist.findNick(msg.sender.nick)) {
-					gateway.findChannel(msg.text).nicklist.addNick(msg.sender.nick);
-				} else {
-					gateway.findChannel(msg.text).nicklist.findNick(msg.sender.nick).setMode('owner', false);
-					gateway.findChannel(msg.text).nicklist.findNick(msg.sender.nick).setMode('admin', false);
-					gateway.findChannel(msg.text).nicklist.findNick(msg.sender.nick).setMode('op', false);
-					gateway.findChannel(msg.text).nicklist.findNick(msg.sender.nick).setMode('halfop', false);
-					gateway.findChannel(msg.text).nicklist.findNick(msg.sender.nick).setMode('voice', false);
+			var chan = gateway.findChannel(msg.text);
+			if(!chan) return;
+			var nicklistUser = chan.nicklist.findNick(msg.sender.nick);
+			if(msg.sender.nick != guser.nick) {
+				if (!$('#showPartQuit').is(':checked')) {
+					chan.appendMessage(messagePatterns.join, [gateway.niceTime(), he(msg.sender.nick), he(msg.sender.ident), he(msg.sender.host), msg.text]);
 				}
 			}
+			if(!nicklistUser) {
+				chan.nicklist.addNick(msg.sender.nick);
+				nicklistUser = chan.nicklist.findNick(msg.sender.nick);
+			} else {
+				nicklistUser.setMode('owner', false);
+				nicklistUser.setMode('admin', false);
+				nicklistUser.setMode('op', false);
+				nicklistUser.setMode('halfop', false);
+				nicklistUser.setMode('voice', false);
+			}
+			nicklistUser.setIdent(msg.sender.ident);
+			nicklistUser.setUserHost(msg.sender.host);
+			gateway.send('WHO '+msg.sender.nick);
 		}
 	],
 	'PART': [
@@ -479,29 +484,37 @@ var cmdBinds = {
 	],
 	'352': [	// RPL_WHOREPLY
 		function(msg) {
-			var channel = gateway.findChannel(msg.args[1]);
-			if(!channel){
-				return;
-			}
-			var nickListItem = channel.nicklist.findNick(msg.args[5]);
-			if(!nickListItem){
-				return;
-			}
-			nickListItem.setIdent(msg.args[2]);
-			nickListItem.setUserHost(msg.args[3]);
-			nickListItem.setRealname(msg.text.substr(msg.text.indexOf(' ') + 1));
-			if(msg.args[6].charAt(0) == 'G'){
-				nickListItem.setAway(true);
-			} else {
-				nickListItem.setAway(false);
-			}
-			if(msg.args[6].indexOf('*') > -1){
-				nickListItem.setIrcOp();
-			}
-			if(msg.args[6].indexOf('B') > -1){
-				nickListItem.setBot(true);
-			} else {
-				nickListItem.setBot(false);
+			for(var i=0; i<gateway.channels.length; i++){
+				var channel = gateway.channels[i];
+//			var channel = gateway.findChannel(msg.args[1]);
+//			if(!channel){
+//				return;
+//			}
+				var nickListItem = channel.nicklist.findNick(msg.args[5]);
+				if(!nickListItem){
+					continue;
+				}
+				nickListItem.setIdent(msg.args[2]);
+				nickListItem.setUserHost(msg.args[3]);
+				nickListItem.setRealname(msg.text.substr(msg.text.indexOf(' ') + 1));
+				if(msg.args[6].charAt(0) == 'G'){
+					nickListItem.setAway(true);
+				} else {
+					nickListItem.setAway(false);
+				}
+				if(msg.args[6].indexOf('*') > -1){
+					nickListItem.setIrcOp();
+				}
+				if(msg.args[6].indexOf('B') > -1){
+					nickListItem.setBot(true);
+				} else {
+					nickListItem.setBot(false);
+				}
+				if(msg.args[6].indexOf('r') > -1){
+					nickListItem.setRegistered(true);
+				} else {
+					nickListItem.setRegistered(false);
+				}
 			}
 		}
 	],

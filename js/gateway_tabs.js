@@ -124,6 +124,7 @@ function NicklistUser(usernick, chan) {
 	this.awayReason = false;
 	this.ircOp = false;
 	this.isBot = false;
+	this.isRegistered = false;
 
 	this.makeHTML = function() {
 		return '<li id="'+this.id+'" class="'+md5(this.nick)+'">'+
@@ -230,6 +231,10 @@ function NicklistUser(usernick, chan) {
 		this.isBot = val;
 		this.showTitle();
 	}
+	this.setRegistered = function(val) {
+		this.isRegistered = val;
+		this.showTitle();
+	}
 	this.showTitle = function() {
 		var text = '';
 		if(this.ident && this.host){
@@ -261,6 +266,12 @@ function NicklistUser(usernick, chan) {
 				text += '\n';
 			}
 			text += 'Ten użytkownik jest botem';
+		}
+		if(this.isRegistered){
+			if(text != ''){
+				text += '\n';
+			}
+			text += 'Ten nick jest zarejestrowany';
 		}
 		if(text != ''){
 			$('#'+this.id).attr('title', text);
