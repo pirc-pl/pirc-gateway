@@ -100,6 +100,8 @@ function Nicklist(chan, id) {
 			'<li onclick="gateway.send(\'MODE '+this.channel+' I\')" title="Znajdujący się na liście nie potrzebują zaproszenia, gdy jest ustawiony tryb +i">Lista wyjątków i (I)</li>' +
 			'<li onclick="gateway.showChannelModes(\''+this.channel+'\')">Tryby kanału</li>' +
 			'<li onclick="gateway.showInvitePrompt(\''+this.channel+'\')">Zaproś na kanał</li>' +
+			'<li onclick="gateway.showChanServCmds(\''+this.channel+'\')">Polecenia ChanServ</li>' +
+			'<li onclick="gateway.showBotServCmds(\''+this.channel+'\')">Polecenia BotServ</li>' +
 		'</ul>' +
 		'</div>'+
 		'<div class="nicklistRefresh" title="Odśwież listę" onclick="disp.refreshNickList(\''+this.channel+'\')"></div>';

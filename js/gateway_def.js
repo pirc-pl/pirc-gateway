@@ -1295,6 +1295,12 @@ var gateway = {
 			$('#'+nick+'_ignore_query').prop('checked', true);
 		}
 	},
+	'showChanServCmds': function(chan) {
+		$$.alert('Funkcja w przygotowaniu!');
+	},
+	'showBotServCmds': function(chan){
+		$$.alert('Funkcja w przygotowaniu!');
+	},
 	'openQuery': function(nick, id) {
 		if(gateway.ignoring(nick, 'query')){
 			var button = [

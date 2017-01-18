@@ -325,9 +325,10 @@ var commands = {
 				if(reason) {
 					gateway.send("PRIVMSG "+command[1]+" :"+reason);
 					
-					var serviceNicks = [ 'nickserv', 'chanserv', 'hostserv', 'operserv', 'botserv' ];
+				//	var serviceNicks = [ 'nickserv', 'chanserv', 'hostserv', 'operserv', 'botserv' ];
 					
-					if(serviceNicks.indexOf(command[1].toLowerCase()) > -1){
+				//	if(serviceNicks.indexOf(command[1].toLowerCase()) > -1){
+					if(command[1].isInList(servicesNicks)){
 						var query = gateway.findQuery(command[1]);
 						var displayAsQuery = Boolean(query);
 					
@@ -340,7 +341,8 @@ var commands = {
 							query.appendMessage('%s', [$$.parseImages(reason)]);
 						} else if($("#noticeDisplay").val() == 0){ // okienko
 							var html = "<span class=\"notice\">[<b>"+he(guser.nick)+" → "+command[1] + "</b>]</span> " + $$.colorize(reason);
-							$$.displayDialog('notice', command[1], 'Komunikat prywatny od '+command[1], html);
+//							$$.displayDialog('notice', command[1], 'Komunikat prywatny od '+command[1], html);
+							$$.displayDialog('notice', 'service', 'Komunikat od usługi sieciowej', html);
 						} else { // status
 							gateway.statusWindow.appendMessage(messagePatterns.yourMsg, [gateway.niceTime(), $$.nickColor(guser.nick), guser.nick + ' → ' + command[1], $$.colorize(reason)]);
 						}

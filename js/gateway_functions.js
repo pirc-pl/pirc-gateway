@@ -177,7 +177,7 @@ if (!String.prototype.isInList) {
    String.prototype.isInList = function(list) {
       var value = this.valueOf();
       for (var i = 0, l = list.length; i < l; i += 1) {
-         if (list[i] === value) return true;
+         if (list[i].toLowerCase() === value.toLowerCase()) return true;
       }
       return false;
    }
