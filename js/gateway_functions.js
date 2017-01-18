@@ -347,6 +347,37 @@ var disp = {
 		}
 		var filename = '/styles/audio/served';
 		$('#sound').html('<audio autoplay="autoplay"><source src="' + filename + '.mp3" type="audio/mpeg" /><source src="' + filename + '.ogg" type="audio/ogg" /><embed hidden="true" autostart="true" loop="false" src="' + filename +'.mp3" /></audio>');
+	},
+	'insertLinebeI': function(mode, args){
+		var chanId = gateway.findChannel(args[1]).id;
+		var listName = disp.getNamebeI(mode);
+		if($$.getDialogSelector('list', 'list-'+mode+'-'+args[1]).length == 0){
+			var html = '<div class="beIListContents"><table><tr><th>Maska</th><th>Założony przez</th><th>Data</th></tr></table></div>';
+			$$.displayDialog('list', 'list-'+mode+'-'+args[1], 'Lista '+listName+' na kanale '+he(args[1]), html);
+		}
+		var html = '<tr><td>'+he(args[2])+'</td><td>'+he(args[3])+'</td><td>'+$$.parseTime(args[4])+'</td>' +
+			'<td class="'+chanId+'-operActions button" style="display:none">' +
+			'<button id="un'+mode+'-'+chanId+'-'+md5(args[2])+'">Usuń</button>' +
+			'</td></tr>';
+		$('table', $$.getDialogSelector('list', 'list-'+mode+'-'+args[1])).append(html);
+		$('#un'+mode+'-'+chanId+'-'+md5(args[2])).click(function(){
+			gateway.send('MODE '+args[1]+' -'+mode+' '+args[2]+'\r\nMODE '+args[1]+' '+mode);
+			$$.closeDialog('list', 'list-'+mode+'-'+args[1]);
+		});
+	},
+	'endListbeI': function(mode, chan){
+		if($$.getDialogSelector('list', 'list-'+mode+'-'+chan).length == 0){
+			$$.displayDialog('list', 'list-'+mode+'-'+chan, 'Lista '+disp.getNamebeI(mode)+' na kanale '+he(chan), 'Lista jest pusta.');
+		}
+	},
+	'getNamebeI': function(mode){
+		var listName = mode;
+		switch(mode){
+			case 'b': listName = 'banów'; break;
+			case 'e': listName = 'wyjątków'; break;
+			case 'I': listName = 'zaproszeń'; break;
+		}
+		return listName;
 	}
 };
 

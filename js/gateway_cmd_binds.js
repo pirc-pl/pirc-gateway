@@ -254,7 +254,12 @@ var cmdBinds = {
 						gateway.statusWindow.appendMessage(messagePatterns.notice, [gateway.niceTime(), he(msg.sender.nick), he(msg.sender.ident), he(msg.sender.host), $$.colorize(msg.text)]);
 						gateway.statusWindow.markBold();
 					} else if($("#noticeDisplay").val() == 0) { // notice jako okienko
-						$$.displayDialog('notice', msg.sender.nick, 'Komunikat prywatny od '+msg.sender.nick, $$.colorize(msg.text));
+						if(msg.sender.nick.isInList(servicesNicks)){
+							var html = '<span class="notice-nick">&lt;<b>'+msg.sender.nick+'</b>&gt</span> '+$$.colorize(msg.text);
+							$$.displayDialog('notice', 'service', 'Komunikat od usługi sieciowej', html);
+						} else {
+							$$.displayDialog('notice', msg.sender.nick, 'Komunikat prywatny od '+msg.sender.nick, $$.colorize(msg.text));
+						}
 					}
 				} else if(msg.sender.server){
 					var expressions = [/^Your "real name" is now set to be/, / invited [^ ]+ into the channel.$/];
@@ -572,7 +577,6 @@ var cmdBinds = {
 					}
 				}
 			}
-
 		}
 	],
 	'332': [	// RPL_TOPIC 
@@ -597,92 +601,32 @@ var cmdBinds = {
 	],
 	'348': [	// RPL_EXCEPTLIST
 		function(msg) {
-		/*	if(gateway.findChannel(msg.args[1])) {
-				gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.exceptListElement, [gateway.niceTime(), msg.args[2], msg.args[3], $$.parseTime(msg.args[4])]);
-			}*/
-			var chanId = gateway.findChannel(msg.args[1]).id;
-			if($$.getDialogSelector('list', 'except-'+msg.args[1]).length == 0){
-				var html = '<div class="beIListContents"><table><tr><th>Maska</th><th>Założony przez</th><th>Data</th></tr></table></div>';
-				$$.displayDialog('list', 'except-'+msg.args[1], 'Lista wyjątków na kanale '+he(msg.args[1]), html);
-			}
-			var html = '<tr><td>'+he(msg.args[2])+'</td><td>'+he(msg.args[3])+'</td><td>'+$$.parseTime(msg.args[4])+'</td>' +
-				'<td class="'+chanId+'-operActions button" style="display:none">' +
-				'<button id="unex-'+chanId+'-'+md5(msg.args[2])+'">Usuń</button>' +
-				'</td></tr>';
-			$('table', $$.getDialogSelector('list', 'except-'+msg.args[1])).append(html);
-			$('#unex-'+chanId+'-'+md5(msg.args[2])).click(function(){
-				gateway.send('MODE '+msg.args[1]+' -e '+msg.args[2]+'\r\nMODE '+msg.args[1]+' e');
-				$$.closeDialog('list', 'except-'+msg.args[1]);
-			});
+			disp.insertLinebeI('e', msg.args);
 		}
 	],
 	'349': [	// RPL_ENDOFEXCEPTLIST 
 		function(msg) {
-			/*if(gateway.findChannel(msg.args[1])) {
-				gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.exceptListEnd, [gateway.niceTime()]);
-			}*/
-			if($$.getDialogSelector('list', 'except-'+msg.args[1]).length == 0){
-				$$.displayDialog('list', 'except-'+msg.args[1], 'Lista wyjątków na kanale '+he(msg.args[1]), 'Lista jest pusta.');
-			}
+			disp.endListbeI('e', msg.args[1]);
 		}
 	],
 	'346': [	// RPL_INVITELIST
 		function(msg) {
-			/*if(gateway.findChannel(msg.args[1])) {
-				gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.invexListElement, [gateway.niceTime(), msg.args[2], msg.args[3], $$.parseTime(msg.args[4])]);
-			}*/
-			var chanId = gateway.findChannel(msg.args[1]).id;
-			if($$.getDialogSelector('list', 'invex-'+msg.args[1]).length == 0){
-				var html = '<div class="beIListContents"><table><tr><th>Maska</th><th>Założony przez</th><th>Data</th></tr></table></div>';
-				$$.displayDialog('list', 'invex-'+msg.args[1], 'Lista wyjątków zaproszenia na kanale '+he(msg.args[1]), html);
-			}
-			var html = '<tr><td>'+he(msg.args[2])+'</td><td>'+he(msg.args[3])+'</td><td>'+$$.parseTime(msg.args[4])+'</td>' +
-				'<td class="'+chanId+'-operActions button" style="display:none">' +
-				'<button id="uninvex-'+chanId+'-'+md5(msg.args[2])+'">Usuń</button>' +
-				'</td></tr>';
-			$('table', $$.getDialogSelector('list', 'invex-'+msg.args[1])).append(html);
-			$('#uninvex-'+chanId+'-'+md5(msg.args[2])).click(function(){
-				gateway.send('MODE '+msg.args[1]+' -I '+msg.args[2]+'\r\nMODE '+msg.args[1]+' I');
-				$$.closeDialog('list', 'invex-'+msg.args[1]);
-			});
+			disp.insertLinebeI('I', msg.args);
 		}
 	],
 	'347': [	// RPL_INVITELISTEND
 		function(msg) {
-			/*if(gateway.findChannel(msg.args[1])) {
-				gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.invexListEnd, [gateway.niceTime()]);
-			}*/
-			if($$.getDialogSelector('list', 'invex-'+msg.args[1]).length == 0){
-				$$.displayDialog('list', 'invex-'+msg.args[1], 'Lista wyjątków zaproszenia na kanale '+he(msg.args[1]), 'Lista jest pusta.');
-			}
+			disp.endListbeI('I', msg.args[1]);
 		}			
 	],
 	'367': [	// RPL_BANLIST 
 		function(msg) {
-			var chanId = gateway.findChannel(msg.args[1]).id;
-			if($$.getDialogSelector('list', 'ban-'+msg.args[1]).length == 0){
-				var html = '<div class="beIListContents"><table><tr><th>Maska</th><th>Założony przez</th><th>Data</th></tr></table></div>';
-				$$.displayDialog('list', 'ban-'+msg.args[1], 'Lista banów na kanale '+he(msg.args[1]), html);
-			}
-			var html = '<tr><td>'+he(msg.args[2])+'</td><td>'+he(msg.args[3])+'</td><td>'+$$.parseTime(msg.args[4])+'</td>' +
-				'<td class="'+chanId+'-operActions button" style="display:none">' +
-				'<button id="unban-'+chanId+'-'+md5(msg.args[2])+'">Usuń</button>' +
-				'</td></tr>';
-			$('table', $$.getDialogSelector('list', 'ban-'+msg.args[1])).append(html);
-			$('#unban-'+chanId+'-'+md5(msg.args[2])).click(function(){
-				gateway.send('MODE '+msg.args[1]+' -b '+msg.args[2]+'\r\nMODE '+msg.args[1]+' b');
-				$$.closeDialog('list', 'ban-'+msg.args[1]);
-			});
+			disp.insertLinebeI('b', msg.args);
 		}
 	],
 	'368': [	// RPL_ENDOFBANLIST
-		function(msg) { // TODO zmienić na dialog
-		/*	if(gateway.findChannel(msg.args[1])) {
-				gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.banListEnd, [gateway.niceTime()]);
-			}*/
-			if($$.getDialogSelector('list', 'ban-'+msg.args[1]).length == 0){
-				$$.displayDialog('list', 'ban-'+msg.args[1], 'Lista banów na kanale '+he(msg.args[1]), 'Lista jest pusta.');
-			}
+		function(msg) {
+			disp.endListbeI('b', msg.args[1]);
 		}			
 	],
 	'372': [	// RPL_MOTD
