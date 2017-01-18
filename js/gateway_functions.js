@@ -791,6 +791,9 @@ var $$ = {
 				$(this).dialog('close');
 			}
 		} ];
+		if($$.getDialogSelector('alert', 'alert').length > 0){
+			text = '<br>' + text;
+		}
 		$$.displayDialog('alert', 'alert', 'Komunikat', text, button);
 	},
 	'wildcardToRegex': function(regex){

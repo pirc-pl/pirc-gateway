@@ -1296,10 +1296,127 @@ var gateway = {
 		}
 	},
 	'showChanServCmds': function(chan) {
-		$$.alert('Funkcja w przygotowaniu!');
+		html = 'Uwaga: użycie każdej z funkcji wymaga odpowiednich uprawnień.<br>' +
+			'<table>'+
+			'<tr><td><button onclick="gateway.clickChanServ(\'ban\', \''+chan+'\');">BAN</button></td><td>Nick/maska: <input type="text" id="cs-ban-'+md5(chan)+'"></td><td>Powód: <input type="text" id="cs-banreason-'+md5(chan)+'"></td><td>Banuj użytkownika</td></tr>'+
+			'<tr><td><button onclick="gateway.clickChanServ(\'kick\', \''+chan+'\');">KICK</button></td><td>Nick/maska: <input type="text" id="cs-kick-'+md5(chan)+'"></td><td>Powód: <input type="text" id="cs-kickreason-'+md5(chan)+'"></td><td>Kop użytkownika</td></tr>'+
+			'<tr><td><button onclick="gateway.clickChanServ(\'register\', \''+chan+'\');">REGISTER</button></td><td>Opis kanału: <input type="text" id="cs-register-'+md5(chan)+'"></td><td></td><td>Zarejestruj kanał</td></tr>'+
+			'<tr><td><button onclick="gateway.clickChanServ(\'status\', \''+chan+'\');">STATUS</button></td><td>Nick: <input type="text" id="cs-status-'+md5(chan)+'"></td><td></td><td>Sprawdź status użytkownika w ChanServ</td></tr>'+
+			'<tr><td><button onclick="gateway.clickChanServ(\'access list\', \''+chan+'\');">ACCESS LIST</button></td><td></td><td></td><td>Wyświetl listę dostępową</td></tr>'+
+			'<tr><td><button onclick="gateway.clickChanServ(\'access del\', \''+chan+'\');">ACCESS DEL</button></td><td>Nick: <input type="text" id="cs-acc-del-'+md5(chan)+'"></td><td></td><td>Usuń użytkownika z listy dostępowej</td></tr>'+
+		'</table>';
+		$$.displayDialog('admin', 'cs-'+chan, 'Polecenia ChanServ na '+he(chan), html);
+		$$.alert('Funkcja w przygotowaniu - niektóre opcje mogą nie działać, a lista może być niepełna!');
+	},
+	'clickChanServ': function(cmd, chan){
+		var opts = {
+			'arg': [],
+			'argreq': [],
+			'cmd': ''
+		};
+		switch(cmd){
+			case 'ban':
+				opts.arg[0] = 'ban';
+				opts.argreq[0] = true;
+				opts.arg[1] = 'banreason';
+				opts.cmd = 'BAN '+chan;
+				break;
+			case 'kick':
+				opts.arg[0] = 'kick';
+				opts.argreq[0] = true;
+				opts.arg[1] = 'kickreason';
+				opts.cmd = 'KICK '+chan;
+				break;
+			case 'register':
+				opts.arg[0] = 'register';
+				opts.cmd = 'REGISTER '+chan;
+				break;
+			case 'status':
+				opts.arg[0] = 'status';
+				opts.argreq[0] = true;
+				opts.cmd = 'STATUS '+chan;
+				break;
+			case 'access list':
+				opts.cmd = 'ACCESS '+chan+' LIST';
+				break;
+			case 'access del':
+				opts.arg[0] = 'acc-del';
+				opts.argreq[0] = true;
+				opts.cmd = 'ACCESS '+chan+' DEL';
+				break;
+		}
+		
+		var cmdArgs = gateway.servMakeArgs(opts, cmd, chan, 'cs');
+		if(cmdArgs === false){
+			return;
+		}
+		var cmdString = 'CS '+opts.cmd+cmdArgs;
+		gateway.performCommand(cmdString);
 	},
 	'showBotServCmds': function(chan){
-		$$.alert('Funkcja w przygotowaniu!');
+		html = 'Uwaga: użycie każdej z funkcji wymaga odpowiednich uprawnień.<br>' +
+			'<table>'+
+			'<tr><td><button onclick="gateway.clickBotServ(\'botlist\', \'\');">BOTLIST</button></td><td></td><td></td><td>Pokaż listę botów</td></tr>'+
+			'<tr><td><button onclick="gateway.clickBotServ(\'assign\', \''+chan+'\');">ASSIGN</button></td><td>Nick (wybrany z BOTLIST): <input type="text" id="bs-assign-'+md5(chan)+'"></td><td></td><td>Przypisz bota do kanału</td></tr>'+
+			'<tr><td><button onclick="gateway.clickBotServ(\'unassign\', \''+chan+'\');">UNASSIGN</button></td><td></td><td></td><td>Usuń bota z kanału</td></tr>'+
+			'<tr><td><button onclick="gateway.clickBotServ(\'act\', \''+chan+'\');">ACT</button></td><td>Wiadomość: <input type="text" id="bs-act-'+md5(chan)+'"></td><td></td><td>Wyślij wiadomość na kanał (/me wiadomość)</td></tr>'+
+			'<tr><td><button onclick="gateway.clickBotServ(\'say\', \''+chan+'\');">SAY</button></td><td>Wiadomość: <input type="text" id="bs-say-'+md5(chan)+'"></td><td></td><td>Wyślij wiadomość na kanał</td></tr>'+
+		'</table>';
+		$$.displayDialog('admin', 'bs-'+chan, 'Polecenia BotServ na '+he(chan), html);
+		$$.alert('Funkcja w przygotowaniu - niektóre opcje mogą nie działać, a lista może być niepełna!');
+	},
+	'clickBotServ': function(cmd, chan){
+		var opts = {
+			'arg': [],
+			'argreq': [],
+			'cmd': ''
+		};
+		switch(cmd){
+			case 'botlist':
+				opts.cmd = 'BOTLIST';
+				break;
+			case 'assign':
+				opts.arg[0] = 'assign';
+				opts.argreq[0] = true;
+				opts.cmd = 'ASSIGN '+chan;
+				break;
+			case 'unassign':
+				opts.cmd = 'UNASSIGN '+chan;
+				break;
+			case 'act':
+				opts.arg[0] = 'act';
+				opts.argreq[0] = true;
+				opts.cmd = 'ACT '+chan;
+				break;
+			case 'say':
+				opts.arg[0] = 'say';
+				opts.argreq[0] = true;
+				opts.cmd = 'SAY '+chan;
+				break;
+		}
+		
+		var cmdArgs = gateway.servMakeArgs(opts, cmd, chan, 'bs');
+		if(cmdArgs === false){
+			return;
+		}
+		var cmdString = 'BS '+opts.cmd+cmdArgs;
+		gateway.performCommand(cmdString);
+	},
+	'servMakeArgs': function(opts, cmd, chan, service){
+		var cmdString = '';
+		for(var i=0; i<opts.arg.length; i++){
+			if(opts.arg[i]){
+				var arg = $('#'+service+'-'+opts.arg[i]+'-'+md5(chan)).val();
+				if(!arg || arg == ''){
+					if(opts.argreq[i]){
+						$$.alert('Wymagany argument dla polecenia <b>'+cmd+'</b>!');
+						return false;
+					}
+				}
+				cmdString += ' '+arg;
+			} else break;
+		}
+		return cmdString;
 	},
 	'openQuery': function(nick, id) {
 		if(gateway.ignoring(nick, 'query')){
