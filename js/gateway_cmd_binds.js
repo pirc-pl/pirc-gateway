@@ -422,9 +422,12 @@ var cmdBinds = {
 				chanlist.forEach(function(channel){
 					var chanPrefix = '';
 					var chanName = channel;
-					if(chanName.charAt(0) != '#'){
-						chanPrefix = chanName.charAt(0);
+					while(chanName.charAt(0) != '#'){
+						chanPrefix += chanName.charAt(0);
 						chanName = chanName.substring(1);
+						if(chanName.length == 0){
+							return;
+						}
 					}
 					chanName = he(chanName);
 					chanHtml += chanPrefix + '<a href="javascript:gateway.send(\'JOIN ' + chanName + '\')" title="Dołącz do kanału ' + chanName + '">' + chanName + '</a> ';
@@ -470,7 +473,9 @@ var cmdBinds = {
 				mody.splice(0,2);
 				mody = mody.join(" ");
 				var chanO = gateway.findChannel(chan);
-				chanO.appendMessage(messagePatterns.mode, [gateway.niceTime(), chan, mody]);
+				if (!$('#showMode').is(':checked')) {
+					chanO.appendMessage(messagePatterns.mode, [gateway.niceTime(), chan, mody]);
+				}
 				gateway.parseChannelMode(msg.args, chanO);
 				gateway.send('CAP REQ :multi-prefix userhost-in-names away-notify\r\nCAP END');//\r\nNAMES '+chan);
 				try {
@@ -718,9 +723,9 @@ var cmdBinds = {
 			if(gateway.connectStatus == statusDisconnected){
 				gateway.send('NICK PIRC-'+Math.round(Math.random()*100));
 			}
-			var html = 'Nick <b>'+he(msg.args[1])+'</b> jest niedostępny. Spróbuj poczekać kilka minut.';
+			var html = '<p>Nick <b>'+he(msg.args[1])+'</b> jest niedostępny. Spróbuj poczekać kilka minut.</p>';
 			if(gateway.connectStatus != statusDisconnected){
-				html += "<br>Twój bieżący nick to <b>"+guser.nick+"</b>.";
+				html += "<p>Twój bieżący nick to <b>"+guser.nick+"</b>.</p>";
 			}
 			$$.displayDialog('warning', 'warning', 'Ostrzeżenie', html);
 			gateway.statusWindow.appendMessage(messagePatterns.badNick, [gateway.niceTime(), msg.args[1]]);
@@ -742,21 +747,21 @@ var cmdBinds = {
 	],
 	'447' : [	// ERR_NONICKCHANGE 
 		function(msg) {
-			var html = "Nie można zmienić nicka.<br>Komunikat od serwera: " + he(msg.text);
+			var html = "<p>Nie można zmienić nicka.<br>Komunikat od serwera: " + he(msg.text) + '</p>';
 			$$.displayDialog('error', 'error', 'Błąd', html);
 			gateway.statusWindow.appendMessage(messagePatterns.notOnChannel, [gateway.niceTime(), he(msg.args[1])]);
 		}
 	],
 	'442' : [	// ERR_NOTONCHANNEL
 		function(msg) {
-			var html = he(msg.args[1])+": nie jesteś na tym kanale.";
+			var html = '<p>'+he(msg.args[1])+": nie jesteś na tym kanale.</p>";
 			$$.displayDialog('error', 'error', 'Błąd', html);
 			gateway.statusWindow.appendMessage(messagePatterns.notOnChannel, [gateway.niceTime(), he(msg.args[1])]);
 		}
 	],
 	'443' : [	// ERR_USERONCHANNEL
 		function(msg) {
-			var html = he(msg.args[2])+": <b>"+he(msg.args[1])+"</b> jest już na tym kanale.";
+			var html = '<p>'+he(msg.args[2])+": <b>"+he(msg.args[1])+"</b> jest już na tym kanale.</p>";
 			$$.displayDialog('error', 'error', 'Błąd', html);
 			gateway.statusWindow.appendMessage(messagePatterns.alreadyOnChannel, [gateway.niceTime(), he(msg.args[2]), he(msg.args[1])]);
 		}
@@ -764,9 +769,9 @@ var cmdBinds = {
 	'474' : [	// ERR_BANNEDFROMCHAN
 		function(msg) {
 			gateway.iKnowIAmConnected(); // TODO inne powody, przez które nie można wejść
-			var html =  "Nie można dołączyć do kanału <b>" + msg.args[1] + "</b>";
+			var html =  "<p>Nie można dołączyć do kanału <b>" + msg.args[1] + "</b>";
 			if (msg.text == "Cannot join channel (+b)") {
-				html += "<br>Jesteś zbanowany.";
+				html += "<br>Jesteś zbanowany.</p>";
 				gateway.statusWindow.appendMessage(messagePatterns.cannotJoin, [gateway.niceTime(), msg.args[1], "Jesteś zbanowany"]);
 			}
 			$$.displayDialog('error', 'error', 'Błąd', html);
@@ -775,8 +780,8 @@ var cmdBinds = {
 	'473' : [	// ERR_INVITEONLYCHAN
 		function(msg) {
 			gateway.iKnowIAmConnected();
-			var html = 'Nie można dołączyć do kanału <b>' + he(msg.args[1]) + '</b>' +
-				'<br>Musisz dostać zaproszenie aby wejść na ten kanał.';
+			var html = '<p>Nie można dołączyć do kanału <b>' + he(msg.args[1]) + '</b>' +
+				'<br>Musisz dostać zaproszenie aby wejść na ten kanał.</p>';
 			var button = [ {
 				text: 'Poproś operatorów o możliwość wejścia',
 				click: function(){
@@ -790,8 +795,8 @@ var cmdBinds = {
 	],
 	'480' : [	// ERR_CANNOTKNOCK
 		function(msg) {
-			var html = "Nie można zapukać do kanału.<br>" +
-				"Komunikat serwera: "+he(msg.text);
+			var html = "<p>Nie można zapukać do kanału.<br>" +
+				"Komunikat serwera: "+he(msg.text) + '</p>';
 			gateway.statusWindow.appendMessage(messagePatterns.alreadyOnChannel, [gateway.niceTime(), 'Komunikat serwera', he(msg.text)]);
 			$$.displayDialog('error', 'error', 'Błąd', html);
 		}
@@ -799,8 +804,8 @@ var cmdBinds = {
 	'489' : [	// ERR_SECUREONLYCHAN 
 		function(msg) {
 			gateway.iKnowIAmConnected();
-			var html = "Nie można dołączyć do kanału <b>" + he(msg.args[1]) + "</b>" +
-				'<br>Kanał wymaga połączenia z włączonym SSL (tryb +z). Nie jest dostępny z bramki.<br>Możesz spróbować użyć programu HexChat według instrukcji z <a href="http://pirc.pl/teksty/p_instalacja_i_konfiguracja" target="_blank">tej strony</a>.';
+			var html = "<p>Nie można dołączyć do kanału <b>" + he(msg.args[1]) + "</b>" +
+				'<br>Kanał wymaga połączenia z włączonym SSL (tryb +z). Nie jest dostępny z bramki.<br>Możesz spróbować użyć programu HexChat według instrukcji z <a href="http://pirc.pl/teksty/p_instalacja_i_konfiguracja" target="_blank">tej strony</a>.</p?';
 			gateway.statusWindow.appendMessage(messagePatterns.cannotJoin, [gateway.niceTime(), msg.args[1], "Kanał wymaga połączenia SSL"]);
 			$$.displayDialog('error', 'error', 'Błąd', html);
 		}
@@ -808,8 +813,8 @@ var cmdBinds = {
 	'477' : [	// ERR_NEEDREGGEDNICK
 		function(msg) {
 			gateway.iKnowIAmConnected();
-			var html = "Nie można dołączyć do kanału <b>" + he(msg.args[1]) + "</b>" +
-				'<br>Kanał wymaga, aby Twój nick był zarejestrowany. Zastosuj się do instrukcji otrzymanych od NickServ lub zajrzyj <a href="http://pirc.pl/teksty/p_nickserv" target="_blank">tutaj</a>.';
+			var html = "<p>Nie można dołączyć do kanału <b>" + he(msg.args[1]) + "</b>" +
+				'<br>Kanał wymaga, aby Twój nick był zarejestrowany. Zastosuj się do instrukcji otrzymanych od NickServ lub zajrzyj <a href="http://pirc.pl/teksty/p_nickserv" target="_blank">tutaj</a>.</p>';
 			gateway.statusWindow.appendMessage(messagePatterns.cannotJoin, [gateway.niceTime(), msg.args[1], "Kanał wymaga zarejestrowanego nicka"]);
 			$$.displayDialog('error', 'error', 'Błąd', html);
 		}
@@ -817,10 +822,10 @@ var cmdBinds = {
 	'475' : [	// ERR_BADCHANNELKEY
 		function(msg) {
 			gateway.iKnowIAmConnected();
-			var html = "Nie można dołączyć do kanału <b>" + msg.args[1] + "</b>" +
+			var html = "<p>Nie można dołączyć do kanału <b>" + msg.args[1] + "</b>" +
 				'<br>Musisz podać poprawne hasło.' +
 				'<br><form onsubmit="gateway.chanPassword(\''+he(msg.args[1])+'\');$$.closeDialog(\'warning\', \'warning\')" action="javascript:void(0);">' +
-				'Hasło do '+he(msg.args[1])+': <input type="password" id="chpass" /> <input type="submit" value="Wejdź" /></form>';
+				'Hasło do '+he(msg.args[1])+': <input type="password" id="chpass" /> <input type="submit" value="Wejdź" /></form></p>';
 			gateway.statusWindow.appendMessage(messagePatterns.cannotJoin, [gateway.niceTime(), msg.args[1], "Wymagane hasło"]);
 			$$.displayDialog('warning', 'warning', 'Ostrzeżenie', html);
 		}
@@ -924,7 +929,9 @@ var cmdBinds = {
 				}
 				modestr = modestr.slice(0,-1);
 				var chan = gateway.findChannel(msg.args[0]);
-				chan.appendMessage(messagePatterns.modeChange, [gateway.niceTime(), he(msg.sender.nick), he(modestr), he(msg.args[0])]);
+				if (!$('#showMode').is(':checked') || msg.sender.nick.toLowerCase() == guser.nick.toLowerCase()) {
+					chan.appendMessage(messagePatterns.modeChange, [gateway.niceTime(), he(msg.sender.nick), he(modestr), he(msg.args[0])]);
+				}
 				var args2 = msg.args;
 				args2.shift();
 				gateway.parseChannelMode(args2, chan);

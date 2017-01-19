@@ -14,7 +14,11 @@
 			<table>
 				<tr>
 					<td class="optionsCheckBox"><input type="checkbox" id="showPartQuit" onchange="disp.changeSettings()" /></td>
-					<td>&nbsp; Nie pokazuj wiadomości PART/JOIN/QUIT</td>
+					<td>&nbsp; Nie pokazuj wiadomości PART/JOIN/QUIT (wejścia/wyjścia z kanałów)</td>
+				</tr>
+				<tr>
+					<td class="optionsCheckBox"><input type="checkbox" id="showMode" onchange="disp.changeSettings()" /></td>
+					<td>&nbsp; Nie pokazuj wiadomości MODE (zmian trybów)</td>
 				</tr>
 				<tr>
 					<td class="optionsCheckBox"><input type="checkbox" id="tabsListBottom" onchange="disp.changeSettings()" /></td>

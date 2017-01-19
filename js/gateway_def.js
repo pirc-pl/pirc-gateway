@@ -569,7 +569,7 @@ var gateway = {
 			if(gateway.connectStatus == statusGhostAndNickSent && guser.nick == guser.nickservnick){ //ghost się udał
 				gateway.send("PRIVMSG NickServ :IDENTIFY "+guser.nickservpass);
 				if(gateway.nickWasInUse){
-					var html = '<br>I już nie jest: usunąłem go używając twojego hasła :)';
+					var html = '<p>I już nie jest: usunąłem go używając twojego hasła :)</p>';
 					$$.displayDialog('warning', 'warning', 'Ostrzeżenie', html);
 					gateway.nickWasInUse = false;
 				}
@@ -642,6 +642,10 @@ var gateway = {
 		}
 		if(!nickInput.match(/^[\^\|0-9a-z_`\[\]\-]+$/i)) {
 			$$.alert('Nick zawiera niedozwolone znaki!');
+			return false;
+		}
+		if(nickInput.match(/^[0-9-]/)){
+			$$.alert('Nick nie może zaczynać się od cyfry ani minusa!');
 			return false;
 		}
 		if(!chanInput.match(/^[#,a-z0-9_\.\-]+$/i)) {
