@@ -486,6 +486,7 @@ function Channel(chan) {
 		
 	}
 	this.setMark = function() {
+		$('#'+this.id+'-window hr').remove();
 		$('#'+this.id+'-window').append('<hr>');
 		this.newLines = false;
 	}

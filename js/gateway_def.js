@@ -2157,6 +2157,12 @@ $('document').ready(function(){setTimeout(readyFunc, 100);});
 
 function onBlur() {
 	disp.focused = false;
+	var act = gateway.getActive();
+	if(act){
+		act.setMark();
+	} else {
+		gateway.statusWindow.setMark();
+	}
 };
 function onFocus(){
 	clearInterval(disp.titleBlinkInterval);
@@ -2166,6 +2172,8 @@ function onFocus(){
 	var act = gateway.getActive();
 	if(act){
 		act.markRead();
+	} else {
+		gateway.statusWindow.markRead();
 	}
 };
 
