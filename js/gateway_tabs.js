@@ -93,15 +93,15 @@ function Nicklist(chan, id) {
 	}
 	
 	var operHtml = '<div id="'+id+'-operActions" class="'+id+'-operActions channelAdmin" style="display:none">' +
-		'<div class="channelOperActionsButton" onclick="gateway.toggleChannelOpts(\''+this.channel+'\')">Akcje administracyjne</div>'+
+		'<div class="channelOperActionsButton" onclick="gateway.toggleChannelOpts(\''+bsEscape(this.channel)+'\')">Akcje administracyjne</div>'+
 		'<ul class="channelOperActions">' +
-			'<li onclick="gateway.send(\'MODE '+this.channel+' b\')">Lista banów (b)</li>' +
-			'<li onclick="gateway.send(\'MODE '+this.channel+' e\')" title="Znajdujący się na liście nie są obejmowani przez bany">Lista wyjątków b (e)</li>' +
-			'<li onclick="gateway.send(\'MODE '+this.channel+' I\')" title="Znajdujący się na liście nie potrzebują zaproszenia, gdy jest ustawiony tryb +i">Lista wyjątków i (I)</li>' +
-			'<li onclick="gateway.showChannelModes(\''+this.channel+'\')">Tryby kanału</li>' +
-			'<li onclick="gateway.showInvitePrompt(\''+this.channel+'\')">Zaproś na kanał</li>' +
-			'<li onclick="gateway.showChanServCmds(\''+this.channel+'\')">Polecenia ChanServ</li>' +
-			'<li onclick="gateway.showBotServCmds(\''+this.channel+'\')">Polecenia BotServ</li>' +
+			'<li onclick="gateway.send(\'MODE '+bsEscape(this.channel)+' b\')">Lista banów (b)</li>' +
+			'<li onclick="gateway.send(\'MODE '+bsEscape(this.channel)+' e\')" title="Znajdujący się na liście nie są obejmowani przez bany">Lista wyjątków b (e)</li>' +
+			'<li onclick="gateway.send(\'MODE '+bsEscape(this.channel)+' I\')" title="Znajdujący się na liście nie potrzebują zaproszenia, gdy jest ustawiony tryb +i">Lista wyjątków i (I)</li>' +
+			'<li onclick="gateway.showChannelModes(\''+bsEscape(this.channel)+'\')">Tryby kanału</li>' +
+			'<li onclick="gateway.showInvitePrompt(\''+bsEscape(this.channel)+'\')">Zaproś na kanał</li>' +
+			'<li onclick="gateway.showChanServCmds(\''+bsEscape(this.channel)+'\')">Polecenia ChanServ</li>' +
+			'<li onclick="gateway.showBotServCmds(\''+bsEscape(this.channel)+'\')">Polecenia BotServ</li>' +
 		'</ul>' +
 		'</div>'+
 		'<div class="nicklistRefresh" title="Odśwież listę" onclick="disp.refreshNickList(\''+this.channel+'\')"></div>';
@@ -511,7 +511,7 @@ function Channel(chan) {
 	}
 	this.markBold = function() {
 		if(!this.hilight2 && !this.hilight) {
-			this.hilight2 = window.setInterval('gateway.findChannel(\''+this.name+'\').toggleClassMsg();', 500);
+			this.hilight2 = window.setInterval('gateway.findChannel(\''+bsEscape(this.name)+'\').toggleClassMsg();', 500);
 		}
 	}
 	this.markRead = function() {
@@ -547,7 +547,7 @@ function Channel(chan) {
 		if(!this.left) {
 			this.part();
 			gateway.send("PART "+this.name+" :Opuścił kanał");
-			gateway.statusWindow.appendMessage(messagePatterns.partOwn, [gateway.niceTime(), this.name, this.name]);
+			gateway.statusWindow.appendMessage(messagePatterns.partOwn, [gateway.niceTime(), this.name, bsEscape(this.name)]);
 		}
 		this.nicklist.remove();
 		$('#'+this.id+'-tab').remove();
@@ -609,8 +609,8 @@ function Channel(chan) {
 	$('<span/>').attr('id', this.id+'-window').hide().appendTo('#main-window');
 	$('<span/>').attr('id', this.id+'-topic').hide().appendTo('#info');
 	$('#'+this.id+'-topic').html('<h1>'+he(this.name)+'</h1><h2></h2>');
-	$('<li/>').attr('id', this.id+'-tab').html('<a href="javascript:void(0);" onclick="gateway.switchTab(\''+this.name+'\')" class="switchTab">'+he(this.name)+'</a>'+
-		'<a href="javascript:void(0);" onclick="gateway.removeChannel(\''+this.name+'\')"><div class="close" title="Wyjdź z kanału"></div></a>').appendTo('#tabs');
+	$('<li/>').attr('id', this.id+'-tab').html('<a href="javascript:void(0);" onclick="gateway.switchTab(\''+bsEscape(this.name)+'\')" class="switchTab">'+he(this.name)+'</a>'+
+		'<a href="javascript:void(0);" onclick="gateway.removeChannel(\''+bsEscape(this.name)+'\')"><div class="close" title="Wyjdź z kanału"></div></a>').appendTo('#tabs');
 	
 	try {
 		var qCookie = localStorage.getItem('channel'+md5(this.name));

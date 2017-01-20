@@ -648,7 +648,7 @@ var gateway = {
 			$$.alert('Nick nie może zaczynać się od cyfry ani minusa!');
 			return false;
 		}
-		if(!chanInput.match(/^[#,a-z0-9_\.\-]+$/i)) {
+		if(!chanInput.match(/^[#,a-z0-9_\.\-\\]+$/i)) {
 			$$.alert('Kanał zawiera niedozwolone znaki!');
 			return false;
 		}
@@ -1302,12 +1302,12 @@ var gateway = {
 	'showChanServCmds': function(chan) {
 		html = 'Uwaga: użycie każdej z funkcji wymaga odpowiednich uprawnień.<br>' +
 			'<table>'+
-			'<tr><td><button onclick="gateway.clickChanServ(\'ban\', \''+chan+'\');">BAN</button></td><td>Nick/maska: <input type="text" id="cs-ban-'+md5(chan)+'"></td><td>Powód: <input type="text" id="cs-banreason-'+md5(chan)+'"></td><td>Banuj użytkownika</td></tr>'+
-			'<tr><td><button onclick="gateway.clickChanServ(\'kick\', \''+chan+'\');">KICK</button></td><td>Nick/maska: <input type="text" id="cs-kick-'+md5(chan)+'"></td><td>Powód: <input type="text" id="cs-kickreason-'+md5(chan)+'"></td><td>Kop użytkownika</td></tr>'+
-			'<tr><td><button onclick="gateway.clickChanServ(\'register\', \''+chan+'\');">REGISTER</button></td><td>Opis kanału: <input type="text" id="cs-register-'+md5(chan)+'"></td><td></td><td>Zarejestruj kanał</td></tr>'+
-			'<tr><td><button onclick="gateway.clickChanServ(\'status\', \''+chan+'\');">STATUS</button></td><td>Nick: <input type="text" id="cs-status-'+md5(chan)+'"></td><td></td><td>Sprawdź status użytkownika w ChanServ</td></tr>'+
-			'<tr><td><button onclick="gateway.clickChanServ(\'access list\', \''+chan+'\');">ACCESS LIST</button></td><td></td><td></td><td>Wyświetl listę dostępową</td></tr>'+
-			'<tr><td><button onclick="gateway.clickChanServ(\'access del\', \''+chan+'\');">ACCESS DEL</button></td><td>Nick: <input type="text" id="cs-acc-del-'+md5(chan)+'"></td><td></td><td>Usuń użytkownika z listy dostępowej</td></tr>'+
+			'<tr><td><button onclick="gateway.clickChanServ(\'ban\', \''+bsEscape(chan)+'\');">BAN</button></td><td>Nick/maska: <input type="text" id="cs-ban-'+md5(chan)+'"></td><td>Powód: <input type="text" id="cs-banreason-'+md5(chan)+'"></td><td>Banuj użytkownika</td></tr>'+
+			'<tr><td><button onclick="gateway.clickChanServ(\'kick\', \''+bsEscape(chan)+'\');">KICK</button></td><td>Nick/maska: <input type="text" id="cs-kick-'+md5(chan)+'"></td><td>Powód: <input type="text" id="cs-kickreason-'+md5(chan)+'"></td><td>Kop użytkownika</td></tr>'+
+			'<tr><td><button onclick="gateway.clickChanServ(\'register\', \''+bsEscape(chan)+'\');">REGISTER</button></td><td>Opis kanału: <input type="text" id="cs-register-'+md5(chan)+'"></td><td></td><td>Zarejestruj kanał</td></tr>'+
+			'<tr><td><button onclick="gateway.clickChanServ(\'status\', \''+bsEscape(chan)+'\');">STATUS</button></td><td>Nick: <input type="text" id="cs-status-'+md5(chan)+'"></td><td></td><td>Sprawdź status użytkownika w ChanServ</td></tr>'+
+			'<tr><td><button onclick="gateway.clickChanServ(\'access list\', \''+bsEscape(chan)+'\');">ACCESS LIST</button></td><td></td><td></td><td>Wyświetl listę dostępową</td></tr>'+
+			'<tr><td><button onclick="gateway.clickChanServ(\'access del\', \''+bsEscape(chan)+'\');">ACCESS DEL</button></td><td>Nick: <input type="text" id="cs-acc-del-'+md5(chan)+'"></td><td></td><td>Usuń użytkownika z listy dostępowej</td></tr>'+
 		'</table>';
 		$$.displayDialog('admin', 'cs-'+chan, 'Polecenia ChanServ na '+he(chan), html);
 		$$.alert('Funkcja w przygotowaniu - niektóre opcje mogą nie działać, a lista może być niepełna!');
@@ -1361,10 +1361,10 @@ var gateway = {
 		html = 'Uwaga: użycie każdej z funkcji wymaga odpowiednich uprawnień.<br>' +
 			'<table>'+
 			'<tr><td><button onclick="gateway.clickBotServ(\'botlist\', \'\');">BOTLIST</button></td><td></td><td></td><td>Pokaż listę botów</td></tr>'+
-			'<tr><td><button onclick="gateway.clickBotServ(\'assign\', \''+chan+'\');">ASSIGN</button></td><td>Nick (wybrany z BOTLIST): <input type="text" id="bs-assign-'+md5(chan)+'"></td><td></td><td>Przypisz bota do kanału</td></tr>'+
-			'<tr><td><button onclick="gateway.clickBotServ(\'unassign\', \''+chan+'\');">UNASSIGN</button></td><td></td><td></td><td>Usuń bota z kanału</td></tr>'+
-			'<tr><td><button onclick="gateway.clickBotServ(\'act\', \''+chan+'\');">ACT</button></td><td>Wiadomość: <input type="text" id="bs-act-'+md5(chan)+'"></td><td></td><td>Wyślij wiadomość na kanał (/me wiadomość)</td></tr>'+
-			'<tr><td><button onclick="gateway.clickBotServ(\'say\', \''+chan+'\');">SAY</button></td><td>Wiadomość: <input type="text" id="bs-say-'+md5(chan)+'"></td><td></td><td>Wyślij wiadomość na kanał</td></tr>'+
+			'<tr><td><button onclick="gateway.clickBotServ(\'assign\', \''+bsEscape(chan)+'\');">ASSIGN</button></td><td>Nick (wybrany z BOTLIST): <input type="text" id="bs-assign-'+md5(chan)+'"></td><td></td><td>Przypisz bota do kanału</td></tr>'+
+			'<tr><td><button onclick="gateway.clickBotServ(\'unassign\', \''+bsEscape(chan)+'\');">UNASSIGN</button></td><td></td><td></td><td>Usuń bota z kanału</td></tr>'+
+			'<tr><td><button onclick="gateway.clickBotServ(\'act\', \''+bsEscape(chan)+'\');">ACT</button></td><td>Wiadomość: <input type="text" id="bs-act-'+md5(chan)+'"></td><td></td><td>Wyślij wiadomość na kanał (/me wiadomość)</td></tr>'+
+			'<tr><td><button onclick="gateway.clickBotServ(\'say\', \''+bsEscape(chan)+'\');">SAY</button></td><td>Wiadomość: <input type="text" id="bs-say-'+md5(chan)+'"></td><td></td><td>Wyślij wiadomość na kanał</td></tr>'+
 		'</table>';
 		$$.displayDialog('admin', 'bs-'+chan, 'Polecenia BotServ na '+he(chan), html);
 		$$.alert('Funkcja w przygotowaniu - niektóre opcje mogą nie działać, a lista może być niepełna!');
@@ -1451,41 +1451,42 @@ var gateway = {
 	},
 	'showStatus': function(channel, nick) {
 	  	var html = 
-			"<p>Daj użytkownikowi "+he(nick)+" bieżące uprawnienia na kanale "+he(channel)+":</p>" +
-			"<p class='statusbutton' onClick='gateway.send(\"MODE "+channel+" +q "+$$.sescape(nick)+"\");'>FOUNDER (Właściciel kanału)</p>" +
-			"<p class='statusbutton' onClick='gateway.send(\"MODE "+channel+" +a "+$$.sescape(nick)+"\");'>PROTECT (Ochrona przed kopnięciem)</p>" +
-			"<p class='statusbutton' onClick='gateway.send(\"MODE "+channel+" +o "+$$.sescape(nick)+"\");'>OP (Operator kanału)</p>" +
-			"<p class='statusbutton' onClick='gateway.send(\"MODE "+channel+" +h "+$$.sescape(nick)+"\");'>HALFOP (Pół-operator kanału)</p>" +
-			"<p class='statusbutton' onClick='gateway.send(\"MODE "+channel+" +v "+$$.sescape(nick)+"\");'>VOICE (Uprawnienie do głosu)</p>" +
-			"<p>Daj użytkownikowi "+he(nick)+" uprawnienia w ChanServ (na stałe) na kanale "+he(channel)+"<br>(musisz posiadać odpowiedni dostęp do serwisów):</p>" +
-			"<p class='statusbutton' onClick='gateway.performCommand(\"CS QOP "+channel+" ADD "+$$.sescape(nick)+"\");'>QOP: FOUNDER (Właściciel kanału)</p>" +
-			"<p class='statusbutton' onClick='gateway.performCommand(\"CS SOP "+channel+" ADD "+$$.sescape(nick)+"\");'>SOP: PROTECT (Ochrona przed kopnięciem)</p>" +
-			"<p class='statusbutton' onClick='gateway.performCommand(\"CS AOP "+channel+" ADD "+$$.sescape(nick)+"\");'>AOP: OP (Operator kanału)</p>" +
-			"<p class='statusbutton' onClick='gateway.performCommand(\"CS HOP "+channel+" ADD "+$$.sescape(nick)+"\");'>HOP: HALFOP (Pół-operator kanału)</p>" +
-			"<p class='statusbutton' onClick='gateway.performCommand(\"CS VOP "+channel+" ADD "+$$.sescape(nick)+"\");'>VOP: VOICE (Uprawnienie do głosu)</p>";
+			'<p>Daj użytkownikowi '+he(nick)+' bieżące uprawnienia na kanale '+he(channel)+':</p>' +
+			'<p class="statusbutton" onClick="gateway.send(\'MODE '+bsEscape(channel)+' +q '+$$.sescape(nick)+'\');">FOUNDER (Właściciel kanału)</p>' +
+			'<p class="statusbutton" onClick="gateway.send(\'MODE '+bsEscape(channel)+' +a '+$$.sescape(nick)+'\');">PROTECT (Ochrona przed kopnięciem)</p>' +
+			'<p class="statusbutton" onClick="gateway.send(\'MODE '+bsEscape(channel)+' +o '+$$.sescape(nick)+'\');">OP (Operator kanału)</p>' +
+			'<p class="statusbutton" onClick="gateway.send(\'MODE '+bsEscape(channel)+' +h '+$$.sescape(nick)+'\');">HALFOP (Pół-operator kanału)</p>' +
+			'<p class="statusbutton" onClick="gateway.send(\'MODE '+bsEscape(channel)+' +v '+$$.sescape(nick)+'\');">VOICE (Uprawnienie do głosu)</p>' +
+			'<p>Daj użytkownikowi '+he(nick)+' uprawnienia w ChanServ (na stałe) na kanale '+he(channel)+'<br>(musisz posiadać odpowiedni dostęp do serwisów):</p>' +
+			'<p class="statusbutton" onClick="gateway.performCommand(\'CS QOP '+bsEscape(channel)+' ADD "+$$.sescape(nick)+"\");">QOP: FOUNDER (Właściciel kanału)</p>' +
+			'<p class="statusbutton" onClick="gateway.performCommand(\'CS SOP '+bsEscape(channel)+' ADD "+$$.sescape(nick)+"\");">SOP: PROTECT (Ochrona przed kopnięciem)</p>' +
+			'<p class="statusbutton" onClick="gateway.performCommand(\'CS AOP '+bsEscape(channel)+' ADD "+$$.sescape(nick)+"\");">AOP: OP (Operator kanału)</p>' +
+			'<p class="statusbutton" onClick="gateway.performCommand(\'CS HOP '+bsEscape(channel)+' ADD "+$$.sescape(nick)+"\");">HOP: HALFOP (Pół-operator kanału)</p>' +
+			'<p class="statusbutton" onClick="gateway.performCommand(\'CS VOP '+bsEscape(channel)+' ADD "+$$.sescape(nick)+"\");">VOP: VOICE (Uprawnienie do głosu)</p>';
 		$$.displayDialog('admin', channel, 'Zarządzanie '+he(channel), html);
 	},
 	'showStatusAnti': function(channel, nick) {
 		var html =
-			"<p>Odbierz użytkownikowi "+he(nick)+" uprawnienia na kanale "+he(channel)+":</p>" +
-			"<p class='statusbutton' onClick='gateway.send(\"MODE "+channel+" -q "+$$.sescape(nick)+"\");'>FOUNDER (Właściciel kanału)</p>" +
-			"<p class='statusbutton' onClick='gateway.send(\"MODE "+channel+" -a "+$$.sescape(nick)+"\");'>PROTECT (Ochrona przed kopnięciem)</p>" +
-			"<p class='statusbutton' onClick='gateway.send(\"MODE "+channel+" -o "+$$.sescape(nick)+"\");'>OP (Operator kanału)</p>" +
-			"<p class='statusbutton' onClick='gateway.send(\"MODE "+channel+" -h "+$$.sescape(nick)+"\");'>HALFOP (Pół-operator kanału)</p>" +
-			"<p class='statusbutton' onClick='gateway.send(\"MODE "+channel+" -v "+$$.sescape(nick)+"\");'>VOICE (Uprawnienie do głosu)</p>";
+			'<p>Odbierz użytkownikowi '+he(nick)+' uprawnienia na kanale '+he(channel)+':</p>' +
+			'<p class="statusbutton" onClick="gateway.send(\'MODE '+bsEscape(channel)+' -q '+$$.sescape(nick)+'\');">FOUNDER (Właściciel kanału)</p>' +
+			'<p class="statusbutton" onClick="gateway.send(\'MODE '+bsEscape(channel)+' -a '+$$.sescape(nick)+'\');">PROTECT (Ochrona przed kopnięciem)</p>' +
+			'<p class="statusbutton" onClick="gateway.send(\'MODE '+bsEscape(channel)+' -o '+$$.sescape(nick)+'\');">OP (Operator kanału)</p>' +
+			'<p class="statusbutton" onClick="gateway.send(\'MODE '+bsEscape(channel)+' -h '+$$.sescape(nick)+'\');">HALFOP (Pół-operator kanału)</p>' +
+			'<p class="statusbutton" onClick="gateway.send(\'MODE '+bsEscape(channel)+' -v '+$$.sescape(nick)+'\');">VOICE (Uprawnienie do głosu)</p>';
 		$$.displayDialog('admin', channel, 'Zarządzanie '+he(channel), html);
 	},
 	'showChannelModes': function(channel) {
 		var channame = channel.substring(1);
+		var ch = md5(channame);
 		
 		var html = "<p>Zmień tryby kanału "+he(channel)+":</p>" +
 			"<table><tr><th></th><th>Litera</th><th>Opis</th></tr>";
 		//generacja HTML z tabelą z wszystkimi trybami
 		modes.changeableSingle.forEach(function(mode){
-			html += '<tr><td><input type="checkbox" id="'+channame+'_mode_'+mode[0]+'"></td><td>'+mode[0]+'</td><td>'+mode[1]+'</td></tr>';
+			html += '<tr><td><input type="checkbox" id="'+ch+'_mode_'+mode[0]+'"></td><td>'+mode[0]+'</td><td>'+mode[1]+'</td></tr>';
 		}, this);
 		modes.changeableArg.forEach(function(mode){
-			html += '<tr><td><input type="checkbox" id="'+channame+'_mode_'+mode[0]+'"></td><td>'+mode[0]+'</td><td>'+mode[1]+'</td><td><input type="text" id="'+channame+'_mode_'+mode[0]+'_text"></td></tr>';
+			html += '<tr><td><input type="checkbox" id="'+ch+'_mode_'+mode[0]+'"></td><td>'+mode[0]+'</td><td>'+mode[1]+'</td><td><input type="text" id="'+ch+'_mode_'+mode[0]+'_text"></td></tr>';
 		}, this);
 		html += '</table>';
 
@@ -1506,13 +1507,13 @@ var gateway = {
 		//uzupełnianie tabeli trybami już ustawionymi
 		modes.changeableSingle.forEach(function(mode){
 			if(chanModes[mode[0]]){
-				$('#'+channame+'_mode_'+mode[0]).prop('checked', true);
+				$('#'+ch+'_mode_'+mode[0]).prop('checked', true);
 			}
 		}, this);
 		modes.changeableArg.forEach(function(mode){
 			if(chanModes[mode[0]]){
-				$('#'+channame+'_mode_'+mode[0]).prop('checked', true);
-				$('#'+channame+'_mode_'+mode[0]+'_text').val(chanModes[mode[0]]);
+				$('#'+ch+'_mode_'+mode[0]).prop('checked', true);
+				$('#'+ch+'_mode_'+mode[0]+'_text').val(chanModes[mode[0]]);
 			}
 		}, this);
 	},
@@ -1522,11 +1523,12 @@ var gateway = {
 		var modearg = '';
 		var chanModes = gateway.findChannel(channel).modes;
 		var channame = channel.substring(1);
+		var ch = md5(channame);
 		
 		modes.changeableSingle.forEach(function(mode){
 			mode = mode[0];
 			var set = chanModes[mode];
-			var checked = $('#'+channame+'_mode_'+mode).prop('checked');
+			var checked = $('#'+ch+'_mode_'+mode).prop('checked');
 			if(set != checked){
 				if(checked){
 					if(modeop != '+'){
@@ -1547,8 +1549,8 @@ var gateway = {
 		modes.changeableArg.forEach(function(mode){
 			mode = mode[0];
 			var set = chanModes[mode];
-			var checked = $('#'+channame+'_mode_'+mode).prop('checked');
-			var text = $('#'+channame+'_mode_'+mode+'_text').val();
+			var checked = $('#'+ch+'_mode_'+mode).prop('checked');
+			var text = $('#'+ch+'_mode_'+mode+'_text').val();
 			if(set != checked || (set && set != text)){
 				if(checked){
 					if(modeop != '+'){

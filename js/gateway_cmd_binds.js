@@ -840,6 +840,21 @@ var cmdBinds = {
 			$$.displayDialog('error', 'error', 'Błąd', html);
 		}
 	],
+	'486' : [	// ERR_NONONREG
+		function(msg) {
+			var expr = /^You must identify to a registered nick to private message ([^ ]*)$/;
+			var match = expr.exec(msg.text);
+			if(match){
+				var query = gateway.findQuery(match[1]);
+				if(query){
+					query.appendMessage(messagePatterns.cannotSendToUser, [gateway.niceTime(), match[1]]);
+				}
+				$$.displayDialog('error', 'error', 'Błąd', '<p>Nie można wysłać prywatnej wiadomości do <b>'+match[1]+'</b></p><p>Użytkownik akceptuje prywatne wiadomości tylko od zarejestrowanych nicków.</p>');
+			} else {
+				$$.displayDialog('error', 'error', 'Błąd', '<p>Nie można wysłać prywatnej wiadomości.</p><p>Komunikat od serwera: '+he(msg.text)+'</p>');
+			}					
+		}
+	],
 	'499' : [	// ERR_CHANOWNPRIVNEEDED
 		function(msg) {
 			var html = msg.args[1] + ": brak uprawnień." +

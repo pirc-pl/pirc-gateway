@@ -82,6 +82,7 @@ var messagePatterns = {
 	'notConnected': '<span class="time">%s</span> &nbsp; <span class="mode">*** Nie jesteś połączony z IRC!</span><br />',
 	'notEnoughParameters': '<span class="time">%s</span> &nbsp; <span class="mode">*** %s: Za mało argumentów.</span><br />',
 	'cannotSendToChan': '<span class="time">%s</span> &nbsp; <span class="kick">*** Nie można wysłać na %s: %s. Wiadomość nie została dostarczona.</span><br />',
+	'cannotSendToUser': '<span class="time">%s</span> &nbsp; <span class="kick">*** Nie można pisać do %s: Twój nick musi być zarejestrowany. Wiadomość nie została dostarczona.</span><br />',
 	'cannotJoin': '<span class="time">%s</span> &nbsp; <span class="kick">*** Nie można dołączyć do kanału %s: %s</span><br />',
 	'noPerms': '<span class="time">%s</span> &nbsp; <span class="kick">*** Brak uprawnien.</span><br />',
 	'notice': '<span class="time">%s</span> &nbsp; <span class="notice-nick"><b>-%s-</b></span><span class="userhost">(<span class="notice-nick">%s</span>@<span class="notice-nick">%s</span>)</span> <span class="notice">%s</span><br />',
@@ -171,6 +172,10 @@ function str2bool(b){
 
 function he(text) { //HTML Escape
 	return $('<div/>').text(text).html();
+}
+
+function bsEscape(text) { // escapowanie beksleszy
+	return text.replace('\\', '\\\\');
 }
 
 if (!String.prototype.isInList) {
@@ -596,7 +601,7 @@ var $$ = {
 		//}
 	},
 	'parseImages': function(text) {
-		var rmatch = text.match(/(https?:\/\/[^ ]+\.(png|jpeg|jpg|gif))/gi);
+		var rmatch = text.match(/(https?:\/\/[^ ]+\.(png|jpeg|jpg|gif)(\?[^ ]+)?)/gi);
 		var html = '';
 		if(rmatch){
 			rmatch.forEach(function(arg){
@@ -671,7 +676,7 @@ var $$ = {
 					if(c != ' '){
 						currLink += c;
 					} else {
-						newText += '<a href="javascript:gateway.send(\'JOIN '+currLink+'\')"' + confirmChan + '>'+currLink+'</a> ';
+						newText += '<a href="javascript:gateway.send(\'JOIN '+bsEscape(currLink)+'\')"' + confirmChan + '>'+currLink+'</a> ';
 						state = stateText;
 					}
 					break;
