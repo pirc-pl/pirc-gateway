@@ -869,8 +869,10 @@ var gateway = {
 		var act = gateway.getActive();
 		if(act){
 			act.saveScroll();
+			act.setMark();
 		} else {
 			gateway.statusWindow.saveScroll();
+			gateway.statusWindow.setMark();
 		}
 		chan = chan.toLowerCase();
 		if(chan != "--status" && gateway.findChannel(chan)) {
