@@ -72,19 +72,7 @@ var cmdBinds = {
 					//gateway.channels[c].appendMessage(messagePatterns.nickChange, [gateway.niceTime(), msg.sender.nick, msg.text]);
 				}
 			} else {
-				for(c in gateway.channels) {
-					if(gateway.channels[c].nicklist.findNick(msg.sender.nick)) {
-						gateway.channels[c].nicklist.removeNick(msg.sender.nick);
-						if (!$('#showPartQuit').is(':checked')) {
-							gateway.channels[c].appendMessage(messagePatterns.quit, [gateway.niceTime(), he(msg.sender.nick), he(msg.sender.ident), he(msg.sender.host), $$.colorize(msg.text)]);
-						}
-					}
-				}
-				if(gateway.findQuery(msg.sender.nick)) {
-					if (!$('#showPartQuit').is(':checked')) {
-						gateway.findQuery(msg.sender.nick).appendMessage(messagePatterns.quit, [gateway.niceTime(), he(msg.sender.nick), he(msg.sender.ident), he(msg.sender.host), $$.colorize(msg.text)]);
-					}
-				}
+				gateway.processQuit(msg);
 			}
 		}
 	],

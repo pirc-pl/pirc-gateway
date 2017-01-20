@@ -2078,6 +2078,57 @@ var gateway = {
 				}
 			} catch(e) {}
 		}
+	},
+	'quitQueue': [],
+	'quitTimeout': false,
+	'processNetsplit': function(){
+		gateway.quitTimeout = false;
+		if(gateway.quitQueue.length == 0) return;
+		
+		for(c in gateway.channels){
+			var nickNames = '';
+			var chan = gateway.channels[c];
+			var nicklist = chan.nicklist;
+			for(n in gateway.quitQueue){
+				var nick = gateway.quitQueue[n].sender.nick;
+				if(nicklist.findNick(nick)){
+					nicklist.removeNick(nick);
+					if(nickNames != ''){
+						nickNames += ', ';
+					}
+					nickNames += nick;
+				}
+			}
+			if(nickNames != ''){
+				chan.appendMessage(messagePatterns.netsplit, [gateway.niceTime(), nickNames]);
+			}
+		}
+		gateway.quitQueue = [];
+	},
+	'processQuit': function(msg){
+		if(gateway.findQuery(msg.sender.nick)) {
+			if (!$('#showPartQuit').is(':checked')) {
+				gateway.findQuery(msg.sender.nick).appendMessage(messagePatterns.quit, [gateway.niceTime(), he(msg.sender.nick), he(msg.sender.ident), he(msg.sender.host), $$.colorize(msg.text)]);
+			}
+		}
+
+		if(msg.text.match(/^[0-9a-zA-Z.]+ [0-9a-zA-Z.]+$/)){
+			gateway.quitQueue.push(msg);
+			if(gateway.quitTimeout){
+				clearTimeout(gateway.quitTimeout);
+			}
+			gateway.quitTimeout = setTimeout(gateway.processNetsplit, 700);
+			return;
+		}
+		
+		for(c in gateway.channels) {
+			if(gateway.channels[c].nicklist.findNick(msg.sender.nick)) {
+				gateway.channels[c].nicklist.removeNick(msg.sender.nick);
+				if (!$('#showPartQuit').is(':checked')) {
+					gateway.channels[c].appendMessage(messagePatterns.quit, [gateway.niceTime(), he(msg.sender.nick), he(msg.sender.ident), he(msg.sender.host), $$.colorize(msg.text)]);
+				}
+			}
+		}
 	}
 }
 	

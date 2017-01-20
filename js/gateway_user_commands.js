@@ -671,6 +671,17 @@ var commands = {
 				gateway.notEnoughParams("mode", "musisz podać nick/kanał jako pierwszy argument");
 			}
 		}
+	},
+	'sdebug': {
+		'channels': false,
+		'nicks': false,
+		'custom': [],
+		'callback': function(command, input) {
+			var raw = input.slice(1).substr(command[0].length+1);
+			raw = raw.replace(/\\n/g, '\r\n') + '\r\n';
+			data = irc.parseMessage(raw);
+			gateway.processData(data);
+		}
 	}
 /*		'join': {
 		'channels': true,

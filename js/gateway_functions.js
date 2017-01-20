@@ -115,7 +115,8 @@ var messagePatterns = {
 	'ignoreListStart': '<span class="time">%s</span> &nbsp; <span class="mode">*** Lista ignorowanych:</span><br />',
 	'ignoreListEnd': '<span class="time">%s</span> &nbsp; <span class="mode">*** Koniec listy.</span><br />',
 	'ignoreListEmpty': '<span class="time">%s</span> &nbsp; <span class="mode">*** Lista ignorowanych jest pusta.</span><br />',
-	'ignoreListItem': '<span class="time">%s</span> &nbsp; <span class="mode">*** Typ: <b>%s</b>, maska: <b>%s</b></span><br />'
+	'ignoreListItem': '<span class="time">%s</span> &nbsp; <span class="mode">*** Typ: <b>%s</b>, maska: <b>%s</b></span><br />',
+	'netsplit': '<span class="time">%s</span> &nbsp; <span class="part">&larr; <span class="netsplit">Netsplit</span>, wychodzą: %s</span><br />'
 };
 
 var modes = {
