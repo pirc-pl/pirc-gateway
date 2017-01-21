@@ -26,9 +26,9 @@
 		<script type="text/javascript" src="/js/jquery.browser.min.js"></script>
 		<script type="text/javascript" src="/js/jquery-ui.min.js"></script>
 		<script type="text/javascript" src="/js/base64.js"></script>
-		<script type="text/javascript" src="/js/gateway_functions.js"></script>
-		<script type="text/javascript" src="/js/gateway_cmd_binds.js"></script>
-		<script type="text/javascript" src="/js/gateway_user_commands.js"></script>
-		<script type="text/javascript" src="/js/gateway_tabs.js"></script>
-		<script type="text/javascript" src="/js/gateway_def.js"></script>
+		<script type="text/javascript" src="/js/gateway_functions.js{$random_string}"></script>
+		<script type="text/javascript" src="/js/gateway_cmd_binds.js{$random_string}"></script>
+		<script type="text/javascript" src="/js/gateway_user_commands.js{$random_string}"></script>
+		<script type="text/javascript" src="/js/gateway_tabs.js{$random_string}"></script>
+		<script type="text/javascript" src="/js/gateway_def.js{$random_string}"></script>
 	</head>

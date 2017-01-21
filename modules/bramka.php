@@ -51,6 +51,7 @@ class Module extends ModuleT {
 		Template::assign('gateway_version', settings::$gateway['version']);
 		Template::assign('sid', session_id());
 		Template::assign('old_gateway_html', $gateway_url);
+		Template::assign('random_string', '?'.rand(100, 5000));
 		
 		Template::display('gateway_ajax_header');
 		Template::display('ajax_'.$glayout);

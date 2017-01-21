@@ -7,15 +7,8 @@ var icons = [
 	'/styles/img/prot.png',
 	'/styles/img/owner.png'
 ];
-
-var alt = [
-	'',
-	'+',
-	'%',
-	'@',
-	'&',
-	'~'
-];
+var alt = [	'', '+', '%', '@', '&', '~' ];
+var chStatusInfo = [ '', 'Prawo głosu', 'Pół-operator', 'Operator', 'Admin', 'Właściciel' ];
 
 var reqChannel = '';
 
@@ -68,7 +61,7 @@ var messagePatterns = {
 	'topicTime': '<span class="time">%s</span> &nbsp; <span class="mode">*** Temat ustawiony przez %s [%s]</span><br />',
 	'kick': '<span class="time">%s</span> &nbsp; <span class="kick">*** %s wyrzucił %s z %s [Powód: %s]</span><br />',
 	'kickOwn': '<span class="time">%s</span> &nbsp; <span class="kick">*** %s wyrzucił cię z %s [Powód: %s]</span><br />',
-	'modeChange': '<span class="time">%s</span> &nbsp; <span class="mode">*** %s ustawił tryb [%s] dla kanału %s</span><br />',
+	'modeChange': '<span class="time">%s</span> &nbsp; <span class="mode">*** %s %s na kanale %s</span><br />',
 	'startedQuery': '<span class="time">%s</span> &nbsp; <span class="join">&rarr; Rozpoczęto rozmowę z %s. <a onclick="gateway.askIgnore(\'%s\');">Ignoruj tego użytkownika</a></span><br />',
 	'queryBacklog': '<span class="time">%s</span> &nbsp; <span class="join">*** Zapis poprzedniej rozmowy z %s:</span><br />',
 	'channelBacklog': '<span class="time">%s</span> &nbsp; <span class="mode">*** Zapis poprzedniej wizyty na %s:</span><br />',
@@ -99,7 +92,7 @@ var messagePatterns = {
 	'invexListEnd': '<span class="time">%s</span> &nbsp; <span class="mode">*** Koniec listy invex.</span><br />',
 	'exceptListElement': '<span class="time">%s</span> &nbsp; <span class="mode">*** Except: <b>%s</b> <i>założony przez:</i> <b>%s</b> (%s) </span><br />',
 	'exceptListEnd': '<span class="time">%s</span> &nbsp; <span class="mode">*** Koniec listy except.</span><br />',
-	'mode': '<span class="time">%s</span> &nbsp; <span class="mode">*** Ustawienia kanału %s: [%s]</span><br />',
+	'mode': '<span class="time">%s</span> &nbsp; <span class="mode">*** Ustawienia kanału %s: %s</span><br />',
 	'error': '<span class="time">%s</span> &nbsp; <span class="mode"> !!! Rozłączono z serwerem: %s</span><br />',
 	'existingConnection': '<span class="time">%s</span> &nbsp; <span class="mode">*** Połączenie już istnieje, dołączam się do niego.</span><br />',
 	'away': '<span class="time">%s</span> &nbsp; <span class="mode">*** %s otrzymał twoją wiadomość, ale jest teraz nieobecny: %s</span><br />',
@@ -121,9 +114,9 @@ var messagePatterns = {
 };
 
 var modes = {
-	'single': ['p', 's', 'm', 'n', 't', 'i', 'r', 'R', 'c', 'O', 'A', 'Q', 'K', 'V', 'C', 'u', 'z', 'N', 'S', 'M', 'T', 'G'],
-	'argBoth': ['b', 'e', 'I'],
-	'argAdd': ['k', 'f', 'L', 'l', 'j'],
+	'single': ['p', 's', 'm', 'n', 't', 'i', 'r', 'R', 'c', 'O', 'Q', 'K', 'V', 'C', 'u', 'z', 'N', 'S', 'M', 'T', 'G'],
+	'argBoth': ['k', 'b', 'e', 'I', 'f'],
+	'argAdd': ['L', 'l'],
 	'user': ['q','a','o','h','v'],
 	'changeableSingle': [
 		['m', 'Kanał moderowany'],
@@ -140,6 +133,44 @@ var modes = {
 		['k', 'Hasło do kanału'],
 		['l', 'Maksymalna ilość użytkowników']
 	]
+};
+
+var chModeInfo = {
+	'q': 'status właściciela',
+	'a': 'status admina',
+	'o': 'status operatora',
+	'h': 'status pół-operatora',
+	'v': 'prawo głosu',
+	'k': 'hasło:',
+	'b': 'bana na',
+	'e': 'wyjątek bana na',
+	'I': 'stałe zaproszenie na',
+	'f': 'zabezpieczenie przed floodem:',
+	'L-add': 'przekierowanie na kanał',
+	'L-remove': 'przekierowanie na inny kanał',
+	'l-add': 'limit użytkowników na',
+	'l-remove': 'limit użytkowników',
+	'p': 'tryb prywatny',
+	's': 'tryb ukryty',
+	'm': ['moderację', 'kanał moderowany'],
+	'n': 'brak wiadomości z zewnątrz',
+	't': ['ochronę tematu', 'chroniony temat'],
+	'i': 'wejście tylko na zaproszenie',
+	'r': ['rejestrację', 'zarejestrowany'],
+	'R': 'wejście tylko dla zarejestrowanych',
+	'c': ['blokadę kolorów', 'blokada kolorów'],
+	'O': 'tryb O',
+	'Q': ['blokadę kopania', 'zablokowane kopanie'],
+	'K': ['blokadę pukania', 'zablokowane pukanie'],
+	'V': ['blokadę zaproszeń', 'zablokowane zaproszenia'],
+	'C': ['blokadę CTCP', 'zablokowane CTCP'],
+	'u': 'tryb u',
+	'z': 'wejście tylko dla połączeń szyfrowanych',
+	'N': ['blokadę zmian nicków', 'zablokowana zmiana nicków'],
+	'S': 'usuwanie kolorów',
+	'M': ['moderację niezarejestrowanych', 'niezarejestrowani są moderowani'],
+	'T': ['blokadę NOTICE', 'zablokowane NOTICE'],
+	'G': 'tryb G'
 };
 
 var servicesNicks = ['NickServ', 'ChanServ', 'HostServ', 'OperServ', 'Global', 'BotServ'];
@@ -165,6 +196,20 @@ function ChannelModes() {
 	modes.argAdd.forEach(function(mode){
 		this[mode] = false;
 	}, this);
+	this['k'] = false;
+	this['f'] = false;
+}
+
+function getModeInfo(letter, type){
+	if(!type){
+		type = 0;
+	}
+	var data = chModeInfo[letter];
+	if(data.constructor === Array){
+		return data[type];
+	} else {
+		return data;
+	}
 }
 
 // pomocnicze funkcje globalne
@@ -188,6 +233,16 @@ if (!String.prototype.isInList) {
       }
       return false;
    }
+}
+
+if(!String.prototype.apList){
+	String.prototype.apList = function(data){
+		if(this == ''){
+			return data;
+		} else {
+			return this.valueOf() + ', '+data;
+		}
+	}
 }
 
 // zmienna gateway.connectStatus
@@ -675,7 +730,7 @@ var $$ = {
 					break;
 				case stateChannel:
 					var c = text.charAt(i);
-					if(c != ' '){
+					if(c != ' ' && c != ','){
 						currLink += c;
 					} else {
 						newText += '<a href="javascript:gateway.send(\'JOIN '+bsEscape(currLink)+'\')"' + confirmChan + '>'+currLink+'</a> ';

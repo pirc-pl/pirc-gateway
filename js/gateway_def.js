@@ -174,6 +174,11 @@ var services = {
 			$$.closeDialog('error', 'nickserv');
 			return false;
 		}
+		if(msg.text.match(/^Nick [^ ]+ nie jest zarejestrowany\.$/i) && guser.nickservpass != ''){
+			guser.nickservpass = '';
+			guser.nickservnick = '';
+			return false;
+		}
 		if (msg.text.match(/^Nieprawid.owe has.o\.$/i)) { // złe hasło nickserv
 			services.showTimeToChange = true;
 			services.nickStore = guser.nickservnick;
@@ -181,7 +186,7 @@ var services = {
 			$$.displayDialog('error', 'nickserv', 'Błąd', html);
 			return true;
 		}
-		if(msg.text.match(/^Ten nick jest zarejestrowany i chroniony\.( Jeśli należy do Ciebie,)?$/i)){
+		if(msg.text.match(/^Ten nick jest zarejestrowany i chroniony\.( Je.li nale.y do Ciebie,)?$/i)){
 			if(guser.nickservpass == ''){
 				services.showTimeToChange = true;
 				services.nickStore = guser.nick;
@@ -775,7 +780,6 @@ var gateway = {
 		}
 		var newTopic = $('#topicEdit').val().replace(/\n/g, ' ');
 		gateway.send('TOPIC '+channel+' :'+$$.tagsToColors(newTopic));
-		gateway.closeNotify();
 	},
 	'tabHistory': ['--status'],
 	'lasterror': '',
@@ -1075,10 +1079,35 @@ var gateway = {
 				} ];
 				var html = 'Wpisany tekst zaczyna się od znaku "/", ale poprzedzonego spacją. Aby uniknąć pomyłki, wybierz, co chcesz zrobić.<br><br><strong>'+$$.sescape(input)+'</string>';
 				$$.displayDialog('confirm', 'command', 'Potwierdź', html, button);
-			} else if(input.charAt(0) == "/") {
-				gateway.parseUserCommand(input);
 			} else {
-				gateway.parseUserMessage(input);
+				regexp = /^(#[^ ,]{1,25})$/;
+				match = regexp.exec(input);
+				if(match){
+					var button = [ {
+						text: 'Wyślij wiadomość',
+						click: function(){
+							gateway.parseUserMessage(input);
+							$(this).dialog('close');
+						}
+					}, {
+						text: 'Dołącz do '+input,
+						click: function(){
+							gateway.send('JOIN '+input);
+							$(this).dialog('close');
+						}
+					}, {
+						text: 'Anuluj',
+						click: function(){
+							$(this).dialog('close');
+						}
+					} ];
+					var html = 'Wpisana wiadomość wygląda jak nazwa kanału IRC. Podawanie nazw kanałów na innych kanałach jest często uznawane jako spam. Aby uniknąć pomyłki, wybierz, co chcesz zrobić.<br><br><strong>'+$$.sescape(input)+'</string>';
+					$$.displayDialog('confirm', 'command', 'Potwierdź', html, button);
+				} else if(input.charAt(0) == "/") {
+					gateway.parseUserCommand(input);
+				} else {
+					gateway.parseUserMessage(input);
+				}
 			}
 		} else {
 			if (gateway.getActive()) {
@@ -1943,27 +1972,52 @@ var gateway = {
 			}
 		}
 	},
-	'parseChannelMode': function(args, chan) {
+	'parseChannelMode': function(args, chan, type) {
 		var plus = true;
 		var nextarg = 1;
 		var modearr = args[0].split('');
 		var log = '';
 		var mode = '';
 		var modechar = '';
+		var infoText = '';
+		var dir = '';
 		for (i in modearr) {
 			if(modearr[i] == '+') {
 				log += "Change +\n";
 				plus = true;
+				if(type == 1){
+					dir = '';
+				} else {
+					dir = 'ustawił ';
+				}
 			} else if(modearr[i] == '-') {
+				if(type == 1){
+					continue;
+				}
+				dir = 'zdjął ';
 				log += "Change -\n";
 				plus = false;
 			} else if($.inArray(modearr[i], modes.argBoth) > -1) {
 				log += "Mode 'both' "+plus+' '+modearr[i]+' '+args[nextarg]+"\n";
+				infoText = infoText.apList(dir+getModeInfo(modearr[i], type)+' '+args[nextarg]);
+				if(modearr[i] == 'k' || modearr[i] == 'f'){
+					if(plus){
+						chan.modes[modearr[i]] = args[nextarg];
+					} else {
+						chan.modes[modearr[i]] = false;
+					}
+				}
 				nextarg++;
-			} else if($.inArray(modearr[i], modes.argAdd) > -1 && plus == true) {
+			} else if($.inArray(modearr[i], modes.argAdd) > -1 ) {
 				log += "Mode 'add' "+plus+' '+modearr[i]+' '+args[nextarg]+"\n";
-				chan.modes[modearr[i]] = args[nextarg];
-				nextarg++;
+				if(plus){
+					chan.modes[modearr[i]] = args[nextarg];
+					infoText = infoText.apList(dir+getModeInfo(modearr[i]+'-add', type)+' '+args[nextarg]);
+					nextarg++;
+				} else {
+					infoText = infoText.apList(dir+getModeInfo(modearr[i]+'-remove', type));
+					chan.modes[modearr[i]] = false;
+				}
 			} else if($.inArray(modearr[i], modes.user) > -1) {
 				modechar = modearr[i];
 				log += "Mode 'user' "+plus+' '+modearr[i]+' '+args[nextarg]+"\n";
@@ -1991,6 +2045,7 @@ var gateway = {
 								break;
 						}
 						chan.nicklist.findNick(args[nextarg]).setMode(mode, true);
+						infoText = infoText.apList('dał '+getModeInfo(modechar, type)+' dla '+args[nextarg]);
 					}
 				} else {
 					if(chan.nicklist.findNick(args[nextarg])) {
@@ -2016,14 +2071,17 @@ var gateway = {
 								break;
 						}
 						chan.nicklist.findNick(args[nextarg]).setMode(mode, false);
+						infoText = infoText.apList('odebrał '+getModeInfo(modechar, type)+' '+args[nextarg]);
 					}
 				}
 				nextarg++;
 			} else {
 				log += "Mode 'normal' "+plus+' '+modearr[i]+"\n";
 				chan.modes[modearr[i]] = plus;
+				infoText = infoText.apList(dir+' '+getModeInfo(modearr[i], type));
 			}
 		}
+		return infoText;
 	//	console.log(log);
 	},
 	'storageHandler': function(evt) {

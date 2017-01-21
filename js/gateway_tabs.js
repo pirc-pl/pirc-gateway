@@ -129,7 +129,7 @@ function NicklistUser(usernick, chan) {
 	this.makeHTML = function() {
 		return '<li id="'+this.id+'" class="'+md5(this.nick)+'">'+
 			'<table><tr onclick="gateway.toggleNickOpt(\''+this.id+'\')">'+
-				'<td valign="top"><img class="chrank" alt="'+alt[this.level]+'" src="'+icons[this.level]+'" /></td>'+
+				'<td valign="top"><img class="chrank" alt="'+alt[this.level]+'" src="'+icons[this.level]+'" title="'+chStatusInfo[this.level]+'" /></td>'+
 				'<td valign="top" style="text-align:left;width:100%;" class="'+((this.nick.toLowerCase()==guser.nick.toLowerCase())?'ownNick ':'')+'nickname">&nbsp;&nbsp;'+this.nick+'</td>'+
 			'</tr></table>'+
 			'<ul class="options" id="'+this.id+'-opt">'+

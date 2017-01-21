@@ -459,10 +459,10 @@ var cmdBinds = {
 				mody.splice(0,2);
 				mody = mody.join(" ");
 				var chanO = gateway.findChannel(chan);
+				var info = gateway.parseChannelMode(msg.args, chanO, 1);
 				if (!$('#showMode').is(':checked')) {
-					chanO.appendMessage(messagePatterns.mode, [gateway.niceTime(), chan, mody]);
+					chanO.appendMessage(messagePatterns.mode, [gateway.niceTime(), chan, info]);
 				}
-				gateway.parseChannelMode(msg.args, chanO);
 				gateway.send('CAP REQ :multi-prefix userhost-in-names away-notify\r\nCAP END');//\r\nNAMES '+chan);
 				try {
 					var ckNick = localStorage.getItem('origNick');
@@ -929,8 +929,9 @@ var cmdBinds = {
 		}
 	],
 	'MODE': [
-		function(msg) {;
-			if(gateway.findChannel(msg.args[0])) {
+		function(msg) {
+			var chanName = msg.args[0];
+			if(gateway.findChannel(chanName)) {
 				var modestr = '';
 				for (i in msg.args) {
 					if(i != 0) {
@@ -938,13 +939,14 @@ var cmdBinds = {
 					}
 				}
 				modestr = modestr.slice(0,-1);
-				var chan = gateway.findChannel(msg.args[0]);
-				if (!$('#showMode').is(':checked') || msg.sender.nick.toLowerCase() == guser.nick.toLowerCase()) {
-					chan.appendMessage(messagePatterns.modeChange, [gateway.niceTime(), he(msg.sender.nick), he(modestr), he(msg.args[0])]);
-				}
+	
+				var chan = gateway.findChannel(chanName);
 				var args2 = msg.args;
 				args2.shift();
-				gateway.parseChannelMode(args2, chan);
+				var info = gateway.parseChannelMode(args2, chan);
+				if (!$('#showMode').is(':checked') || msg.sender.nick.toLowerCase() == guser.nick.toLowerCase()) {
+					chan.appendMessage(messagePatterns.modeChange, [gateway.niceTime(), he(msg.sender.nick), /*he(modestr)*/info, he(chanName)]);
+				}
 			}
 		}
 	]
