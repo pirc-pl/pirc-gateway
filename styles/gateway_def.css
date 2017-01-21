@@ -284,6 +284,10 @@ span.netsplit {
 	color: #aa1111;
 }
 
+span.netjoin {
+	color: #11aa11;
+}
+
 span.join a {
 	color: #000055;
 	cursor: pointer;

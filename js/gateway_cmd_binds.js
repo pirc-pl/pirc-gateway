@@ -307,9 +307,7 @@ var cmdBinds = {
 			if(!chan) return;
 			var nicklistUser = chan.nicklist.findNick(msg.sender.nick);
 			if(msg.sender.nick != guser.nick) {
-				if (!$('#showPartQuit').is(':checked')) {
-					chan.appendMessage(messagePatterns.join, [gateway.niceTime(), he(msg.sender.nick), he(msg.sender.ident), he(msg.sender.host), msg.text]);
-				}
+				gateway.processJoin(msg);
 			}
 			if(!nicklistUser) {
 				chan.nicklist.addNick(msg.sender.nick);
@@ -689,7 +687,7 @@ var cmdBinds = {
 		function(msg) {
 			if(gateway.findChannel(msg.args[1])) {
 				var reason = '';
-				if(msg.text.match(/Cannot send to channel \(Newly connected users have to wait before they can send any links\)/)){
+				if(msg.text.match(/Newly connected users have to wait before they can send any links \(.*\)/)){
 					reason = 'Twoja wiadomość została rozpoznana jako link. Musisz odczekać kilka minut po połączeniu i spróbować ponownie. Zarejestruj nick, aby uniknąć tego ograniczenia w przyszłości';
 				} else if(msg.text.match(/You need voice \(\+v\) \(.*\)/)){
 					reason = 'Potrzebujesz prawa głosu, aby teraz pisać na tym kanale';
@@ -702,7 +700,16 @@ var cmdBinds = {
 				} else {
 					reason = msg.text;
 				}
-				gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.cannotSendToChan, [gateway.niceTime(), msg.args[1], reason])
+				gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.cannotSendToChan, [gateway.niceTime(), msg.args[1], reason]);
+			} else if(gateway.findQuery(msg.args[1])){
+				if(msg.text.match(/Newly connected users have to wait before they can send any links/)){
+					reason = 'Twoja wiadomość została rozpoznana jako link. Musisz odczekać kilka minut po połączeniu i spróbować ponownie. Zarejestruj nick, aby uniknąć tego ograniczenia w przyszłości';
+				} else {
+					reason = msg.text;
+				}
+				gateway.findQuery(msg.args[1]).appendMessage(messagePatterns.cannotSendToUser, [gateway.niceTime(), msg.args[1], reason]);
+			} else {
+				$$.displayDialog('error', 'error', 'Błąd', '<p>Nie można wysłać wiadomości do '+he(msg.args[1])+'</p><p>Komunikat od serwera: '+msg.text+'</p>');
 			}
 		}
 	],
@@ -835,7 +842,7 @@ var cmdBinds = {
 			if(match){
 				var query = gateway.findQuery(match[1]);
 				if(query){
-					query.appendMessage(messagePatterns.cannotSendToUser, [gateway.niceTime(), match[1]]);
+					query.appendMessage(messagePatterns.cannotSendToUser, [gateway.niceTime(), match[1], 'Twój nick musi być zarejestrowany']);
 				}
 				$$.displayDialog('error', 'error', 'Błąd', '<p>Nie można wysłać prywatnej wiadomości do <b>'+match[1]+'</b></p><p>Użytkownik akceptuje prywatne wiadomości tylko od zarejestrowanych nicków.</p>');
 			} else {

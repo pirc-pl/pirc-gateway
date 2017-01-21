@@ -415,7 +415,9 @@ function Query(nick) {
 		}
 	}
 	this.setMark = function() {
+		$('#'+this.id+'-window hr').remove();
 		$('#'+this.id+'-window').append('<hr>');
+		this.newLines = false;
 	}
 	$('<span/>').attr('id', this.id+'-window').hide().appendTo('#main-window');
 	$('<span/>').attr('id', this.id+'-topic').hide().appendTo('#info');
@@ -684,6 +686,7 @@ function Status() {
 		}
 	}
 	this.setMark = function() {
+		$('#'+this.id+'-window hr').remove();
 		$('#'+this.id+'-window').append('<hr>');
 		this.newLines = false;
 	}

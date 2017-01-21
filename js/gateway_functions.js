@@ -82,7 +82,7 @@ var messagePatterns = {
 	'notConnected': '<span class="time">%s</span> &nbsp; <span class="mode">*** Nie jesteś połączony z IRC!</span><br />',
 	'notEnoughParameters': '<span class="time">%s</span> &nbsp; <span class="mode">*** %s: Za mało argumentów.</span><br />',
 	'cannotSendToChan': '<span class="time">%s</span> &nbsp; <span class="kick">*** Nie można wysłać na %s: %s. Wiadomość nie została dostarczona.</span><br />',
-	'cannotSendToUser': '<span class="time">%s</span> &nbsp; <span class="kick">*** Nie można pisać do %s: Twój nick musi być zarejestrowany. Wiadomość nie została dostarczona.</span><br />',
+	'cannotSendToUser': '<span class="time">%s</span> &nbsp; <span class="kick">*** Nie można pisać do %s: %s. Wiadomość nie została dostarczona.</span><br />',
 	'cannotJoin': '<span class="time">%s</span> &nbsp; <span class="kick">*** Nie można dołączyć do kanału %s: %s</span><br />',
 	'noPerms': '<span class="time">%s</span> &nbsp; <span class="kick">*** Brak uprawnien.</span><br />',
 	'notice': '<span class="time">%s</span> &nbsp; <span class="notice-nick"><b>-%s-</b></span><span class="userhost">(<span class="notice-nick">%s</span>@<span class="notice-nick">%s</span>)</span> <span class="notice">%s</span><br />',
@@ -116,7 +116,8 @@ var messagePatterns = {
 	'ignoreListEnd': '<span class="time">%s</span> &nbsp; <span class="mode">*** Koniec listy.</span><br />',
 	'ignoreListEmpty': '<span class="time">%s</span> &nbsp; <span class="mode">*** Lista ignorowanych jest pusta.</span><br />',
 	'ignoreListItem': '<span class="time">%s</span> &nbsp; <span class="mode">*** Typ: <b>%s</b>, maska: <b>%s</b></span><br />',
-	'netsplit': '<span class="time">%s</span> &nbsp; <span class="part">&larr; <span class="netsplit">Netsplit</span>, wychodzą: %s</span><br />'
+	'netsplit': '<span class="time">%s</span> &nbsp; <span class="part">&larr; <span class="netsplit">Netsplit</span>, wychodzą: %s</span><br />',
+	'netjoin': '<span class="time">%s</span> &nbsp; <span class="join">&rarr; Po <span class="netjoin">netsplicie</span> wchodzą: %s</span><br />'
 };
 
 var modes = {

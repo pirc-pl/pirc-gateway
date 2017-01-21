@@ -2083,6 +2083,9 @@ var gateway = {
 	},
 	'quitQueue': [],
 	'quitTimeout': false,
+	'netJoinUsers': {},
+	'netJoinQueue': [],
+	'netJoinTimeout': false,
 	'processNetsplit': function(){
 		gateway.quitTimeout = false;
 		if(gateway.quitQueue.length == 0) return;
@@ -2093,6 +2096,10 @@ var gateway = {
 			var nicklist = chan.nicklist;
 			for(n in gateway.quitQueue){
 				var nick = gateway.quitQueue[n].sender.nick;
+				if(!gateway.netJoinUsers[chan.name]){
+					gateway.netJoinUsers[chan.name] = {};
+				}
+				gateway.netJoinUsers[chan.name][nick] = (+new Date)/1000;
 				if(nicklist.findNick(nick)){
 					nicklist.removeNick(nick);
 					if(nickNames != ''){
@@ -2106,6 +2113,27 @@ var gateway = {
 			}
 		}
 		gateway.quitQueue = [];
+	},
+	'processNetjoin': function(){
+		gateway.netJoinTimeout = false;
+		if(gateway.netJoinQueue.length == 0) return;
+		
+		for(c in gateway.channels){
+			var nickNames = '';
+			var chan = gateway.channels[c];
+			var nicklist = chan.nicklist;
+			for(n in gateway.netJoinQueue){
+				var nick = gateway.netJoinQueue[n].sender.nick;
+				if(nickNames != ''){
+					nickNames += ', ';
+				}
+				nickNames += nick;
+			}
+			if(nickNames != ''){
+				chan.appendMessage(messagePatterns.netjoin, [gateway.niceTime(), nickNames]);
+			}
+		}
+		gateway.netJoinQueue = [];
 	},
 	'processQuit': function(msg){
 		if(gateway.findQuery(msg.sender.nick)) {
@@ -2130,6 +2158,27 @@ var gateway = {
 					gateway.channels[c].appendMessage(messagePatterns.quit, [gateway.niceTime(), he(msg.sender.nick), he(msg.sender.ident), he(msg.sender.host), $$.colorize(msg.text)]);
 				}
 			}
+		}
+	},
+	'processJoin': function(msg){
+		var chan = gateway.findChannel(msg.text);
+		var dlimit = (+new Date)/1000 - 300;
+		if(!chan) return;
+		var netjoin = false;
+		if(gateway.netJoinUsers[msg.text] && gateway.netJoinUsers[msg.text][msg.sender.nick]){
+			if(gateway.netJoinUsers[msg.text][msg.sender.nick] > dlimit){
+				netjoin = true;
+			}
+			delete gateway.netJoinUsers[msg.text][msg.sender.nick];
+		} 
+		if(netjoin){
+			gateway.netJoinQueue.push(msg);
+			if(gateway.netJoinTimeout){
+				clearTimeout(gateway.netJoinTimeout);
+			}
+			gateway.netJoinTimeout = setTimeout(gateway.processNetjoin, 700);
+		} else if (!$('#showPartQuit').is(':checked')) {
+			chan.appendMessage(messagePatterns.join, [gateway.niceTime(), he(msg.sender.nick), he(msg.sender.ident), he(msg.sender.host), msg.text]);
 		}
 	}
 }
