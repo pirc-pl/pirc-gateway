@@ -2438,7 +2438,6 @@ var conn = {
 			$('#chat-wrapper').scrollTop(document.getElementById('chat-wrapper').scrollHeight);
 		});
 	
-	//	gateway.send("QUIT"); //k4be
 		$('#input').keydown(function(e) {
 			if(e.which == 13 || e.which == 38 || e.which == 40 || e.which == 9) {
 				e.preventDefault();
