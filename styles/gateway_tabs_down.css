@@ -16,6 +16,17 @@
 	bottom: 7em;
 }
 
+#nicklist {
+	top: 3.3em;
+	bottom: 8.8em;
+}
+
+#chstats {
+	bottom: 7em;
+	top: initial;
+}
+
+
 #inputbox {
 	bottom: 3.2em;
 }

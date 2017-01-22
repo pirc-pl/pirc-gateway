@@ -130,7 +130,11 @@
 					</div>
 				</div>
 			</div>
-
+			<div id="chstats">
+				<div class="chstatswrapper">
+					<span class="chstats-text" id="--status-chstats">Okno statusu</span>
+				</div>
+			</div>
 			<div id="nicklist-closed">
 				<div id="nicklist-hide-button" class="closed" onclick="gateway.nickListToggle()"></div>
 			</div>

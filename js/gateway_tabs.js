@@ -50,6 +50,7 @@ function Nicklist(chan, id) {
 		if(nickListItem.host && nickListItem.ident){
 			$('#'+nickListItem.id).attr('title', nickListItem.nick+'!'+nickListItem.ident+'@'+nickListItem.host);
 		}
+		this.showChstats();
 	}
 	this.changeNick = function(nick, newnick) {
 		var nickListItem = this.findNick(nick);
@@ -78,10 +79,40 @@ function Nicklist(chan, id) {
 			if(this.list[i].nick == nick) {
 				this.list[i].remove();
 				this.list.splice(i, 1);
+				this.showChstats();
 				return true;
 			}
 		}
 		return false;
+	}
+	this.showChstats = function() {
+		var opCount = 0;
+		var normCount = 0;
+		for(i in this.list) {
+			var modes = this.list[i].modes;
+			if(modes.owner || modes.admin || modes.op || modes.halfop){
+				opCount++;
+			} else {
+				normCount++;
+			}
+		}
+		var text = '';
+		if(normCount > 0){
+			text = normCount + ' użytkownik';
+			if(normCount > 1){
+				text += 'ów';
+			}
+		}
+		if(opCount > 0){
+			if(text != ''){
+				text += ', ';
+			}
+			text += opCount + ' op';
+			if(opCount > 1){
+				text += 'ów';
+			}
+		}
+		$('#'+gateway.findChannel(this.channel).id+'-chstats .chstats-text').html(text);
 	}
 	try {
 		$('<span id="'+this.id+'"></span>').hide().appendTo('#nicklist-main');
@@ -344,6 +375,7 @@ function Query(nick) {
 		$('#'+this.id+'-tab').remove();
 		$('#'+this.id+'-window').remove();
 		$('#'+this.id+'-topic').remove();
+		$('#'+this.id+'-chstats').remove();
 		if(this.name.toLowerCase() == gateway.active.toLowerCase()) {
 			gateway.switchTab(gateway.tabHistoryLast(this.name));
 		}
@@ -423,6 +455,7 @@ function Query(nick) {
 	$('<span/>').attr('id', this.id+'-topic').hide().appendTo('#info');
 	$('#'+this.id+'-topic').html('<h1>'+this.name+'</h1><h2></h2>');
 	$('<li/>').attr('id', this.id+'-tab').html('<a href="javascript:void(0);" class="switchTab" onclick="gateway.switchTab(\''+this.name+'\')">'+he(this.name)+'</a><a href="javascript:void(0);" onclick="gateway.removeQuery(\''+this.name+'\')"><div class="close" title="Zamknij rozmowę prywatną"></div></a>').appendTo('#tabs');
+	$('#chstats').append('<div class="chstatswrapper" id="'+this.id+'-chstats"><span class="chstats-text">Rozmowa prywatna</span></div>');
 	
 	try {
 		var qCookie = localStorage.getItem('query'+md5(this.name));
@@ -574,6 +607,7 @@ function Channel(chan) {
 		$('#'+this.id+'-tab').remove();
 		$('#'+this.id+'-window').remove();
 		$('#'+this.id+'-topic').remove();
+		$('#'+this.id+'-chstats').remove();
 		if(this.name.toLowerCase() == gateway.active.toLowerCase()) {
 			gateway.switchTab(gateway.tabHistoryLast(this.name));
 		}
@@ -633,6 +667,7 @@ function Channel(chan) {
 	$('#'+this.id+'-topic').html('<h1>'+he(this.name)+'</h1><h2></h2>');
 	$('<li/>').attr('id', this.id+'-tab').html('<a href="javascript:void(0);" onclick="gateway.switchTab(\''+bsEscape(this.name)+'\')" class="switchTab">'+he(this.name)+'</a>'+
 		'<a href="javascript:void(0);" onclick="gateway.removeChannel(\''+bsEscape(this.name)+'\')"><div class="close" title="Wyjdź z kanału"></div></a>').appendTo('#tabs');
+	$('#chstats').append('<div class="chstatswrapper" id="'+this.id+'-chstats"><span class="chstats-text">'+he(this.name)+'</span></div>');
 	
 	try {
 		var qCookie = localStorage.getItem('channel'+md5(this.name));

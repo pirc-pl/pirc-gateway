@@ -140,7 +140,7 @@ input, button, submit {
 	bottom: 4em;
 	position: absolute;
 	right: 10px;
-	top: 6.7em;
+	top: 8.5em;
 	width: 23%;
 }
 	
@@ -998,5 +998,29 @@ span.td_right {
     position: relative;
     float: right;
    	cursor: pointer;
+}
+
+#chstats {
+    position: absolute;
+    right: 10px;
+    top: 6.7em;
+    width: 23%;
+    height: 1.4em;
+}
+
+.chstatswrapper {
+    border-radius: 4px;
+    background: none repeat scroll 0 0 #FFFFFF;
+    border: 1px solid #9A9A9A;
+    height: 100%;
+    margin: 10px auto;
+    overflow: auto;
+    width: 98%;
+}
+
+span.chstats-text {
+    display: block;
+    padding: 1px;
+    padding-left: 5px;
 }
 

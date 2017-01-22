@@ -802,6 +802,10 @@ var gateway = {
 				"opacity": "toggle",
 				"width":	"40px"
 			}, 400);
+			$("#chstats").animate({
+				"opacity": "toggle",
+				"width":	"40px"
+			}, 400);
 			$("#chatbox").animate({
 				"width":	"97%"
 			}, 401, function () {
@@ -828,6 +832,10 @@ var gateway = {
 	'showNickList': function() {
 		$("#nicklist-closed").fadeOut(200, function () {
 			$("#nicklist").animate({
+				"opacity": "toggle",
+				"width":	"23%"
+			}, 400);
+			$("#chstats").animate({
 				"opacity": "toggle",
 				"width":	"23%"
 			}, 400);
@@ -889,11 +897,13 @@ var gateway = {
 		if(chan != "--status" && gateway.findChannel(chan)) {
 			$('#main-window > span').hide();
 			$('#nicklist-main > span').hide();
+			$('#chstats > div').hide();
 			$('#info > span').hide();
 			$('#'+gateway.findChannel(chan).id+'-nicklist').show();
 			$('#tabs > li').removeClass("activeWindow");
 			$('#'+gateway.findChannel(chan).id+'-tab').addClass("activeWindow");
 			$('#'+gateway.findChannel(chan).id+'-window').show();
+			$('#'+gateway.findChannel(chan).id+'-chstats').show();
 			$('#'+gateway.findChannel(chan).id+'-topic').show();
 			$('#'+gateway.findChannel(chan).id+'-topic').prop('title', 'Kliknij aby zobaczyć cały temat');
 			gateway.findChannel(chan).markRead();
@@ -903,6 +913,10 @@ var gateway = {
 			if($("#nicklist").width() < 41 && gateway.nickListVisibility) {
 				$("#nicklist-closed").fadeOut(1, function () {
 					$("#nicklist").animate({
+						"opacity": "toggle",
+						"width":	"23%"
+					}, 1);
+					$("#chstats").animate({
 						"opacity": "toggle",
 						"width":	"23%"
 					}, 1);
@@ -926,17 +940,23 @@ var gateway = {
 			$('#main-window > span').hide();
 			$('#nicklist-main > span').hide();
 			$('#info > span').hide();
+			$('#chstats > div').hide();
 			$('#--status-nicklist').show();
 			$('#tabs > li').removeClass("activeWindow");
 			$('#'+gateway.findQuery(chan).id+'-tab').addClass("activeWindow");
 			$('#'+gateway.findQuery(chan).id+'-window').show();
 			$('#'+gateway.findQuery(chan).id+'-topic').show();
+			$('#'+gateway.findQuery(chan).id+'-chstats').show();
 			$('#'+gateway.findChannel(chan).id+'-topic').prop('title', '');
 			gateway.active = chan;
 			gateway.tabHistory.push(chan);
 			$('#input').focus();
 			if($("#nicklist").width() > 40) {
 				$("#nicklist").animate({
+					"opacity": "toggle",
+					"width":	"40px"
+				}, 1);
+				$("#chstats").animate({
 					"opacity": "toggle",
 					"width":	"40px"
 				}, 1);
@@ -960,11 +980,13 @@ var gateway = {
 			$('#main-window > span').hide();
 			$('#nicklist-main > span').hide();
 			$('#info > span').hide();
+			$('#chstats > div').hide();
 			$('#--status-nicklist').show();
 			$('#tabs > li').removeClass("activeWindow");
 			$('#--status-tab').addClass("activeWindow");
 			$('#--status-window').show();
 			$('#--status-topic').show();
+			$('#--status-chstats').show();
 			$('#'+gateway.findChannel(chan).id+'-topic').prop('title', '');
 			gateway.statusWindow.markRead();
 			gateway.active = chan;
@@ -972,6 +994,10 @@ var gateway = {
 			$('#input').focus();
 			if($("#nicklist").width() > 40) {
 				$("#nicklist").animate({
+					"opacity": "toggle",
+					"width":	"40px"
+				}, 1);
+				$("#chstats").animate({
 					"opacity": "toggle",
 					"width":	"40px"
 				}, 1);
