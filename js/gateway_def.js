@@ -541,7 +541,8 @@ var gateway = {
 		console.log('WebSocket error!');
 		if(gateway.connectStatus != statusDisconnected && gateway.connectStatus != statusError){
 			gateway.connectStatus = statusError;
-			gateway.disconnected('Błąd serwera bramki');
+			//gateway.disconnected('Błąd serwera bramki');
+			gateway.disconnected('Utracono połączenie z serwerem');
 			if($('#autoReconnect').is(':checked')){
 				gateway.reconnect();
 			} else {
@@ -2078,7 +2079,7 @@ var gateway = {
 								break;
 						}
 						chan.nicklist.findNick(args[nextarg]).setMode(mode, true);
-						infoText = infoText.apList('dał '+getModeInfo(modechar, type)+' dla '+args[nextarg]);
+						infoText = infoText.apList('dał '+getModeInfo(modechar, type)+' dla <span class="modevictim">'+args[nextarg]+'</span>');
 					}
 				} else {
 					if(chan.nicklist.findNick(args[nextarg])) {
@@ -2104,7 +2105,7 @@ var gateway = {
 								break;
 						}
 						chan.nicklist.findNick(args[nextarg]).setMode(mode, false);
-						infoText = infoText.apList('odebrał '+getModeInfo(modechar, type)+' '+args[nextarg]);
+						infoText = infoText.apList('odebrał '+getModeInfo(modechar, type)+' <span class="modevictim">'+args[nextarg]+'</span>');
 					}
 				}
 				nextarg++;
@@ -2552,6 +2553,8 @@ var conn = {
 			if (gateway.connectStatus != statusDisconnected) {
 				if ($('#autoDisconnect').is(':checked')) {
 					gateway.send('QUIT :Użytkownik zamknął stronę');
+					gateway.userQuit = true;
+					gateway.connectStatus = statusDisconnected;
 				} else {
 					gateway.clickQuit();
 					return 'Jesteś nadal połączony z IRCem. Kliknij "Zostań na stronie" a następnie "Rozłącz" w okienku poniżej aby się rozłączyć przed wyjściem.';

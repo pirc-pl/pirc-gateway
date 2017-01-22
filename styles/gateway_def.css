@@ -293,6 +293,10 @@ span.join a {
 	cursor: pointer;
 	text-decoration: underline;
 }
+
+span.modevictim, span.modeinfo {
+	font-weight: bolder;
+}
 	
 #chat-wrapper br {
 	margin-top: 2px;
