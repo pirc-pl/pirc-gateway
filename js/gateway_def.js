@@ -478,7 +478,14 @@ var gateway = {
 		gateway.websock = new WebSocket(server);
 		gateway.websock.onopen = function(e){
 			gateway.configureConnection();
-			gateway.send('USER pirc * * :Użytkownik bramki PIRC.pl\r\n');
+			var username = 'Użytkownik bramki PIRC.pl';
+			try {
+				var ckNick = localStorage.getItem('origNick');
+			 	if(ckNick){
+					username += ' "'+ckNick+'"';
+				}
+			} catch(e) {}
+			gateway.send('USER pirc * * :'+username+'\r\n');
 			gateway.send('NICK '+guser.nick);
 		}
 
@@ -2200,7 +2207,7 @@ var gateway = {
 			}
 		}
 
-		if(msg.text.match(/^[0-9a-zA-Z]+\.[0-9a-zA-Z]+ [0-9a-zA-Z]+\.[0-9a-zA-Z]+$/)){
+		if(msg.text.match(/^[^ :]+\.[^ :]+ [^ :]+\.[^ :]+$/)){
 			gateway.quitQueue.push(msg);
 			if(gateway.quitTimeout){
 				clearTimeout(gateway.quitTimeout);

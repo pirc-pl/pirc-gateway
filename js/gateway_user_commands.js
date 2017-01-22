@@ -65,7 +65,7 @@ var commands = {
 		'custom': [],
 		'callback': function(command, input) {
 			if(command[1]) {
-				gateway.send("WHOIS "+command[1]);
+				gateway.send("WHOIS "+command[1]+" "+command[1]);
 				if(command[1].toLowerCase() == guser.nick.toLowerCase()){
 					gateway.displayOwnWhois = true;
 				}

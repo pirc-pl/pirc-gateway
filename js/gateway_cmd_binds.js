@@ -381,7 +381,18 @@ var cmdBinds = {
 	],
 	'313': [	// RPL_WHOISOPERATOR
 		function(msg) {
-			$$.displayDialog('whois', msg.args[1], false, "<p class='whois'><span class='info'><br /></span><span class='data'><b class=admin>ADMINISTRATOR SIECI</b> (" + he(msg.text.substr(5)) +")</span></p>");
+			var info = '<b class="admin">OPERATOR SIECI</b>';
+			if(msg.text.match(/is a Network Service/i)){
+				info = 'Usługa sieciowa';
+				var sel = $$.getDialogSelector('whois', msg.args[1]).find('span.admin');
+				if(sel.length){
+					sel.append(' ('+info+')');
+					return;
+				} else {
+					info = '<b class="admin">' + info + '</b>';
+				}
+			}
+			$$.displayDialog('whois', msg.args[1], false, "<p class='whois'><span class='info'><br /></span><span class='data admin'>"+info+"</span></p>");
 		}
 	],
 	'317': [	// RPL_WHOISIDLE 
@@ -440,6 +451,16 @@ var cmdBinds = {
 			}
 		}
 	],
+	'320': [	//RPL_WHOISSPECIAL
+		function(msg) {
+			var sel = $$.getDialogSelector('whois', msg.args[1]).find('span.admin');
+			if(sel.length){
+				sel.append(' ('+msg.text+')');
+			} else {
+				$$.displayDialog('whois', msg.args[1], false, "<p class='whois'><span class='info'><br /></span><span class='data'>"+msg.text+"</span></p>");
+			}
+		}
+	],
 	'322': [	// RPL_LIST
 		function(msg) {
 			if (!msg.text) {
@@ -464,12 +485,12 @@ var cmdBinds = {
 					chanO.appendMessage(messagePatterns.mode, [gateway.niceTime(), chan, info]);
 				}
 				gateway.send('CAP REQ :multi-prefix userhost-in-names away-notify\r\nCAP END');//\r\nNAMES '+chan);
-				try {
+				/*try {
 					var ckNick = localStorage.getItem('origNick');
   				 	if(ckNick){
 						gateway.send('SETNAME Użytkownik bramki PIRC.pl "' + ckNick + '"');
 					}
-				} catch(e) {}
+				} catch(e) {}*/
 			}
 		}
 	],
