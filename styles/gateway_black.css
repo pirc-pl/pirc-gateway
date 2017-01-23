@@ -1,4 +1,4 @@
-#chat-wrapper, #nick-wrapper, .chstatswrapper {
+#chat-wrapper, #nick-wrapper {
 	background-color: #000000;
 }
 
@@ -225,4 +225,7 @@ span.data {
 	background: url("/styles/img/techbg.png") no-repeat scroll right top #062B65 !important;
 }
 
+.chstatswrapper {
+    background-color: #555555;
+}
 

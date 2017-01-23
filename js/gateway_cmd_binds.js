@@ -694,13 +694,19 @@ var cmdBinds = {
 	],
 	'401': [	// ERR_NOSUCHNICK
 		function(msg) {
-			$$.displayDialog('error', 'error', 'Błąd', 'Nie można wykonać żądanej akcji: nie ma takiego nicku ani kanału.');
+			$$.displayDialog('error', 'error', 'Błąd', '<p>Nie można wykonać żądanej akcji: nie ma takiego nicku ani kanału.</p>');
+			gateway.statusWindow.appendMessage(messagePatterns.noSuchNick, [gateway.niceTime(), he(msg.args[1])]);
+		}
+	],
+	'402': [	// ERR_NOSUCHSERVER
+		function(msg) {
+			$$.displayDialog('error', 'error', 'Błąd', '<p>Nie można wykonać żądanej akcji: nie ma takiego obiektu.</p>');
 			gateway.statusWindow.appendMessage(messagePatterns.noSuchNick, [gateway.niceTime(), he(msg.args[1])]);
 		}
 	],
 	'403': [	// ERR_NOSUCHCHANNEL 
 		function(msg) {
-			$$.displayDialog('error', 'error', 'Błąd', 'Nie można wykonać żądanej akcji: nie ma takiego kanału.');
+			$$.displayDialog('error', 'error', 'Błąd', '<p>Nie można wykonać żądanej akcji: nie ma takiego kanału.</p>');
 			gateway.statusWindow.appendMessage(messagePatterns.noSuchChannel, [gateway.niceTime(), he(msg.args[1])]);
 		}
 	],
@@ -718,6 +724,8 @@ var cmdBinds = {
 					reason = 'Wiadomości zawierające kolory są zabronione na tym kanale';
 				} else if(msg.text.match(/No external channel messages \(.*\)/)){
 					reason = 'Musisz być na tym kanale, aby móc pisać';
+				} else if(msg.text.match(/You must have a registered nick \(\+r\) to talk on this channel \(.*\)/)){
+					reason = 'Musisz mieć zarejestrowanego nicka, aby teraz pisać na tym kanale';
 				} else {
 					reason = msg.text;
 				}
@@ -912,12 +920,11 @@ var cmdBinds = {
 			if(msg.text.match(/\(NickServ \(RECOVER command used by [^ ]+\)\)$/)){
 				$$.displayReconnect();
 				var html = "<h2>Błąd ogólny</h2>" +
-					"<br>Inna sesja rozłączyła Cię używając polecenia RECOVER. Może masz otwartą więcej niż jedną bramkę?";
-				$$.displayDialog('error', 'error', 'Błąd', html);
+					"<p>Inna sesja rozłączyła Cię używając polecenia RECOVER. Może masz otwartą więcej niż jedną bramkę?</p>";
+				$$.displayDialog('error', 'herror', 'Błąd', html);
 			} else {
-
 				var html = "<h3>Serwer przerwał połączenie</h3>" +
-					"Informacje: "+msg.text+"</p>";
+					"<p>Informacje: "+msg.text+"</p>";
 				$$.displayDialog('error', 'error', 'Błąd', html);
 				if($('#autoReconnect').is(':checked')){
 					gateway.reconnect();

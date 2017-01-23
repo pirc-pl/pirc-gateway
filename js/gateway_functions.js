@@ -14,7 +14,7 @@ var reqChannel = '';
 
 var server = 'wss://bramka.pirc.pl:8082/';
 
-var booleanSettings = [ 'showPartQuit', 'tabsListBottom', 'showUserHostnames', 'autoReconnect', 'displayLinkWarning', 'blackTheme', 'newMsgSound', 'autoDisconnect', 'coloredNicks', 'showMode' ];
+var booleanSettings = [ 'showPartQuit', 'tabsListBottom', 'showUserHostnames', 'autoReconnect', 'displayLinkWarning', 'blackTheme', 'newMsgSound', 'autoDisconnect', 'coloredNicks', 'showMode', 'dispEmoji', 'sendEmoji' ];
 var comboSettings = [ 'noticeDisplay' ];
 var numberSettings = [ 'backlogCount' ];
 var numberSettingsMinMax = {
@@ -41,11 +41,11 @@ var banData = {
 var messagePatterns = {
 	'nickChange': '<span class="time">%s</span> &nbsp; <span class="mode">✯ <span class="modeinfo">%s</span> zmienił nick na <span class="modeinfo">%s</span></span><br />',
 	'nickInUse': '<span class="time">%s</span> &nbsp; <span class="kick">✯ <span class="modeinfo">%s</span>: Nick jest już używany przez kogoś innego.</span><br />',
-	'badNick': '<span class="time">%s</span> &nbsp; <span class="kick">✯ <span class="modeinfo">%s</span>: Nick nie jest dostępny.</span><br />',
+	'badNick': '<span class="time">%s</span> &nbsp; <span class="kick">⮿ <span class="modeinfo">%s</span>: Nick nie jest dostępny.</span><br />',
 	'nickChangeOwn': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Jesteś teraz znany jako <span class="modeinfo">%s</span></span><br />',
 	'joinOwn': '<span class="time">%s</span> &nbsp; <span class="join">🢡 Dołączyłeś do kanału <span class="modeinfo">%s</span>.</span><br />',
-	'join': '<span class="time">%s</span> &nbsp; <span class="join">🢡 <b>%s</b> <i class="userhost">[%s@%s]</i> dołączył do %s.</span><br />',
-	'part': '<span class="time">%s</span> &nbsp; <span class="part">🢠 <b>%s</b> <i class="userhost">[%s@%s]</i> opuścił %s [%s]</span><br />',
+	'join': '<span class="time">%s</span> &nbsp; <span class="join">🢡 <b>%s</b> <i class="userhost">[%s@%s]</i> dołączył do <span class="modeinfo">%s</span>.</span><br />',
+	'part': '<span class="time">%s</span> &nbsp; <span class="part">🢠 <b>%s</b> <i class="userhost">[%s@%s]</i> opuścił <span class="modeinfo">%s</span> [%s]</span><br />',
 	'quit': '<span class="time">%s</span> &nbsp; <span class="part">🢠 <b>%s</b> <i class="userhost">[%s@%s]</i> opuścił IRC [%s]</span><br />',
 	'partOwn': '<span class="time">%s</span> &nbsp; <span class="part">🢠 Opuściłeś kanał <span class="modeinfo">%s</span>. <a href="#" onclick="gateway.send(\'JOIN %s\')">Dołącz ponownie</a></span><br />',
 	'channelMsg': '<span class="time">%s</span> &nbsp; <span class="nick">&lt;<span %s>%s</span>&gt;</span> %s<br />',
@@ -59,30 +59,30 @@ var messagePatterns = {
 	'topic': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Temat kanału <span class="modeinfo">%s</span>: %s</span><br />',
 	'topicNotSet': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Temat <span class="modeinfo">%s</span> nie jest ustawiony</span><br />',
 	'topicTime': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Temat ustawiony przez <span class="modeinfo">%s</span> [%s]</span><br />',
-	'kick': '<span class="time">%s</span> &nbsp; <span class="kick">✯ <span class="modeinfo">%s</span> wyrzucił <span class="modeinfo">%s</span> z <span class="modeinfo">%s</span> [Powód: %s]</span><br />',
-	'kickOwn': '<span class="time">%s</span> &nbsp; <span class="kick">✯ <span class="modeinfo">%s</span> wyrzucił cię z <span class="modeinfo">%s</span> [Powód: %s]</span><br />',
-	'modeChange': '<span class="time">%s</span> &nbsp; <span class="mode">✯ <span class="modeinfo">%s</span> %s na kanale <span class="modeinfo">%s</span></span><br />',
-	'mode': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Ustawienia kanału <span class="modeinfo">%s</span>: %s</span><br />',
+	'kick': '<span class="time">%s</span> &nbsp; <span class="kick">✀ <span class="modeinfo">%s</span> wyrzucił <span class="modeinfo">%s</span> z <span class="modeinfo">%s</span> [Powód: %s]</span><br />',
+	'kickOwn': '<span class="time">%s</span> &nbsp; <span class="kick">✀ <span class="modeinfo">%s</span> wyrzucił cię z <span class="modeinfo">%s</span> [Powód: %s]</span><br />',
+	'modeChange': '<span class="time">%s</span> &nbsp; <span class="mode">🔧 <span class="modeinfo">%s</span> %s na kanale <span class="modeinfo">%s</span></span><br />',
+	'mode': '<span class="time">%s</span> &nbsp; <span class="mode">🔧 Ustawienia kanału <span class="modeinfo">%s</span>: %s</span><br />',
 	'startedQuery': '<span class="time">%s</span> &nbsp; <span class="join">🢡 Rozpoczęto rozmowę z <span class="modeinfo">%s</span>. <a onclick="gateway.askIgnore(\'%s\');">Ignoruj tego użytkownika</a></span><br />',
 	'queryBacklog': '<span class="time">%s</span> &nbsp; <span class="join">✯ Zapis poprzedniej rozmowy z <span class="modeinfo">%s</span>:</span><br />',
 	'channelBacklog': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Zapis poprzedniej wizyty na <span class="modeinfo">%s</span>:</span><br />',
 	'channelBacklogEnd': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Koniec zapisu.</span><br />',
-	'noSuchCommand': '<span class="time">%s</span> &nbsp; <span class="mode">✯ <span class="modeinfo">%s</span>: nieznana komenda.</span><br />',
-	'noSuchNick': '<span class="time">%s</span> &nbsp; <span class="mode">✯ <span class="modeinfo">%s</span>: nie ma takiego nicku ani kanału</span><br />',
-	'noSuchChannel': '<span class="time">%s</span> &nbsp; <span class="mode">✯ <span class="modeinfo">%s</span>: nie ma takiego kanału</span><br />',
-	'notOnChannel': '<span class="time">%s</span> &nbsp; <span class="mode">✯ <span class="modeinfo">%s</span>: nie jesteś na tym kanale</span><br />',
-	'alreadyOnChannel': '<span class="time">%s</span> &nbsp; <span class="mode">✯ %s: <span class="modeinfo">%s</span> jest już na tym kanale</span><br />',
+	'noSuchCommand': '<span class="time">%s</span> &nbsp; <span class="mode">⮿ <span class="modeinfo">%s</span>: nieznana komenda.</span><br />',
+	'noSuchNick': '<span class="time">%s</span> &nbsp; <span class="mode">⮿ <span class="modeinfo">%s</span>: nie ma takiego nicku ani kanału</span><br />',
+	'noSuchChannel': '<span class="time">%s</span> &nbsp; <span class="mode">⮿ <span class="modeinfo">%s</span>: nie ma takiego kanału</span><br />',
+	'notOnChannel': '<span class="time">%s</span> &nbsp; <span class="mode">⮿ <span class="modeinfo">%s</span>: nie jesteś na tym kanale</span><br />',
+	'alreadyOnChannel': '<span class="time">%s</span> &nbsp; <span class="mode">⮿ %s: <span class="modeinfo">%s</span> jest już na tym kanale</span><br />',
 	'youQuit': '<span class="time">%s</span> &nbsp; <span class="part">✯ Wyszedłeś z IRC</span><br />',
-	'notConnected': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Nie jesteś połączony z IRC!</span><br />',
-	'notEnoughParameters': '<span class="time">%s</span> &nbsp; <span class="mode">✯ <span class="modeinfo">%s</span>: Za mało argumentów.</span><br />',
-	'cannotSendToChan': '<span class="time">%s</span> &nbsp; <span class="kick">✯ Nie można wysłać na <span class="modeinfo">%s</span>: %s. Wiadomość nie została dostarczona.</span><br />',
-	'cannotSendToUser': '<span class="time">%s</span> &nbsp; <span class="kick">✯ Nie można pisać do <span class="modeinfo">%s</span>: %s. Wiadomość nie została dostarczona.</span><br />',
-	'cannotJoin': '<span class="time">%s</span> &nbsp; <span class="kick">✯ Nie można dołączyć do kanału <span class="modeinfo">%s</span>: %s</span><br />',
-	'noPerms': '<span class="time">%s</span> &nbsp; <span class="kick">✯ Brak uprawnien.</span><br />',
+	'notConnected': '<span class="time">%s</span> &nbsp; <span class="mode">⮿ Nie jesteś połączony z IRC!</span><br />',
+	'notEnoughParameters': '<span class="time">%s</span> &nbsp; <span class="mode">⮿ <span class="modeinfo">%s</span>: Za mało argumentów.</span><br />',
+	'cannotSendToChan': '<span class="time">%s</span> &nbsp; <span class="kick">⮿ Nie można wysłać na <span class="modeinfo">%s</span>: %s. Wiadomość nie została dostarczona.</span><br />',
+	'cannotSendToUser': '<span class="time">%s</span> &nbsp; <span class="kick">⮿ Nie można pisać do <span class="modeinfo">%s</span>: %s. Wiadomość nie została dostarczona.</span><br />',
+	'cannotJoin': '<span class="time">%s</span> &nbsp; <span class="kick">⮿ Nie można dołączyć do kanału <span class="modeinfo">%s</span>: %s</span><br />',
+	'noPerms': '<span class="time">%s</span> &nbsp; <span class="kick">⮿ Brak uprawnien.</span><br />',
 	'notice': '<span class="time">%s</span> &nbsp; <span class="notice-nick"><b>-%s-</b></span><span class="userhost">(<span class="notice-nick">%s</span>@<span class="notice-nick">%s</span>)</span> <span class="notice">%s</span><br />',
 	'serverNotice': '<span class="time">%s</span> &nbsp; <span class="notice-nick">Wiadomość od serwera <b>%s</b>:</span> <span class="notice">%s</span><br />',
 	'yourNotice': '<span class="time">%s</span> &nbsp; <span class="notice"><b>-NOTICE/%s-</b> %s</span><br />',
-	'notEnoughParams': '<span class="time">%s</span> &nbsp; <span class="mode">✯ <span class="modeinfo">%s</span>: za mało argumentów: %s</span><br />',
+	'notEnoughParams': '<span class="time">%s</span> &nbsp; <span class="mode">⮿ <span class="modeinfo">%s</span>: za mało argumentów: %s</span><br />',
 	'motd': '<span class="time">%s</span> &nbsp; <span class="motd">✯ %s</span><br />',
 	'ctcpRequest': '<span class="time">%s</span> &nbsp; <span class="mode">✯ <span class="modeinfo">%s</span> wysyła CTCP REQUEST: %s</span><br />',
 	'ctcpReply': '<span class="time">%s</span> &nbsp; <span class="notice">✯ <b>CTCP REPLY od %s:</b> %s</span><br />',
@@ -93,11 +93,11 @@ var messagePatterns = {
 	'invexListEnd': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Koniec listy invex.</span><br />',
 	'exceptListElement': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Except: <b>%s</b> <i>założony przez:</i> <b>%s</b> (%s) </span><br />',
 	'exceptListEnd': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Koniec listy except.</span><br />',*/
-	'error': '<span class="time">%s</span> &nbsp; <span class="mode"> !!! Rozłączono z serwerem: %s</span><br />',
+	'error': '<span class="time">%s</span> &nbsp; <span class="mode"> ⮿ Rozłączono z serwerem: %s</span><br />',
 	'existingConnection': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Połączenie już istnieje, dołączam się do niego.</span><br />',
-	'away': '<span class="time">%s</span> &nbsp; <span class="mode">✯ <span class="modeinfo">%s</span> otrzymał twoją wiadomość, ale jest teraz nieobecny: %s</span><br />',
-	'yourAwayEnabled': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Jesteś teraz oznaczony jako nieobecny</span><br />',
-	'yourAwayDisabled': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Nie jesteś już oznaczony jako nieobecny</span><br />',
+	'away': '<span class="time">%s</span> &nbsp; <span class="mode">🍵 <span class="modeinfo">%s</span> otrzymał twoją wiadomość, ale jest teraz nieobecny: %s</span><br />',
+	'yourAwayEnabled': '<span class="time">%s</span> &nbsp; <span class="mode">🍵 Jesteś teraz oznaczony jako nieobecny</span><br />',
+	'yourAwayDisabled': '<span class="time">%s</span> &nbsp; <span class="mode">🍵 Nie jesteś już oznaczony jako nieobecny</span><br />',
 	'yourInvite': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Zaprosiłeś użytkownika <span class="modeinfo">%s</span> na kanał <span class="modeinfo">%s</span></span><br />',
 	'knocked': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Poprosiłeś o dostęp ("zapukałeś") na <span class="modeinfo">%s</span>, czekaj na zaproszenie od operatora</span><br />',
 	'listShown': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Lista kanałów będzie wyświetlona w zakładce statusu.</span><br />',
@@ -189,6 +189,37 @@ var ignoreData = {
 	}
 };
 
+var emoji = {
+	':D':	'😃',
+	'O:->':	'😇',
+	']:->': '😈',
+	'^^':	'😊',
+	':p':	'😋',
+	'3)':	'😌',
+	'8)':	'😎',
+	':>':	'😏',
+	':|':	'😐',
+	':<':	'😒',
+	':((':	'😓',
+	':/':	'😕',
+	':c':	'😕',
+	':o':	'😕',
+	':O':	'😱',
+	'xo':	'😵',
+	':*':	'😘',
+	';*':	'😙',
+	':P':	'😛',
+	';p':	'😜',
+	':(':	'🙁',
+	':)':	'🙂',
+	'(:':	'🙃',
+	'<3':	'💗',
+	'-_-':	'😑',
+	';(':	'😢',
+	';)':	'😉'
+	
+};	
+
 function ChannelModes() {
 	modes.single.forEach(function(mode){
 		this[mode] =  false;
@@ -225,6 +256,10 @@ function bsEscape(text) { // escapowanie beksleszy
 	return text.replace('\\', '\\\\');
 }
 
+function rxEscape(text) { //backupowanie regex
+	return text.replace(/[.^$*+?()[{\\|]/g, '\\$&');
+}
+
 if (!String.prototype.isInList) {
    String.prototype.isInList = function(list) {
       var value = this.valueOf();
@@ -244,6 +279,20 @@ if(!String.prototype.apList){
 		}
 	}
 }
+
+var emojiRegex = [];
+
+var out1 = '';
+var out2 = '';
+for(i in emoji){
+	var expr = rxEscape(i)+'(($)|(\\s))';
+	var regex = new RegExp(expr, 'g');
+	emojiRegex.push([regex, emoji[i]]);
+	out1 += emoji[i] + ' ';
+	out2 += i + ' ';
+}
+console.log(out1);
+console.log(out2);
 
 // zmienna gateway.connectStatus
 
@@ -340,21 +389,27 @@ var disp = {
 			}
 		}, 250);
 	},
-	'changeSettings': function() {
+	'changeSettings': function(e) {
 		booleanSettings.forEach(function(sname){
-			localStorage.setItem(sname, $('#'+sname).is(':checked'));
+			try {
+				localStorage.setItem(sname, $('#'+sname).is(':checked'));
+			} catch(e){}
 		});
 		comboSettings.forEach(function(sname){
-			localStorage.setItem(sname, $('#'+sname).val());
+			try {
+				localStorage.setItem(sname, $('#'+sname).val());
+			} catch(e){}
 		});
 
 		numberSettings.forEach(function(sname){
 			var value = $('#'+sname).val();
-			if(isNaN(parseFloat(value)) || value < numberSettingsMinMax[sname]['min'] || value > numberSettingsMinMax[sname]['max']){
+			if(value == '' || isNaN(parseFloat(value)) || value < numberSettingsMinMax[sname]['min'] || value > numberSettingsMinMax[sname]['max']){
 				value = numberSettingsMinMax[sname]['deflt'];
 				$('#'+sname).val(value);
 			}
-			localStorage.setItem(sname, value);
+			try {
+				localStorage.setItem(sname, value);
+			} catch(e){}
 		});
 		settings.backlogLength = parseInt($('#backlogCount').val());
 		if ($('#tabsListBottom').is(':checked')) {
@@ -379,6 +434,16 @@ var disp = {
 			if($('#userhost_hidden').length == 0){
 				var style = $('<style id="userhost_hidden">.userhost { display:none; }</style>');
 				$('html > head').append(style);
+			}
+		}
+		if(!e) return;
+		if(e.currentTarget.id == 'dispEmoji') {
+			if(!$('#dispEmoji').is(':checked')){
+				$('#sendEmoji').prop('checked', false);
+			}
+		} else if(e.currentTarget.id == 'sendEmoji'){
+			if($('#sendEmoji').is(':checked')){
+				$('#dispEmoji').prop('checked', true);
 			}
 		}
 	},
@@ -486,6 +551,9 @@ var $$ = {
 		var currBack = pageBack;
 		var currFront = pageFront;
 		var newText = '';
+		if($('#dispEmoji').is(':checked')){
+			message = $$.textToEmoji(message);
+		}
 		message = he(message); 
 		message = $$.parseLinks(message);
 		var length	= message.length;
@@ -867,6 +935,13 @@ var $$ = {
 		regex = regex.replace(/\.\*/g, "*");
 		regex = regex.replace(/\.\?/g, "?");
 		return regex.slice(1, -1);
+	},
+	'textToEmoji': function(text){
+		for(i in emojiRegex){
+			var regexp = emojiRegex[i][0];
+			text = text.replace(regexp, emojiRegex[i][1]+'$1');
+		}
+		return text;
 	}
 }
 

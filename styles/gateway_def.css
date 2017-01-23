@@ -1014,17 +1014,32 @@ span.td_right {
 
 .chstatswrapper {
     border-radius: 4px;
-    background: none repeat scroll 0 0 #FFFFFF;
+    background: none repeat scroll 0 0 #E4E4E4;
     border: 1px solid #9A9A9A;
     height: 100%;
     margin: 10px auto;
     overflow: auto;
     width: 98%;
+    text-align: center;
+	font-size: .9em;
 }
 
 span.chstats-text {
     display: block;
-    padding: 1px;
+	padding-top: .2em;
     padding-left: 5px;
+    padding-right: 5px;
+}
+
+span.chstats-text:after {
+    content: " ⮘";
+}
+
+span.chstats-text:before {
+    content: "⮚ ";
+}
+
+#options-dialog td.info {
+    padding-left: .5em;
 }
 

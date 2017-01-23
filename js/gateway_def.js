@@ -1086,6 +1086,9 @@ var gateway = {
 			input = '';
 		}
 		input = $$.tagsToColors(input);
+		if($('#sendEmoji').is(':checked')){
+			input = $$.textToEmoji(input);
+		}
 		if (!input) {
 			return;
 		}
@@ -2215,6 +2218,9 @@ var gateway = {
 			var chan = gateway.channels[c];
 			var nicklist = chan.nicklist;
 			for(n in gateway.netJoinQueue){
+				if(gateway.netJoinQueue[n].msg.text.toLowerCase() != chan.name.toLowerCase()){
+					continue;
+				}
 				var nick = gateway.netJoinQueue[n].sender.nick;
 				if(nickNames != ''){
 					nickNames += ', ';
@@ -2434,7 +2440,6 @@ var conn = {
 				$('#'+sname).val(localStorage.getItem(sname));
 			});
 			disp.setSize(localStorage.getItem('tsize'));
-			disp.changeSettings();
 			var ignoreList = localStorage.getItem('ignore');
 			if(ignoreList){
 				ignoreData = JSON.parse(ignoreList);
@@ -2442,6 +2447,7 @@ var conn = {
 		} catch(e){
 			//za mało miejsca na dysku?
 		}
+		disp.changeSettings();
 		
 		$('#chatbox').click(function() {
 		/*	gateway.closeNotify();

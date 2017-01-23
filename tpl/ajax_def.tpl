@@ -13,53 +13,61 @@
 		<div id="options-dialog" title="Ustawienia">
 			<table>
 				<tr>
-					<td class="optionsCheckBox"><input type="checkbox" id="showPartQuit" onchange="disp.changeSettings()" /></td>
-					<td>&nbsp; Nie pokazuj wiadomości PART/JOIN/QUIT (wejścia/wyjścia z kanałów)</td>
+					<td class="optionsCheckBox"><input type="checkbox" id="showPartQuit" onchange="disp.changeSettings(event)" /></td>
+					<td class="info">Nie pokazuj wiadomości PART/JOIN/QUIT (wejścia/wyjścia z kanałów)</td>
 				</tr>
 				<tr>
-					<td class="optionsCheckBox"><input type="checkbox" id="showMode" onchange="disp.changeSettings()" /></td>
-					<td>&nbsp; Nie pokazuj wiadomości MODE (zmian trybów)</td>
+					<td class="optionsCheckBox"><input type="checkbox" id="showMode" onchange="disp.changeSettings(event)" /></td>
+					<td class="info">Nie pokazuj wiadomości MODE (zmian trybów)</td>
 				</tr>
 				<tr>
-					<td class="optionsCheckBox"><input type="checkbox" id="tabsListBottom" onchange="disp.changeSettings()" /></td>
-					<td>&nbsp; Listę zakładek pokazuj na dole strony</td>
+					<td class="optionsCheckBox"><input type="checkbox" id="tabsListBottom" onchange="disp.changeSettings(event)" /></td>
+					<td class="info">Listę zakładek pokazuj na dole strony</td>
 				</tr>
 				<tr title="Pokazuje informację user@host przy dołączaniu i opuszczaniu kanałów przez użytkowników">
-					<td class="optionsCheckBox"><input type="checkbox" id="showUserHostnames" onchange="disp.changeSettings()" /></td>
-					<td>&nbsp; Pokazuj nazwy hosta użytkowników</td>
+					<td class="optionsCheckBox"><input type="checkbox" id="showUserHostnames" onchange="disp.changeSettings(event)" /></td>
+					<td class="info">Pokazuj nazwy hosta użytkowników</td>
 				</tr>
 				<tr>
-					<td class="optionsCheckBox"><input type="checkbox" id="autoReconnect" onchange="disp.changeSettings()" checked="checked" /></td>
-					<td>&nbsp; Automatycznie łącz ponownie po rozłączeniu</td>
+					<td class="optionsCheckBox"><input type="checkbox" id="autoReconnect" onchange="disp.changeSettings(event)" checked="checked" /></td>
+					<td class="info">Automatycznie łącz ponownie po rozłączeniu</td>
 				</tr>
 				<tr title="Ustawienie nie wpływa na linki, które są już wyświetlone">
-					<td class="optionsCheckBox"><input type="checkbox" id="displayLinkWarning" onchange="disp.changeSettings()" checked="checked" /></td>
-					<td>&nbsp; Pokazuj ostrzeżenia o niebezpiecznych linkach</td>
+					<td class="optionsCheckBox"><input type="checkbox" id="displayLinkWarning" onchange="disp.changeSettings(event)" checked="checked" /></td>
+					<td class="info">Pokazuj ostrzeżenia o niebezpiecznych linkach</td>
 				</tr>
 				<tr>
-					<td class="optionsCheckBox"><input type="checkbox" id="blackTheme" onchange="disp.changeSettings()" /></td>
-					<td>&nbsp; Ciemny motyw bramki (eksperymentalny)</td>
+					<td class="optionsCheckBox"><input type="checkbox" id="blackTheme" onchange="disp.changeSettings(event)" /></td>
+					<td class="info">Ciemny motyw bramki (eksperymentalny)</td>
 				</tr>
 				<tr>
-					<td class="optionsCheckBox"><input type="checkbox" id="coloredNicks" onchange="disp.changeSettings()" checked="checked" /></td>
-					<td>&nbsp; Koloruj nicki w oknie rozmowy</td>
+					<td class="optionsCheckBox"><input type="checkbox" id="coloredNicks" onchange="disp.changeSettings(event)" checked="checked" /></td>
+					<td class="info">Koloruj nicki w oknie rozmowy</td>
 				</tr>
 				<tr>
-					<td class="optionsCheckBox"><input type="checkbox" id="newMsgSound" onchange="disp.changeSettings()" /></td>
-					<td>&nbsp; Informuj dźwiękiem o nowej wiadomości</td>
+					<td class="optionsCheckBox"><input type="checkbox" id="newMsgSound" onchange="disp.changeSettings(event)" /></td>
+					<td class="info">Informuj dźwiękiem o nowej wiadomości</td>
 				</tr>
 				<tr>
-					<td class="optionsCheckBox"><input type="checkbox" id="autoDisconnect" onchange="disp.changeSettings()" checked="checked" /></td>
-					<td>&nbsp; Automatycznie rozłączaj przy zamykaniu strony</td>
+					<td class="optionsCheckBox"><input type="checkbox" id="dispEmoji" onchange="disp.changeSettings(event)" checked="checked" /></td>
+					<td class="info">Wyświetlaj emoji w miejsce emotikon tekstowych (na przykład "🙂" w miejsce ":)")</td>
 				</tr>
 				<tr>
-					<td><input type="text" id="backlogCount" onchange="disp.changeSettings()" /></td>
-					<td>&nbsp; Ilość linii w historii rozmów z poprzedniej wizyty</td>
+					<td class="optionsCheckBox"><input type="checkbox" id="sendEmoji" onchange="disp.changeSettings(event)" /></td>
+					<td class="info">Wysyłaj powyższe emoji na IRC</td>
+				</tr>
+				<tr>
+					<td class="optionsCheckBox"><input type="checkbox" id="autoDisconnect" onchange="disp.changeSettings(event)" checked="checked" /></td>
+					<td class="info">Automatycznie rozłączaj przy zamykaniu strony</td>
+				</tr>
+				<tr>
+					<td><input type="text" id="backlogCount" onchange="disp.changeSettings(event)" /></td>
+					<td class="info">Ilość linii w historii rozmów z poprzedniej wizyty</td>
 				</tr>
 				<tr title="Gdy rozmowa prywatna jest już otwarta, to, niezależnie od tego ustawienia, tam pojawią się wszystkie NOTICE">
 					<td colspan="2">
 						Sposób wyświetlania wiadomości NOTICE &nbsp;
-						<select id="noticeDisplay" onchange="disp.changeSettings()">
+						<select id="noticeDisplay" onchange="disp.changeSettings(event)">
 							<option value="0">Wyskakujące okienko</option>
 							<option value="1">Rozmowa prywatna</option>
 							<option value="2">Zakładka statusu</option>
