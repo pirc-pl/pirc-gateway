@@ -9,7 +9,7 @@ a:active {
 
 @font-face {
 	font-family: 'Symbola';
-	src: url('/styles/Symbola.woff') format('woff');
+	src: url('/styles/Symbola.woff?2') format('woff');
 	font-weight: normal;
 	font-style: normal;
 }
