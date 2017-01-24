@@ -16,9 +16,20 @@ var mcolorJoinHandler = function(msg){
 	}
 }
 
+var isCorrectColor = function(color){
+	if(color.match(/^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/)){
+		return true;
+	}
+	return false;
+}
+
 var mcolorCtcpHandler = function(msg){
 	if(msg.ctptext == 'OFF'){
 		delete mcolors[md5(msg.sender.nick.toLowerCase())];
+		return;
+	}
+	if(!isCorrectColor(msg.ctcptext)){
+		console.log(msg.sender.nick+' sent bad color code: '+msg.ctcptext);
 		return;
 	}
 	mcolors[md5(msg.sender.nick.toLowerCase())] = msg.ctcptext;
@@ -36,7 +47,7 @@ var setMyColor = function(color){
 			$$.displayDialog('info', 'info', 'Info', '<p>Kod koloru '+he(color)+' taki jak poprzedni - nie zmieniono!</p>');
 			return;
 		}
-		if(color.match(/^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/)){
+		if(isCorrectColor(color)){
 			mcolor = color;
 			$$.displayDialog('info', 'info', 'Info', '<p>Ustawiono kolor na <span style="color:'+mcolor+'">'+mcolor+'</span></p>');
 		} else {

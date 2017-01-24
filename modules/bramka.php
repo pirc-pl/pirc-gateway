@@ -25,7 +25,7 @@ class Module extends ModuleT {
 		}*/
 		$gateway_url .= '\">innej bramki</a> (Mibbit).';
 		
-		$add_js_list = array('mcolor');
+		$add_js_list = array('mcolor', 'icons_rangi');
 		$add_js = '';
 		$addons = array();
 		if($_GET['addons']){
