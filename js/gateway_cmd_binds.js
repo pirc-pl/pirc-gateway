@@ -1029,5 +1029,9 @@ var ctcpBinds = {
 			}
 			gateway.sendDelayed('NOTICE '+msg.sender.nick+ ' \001REFERER '+referer_string+'\x01');
 		}
+	],
+	'MCOL': [
+		function(msg){
+		}
 	]
 };
