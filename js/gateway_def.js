@@ -518,21 +518,11 @@ var gateway = {
 	},*/
 	'processData': function(data) {
 		for (i in data.packets) { //wywoływanie funkcji 'handlerów' od poleceń
-			if(data.packets[i].command in cmdBinds) {
-				for(func in cmdBinds[data.packets[i].command]) {
-					if(typeof data.packets[i] === undefined || data.packets[i] == undefined){
-						console.log('Undefined packet!');
-						continue;
-					}
-					if(typeof data.packets[i].command === undefined){
-						console.log('Undefined command!');
-						continue;
-					}
-					if(data.packets[i].command && cmdBinds[data.packets[i].command] && typeof(cmdBinds[data.packets[i].command][func]) == 'function') {
-						cmdBinds[data.packets[i].command][func](data.packets[i]);
-					} else {
-						console.log(data.packets[i]);
-					}
+			var msg = data.packets[i];
+			var command = msg.command
+			if(command in cmdBinds) {
+				for(func in cmdBinds[command]) {
+					cmdBinds[command][func](msg);
 				}
 			}
 		}
@@ -1076,7 +1066,11 @@ var gateway = {
 				var sendNow = textToSend.substring(0, 420);
 				textToSend = textToSend.substring(420);
 				gateway.send("PRIVMSG " + gateway.getActive().name + " :" + sendNow);
-				gateway.getActive().appendMessage(messagePatterns.yourMsg, [gateway.niceTime(), $$.nickColor(guser.nick), guser.nick, $$.colorize(sendNow)]);
+				var message = $$.colorize(sendNow);
+				for(f in messageProcessors){
+					message = messageProcessors[f](guser.nick, false, message);
+				}
+				gateway.getActive().appendMessage(messagePatterns.yourMsg, [gateway.niceTime(), $$.nickColor(guser.nick), guser.nick, message]);
 			} while (textToSend != "");
 			gateway.getActive().appendMessage('%s', [$$.parseImages(input)]);
 		}
@@ -2283,7 +2277,7 @@ var gateway = {
 	
 var loaded = false;
 
-var readyFunc = function(){
+var defReadyFunc = function(){
 	if(loaded) return;
 	$('.not-connected-text > h3').html('Ładowanie');
 	$('.not-connected-text > p').html('Poczekaj chwilę, trwa ładowanie...');
@@ -2299,6 +2293,14 @@ var readyFunc = function(){
 		conn.gatewayInit();
 	}
 };
+
+var readyFunctions = [ defReadyFunc ];
+
+var readyFunc = function(){
+	for(f in readyFunctions){
+		readyFunctions[f]();
+	}
+}
 
 $('document').ready(function(){setTimeout(readyFunc, 100);});
 

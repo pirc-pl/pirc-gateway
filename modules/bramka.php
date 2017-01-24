@@ -24,7 +24,17 @@ class Module extends ModuleT {
 			$gateway_url .= $addcssdec . '/';
 		}*/
 		$gateway_url .= '\">innej bramki</a> (Mibbit).';
-
+		
+		$add_js_list = array('mcolor');
+		$add_js = '';
+		$addons = array();
+		if($_GET['addons']){
+			$addons = explode(',', $_GET['addons']);
+		}
+		foreach($addons as $addon){
+			if(!in_array($addon, $add_js_list)) continue;
+			$add_js .= '<script type="text/javascript" src="/js/addon_'.$addon.'.js"></script>'."\n";
+		}
 
 		$nick = htmlspecialchars($nick);
 		if(isset($channel)) $channel = '#'.htmlspecialchars($channel); else $channel = '#';
@@ -52,6 +62,7 @@ class Module extends ModuleT {
 		Template::assign('sid', session_id());
 		Template::assign('old_gateway_html', $gateway_url);
 		Template::assign('random_string', '?'.rand(100, 5000));
+		Template::assign('add_js', $add_js);
 		
 		Template::display('gateway_ajax_header');
 		Template::display('ajax_'.$glayout);

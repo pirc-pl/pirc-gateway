@@ -38,6 +38,8 @@ var banData = {
 	}
 }
 
+var messageProcessors = []; //function (src, dst, text) returns new_text
+
 var messagePatterns = {
 	'nickChange': '<span class="time">%s</span> &nbsp; <span class="mode">✯ <span class="modeinfo">%s</span> zmienił nick na <span class="modeinfo">%s</span></span><br />',
 	'nickInUse': '<span class="time">%s</span> &nbsp; <span class="kick">✯ <span class="modeinfo">%s</span>: Nick jest już używany przez kogoś innego.</span><br />',
@@ -517,7 +519,7 @@ var $$ = {
 	},
 	'dateWeek': [ 'Niedziela', 'Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota' ],
 	'dateMonth': [ 'sty', 'lut', 'mar', 'kwi', 'maj', 'cze', 'lip', 'sie', 'wrz', 'paź', 'lis', 'gru' ],
-	'nickColor': function(nick) {
+	'nickColor': function(nick, codeOnly) {
 		if (!$('#coloredNicks').is(':checked')){
 			return '';
 		}
@@ -543,7 +545,11 @@ var $$ = {
 			case 13: color = '#008100'; break;
 			case 14: color = '#959595'; break;
 		}
-		return 'style="color:' + color +'"';
+		if(codeOnly){
+			return color;
+		} else {
+			return 'style="color:' + color +'"';
+		}
 	},
 	'colorize': function(message) {
 		var pageBack  = 'white';

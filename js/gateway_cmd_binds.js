@@ -82,7 +82,47 @@ var cmdBinds = {
 				msg.text = " ";
 			}
 			
+			if(msg.args[0].indexOf('#') == 0) { // wiadomość kanałowa
+				if(gateway.ignoring(msg.sender.nick, 'channel')){
+					console.log('Ignoring message on '+msg.args[0]+' by '+msg.sender.nick);
+					return;
+				}
+			} else { //prywatna
+				if(gateway.ignoring(msg.sender.nick, 'query')){
+					console.log('Ignoring private message by '+msg.sender.nick);
+					return;
+				}
+			}
+			
 			var html = $$.parseImages(msg.text);
+			
+			if(msg.text.match(/^\001.*\001$/i)) { //CTCP
+				var space = msg.text.indexOf(' ');
+				if(space > -1){
+					var ctcp = msg.text.substring(1, space);
+					msg.ctcptext = msg.text.substring(space+1, msg.text.length-1);
+				} else {
+					var ctcp = msg.text.slice(1, -1);
+					msg.ctcptext = '';
+				}
+				if(ctcp in ctcpBinds){
+					for(func in ctcpBinds[ctcp]){
+						ctcpBinds[ctcp][func](msg);
+					}
+				} else {
+					var query = gateway.findQuery(qnick);
+					var acttext = msg.text.replace(/^\001(.*)\001$/i, '$1');
+					if(query) {
+						query.appendMessage(messagePatterns.ctcpRequest, [gateway.niceTime(), msg.sender.nick, $$.colorize(acttext)]);
+					} else {
+						gateway.statusWindow.appendMessage(messagePatterns.ctcpRequest, [gateway.niceTime(), msg.sender.nick, $$.colorize(acttext)]);
+						gateway.statusWindow.markBold();
+					}
+				}
+				return;
+			}
+			
+			var message = $$.colorize(msg.text);
 			
 			if(msg.args[0].indexOf('#') == 0) { // wiadomość kanałowa
 				if(gateway.ignoring(msg.sender.nick, 'channel')){
@@ -95,30 +135,16 @@ var cmdBinds = {
 					gateway.channels.push(channel);
 					gateway.switchTab(msg.args[0]);
 				}
-				if(msg.text.match(/^\001.*\001$/i)) { //CTCP
-					if(msg.text.match(/^\001ACTION.*\001$/i)) {
-						var acttext = msg.text.replace(/^\001ACTION(.*)\001$/i, '$1');
-						if(msg.text.indexOf(guser.nick) != -1) {
-							channel.appendMessage(messagePatterns.channelActionHilight, [gateway.niceTime(), msg.sender.nick, $$.colorize(acttext)]);
-							if(gateway.active.toLowerCase() != msg.args[0].toLowerCase() || !disp.focused) {
-								channel.markNew();
-							}
-						} else {
-							channel.appendMessage(messagePatterns.channelAction, [gateway.niceTime(), msg.sender.nick, $$.colorize(acttext)]);
-							if(gateway.active.toLowerCase() != msg.args[0].toLowerCase() || !disp.focused) {
-								channel.markBold();
-							}
-						}
-					}
-					return;
-				}
-				if(msg.text.indexOf(guser.nick) != -1) { //hajlajt
-					channel.appendMessage(messagePatterns.channelMsgHilight, [gateway.niceTime(), msg.sender.nick, $$.colorize(msg.text)]);
+				if(message.indexOf(guser.nick) != -1) { //hajlajt
+					channel.appendMessage(messagePatterns.channelMsgHilight, [gateway.niceTime(), msg.sender.nick, message]);
 					if(gateway.active != msg.args[0].toLowerCase() || !disp.focused) {
 						channel.markNew();
 					}
 				} else { //bez hajlajtu
-					channel.appendMessage(messagePatterns.channelMsg, [gateway.niceTime(), $$.nickColor(msg.sender.nick), msg.sender.nick, $$.colorize(msg.text)]);
+					for(f in messageProcessors){
+						message = messageProcessors[f](msg.sender.nick, msg.args[0], message);
+					}
+					channel.appendMessage(messagePatterns.channelMsg, [gateway.niceTime(), $$.nickColor(msg.sender.nick), msg.sender.nick, message]);
 					if(gateway.active.toLowerCase() != msg.args[0].toLowerCase() || !disp.focused) {
 						channel.markBold();
 					}
@@ -130,48 +156,15 @@ var cmdBinds = {
 				} else {
 					var qnick = msg.sender.nick;
 				}
-				if(gateway.ignoring(qnick, 'query')){
-					console.log('Ignoring private message by '+msg.sender.nick);
-					return;
+				for(f in messageProcessors){
+					message = messageProcessors[f](msg.sender.nick, guser.nick, message);
 				}
 				query = gateway.findQuery(qnick);
-				if(msg.text.match(/^\001.*\001$/i)) {	// ctcp
-					if(msg.text.match(/^\001ACTION.*\001$/i)) { //akcja
-						if(!query) {
-							query = new Query(msg.sender.nick);
-							gateway.queries.push(query);
-						}
-						var acttext = msg.text.replace(/^\001ACTION(.*)\001$/i, '$1');
-						query.appendMessage(messagePatterns.channelAction, [gateway.niceTime(), msg.sender.nick, $$.colorize(acttext)]);
-						if(gateway.active.toLowerCase() != msg.sender.nick.toLowerCase()) {
-							gateway.findQuery(msg.sender.nick).markNew();
-						}
-						query.appendMessage('%s', [html]);
-					} else if(msg.text.match(/^\001(VERSION|USERINFO).*\001$/i)) {
-						version_string = 'Bramka WWW PIRC.PL, wersja '+gatewayVersion+' na '+navigator.userAgent;
-						gateway.sendDelayed('NOTICE '+msg.sender.nick+ ' \001VERSION '+version_string+'\x01');
-					} else if(msg.text.match(/^\001REFERER\001$/i)) {
-						referer_string = document.referrer;
-						if(referer_string == ''){
-							referer_string = 'Nieznany';
-						}
-						gateway.sendDelayed('NOTICE '+msg.sender.nick+ ' \001REFERER '+referer_string+'\x01');
-					} else {	// inny ctcp
-						var acttext = msg.text.replace(/^\001(.*)\001$/i, '$1');
-						if(query) {
-							query.appendMessage(messagePatterns.ctcpRequest, [gateway.niceTime(), msg.sender.nick, $$.colorize(acttext)]);
-						} else {
-							gateway.statusWindow.appendMessage(messagePatterns.ctcpRequest, [gateway.niceTime(), msg.sender.nick, $$.colorize(acttext)]);
-							gateway.statusWindow.markBold();
-						}
-					}
-					return;
-				} // normalna wiadomość
 				if(!query) {
 					query = new Query(msg.sender.nick);
 					gateway.queries.push(query);
 				}
-				query.appendMessage(messagePatterns.channelMsg, [gateway.niceTime(), '', msg.sender.nick, $$.colorize(msg.text)]);
+				query.appendMessage(messagePatterns.channelMsg, [gateway.niceTime(), '', msg.sender.nick, message]);
 				if(gateway.active.toLowerCase() != msg.sender.nick.toLowerCase() || !disp.focused) {
 					gateway.findQuery(msg.sender.nick).markNew();
 				}
@@ -976,6 +969,65 @@ var cmdBinds = {
 					chan.appendMessage(messagePatterns.modeChange, [gateway.niceTime(), he(msg.sender.nick), /*he(modestr)*/info, he(chanName)]);
 				}
 			}
+		}
+	]
+};
+
+var ctcpBinds = {
+	'ACTION': [
+		function(msg){
+			if(msg.args[0].charAt(0) == '#'){ //kanał
+				var channel = gateway.findChannel(msg.args[0]);
+				if(!channel) {
+					channel = new Channel(msg.args[0]);
+					gateway.channels.push(channel);
+					gateway.switchTab(msg.args[0]);
+				}
+				if(msg.text.indexOf(guser.nick) != -1) {
+					channel.appendMessage(messagePatterns.channelActionHilight, [gateway.niceTime(), msg.sender.nick, $$.colorize(msg.ctcptext)]);
+					if(gateway.active.toLowerCase() != msg.args[0].toLowerCase() || !disp.focused) {
+						channel.markNew();
+					}
+				} else {
+					channel.appendMessage(messagePatterns.channelAction, [gateway.niceTime(), msg.sender.nick, $$.colorize(msg.ctcptext)]);
+					if(gateway.active.toLowerCase() != msg.args[0].toLowerCase() || !disp.focused) {
+						channel.markBold();
+					}
+				}
+			} else {
+				query = gateway.findQuery(qnick);
+				if(!query) {
+					query = new Query(msg.sender.nick);
+					gateway.queries.push(query);
+				}
+				query.appendMessage(messagePatterns.channelAction, [gateway.niceTime(), msg.sender.nick, $$.colorize(msg.ctcptext)]);
+				if(gateway.active.toLowerCase() != msg.sender.nick.toLowerCase()) {
+					gateway.findQuery(msg.sender.nick).markNew();
+				}
+				query.appendMessage('%s', [html]);
+			}
+
+		}
+	],
+	'VERSION': [
+		function(msg){
+			version_string = 'Bramka WWW PIRC.PL, wersja '+gatewayVersion+' na '+navigator.userAgent;
+			gateway.sendDelayed('NOTICE '+msg.sender.nick+ ' \001VERSION '+version_string+'\x01');
+		}
+	],
+	'USERINFO': [
+		function(msg){
+			version_string = 'Bramka WWW PIRC.PL, wersja '+gatewayVersion+' na '+navigator.userAgent;
+			gateway.sendDelayed('NOTICE '+msg.sender.nick+ ' \001VERSION '+version_string+'\x01');
+		}
+	],
+	'REFERER': [
+		function(msg){
+			referer_string = document.referrer;
+			if(referer_string == ''){
+				referer_string = 'Nieznany';
+			}
+			gateway.sendDelayed('NOTICE '+msg.sender.nick+ ' \001REFERER '+referer_string+'\x01');
 		}
 	]
 };
