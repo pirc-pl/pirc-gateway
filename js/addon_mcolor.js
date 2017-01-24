@@ -18,17 +18,19 @@ var mcolorJoinHandler = function(msg){
 
 var mcolorCtcpHandler = function(msg){
 	if(msg.ctptext == 'OFF'){
-		delete mcolors[msg.sender.nick];
+		delete mcolors[md5(msg.sender.nick.toLowerCase())];
 		return;
 	}
-	mcolors[msg.sender.nick] = msg.ctcptext;
+	mcolors[md5(msg.sender.nick.toLowerCase())] = msg.ctcptext;
 	console.log('Color set for '+msg.sender.nick+': '+msg.ctcptext);
 }
 
 var setMyColor = function(color){
 	if(!color){
+		if(!mcolor) return;
 		mcolor = false;
 		var scolor = 'OFF';
+		$('#nickColorPick').val('#000');
 	} else {
 		if(color == mcolor){
 			$$.alert('<p>Kod koloru '+he(color)+' taki jak poprzedni - nie zmieniono!</p>');
@@ -59,7 +61,7 @@ var colorMessage = function(src, dst, text){
 	if(src == guser.nick){
 		var color = mcolor;
 	} else {
-		var color = mcolors[src.toLowerCase()];
+		var color = mcolors[md5(src.toLowerCase())];
 	}
 	if(color){
 		text = '<span style="color:'+color+'">'+text+'</span>';
