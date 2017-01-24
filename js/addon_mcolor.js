@@ -33,14 +33,14 @@ var setMyColor = function(color){
 		$('#nickColorPick').val('#000');
 	} else {
 		if(color == mcolor){
-			$$.alert('<p>Kod koloru '+he(color)+' taki jak poprzedni - nie zmieniono!</p>');
+			$$.displayDialog('info', 'info', 'Info', '<p>Kod koloru '+he(color)+' taki jak poprzedni - nie zmieniono!</p>');
 			return;
 		}
 		if(color.match(/^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/)){
 			mcolor = color;
-			$$.alert('<p>Ustawiono kolor na <span style="color:'+mcolor+'">'+mcolor+'</span></p>');
+			$$.displayDialog('info', 'info', 'Info', '<p>Ustawiono kolor na <span style="color:'+mcolor+'">'+mcolor+'</span></p>');
 		} else {
-			$$.alert('<p>Niepoprawny kod koloru '+he(color)+'</p>');
+			$$.displayDialog('info', 'info', 'Info', '<p>Niepoprawny kod koloru '+he(color)+'</p>');
 			return;
 		}
 		var scolor = mcolor;
@@ -100,7 +100,8 @@ var mcolorInit = function(){
 			mcolor = ls;
 		}
 	} catch(e){}
-	var html = '<p>Ustaw kolor swojego tekstu: <input type="color" id="nickColorPick"> <button id="setNickColor">Zmień</button> <button id="clearNickColor">Skasuj</button></p>';
+	var html = '<h3>Ustaw kolor swojego tekstu</h3><table><tr><td>1. Wybierz kolor:</td><td><input type="color" id="nickColorPick"></td></tr><tr><td>2. Zatwierdź:</td><td><button id="setNickColor">Zmień</button></td></tr></table>' +
+		'<p><button id="clearNickColor">Skasuj</button></p>';
 	$('#color-dialog').append(html);
 	$('#setNickColor').click(function(){
 		setMyColor($('#nickColorPick').val());
