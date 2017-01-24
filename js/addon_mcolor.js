@@ -100,7 +100,8 @@ var mcolorInit = function(){
 			mcolor = ls;
 		}
 	} catch(e){}
-	var html = '<h3>Ustaw kolor swojego tekstu</h3><table><tr><td>1. Wybierz kolor:</td><td><input type="color" id="nickColorPick"></td></tr><tr><td>2. Zatwierdź:</td><td><button id="setNickColor">Zmień</button></td></tr></table>' +
+	$('#color-dialog h3').append(' (tymczasowo)');
+	var html = '<h3>Ustaw kolor swojego tekstu (na stałe)</h3><table><tr><td>1. Wybierz kolor:</td><td><input type="color" id="nickColorPick"></td></tr><tr><td>2. Zatwierdź:</td><td><button id="setNickColor">Zmień</button></td></tr></table>' +
 		'<p><button id="clearNickColor">Skasuj</button></p>';
 	$('#color-dialog').append(html);
 	$('#setNickColor').click(function(){
