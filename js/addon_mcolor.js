@@ -132,3 +132,4 @@ var mcolorInit = function(){
 
 readyFunctions.push(mcolorInit);
 
+addons.push('mcolor');

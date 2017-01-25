@@ -1011,13 +1011,33 @@ var ctcpBinds = {
 	],
 	'VERSION': [
 		function(msg){
-			version_string = 'Bramka WWW PIRC.PL, wersja '+gatewayVersion+' na '+navigator.userAgent;
+			version_string = 'Bramka WWW PIRC.PL, wersja '+gatewayVersion;
+			if(addons.length > 0){
+				version_string += ', z dodatkami: ';
+				for(i in addons){
+					if(i>0){
+						version_string += ', ';
+					}
+					version_string += addons[i];
+				}
+			}
+			version_string += ', na '+navigator.userAgent;
 			gateway.sendDelayed('NOTICE '+msg.sender.nick+ ' \001VERSION '+version_string+'\x01');
 		}
 	],
 	'USERINFO': [
 		function(msg){
-			version_string = 'Bramka WWW PIRC.PL, wersja '+gatewayVersion+' na '+navigator.userAgent;
+			version_string = 'Bramka WWW PIRC.PL, wersja '+gatewayVersion;
+			if(addons.length > 0){
+				version_string += ', z dodatkami: ';
+				for(i in addons){
+					if(i>0){
+						version_string += ', ';
+					}
+					version_string += addons[i];
+				}
+			}
+			version_string += ', na '+navigator.userAgent;
 			gateway.sendDelayed('NOTICE '+msg.sender.nick+ ' \001VERSION '+version_string+'\x01');
 		}
 	],

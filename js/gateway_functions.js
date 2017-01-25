@@ -39,6 +39,7 @@ var banData = {
 }
 
 var messageProcessors = []; //function (src, dst, text) returns new_text
+var addons = [];
 
 var messagePatterns = {
 	'nickChange': '<span class="time">%s</span> &nbsp; <span class="mode">✯ <span class="modeinfo">%s</span> zmienił nick na <span class="modeinfo">%s</span></span><br />',
