@@ -129,10 +129,10 @@ b.admin {
 .channelAdmin {
 	border-color: #7492B6;
 }
-
+/*
 .channelAdmin:hover, .channelAdminActive {
 	border: 1px solid #7492B6  !important;
-}
+}*/
 
 .channelAdmin li {
 	background-color: #5C738E;
@@ -142,6 +142,10 @@ b.admin {
 
 .channelAdmin li:hover {
 	background-color: #2D3A4A;
+}
+
+.chstats-button:hover {
+    background-color: #2D3A4A;
 }
 
 .ui-widget-content {

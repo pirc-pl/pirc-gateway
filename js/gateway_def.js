@@ -1,4 +1,5 @@
 guser.changeNick = function(newnick, silent) {
+	irc.lastNick = guser.nick;
 	guser.nick = newnick;
 	$('#usernick').text(he(guser.nick));
 	$(document).attr('title', he(guser.nick)+ ' @ PIRC.pl');
@@ -11,6 +12,7 @@ guser.changeNick = function(newnick, silent) {
 }
 
 var irc = {
+	'lastNick': '',
 	'messagedata': function() {
 		this.text = '';
 		this.args = [];
@@ -380,6 +382,7 @@ var gateway = {
 		clearInterval(gateway.pingIntervalID);
 		gateway.pingIntervalID = false;
 		if(guser.nickservnick != ''){
+			irc.lastNick = guser.nick;
 			guser.nick = guser.nickservnick;
 		}
 		if(gateway.disconnectMessageShown) {
@@ -524,16 +527,18 @@ var gateway = {
 	},
 	'sockError': function(e) {
 		console.log('WebSocket error!');
-		if(gateway.connectStatus != statusDisconnected && gateway.connectStatus != statusError){
-			gateway.connectStatus = statusError;
-			//gateway.disconnected('Błąd serwera bramki');
-			gateway.disconnected('Utracono połączenie z serwerem');
-			if($('#autoReconnect').is(':checked')){
-				gateway.reconnect();
-			} else {
-				$$.displayReconnect();
+		setTimeout(function(){
+			if(gateway.connectStatus != statusDisconnected && gateway.connectStatus != statusError){
+				gateway.connectStatus = statusError;
+				//gateway.disconnected('Błąd serwera bramki');
+				gateway.disconnected('Utracono połączenie z serwerem');
+				if($('#autoReconnect').is(':checked')){
+					gateway.reconnect();
+				} else {
+					$$.displayReconnect();
+				}
 			}
-		}
+		}, 1000);
 	},
 	'onRecv': function(sdata) {
 		//data = irc.parseMessage(Base64.decode(sdata.data));
@@ -1883,7 +1888,7 @@ var gateway = {
 			$('#'+nicklistid+'-opt').addClass('activeAdmin');
 		}
 	},
-	'toggleChannelOpts': function(channel) {
+	'toggleChannelOperOpts': function(channel) {
 		var $element = $('#'+gateway.findChannel(channel).id+'-operActions ul');
 		if($element.is(':visible')){
 			$element.hide('blind', {
@@ -2325,6 +2330,13 @@ var gateway = {
 		gateway.smallListLoading = true;
 		gateway.send('LIST >9');
 		$('#chlist-body').html('Poczekaj, trwa ładowanie...');
+	},
+	'toggleChannelOpts': function(chan) {
+		var html = '<p>Uwaga: ta funkcjonalność nie jest jeszcze gotowa, więc może być niekompletna lub działać niepoprawnie!</p>'+
+			'<table><tr><td>Automatycznie wchodź na ten kanał przy każdym połączeniu (wymaga zarejestrowanego nicka)</td>'+
+			'<td><button onclick="gateway.send(\'NS AJOIN ADD '+bsEscape(chan)+'\')">Włącz</button> <button onclick="gateway.send(\'NS AJOIN DEL '+bsEscape(chan)+'\')">Wyłącz</button></td>'+
+			'</tr></table>';
+		$$.displayDialog('admin', chan, 'Ustawienia dla kanału '+chan, html);
 	}
 }
 	

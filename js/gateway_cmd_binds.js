@@ -10,6 +10,7 @@ var cmdBinds = {
 			}
 			
 			if(msg.args[0] != guser.nick) {
+				irc.lastNick = guser.nick;
 				guser.nick = msg.args[0];
 				$$.displayDialog('warning', 'warning', 'Ostrzeżenie', '<p>Twój bieżący nick to <b>'+guser.nick+'</b>.</p>');
 			}
@@ -699,19 +700,21 @@ var cmdBinds = {
 	],
 	'401': [	// ERR_NOSUCHNICK
 		function(msg) {
-			$$.displayDialog('error', 'error', 'Błąd', '<p>Nie można wykonać żądanej akcji: nie ma takiego nicku ani kanału.</p>');
+			if(msg.args[1] != irc.lastNick){
+				$$.displayDialog('error', 'error', 'Błąd', '<p>Nie można wykonać żądanej akcji. Nie ma takiego nicku ani kanału: <b>'+msg.args[1]+'</b></p>');
+			}
 			gateway.statusWindow.appendMessage(messagePatterns.noSuchNick, [gateway.niceTime(), he(msg.args[1])]);
 		}
 	],
 	'402': [	// ERR_NOSUCHSERVER
 		function(msg) {
-			$$.displayDialog('error', 'error', 'Błąd', '<p>Nie można wykonać żądanej akcji: nie ma takiego obiektu.</p>');
+			$$.displayDialog('error', 'error', 'Błąd', '<p>Nie można wykonać żądanej akcji. Nie ma takiego obiektu: <b>'+msg.args[1]+'</b></p>');
 			gateway.statusWindow.appendMessage(messagePatterns.noSuchNick, [gateway.niceTime(), he(msg.args[1])]);
 		}
 	],
 	'403': [	// ERR_NOSUCHCHANNEL 
 		function(msg) {
-			$$.displayDialog('error', 'error', 'Błąd', '<p>Nie można wykonać żądanej akcji: nie ma takiego kanału.</p>');
+			$$.displayDialog('error', 'error', 'Błąd', '<p>Nie można wykonać żądanej akcji. Nie ma takiego kanału: <b>'+msg.args[1]+'</b></p>');
 			gateway.statusWindow.appendMessage(messagePatterns.noSuchChannel, [gateway.niceTime(), he(msg.args[1])]);
 		}
 	],
@@ -763,10 +766,11 @@ var cmdBinds = {
 	'433' : [	// ERR_NICKNAMEINUSE 
 		function(msg) {
 			if(gateway.connectStatus == statusDisconnected){
-				gateway.send('NICK '+guser.nick+Math.floor(Math.random() * 9999));
+				gateway.send('NICK '+guser.nick+Math.floor(Math.random() * 999));
 			}
 			var html = '<p>Nick <b>'+he(msg.args[1])+'</b> jest już używany przez kogoś innego.</p>';
 			gateway.nickWasInUse = true;
+			
 			if(gateway.connectStatus != statusDisconnected){
 				html += "<p>Twój bieżący nick to <b>"+guser.nick+".</p>";
 			}

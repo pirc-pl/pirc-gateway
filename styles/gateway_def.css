@@ -140,7 +140,7 @@ input, button, submit {
 	bottom: 5.8em;
 	position: absolute;
 	right: 10px;
-	top: 8.5em;
+	top: 12em;
 	width: 23%;
 }
 	
@@ -873,7 +873,7 @@ span.td_right {
 .optionsCheckBox {
 	text-align: right;
 }
-
+/*
 .channelAdmin {
 	border: 1px #88a;
 	text-align: center;
@@ -881,7 +881,7 @@ span.td_right {
 	margin-bottom: 3px;
 	border: 1px solid #D5D5DC;
 	margin-left: 10px;
-}
+}*/
 
 .channelAdmin li {
 	list-style: none outside none;
@@ -892,11 +892,19 @@ span.td_right {
 	margin-right: .4em;
 	margin-bottom: 4px;
 	color: #556A83;
+	padding-left: 1em;
+    padding-right: 1em;
 }
 
 .channelAdminActive {
 	background-color: #E6EFFA;
 	border-color: #7492B6;
+}
+
+ul.channelOperActions {
+    position: absolute;
+    z-index: 90;
+    right: 1em;
 }
 
 .channelAdmin button {
@@ -1009,7 +1017,7 @@ span.td_right {
     right: 10px;
     top: 6.7em;
     width: 23%;
-    height: 1.4em;
+    height: 5em;
 }
 
 .chstatswrapper {
@@ -1029,6 +1037,7 @@ span.chstats-text {
 	padding-top: .2em;
     padding-left: 5px;
     padding-right: 5px;
+    margin-bottom: 4px;
 }
 
 span.chstats-text:after {
@@ -1124,4 +1133,18 @@ span.chstats-text:before {
     cursor: pointer;
 }
 
+.chstats-button {
+    display: block;
+    padding: 2px;
+    border: 1px solid #9a9a9a;
+    margin: .2em;
+    margin-left: 1em;
+    margin-right: 1em;
+    border-radius: 3px;
+}
+
+.chstats-button:hover {
+    background-color: #E6EFFA;
+    cursor: pointer;
+}
 

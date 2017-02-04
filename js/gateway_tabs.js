@@ -122,21 +122,6 @@ function Nicklist(chan, id) {
 		$('.not-connected-text > h3').html('Przestarzała przeglądarka');
 		$('.not-connected-text > p').html('Twoja przeglądarka jest przestarzała i nie jest obsługiwana. Należy zainstalować przeglądarkę (Mozilla Firefox, Internet Explorer, Opera, Safari, Chrome lub inną) w aktualnej wersji.');
 	}
-	
-	var operHtml = '<div id="'+id+'-operActions" class="'+id+'-operActions channelAdmin" style="display:none">' +
-		'<div class="channelOperActionsButton" onclick="gateway.toggleChannelOpts(\''+bsEscape(this.channel)+'\')">Akcje administracyjne</div>'+
-		'<ul class="channelOperActions">' +
-			'<li onclick="gateway.send(\'MODE '+bsEscape(this.channel)+' b\')">Lista banów (b)</li>' +
-			'<li onclick="gateway.send(\'MODE '+bsEscape(this.channel)+' e\')" title="Znajdujący się na liście nie są obejmowani przez bany">Lista wyjątków b (e)</li>' +
-			'<li onclick="gateway.send(\'MODE '+bsEscape(this.channel)+' I\')" title="Znajdujący się na liście nie potrzebują zaproszenia, gdy jest ustawiony tryb +i">Lista wyjątków i (I)</li>' +
-			'<li onclick="gateway.showChannelModes(\''+bsEscape(this.channel)+'\')">Tryby kanału</li>' +
-			'<li onclick="gateway.showInvitePrompt(\''+bsEscape(this.channel)+'\')">Zaproś na kanał</li>' +
-			'<li onclick="gateway.showChanServCmds(\''+bsEscape(this.channel)+'\')">Polecenia ChanServ</li>' +
-			'<li onclick="gateway.showBotServCmds(\''+bsEscape(this.channel)+'\')">Polecenia BotServ</li>' +
-		'</ul>' +
-		'</div>'+
-		'<div class="nicklistRefresh" title="Odśwież listę" onclick="disp.refreshNickList(\''+this.channel+'\')"></div>';
-	$('#'+this.id).prepend(operHtml);
 }
 
 function NicklistUser(usernick, chan) {
@@ -667,7 +652,22 @@ function Channel(chan) {
 	$('#'+this.id+'-topic').html('<h1>'+he(this.name)+'</h1><h2></h2>');
 	$('<li/>').attr('id', this.id+'-tab').html('<a href="javascript:void(0);" onclick="gateway.switchTab(\''+bsEscape(this.name)+'\')" class="switchTab">'+he(this.name)+'</a>'+
 		'<a href="javascript:void(0);" onclick="gateway.removeChannel(\''+bsEscape(this.name)+'\')"><div class="close" title="Wyjdź z kanału"></div></a>').appendTo('#tabs');
-	$('#chstats').append('<div class="chstatswrapper" id="'+this.id+'-chstats"><span class="chstats-text">'+he(this.name)+'</span></div>');
+	$('#chstats').append('<div class="chstatswrapper" id="'+this.id+'-chstats"><span class="chstats-text">'+he(this.name)+'</span>'+
+		'<span class="chstats-button" onclick="gateway.toggleChannelOpts(\''+bsEscape(this.name)+'\')">Opcje kanału</span>');
+	var operHtml = '<div id="'+this.id+'-operActions" class="'+this.id+'-operActions channelAdmin" style="display:none">' +
+		//'<div class="channelOperActionsButton" onclick="gateway.toggleChannelOpts(\''+bsEscape(this.name)+'\')">Akcje administracyjne</div>'+
+		'<span class="chstats-button" onclick="gateway.toggleChannelOperOpts(\''+bsEscape(this.name)+'\')">Akcje administracyjne</span>'+
+		'<ul class="channelOperActions">' +
+			'<li onclick="gateway.send(\'MODE '+bsEscape(this.name)+' b\')">Lista banów (b)</li>' +
+			'<li onclick="gateway.send(\'MODE '+bsEscape(this.name)+' e\')" title="Znajdujący się na liście nie są obejmowani przez bany">Lista wyjątków b (e)</li>' +
+			'<li onclick="gateway.send(\'MODE '+bsEscape(this.name)+' I\')" title="Znajdujący się na liście nie potrzebują zaproszenia, gdy jest ustawiony tryb +i">Lista wyjątków i (I)</li>' +
+			'<li onclick="gateway.showChannelModes(\''+bsEscape(this.name)+'\')">Tryby kanału</li>' +
+			'<li onclick="gateway.showInvitePrompt(\''+bsEscape(this.name)+'\')">Zaproś na kanał</li>' +
+			'<li onclick="gateway.showChanServCmds(\''+bsEscape(this.name)+'\')">Polecenia ChanServ</li>' +
+			'<li onclick="gateway.showBotServCmds(\''+bsEscape(this.name)+'\')">Polecenia BotServ</li>' +
+		'</ul>' +
+		'</div></div>';
+	$('#'+this.id+'-chstats').append(operHtml);
 	
 	try {
 		var qCookie = localStorage.getItem('channel'+md5(this.name));

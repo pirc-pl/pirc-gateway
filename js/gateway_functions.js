@@ -332,9 +332,6 @@ var disp = {
 		disp.size = s;
 		localStorage.setItem('tsize', s);
 	},
-	'refreshNickList': function(channel) {
-		gateway.send('NAMES '+channel+'\r\nWHO '+channel);
-	},
 	'displaySpecialDialog': function(name, button) {
 		$('#'+name).dialog({
 			resizable: false,
