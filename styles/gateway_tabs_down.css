@@ -38,3 +38,7 @@
 #chlist-body {
 	height: 84%;
 }
+
+ul.channelOperActions {
+    bottom: 1.4em;
+}

@@ -500,6 +500,11 @@ var cmdBinds = {
 			}
 		}
 	],
+	'335': [	// RPL_BOT ???
+		function(msg){
+			$$.displayDialog('whois', msg.args[1], false, '<p class="whois"><span class="info"><br /></span><span class="data">Ten użytkownik to <b>bot</b></span></p>');
+		}
+	],
 	'352': [	// RPL_WHOREPLY
 		function(msg) {
 			for(var i=0; i<gateway.channels.length; i++){

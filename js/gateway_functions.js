@@ -39,6 +39,7 @@ var banData = {
 }
 
 var messageProcessors = []; //function (src, dst, text) returns new_text
+var nickColorProcessors = []; //function (nick)
 var addons = [];
 
 var messagePatterns = {
@@ -542,6 +543,12 @@ var $$ = {
 			case 12: color = '#1a866e'; break;
 			case 13: color = '#008100'; break;
 			case 14: color = '#959595'; break;
+		}
+		for(a in nickColorProcessors){
+			var ret = nickColorProcessors[a](nick);
+			if(ret){
+				color = ret;
+			}				
 		}
 		if(codeOnly){
 			return color;

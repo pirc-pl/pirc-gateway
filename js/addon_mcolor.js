@@ -77,7 +77,10 @@ var setMyColor = function(color){
 		var scolor = mcolor;
 	}
 	for(c in gateway.channels){
-		gateway.ctcp(gateway.channels[c].name, 'MCOL '+scolor);
+		var chan = gateway.channels[c].name;
+		if(colorsAllowed(chan)){
+			gateway.ctcp(chan, 'MCOL '+scolor);
+		}
 	}
 	try {
 		if(mcolor){
@@ -104,6 +107,15 @@ var colorsAllowed = function(chan){
 	return true;		
 }
 
+var getColor = function(nick){
+	if(nick == guser.nick){
+		var color = mcolor;
+	} else {
+		var color = mcolors[md5(nick.toLowerCase())];
+	}
+	return color;
+}
+
 var colorMessage = function(src, dst, text){
 	if(dst.charAt(0) == '#'){
 		var chan = gateway.findChannel(dst);
@@ -113,15 +125,15 @@ var colorMessage = function(src, dst, text){
 	if(!colorsAllowed(chan)){
 		return text;
 	}
-	if(src == guser.nick){
-		var color = mcolor;
-	} else {
-		var color = mcolors[md5(src.toLowerCase())];
-	}
+	var color = getColor(src);
 	if(color){
 		text = '<span style="color:'+color+'">'+text+'</span>';
 	}
 	return text;
+}
+
+var colorNick = function(nick){
+	return getColor(nick);
 }
 
 var insertBinding = function(list, item, handler){
@@ -137,6 +149,7 @@ insertBinding(ctcpBinds, 'MCOL', mcolorCtcpHandler);
 insertBinding(cmdBinds, '324', mcolorChModeHandler);
 insertBinding(cmdBinds, 'NICK', mcolorNickHandler);
 messageProcessors.push(colorMessage);
+nickColorProcessors.push(colorNick);
 commands['mycolor'] = {
 	'channels': false,
 	'nicks': false,
