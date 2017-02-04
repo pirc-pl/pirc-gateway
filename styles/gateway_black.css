@@ -1,4 +1,4 @@
-#chat-wrapper, #nick-wrapper {
+#chat-wrapper, #nick-wrapper, .chlistwrapper {
 	background-color: #000000;
 }
 
@@ -229,3 +229,10 @@ span.data {
     background-color: #555555;
 }
 
+#chlist td {
+    background-color: #23236B;
+}
+
+#chlist-body td.chname:hover, .chlist_button:hover, #chlist-button:hover {
+    background-color: #223963;
+}

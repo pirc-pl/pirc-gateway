@@ -252,11 +252,11 @@ function str2bool(b){
 }
 
 function he(text) { //HTML Escape
-	return $('<div/>').text(text).html();
+	return $('<div/>').text(text).html().replace(/"/g, '&quot;');
 }
 
 function bsEscape(text) { // escapowanie beksleszy
-	return text.replace('\\', '\\\\');
+	return text.replace(/\\/g, '\\\\');
 }
 
 function rxEscape(text) { //backupowanie regex

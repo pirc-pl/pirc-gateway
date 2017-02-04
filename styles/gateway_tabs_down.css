@@ -18,11 +18,11 @@
 
 #nicklist {
 	top: 3.3em;
-	bottom: 8.8em;
+    bottom: 11em;
 }
 
 #chstats {
-	bottom: 7em;
+	bottom: 9em;
 	top: initial;
 }
 
@@ -31,3 +31,10 @@
 	bottom: 3.2em;
 }
 
+#chlist {
+    bottom: 7em;
+}
+
+#chlist-body {
+	height: 84%;
+}

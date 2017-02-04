@@ -137,7 +137,7 @@ input, button, submit {
 }
 	
 #nicklist {
-	bottom: 4em;
+	bottom: 5.8em;
 	position: absolute;
 	right: 10px;
 	top: 8.5em;
@@ -1042,4 +1042,86 @@ span.chstats-text:before {
 #options-dialog td.info {
     padding-left: .5em;
 }
+
+#chlist {
+    position: absolute;
+    right: 10px;
+    bottom: 4em;
+    width: 23%;
+    height: 1.4em;
+}
+
+.chlistwrapper {
+    border-radius: 4px;
+    background: none repeat scroll 0 0 #E4E4E4;
+    border: 1px solid #9A9A9A;
+    height: 100%;
+    margin: 10px auto;
+    overflow: auto;
+    width: 98%;
+    text-align: center;
+    font-size: .9em;
+    position: relative;
+}
+
+#chlist-button {
+    display: block;
+    padding-top: .2em;
+    position: absolute;
+    bottom: .3em;
+    width: inherit;
+    cursor: pointer;
+}
+
+#chlist-button:hover {
+    background-color: #efefef;
+}
+
+#chlist-body {
+	display: none;
+    width: 90%;
+    height: 87%;
+    padding: .5em;
+    margin-left: auto;
+    margin-right: auto;
+    overflow: auto;
+}
+
+#chlist-body table {
+    margin: auto;
+}
+
+#chlist-body td.chname {
+    min-width: 8em;
+    max-width: 11em;
+}
+
+#chlist td {
+    background-color: #EBF6FF;
+    padding: .3em;
+    overflow: hidden;
+}
+
+#chlist-body td.chusers {
+    width: 3em;
+}
+
+.chlist_button {
+    display: inline-block;
+    padding: 2px;
+    border: 1px solid #9a9a9a;
+    border-radius: 3px;
+    margin-bottom: 8px;
+}
+
+.chlist_button:hover {
+	cursor: pointer;
+    background-color: #efefef;
+}
+
+#chlist-body td.chname:hover {
+    background-color: #fff;
+    cursor: pointer;
+}
+
 

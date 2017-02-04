@@ -129,12 +129,7 @@ var cmdBinds = {
 					console.log('Ignoring message on '+msg.args[0]+' by '+msg.sender.nick);
 					return;
 				}
-				var channel = gateway.findChannel(msg.args[0]);
-				if(!channel) {
-					channel = new Channel(msg.args[0]);
-					gateway.channels.push(channel);
-					gateway.switchTab(msg.args[0]);
-				}
+				var channel = gateway.findOrCreate(msg.args[0], true);
 				if(message.indexOf(guser.nick) != -1) { //hajlajt
 					channel.appendMessage(messagePatterns.channelMsgHilight, [gateway.niceTime(), msg.sender.nick, message]);
 					if(gateway.active != msg.args[0].toLowerCase() || !disp.focused) {
@@ -159,14 +154,11 @@ var cmdBinds = {
 				for(f in messageProcessors){
 					message = messageProcessors[f](msg.sender.nick, guser.nick, message);
 				}
-				query = gateway.findQuery(qnick);
-				if(!query) {
-					query = new Query(msg.sender.nick);
-					gateway.queries.push(query);
-				}
+
+				query = gateway.findOrCreate(qnick);
 				query.appendMessage(messagePatterns.channelMsg, [gateway.niceTime(), '', msg.sender.nick, message]);
 				if(gateway.active.toLowerCase() != msg.sender.nick.toLowerCase() || !disp.focused) {
-					gateway.findQuery(msg.sender.nick).markNew();
+					query.markNew();
 				}
 				query.appendMessage('%s', [html]);
 			}
@@ -224,8 +216,7 @@ var cmdBinds = {
 					var displayAsQuery = Boolean(query);
 					if(displayAsQuery || $("#noticeDisplay").val() == 1){ // notice jako query
 						if(!query) {
-							query = new Query(msg.sender.nick);
-							gateway.queries.push(query);
+							query = gateway.findOrCreate(msg.sender.nick);
 						}
 						query.appendMessage(messagePatterns.notice, [gateway.niceTime(), he(msg.sender.nick), he(msg.sender.ident), he(msg.sender.host), $$.colorize(msg.text)]);
 						if(gateway.active.toLowerCase() != msg.sender.nick.toLowerCase()) {
@@ -287,9 +278,7 @@ var cmdBinds = {
 				if(gateway.findChannel(msg.text)) {
 					gateway.findChannel(msg.text).rejoin();
 				} else {
-					var chan = new Channel(msg.text);
-					gateway.channels.push(chan);
-					gateway.switchTab(msg.text);
+					var chan = gateway.findOrCreate(msg.text, true);
 					chan.appendMessage(messagePatterns.joinOwn, [gateway.niceTime(), msg.text]);
 				}
 				gateway.send("MODE "+msg.text+"\r\nWHO "+msg.text);
@@ -433,9 +422,7 @@ var cmdBinds = {
 							if(gateway.findChannel(channel[0])) {
 								gateway.findChannel(channel[0]).rejoin();
 							} else {
-								var chan = new Channel(channel[0]);
-								gateway.channels.push(chan);
-								gateway.switchTab(channel[0]);
+								gateway.findOrCreate(channel[0]);
 							}
 							gateway.send('NAMES '+channel[0]+'\r\nTOPIC '+channel[0]+'\r\nMODE '+channel[0]+'\r\nWHO '+channel[0]);
 						}
@@ -456,6 +443,11 @@ var cmdBinds = {
 	],
 	'322': [	// RPL_LIST
 		function(msg) {
+			if(gateway.smallListLoading){
+				if(msg.args[1] == '*') return;
+				gateway.smallListData.push([msg.args[1], msg.args[2], msg.text]);
+				return;
+			}
 			if (!msg.text) {
 				var outtext = "<i>(brak tematu)</i>"; // Na wypadek jakby topic nie był ustawiony.
 			} else {
@@ -463,6 +455,26 @@ var cmdBinds = {
 			}
 			gateway.statusWindow.appendMessage(messagePatterns.chanListElement, [gateway.niceTime(), msg.args[1], msg.args[1], msg.args[2], outtext]);
 			gateway.statusWindow.markBold();
+		}
+	],
+	'323': [	// RPL_ENDOFLIST
+		function(msg){
+			if(!gateway.smallListLoading){
+				return;
+			}
+			var lcompare = function(ch1, ch2){
+				return ch2[1] - ch1[1];
+			}
+			gateway.smallListLoading = false;
+			gateway.smallListData.sort(lcompare);
+			var html = '<p><span class="chlist_button" onclick="gateway.performCommand(\'LIST\')">Pełna lista</span> <span class="chlist_button" onclick="gateway.refreshChanList()">Odśwież</span><p>Największe kanały:</p><table>';
+			for(i in gateway.smallListData){
+				var item = gateway.smallListData[i];
+				html += '<tr title="'+he(item[2])+'"><td class="chname" onclick="gateway.send(\'JOIN '+bsEscape(item[0])+'\')">'+he(item[0])+'</td><td class="chusers">'+he(item[1])+'</td></tr>';
+			}
+			html += '</table>';
+			$('#chlist-body').html(html);
+			gateway.smallListData = [];
 		}
 	],
 	'324': [	// RPL_CHANNELMODEIS
@@ -977,12 +989,7 @@ var ctcpBinds = {
 	'ACTION': [
 		function(msg){
 			if(msg.args[0].charAt(0) == '#'){ //kanał
-				var channel = gateway.findChannel(msg.args[0]);
-				if(!channel) {
-					channel = new Channel(msg.args[0]);
-					gateway.channels.push(channel);
-					gateway.switchTab(msg.args[0]);
-				}
+				var channel = gateway.findOrCreate(msg.args[0], false);
 				if(msg.text.indexOf(guser.nick) != -1) {
 					channel.appendMessage(messagePatterns.channelActionHilight, [gateway.niceTime(), msg.sender.nick, $$.colorize(msg.ctcptext)]);
 					if(gateway.active.toLowerCase() != msg.args[0].toLowerCase() || !disp.focused) {
@@ -995,11 +1002,7 @@ var ctcpBinds = {
 					}
 				}
 			} else {
-				query = gateway.findQuery(qnick);
-				if(!query) {
-					query = new Query(msg.sender.nick);
-					gateway.queries.push(query);
-				}
+				query = gateway.findOrCreate(qnick);
 				query.appendMessage(messagePatterns.channelAction, [gateway.niceTime(), msg.sender.nick, $$.colorize(msg.ctcptext)]);
 				if(gateway.active.toLowerCase() != msg.sender.nick.toLowerCase()) {
 					gateway.findQuery(msg.sender.nick).markNew();

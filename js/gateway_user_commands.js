@@ -83,11 +83,7 @@ var commands = {
 		'custom': [],
 		'callback': function(command, input) {
 			if (command[1] != "") {
-				if(!gateway.findQuery(command[1])) {
-					var query = new Query(command[1]);
-					gateway.queries.push(query);
-				}
-				gateway.switchTab(command[1]);
+				gateway.findOrCreate(command[1]);
 			} else {
 				gateway.notEnoughParams("query", "musisz podać nick osoby z którą chcesz rozpocząć prywatną rozmowę");
 			}
@@ -290,11 +286,8 @@ var commands = {
 					if($("#noticeDisplay").val() == 2) { // notice w statusie
 						gateway.statusWindow.appendMessage(messagePatterns.yourNotice, [gateway.niceTime(), command[1], reason]);
 					} else if($("#noticeDisplay").val() == 1) { // notice jako query
-						if(!gateway.findQuery(command[1].toLowerCase())) {
-							var query = new Query(command[1].toLowerCase());
-							gateway.queries.push(query);
-						}
-						gateway.findQuery(command[1]).appendMessage(messagePatterns.yourNotice, [gateway.niceTime(), command[1], reason]);
+						var query = gateway.findOrCreate(command[1]);
+						query.appendMessage(messagePatterns.yourNotice, [gateway.niceTime(), command[1], reason]);
 					} else if($("#noticeDisplay").val() == 0) { // notice jako okienko
 						var html = "<span class=\"notice\">[<b>"+he(guser.nick)+" → "+command[1] + "</b>]</span> " + $$.colorize(reason);
 						$$.displayDialog('notice', command[1], 'Komunikat prywatny od '+command[1], html);
@@ -329,14 +322,10 @@ var commands = {
 					
 				//	if(serviceNicks.indexOf(command[1].toLowerCase()) > -1){
 					if(command[1].isInList(servicesNicks)){
-						var query = gateway.findQuery(command[1]);
 						var displayAsQuery = Boolean(query);
 					
 						if(displayAsQuery || $("#noticeDisplay").val() == 1){ // query
-							if(!query) {
-								query = new Query(command[1]);
-								gateway.queries.push(query);
-							}
+							var query = gateway.findOrCreate(command[1]);
 							query.appendMessage(messagePatterns.yourMsg, [gateway.niceTime(), $$.nickColor(guser.nick), guser.nick, $$.colorize(reason)]);
 							query.appendMessage('%s', [$$.parseImages(reason)]);
 						} else if($("#noticeDisplay").val() == 0){ // okienko

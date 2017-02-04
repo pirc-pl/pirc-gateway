@@ -117,24 +117,6 @@
 				<div id="chat-wrapper">
 					<div style="width: 98%; margin: 0 auto; margin-top: 1%; margin-bottom: 1%;" id="main-window">
 						<span id="--status-window"></span>
-						<!--
-						<span class="time">12:44</span> &nbsp; <span class="nick"> Witaj na sieci PIRC.PL!</span><br />
-						<span class="time">12:44</span> &nbsp; <span class="nick"> --------------------------------------------- </span><br />
-						<span class="time">12:44</span> &nbsp; <span class="join">&rarr; Dołączyłeś do kanału #main.</span><br />
-						<span class="time">12:44</span> &nbsp; <span class="mode">*** Temat dla kanału <b>#main</b>: <a href="http://ichuj.samaelszafran.pl/cytaty">http://ichuj.samaelszafran.pl/cytaty</a> || Kto ukradł topic i dlaczego to był chommik?</span><br />
-						<span class="time">12:44</span> &nbsp; <span class="mode">*** Temat ustawiony przez: samu <i>[s@127.0.0.1]</i> [Fri Aug  6 10:33:56 2010]</span><br />
-						<span class="time">12:45</span> &nbsp; <span class="nick">&lt;samu&gt;</span> Słyszałem, że śpiochu jest policjantem.<br />
-						<span class="time">12:45</span> &nbsp; <span class="mode">*** samu ustawia tryb [+to chommik] dla kanału #main</span><br />
-						<span class="time">12:46</span> &nbsp; <span class="nick">&lt;Tril&gt;</span> Nie, on jest zjebę.<br />
-						<span class="time">12:46</span> &nbsp; <span class="nick">&lt;spiochu&gt;</span> Nie lubie was, ide oglądać bajki :&lt;<br />
-						<span class="time">12:47</span> &nbsp; <span class="nick">&lt;chommik&gt;</span> DEBIAN DEBIAN FTW!!!111oneoneone.<br />
-						<span class="time">12:47</span> &nbsp; <span class="hilight"><span class="nick">&lt;samu&gt;</span> nieznany123: zmień nicka ;x</span><br />
-						<span class="time">12:47</span> &nbsp; <span class="yournick">&lt;nieznany123&gt;</span> :(<br />
-						<span class="time">12:48</span> &nbsp; <span class="join">&rarr; <b>somenick</b> <i>[~somenick@1.3.3.7]</i> dołączył do #main.</span><br />
-						<span class="time">12:48</span> &nbsp; <span class="part">&larr; <b>somenick</b> <i>[~somenick@1.3.3.7]</i> opuścił #main.</span><br />
-						<span class="time">12:48</span> &nbsp; <span class="kick">*** samu wyrzuca spiochu z #main [Powód: Bo jesteś głupi]</span><br />
-						<span class="time">12:48</span> &nbsp; <span class="kick">*** samu wyrzuca Cię z #main [Powód: no reason]</span><br />
-						-->
 					</div>
 				</div>
 			</div>
@@ -152,20 +134,17 @@
 						<div id="nicklist-hide-button" onclick="gateway.nickListToggle()"></div>
 						<div id="nicklist-hide-wrap">
 							<span id="--status-nicklist">
-								<!-- <ul class="nicklist">
-									<li></li>
-									<li><table><tr><td valign="top"><img alt="owner" src="/styles/img/owner.png" width="16" height="16" /></td><td valign="top">&nbsp;&nbsp;Tril</td></tr></table></li>
-									<li><table><tr><td valign="top"><img alt="owner" src="/styles/img/owner.png" width="16" height="16" /></td><td valign="top">&nbsp;&nbsp;chommik</td></tr></table></li>
-									<li><table><tr><td valign="top"><img alt="protect" src="/styles/img/prot.png" width="16" height="16" /></td><td valign="top">&nbsp;&nbsp;mystiq</td></tr></table></li>
-									<li><table><tr><td valign="top"><img alt="op" src="/styles/img/op.png" width="16" height="16" /></td><td valign="top">&nbsp;&nbsp;futrzak</td></tr></table></li>
-									<li><table><tr><td valign="top"><img alt="halfop" src="/styles/img/hop.png" width="16" height="16" /></td><td valign="top">&nbsp;&nbsp;luszczyk</td></tr></table></li>
-									<li><table><tr><td valign="top"><img alt="voice" src="/styles/img/voice.png" width="16" height="16" /></td><td valign="top">&nbsp;&nbsp;kamil</td></tr></table></li>
-									<li><table><tr><td valign="top"><img alt="no status" src="/styles/img/users.png" width="16" height="16" /></td><td valign="top">&nbsp;&nbsp;spiochu</td></tr></table></li>
-									<li><table><tr><td valign="top"><img alt="no status" src="/styles/img/users.png" width="16" height="16" /></td><td valign="top">&nbsp;&nbsp;nieznany123</td></tr></table></li>
-								</ul> -->
 							</span>
 						</div>
 					</div>
+				</div>
+			</div>
+			<div id="chlist">
+				<div class="chlistwrapper">
+					<div id="chlist-body">
+						Poczekaj, trwa ładowanie...
+					</div>
+					<div id="chlist-button" onclick="gateway.toggleChanList()">⮙ lista kanałów ⮙</div>
 				</div>
 			</div>
 		</div>

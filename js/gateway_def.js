@@ -299,12 +299,7 @@ var services = {
 	},
 	'nickInfo': function(nick){
 		var nscommand = 'INFO '+nick+' ALL';
-		var query = gateway.findQuery('nickserv');
-		if(!query) {
-			query = new Query('NickServ');
-			gateway.queries.push(query);
-		}
-		gateway.switchTab('nickserv');
+		var query = gateway.findOrCreate('NickServ', true);
 		query.appendMessage(messagePatterns.yourMsg, [gateway.niceTime(), $$.nickColor(guser.nick), guser.nick, nscommand]);
 		gateway.send('PRIVMSG NickServ :'+nscommand);
 	}
@@ -1505,8 +1500,7 @@ var gateway = {
 			$$.displayDialog('error', 'ignore', 'Błąd', html, button);
 			return;
 		}
-		gateway.queries.push(new Query(nick));
-		gateway.switchTab(nick);
+		gateway.findOrCreate(nick, true);
 		if(id){
 			gateway.toggleNickOpt(id);
 		}
@@ -2272,6 +2266,64 @@ var gateway = {
 		} else if (!$('#showPartQuit').is(':checked')) {
 			chan.appendMessage(messagePatterns.join, [gateway.niceTime(), he(msg.sender.nick), he(msg.sender.ident), he(msg.sender.host), msg.text]);
 		}
+	},
+	'findOrCreate': function(name, setActive){
+		if(!name || name == ''){
+			return null;
+		}
+		if(name.charAt(0) == '#'){ //kanał
+			var tab = gateway.findChannel(name);
+			if(!tab) {
+				tab = new Channel(name);
+				gateway.channels.push(tab);
+			}
+		} else { //query
+			tab = gateway.findQuery(name);
+			if(!tab) {
+				tab = new Query(name);
+				gateway.queries.push(tab);
+			}
+		}
+		if(setActive){
+			gateway.switchTab(name);
+		}
+		return tab;
+	},
+	'smallListLoading': false,
+	'smallListData': [],
+	'toggleChanList': function() {
+		if($('#chlist-body').is(':visible')){
+			$('#chlist-body').css('display', '');
+
+			$('#chlist').css('height', '').css('top', '');
+			$('#nicklist').css('bottom', '');
+			var nicklistBottom = $('#nicklist').css('bottom');
+			$('#nicklist').css('bottom', '31%');
+			$("#nicklist").animate({
+				"bottom":	nicklistBottom
+			}, 400);
+			
+			
+			
+			$('#chlist-button').text('⮙ lista kanałów ⮙');
+		} else {
+			$('#chlist-body').css('display', 'block');
+			$('#chlist').css('height', 'initial').css('top', '70%');
+		//	$('#nicklist').css('bottom', '31%');
+			$("#nicklist").animate({
+				"bottom":	"31%"
+			}, 400);
+			$('#chlist-button').text('⮛ schowaj listę ⮛');
+			if(!$('#chlist-body > table').length){
+				gateway.smallListLoading = true;
+				gateway.send('LIST >9');
+			}
+		}
+	},
+	'refreshChanList': function() {
+		gateway.smallListLoading = true;
+		gateway.send('LIST >9');
+		$('#chlist-body').html('Poczekaj, trwa ładowanie...');
 	}
 }
 	
