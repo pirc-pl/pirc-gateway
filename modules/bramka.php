@@ -26,13 +26,22 @@ class Module extends ModuleT {
 		$gateway_url .= '\">innej bramki</a> (Mibbit).';
 		
 		$add_js_list = array('mcolor', 'icons_rangi');
+		$add_js_list_default = array('mcolor');
 		$add_js = '';
 		$addons = array();
+		$disable_addons = array();
 		if($_GET['addons']){
 			$addons = explode(',', $_GET['addons']);
 		}
+		if($_GET['disable_addons']){
+			$disable_addons = explode(',', $_GET['disable_addons']);
+		}
 		foreach($addons as $addon){
-			if(!in_array($addon, $add_js_list)) continue;
+			if(!in_array($addon, $add_js_list) || in_array($addon, $disable_addons) || in_array($addon, $add_js_list_default)) continue;
+			$add_js .= '<script type="text/javascript" src="/js/addon_'.$addon.'.js"></script>'."\n";
+		}
+		foreach($add_js_list_default as $addon){
+			if(in_array($addon, $disable_addons)) continue;
 			$add_js .= '<script type="text/javascript" src="/js/addon_'.$addon.'.js"></script>'."\n";
 		}
 

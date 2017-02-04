@@ -1055,6 +1055,7 @@ var gateway = {
 		}
 	},
 	'parseUserMessage': function(input){
+		var active = gateway.getActive();
 		if(gateway.getActive()) {
 			var textToSend = input;
 			do {
@@ -1063,11 +1064,11 @@ var gateway = {
 				gateway.send("PRIVMSG " + gateway.getActive().name + " :" + sendNow);
 				var message = $$.colorize(sendNow);
 				for(f in messageProcessors){
-					message = messageProcessors[f](guser.nick, false, message);
+					message = messageProcessors[f](guser.nick, active.name, message);
 				}
-				gateway.getActive().appendMessage(messagePatterns.yourMsg, [gateway.niceTime(), $$.nickColor(guser.nick), guser.nick, message]);
+				active.appendMessage(messagePatterns.yourMsg, [gateway.niceTime(), $$.nickColor(guser.nick), guser.nick, message]);
 			} while (textToSend != "");
-			gateway.getActive().appendMessage('%s', [$$.parseImages(input)]);
+			active.appendMessage('%s', [$$.parseImages(input)]);
 		}
 	},
 	'parseUserInput': function(input) {

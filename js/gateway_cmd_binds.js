@@ -481,11 +481,11 @@ var cmdBinds = {
 		function(msg) {
 			if(gateway.findChannel(msg.args[1])) {
 				var chan = msg.args[1];
-				var mody = msg.args;
+				var mody = JSON.parse(JSON.stringify(msg.args));
 				mody.splice(0,2);
-				mody = mody.join(" ");
+				//modyText = mody.join(" ");
 				var chanO = gateway.findChannel(chan);
-				var info = gateway.parseChannelMode(msg.args, chanO, 1);
+				var info = gateway.parseChannelMode(mody, chanO, 1);
 				if (!$('#showMode').is(':checked')) {
 					chanO.appendMessage(messagePatterns.mode, [gateway.niceTime(), chan, info]);
 				}
