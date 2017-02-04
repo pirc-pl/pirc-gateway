@@ -129,7 +129,7 @@ var cmdBinds = {
 					console.log('Ignoring message on '+msg.args[0]+' by '+msg.sender.nick);
 					return;
 				}
-				var channel = gateway.findOrCreate(msg.args[0], true);
+				var channel = gateway.findOrCreate(msg.args[0]);
 				if(message.indexOf(guser.nick) != -1) { //hajlajt
 					channel.appendMessage(messagePatterns.channelMsgHilight, [gateway.niceTime(), msg.sender.nick, message]);
 					if(gateway.active != msg.args[0].toLowerCase() || !disp.focused) {
