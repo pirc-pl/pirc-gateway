@@ -27,6 +27,15 @@ var mcolorChModeHandler = function(msg){
 	gateway.ctcp(msg.args[1], 'MCOL '+color);
 }
 
+var mcolorNickHandler = function(msg){
+	var index = md5(msg.sender.nick.toLowerCase());
+	var color = mcolors[index];
+	if(color){
+		delete mcolors[index];
+		mcolors[md5(msg.text.toLowerCase())] = color;
+	}
+}
+
 var isCorrectColor = function(color){
 	if(color.match(/^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/)){
 		return true;
@@ -126,6 +135,7 @@ var insertBinding = function(list, item, handler){
 insertBinding(cmdBinds, 'JOIN', mcolorJoinHandler);
 insertBinding(ctcpBinds, 'MCOL', mcolorCtcpHandler);
 insertBinding(cmdBinds, '324', mcolorChModeHandler);
+insertBinding(cmdBinds, 'NICK', mcolorNickHandler);
 messageProcessors.push(colorMessage);
 commands['mycolor'] = {
 	'channels': false,
