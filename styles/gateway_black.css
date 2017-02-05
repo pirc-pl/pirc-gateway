@@ -240,3 +240,8 @@ span.data {
 #chlist-body td.chname:hover, .chlist_button:hover, #chlist-button:hover {
     background-color: #223963;
 }
+
+.channelOperActions, .channelOptions {
+    background-color: #2F2F2F;
+}
+

@@ -74,7 +74,7 @@
 						</select>
 					</td>
 				</tr>
-				<tr><td colspan="2"><a href="javascript:gateway.showIgnoreManagement();">Zarządzaj ignorowanymi nickami</a></td></tr>
+				<tr><td colspan="2"><a href="javascript:ignore.showIgnoreManagement();">Zarządzaj ignorowanymi nickami</a></td></tr>
 			</table>
 		</div>
 		

@@ -27,6 +27,9 @@
 		<script type="text/javascript" src="/js/jquery-ui.min.js"></script>
 		<script type="text/javascript" src="/js/base64.js"></script>
 		<script type="text/javascript" src="/js/gateway_functions.js{$random_string}"></script>
+		<script type="text/javascript" src="/js/gateway_ignore.js{$random_string}"></script>
+		<script type="text/javascript" src="/js/gateway_services.js{$random_string}"></script>
+		<script type="text/javascript" src="/js/gateway_conn.js{$random_string}"></script>
 		<script type="text/javascript" src="/js/gateway_cmd_binds.js{$random_string}"></script>
 		<script type="text/javascript" src="/js/gateway_user_commands.js{$random_string}"></script>
 		<script type="text/javascript" src="/js/gateway_tabs.js{$random_string}"></script>

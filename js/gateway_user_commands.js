@@ -109,7 +109,7 @@ var commands = {
 				gateway.send('LIST '+input.substring(input.indexOf(' ')));
 			}
 			if(gateway.active != '--status'){
-				gateway.getActive().appendMessage(messagePatterns.listShown, [gateway.niceTime()]);
+				gateway.getActive().appendMessage(messagePatterns.listShown, [$$.niceTime()]);
 			}
 		//	disp.listWindowShow();
 		}
@@ -284,10 +284,10 @@ var commands = {
 				if(reason) {
 					gateway.send("NOTICE "+command[1]+" :"+reason);
 					if($("#noticeDisplay").val() == 2) { // notice w statusie
-						gateway.statusWindow.appendMessage(messagePatterns.yourNotice, [gateway.niceTime(), command[1], reason]);
+						gateway.statusWindow.appendMessage(messagePatterns.yourNotice, [$$.niceTime(), command[1], reason]);
 					} else if($("#noticeDisplay").val() == 1) { // notice jako query
 						var query = gateway.findOrCreate(command[1]);
-						query.appendMessage(messagePatterns.yourNotice, [gateway.niceTime(), command[1], reason]);
+						query.appendMessage(messagePatterns.yourNotice, [$$.niceTime(), command[1], reason]);
 					} else if($("#noticeDisplay").val() == 0) { // notice jako okienko
 						var html = "<span class=\"notice\">[<b>"+he(guser.nick)+" → "+command[1] + "</b>]</span> " + $$.colorize(reason);
 						$$.displayDialog('notice', command[1], 'Komunikat prywatny od '+command[1], html);
@@ -326,14 +326,14 @@ var commands = {
 					
 						if(displayAsQuery || $("#noticeDisplay").val() == 1){ // query
 							var query = gateway.findOrCreate(command[1]);
-							query.appendMessage(messagePatterns.yourMsg, [gateway.niceTime(), $$.nickColor(guser.nick), guser.nick, $$.colorize(reason)]);
+							query.appendMessage(messagePatterns.yourMsg, [$$.niceTime(), $$.nickColor(guser.nick), guser.nick, $$.colorize(reason)]);
 							query.appendMessage('%s', [$$.parseImages(reason)]);
 						} else if($("#noticeDisplay").val() == 0){ // okienko
 							var html = "<span class=\"notice\">[<b>"+he(guser.nick)+" → "+command[1] + "</b>]</span> " + $$.colorize(reason);
 //							$$.displayDialog('notice', command[1], 'Komunikat prywatny od '+command[1], html);
 							$$.displayDialog('notice', 'service', 'Komunikat od usługi sieciowej', html);
 						} else { // status
-							gateway.statusWindow.appendMessage(messagePatterns.yourMsg, [gateway.niceTime(), $$.nickColor(guser.nick), guser.nick + ' → ' + command[1], $$.colorize(reason)]);
+							gateway.statusWindow.appendMessage(messagePatterns.yourMsg, [$$.niceTime(), $$.nickColor(guser.nick), guser.nick + ' → ' + command[1], $$.colorize(reason)]);
 						}
 					}
 					
@@ -465,7 +465,7 @@ var commands = {
 					}
 					if(tabToSend){
 						gateway.send("PRIVMSG "+gateway.active+" :\001ACTION "+input.slice(1).substr(3)+"\001");
-						tabToSend.appendMessage(messagePatterns.yourAction, [gateway.niceTime(), guser.nick, $$.colorize(input.slice(1).substr(3))]);
+						tabToSend.appendMessage(messagePatterns.yourAction, [$$.niceTime(), guser.nick, $$.colorize(input.slice(1).substr(3))]);
 						tabToSend.appendMessage('%s', [$$.parseImages(input.slice(1).substr(3))]);
 					} else {
 						console.log('błąd /me !!!');
@@ -485,11 +485,11 @@ var commands = {
 		'callback': function(command, input) {
 			console.log(command);
 			if(!command[1]){ //brak argumentu - listuj wszystkie
-				var data = gateway.getIgnoreList();
+				var data = ignore.getIgnoreList();
 				if(data.length == 0){
-					gateway.statusWindow.appendMessage(messagePatterns.ignoreListEmpty, [gateway.niceTime()]);
+					gateway.statusWindow.appendMessage(messagePatterns.ignoreListEmpty, [$$.niceTime()]);
 				} else {
-					gateway.statusWindow.appendMessage(messagePatterns.ignoreListStart, [gateway.niceTime()]);
+					gateway.statusWindow.appendMessage(messagePatterns.ignoreListStart, [$$.niceTime()]);
 					for(var i=0; i<data.length; i++){
 						if(data[i][0] == 'channel'){
 							var ignoreType = 'kanał';
@@ -497,12 +497,12 @@ var commands = {
 							var ignoreType = 'rozmowa prywatna';
 						}
 						var ignoreMask = data[i][1];
-						gateway.statusWindow.appendMessage(messagePatterns.ignoreListItem, [gateway.niceTime(), ignoreType, ignoreMask]);
+						gateway.statusWindow.appendMessage(messagePatterns.ignoreListItem, [$$.niceTime(), ignoreType, ignoreMask]);
 					}
-					gateway.statusWindow.appendMessage(messagePatterns.ignoreListEnd, [gateway.niceTime()]);
+					gateway.statusWindow.appendMessage(messagePatterns.ignoreListEnd, [$$.niceTime()]);
 				}
 			} else { //są argumenty
-				gateway.askIgnore(command[1]);
+				ignore.askIgnore(command[1]);
 		/*		if(command[3] != null){
 			//		gateway.notEnoughParams("ignore", "Za dużo parametrów.");
 				}*/

@@ -5,10 +5,20 @@ guser.changeNick = function(newnick, silent) {
 	$(document).attr('title', he(guser.nick)+ ' @ PIRC.pl');
 	if(!silent) {
 		for (i in gateway.channels) {
-			gateway.channels[i].appendMessage(messagePatterns.nickChangeOwn, [gateway.niceTime(), he(guser.nick)]);
+			gateway.channels[i].appendMessage(messagePatterns.nickChangeOwn, [$$.niceTime(), he(guser.nick)]);
 		}
 	}
 	return true;
+}
+
+guser.umodes = {};
+
+guser.setUmode = function(modechar, plus){
+	guser.umodes[modechar] = plus;
+}
+
+guser.clearUmodes = function(){
+	guser.umodes = {};
 }
 
 var irc = {
@@ -152,161 +162,6 @@ var irc = {
 	}
 };
 
-var services = {
-	'badNickCounter': false,
-	'badNickInterval': false,
-	'nickStore': '',
-	'showTimeToChange': false,
-	'ignoreNextAccessDenial': false,
-	'badNickString': '<div class="table">'+
-		'<form class="tr" onsubmit="services.logIn();$$.closeDialog(\'error\', \'nickserv\')" action="javascript:void(0);">'+
-			'<span class="td_right">Twoje hasło:</span>'+
-			'<span class="td"><input type="password" id="nspass" /></span>'+
-			'<span class="td"><input type="submit" value="Zaloguj" /></span>'+
-		'</form>'+
-		'<form class="tr" onsubmit="services.changeNick();$$.closeDialog(\'error\', \'nickserv\')" action="javascript:void(0);">'+
-			'<span class="td_right">Nowy nick:</span>'+
-			'<span class="td"><input type="text" id="nnick" /></span>'+
-			'<span class="td"><input type="submit" value="Zmień nick" /></span>'+
-		'</form>'+
-	'</div>',
-	'nickservMessage': function(msg){
-		if (msg.text.match(/^Hasło przyjęte - jesteś zidentyfikowany\(a\)\.$/i)){
-			services.showTimeToChange = false;
-			$$.closeDialog('error', 'nickserv');
-			return false;
-		}
-		if(msg.text.match(/^Nick [^ ]+ nie jest zarejestrowany\.$/i) && guser.nickservpass != ''){
-			guser.nickservpass = '';
-			guser.nickservnick = '';
-			return false;
-		}
-		if (msg.text.match(/^Nieprawid.owe has.o\.$/i)) { // złe hasło nickserv
-			services.showTimeToChange = true;
-			services.nickStore = guser.nickservnick;
-			var html = 'Podane hasło do nicka <b>'+guser.nickservnick+'</b> jest błędne. Możesz spróbować ponownie lub zmienić nicka.<br>'+services.badNickString;
-			$$.displayDialog('error', 'nickserv', 'Błąd', html);
-			return true;
-		}
-		if(msg.text.match(/^Ten nick jest zarejestrowany i chroniony\.( Je.li nale.y do Ciebie,)?$/i)){
-			if(guser.nickservpass == ''){
-				services.showTimeToChange = true;
-				services.nickStore = guser.nick;
-				var html = 'Wybrany nick <b>'+guser.nick+'</b> jest zarejestrowany. Musisz go zmienić lub podać hasło.<br>'+services.badNickString;
-				$$.displayDialog('error', 'nickserv', 'Błąd', html);
-			}
-			return true;
-		}
-		if(msg.text.match(/^Zidentyfikuj się pisząc: /i)
-			|| msg.text.match(/^jeśli nick należy do Ciebie, w przeciwnym razie zmień go\.$/i)
-			|| msg.text.match(/^Nick .* nie jest zajęty przez serwisy\.$/i)
-			|| msg.text.match(/^Nick .* nie jest aktualnie używany\.$/i)
-
-			|| msg.text.match(/^wpisz .\/msg NickServ IDENTIFY .hasło..\. W przeciwnym wypadku$/i)
-			|| msg.text.match(/^wybierz proszę inny nick.$/i)){
-				return true;
-		}
-		if(msg.text.match(/^Odmowa dostępu\.$/i)){
-			if(gateway.connectStatus == statusGhostSent || gateway.connectStatus == statusGhostAndNickSent){
-				gateway.connectStatus = statusIdentified;
-				services.nickStore = guser.nickservnick;
-				guser.nickservnick = '';
-				guser.nickservpass = '';
-				var html = 'Podane hasło do zajętego nicka <b>'+guser.nickservnick+'</b> jest błędne. Możesz spróbować ponownie odzyskać nicka, podając poprawne hasło, lub go zmienić.<br>'+services.badNickString;
-				$$.displayDialog('error', 'nickserv', 'Błąd', html);
-				services.ignoreNextAccessDenial = true;
-				return true;
-			} else if(services.ignoreNextAccessDenial){
-				services.ignoreNextAccessDenial = false;
-				return true;
-			}
-			return false;
-		}
-		if(msg.text.match(/^Nick został usunięty z sieci\.$/i) || msg.text.match(/^Serwisy właśnie zwolniły.*nicka.*\.$/i)){
-			if(gateway.connectStatus == statusGhostSent){
-				gateway.send("NICK "+guser.nickservnick);
-				gateway.connectStatus = statusGhostAndNickSent;
-			}
-			return true;
-		}
-		var time = false;
-		var expr = /^Masz (.*) na zmianę nicka, potem zostanie zmieniony siłą\.$/i;
-		var match = expr.exec(msg.text);
-		if(!match){
-			var expr = /^Jeśli go nie zmienisz w ciągu (.*) sekund\(y\), zostanie zmieniony siłą\.$/i;
-			match = expr.exec(msg.text);
-		}
-		if(match){
-			if(services.showTimeToChange){
-				var html = '<br>Masz <span id="nickserv_timer"></span> na zmianę nicka, potem zostanie zmieniony siłą. Bez obaw: gdy wpiszesz poprawne hasło, to odzyskasz swojego nicka.';
-				$$.displayDialog('error', 'nickserv', 'Błąd', html);
-				var countStart = false;
-				if(match[1] == 'jedną minutę' || match[1] == '60'){
-					$('#nickserv_timer').text('60 sekund');
-					services.badNickCounter = 59;
-					var countStart = true;
-				} else if(match[1] == '20 sekund' || match[1] == '20') {
-					$('#nickserv_timer').text('20 sekund');
-					services.badNickCounter = 19;
-					var countStart = true;
-				} else {
-					$('#nickserv_timer').text(match[1]);
-				}
-				if(countStart){
-					if(services.badNickInterval){
-						clearInterval(services.badNickInterval);
-					}
-					services.badNickInterval = setInterval(function(){
-						if(!(services.badNickCounter > 0)){
-							clearInterval(services.badNickInterval);
-							services.badNickInterval = false;
-						}
-						var text = services.badNickCounter.toString() + ' sekund';
-						if(services.badNickCounter == 1){
-							text += 'ę';
-						} else if((services.badNickCounter < 10 || services.badNickCounter > 20) && services.badNickCounter%10 > 1 && services.badNickCounter%10 < 5){
-							text += 'y';
-						}
-						$('#nickserv_timer').text(text);
-						services.badNickCounter--;
-					}, 1000);
-				}
-			}
-			return true;
-		}
-		return false;
-	},
-	'logIn': function(){
-		if($('#nspass').val() == ''){
-			$$.alert('Nie podałeś hasła!');
-			return false;
-		}
-		guser.nickservnick = services.nickStore;
-		guser.nickservpass = $('#nspass').val();
-		gateway.connectStatus = status001;
-		gateway.setConnectedWhenIdentified = 1;
-		gateway.processStatus();
-		gateway.send('PING :Init');
-		$(".errorwindow").fadeOut(250);
-		return true;
-	},
-	'changeNick': function(){
-		if($('#nnick').val() == ''){
-			$$.alert('Nie podałeś nicka!');
-			return false;
-		}
-		gateway.send('NICK '+$('#nnick').val());
-		$(".errorwindow").fadeOut(250);
-		return true;
-	},
-	'nickInfo': function(nick){
-		var nscommand = 'INFO '+nick+' ALL';
-		var query = gateway.findOrCreate('NickServ', true);
-		query.appendMessage(messagePatterns.yourMsg, [gateway.niceTime(), $$.nickColor(guser.nick), guser.nick, nscommand]);
-		gateway.send('PRIVMSG NickServ :'+nscommand);
-	}
-};
-
 var gateway = {
 	'websock': 0,
 	'whois': '',
@@ -391,16 +246,17 @@ var gateway = {
 		gateway.disconnectMessageShown = 1;
 		for(c in gateway.channels) {
 			gateway.channels[c].part();
-			gateway.channels[c].appendMessage(messagePatterns.error, [gateway.niceTime(), text]);
+			gateway.channels[c].appendMessage(messagePatterns.error, [$$.niceTime(), text]);
 		}
-		gateway.statusWindow.appendMessage(messagePatterns.error, [gateway.niceTime(), text]);
+		gateway.statusWindow.appendMessage(messagePatterns.error, [$$.niceTime(), text]);
 	},
 	'ping': function() { //pytanie IRCD o ping i błąd kiedy brak odpowiedzi
 		if(gateway.connectStatus != statusConnected) {
 			gateway.pingcnt = 0;
 			return;
 		}
-		gateway.forceSend('PING :JavaScript');
+		//gateway.forceSend('PING :JavaScript');
+		gateway.forceSend('MODE '+guser.nick);
 		if(gateway.pingcnt > 3) {
 			gateway.connectStatus = statusError;
 			if($('#autoReconnect').is(':checked')){
@@ -496,7 +352,7 @@ var gateway = {
 		gateway.connectTimeoutID = setTimeout(gateway.connectTimeout, 20000);
 		// już jest połączenie
 		gateway.configureConnection();
-		gateway.statusWindow.appendMessage(messagePatterns.existingConnection, [gateway.niceTime()]);
+		gateway.statusWindow.appendMessage(messagePatterns.existingConnection, [$$.niceTime()]);
 		$$.displayDialog('error', 'error', 'Ostrzeżenie', 'UWAGA: jeśli posiadasz już otwartą bramkę, zamknij ją, aby uniknąć problemów!');
 		gateway.send('PRIVMSG');
 			
@@ -709,18 +565,6 @@ var gateway = {
 			console.log('Outmsg delayed: '+data);
 			gateway.toSend.push(data);
 		}
-	},
-	'niceTime': function() {
-		dateobj = new Date();
-		hours = dateobj.getHours();
-		if(hours < 10) {
-			hours = '0'+hours;
-		}
-		minutes = dateobj.getMinutes();
-		if(minutes < 10) {
-			minutes = '0'+minutes;
-		}
-		return hours+':'+minutes;
 	},
 	'channels': [],
 	'findChannel': function(name) {
@@ -1021,9 +865,9 @@ var gateway = {
 	},
 	'notEnoughParams': function(command, reason) {
 		if(gateway.getActive()) {
-			gateway.getActive().appendMessage(messagePatterns.notEnoughParams, [gateway.niceTime(), command, reason]);
+			gateway.getActive().appendMessage(messagePatterns.notEnoughParams, [$$.niceTime(), command, reason]);
 		} else {
-			gateway.statusWindow.appendMessage(messagePatterns.notEnoughParams, [gateway.niceTime(), command, reason]);
+			gateway.statusWindow.appendMessage(messagePatterns.notEnoughParams, [$$.niceTime(), command, reason]);
 		}
 	},
 	'callCommand': function(command, input, alias) {
@@ -1053,9 +897,9 @@ var gateway = {
 		command = input.slice(1).split(" ");
 		if(!gateway.callCommand(command, input)) {
 			if (gateway.getActive()) {
-				gateway.getActive().appendMessage(messagePatterns.noSuchCommand, [gateway.niceTime(), he(command[0])]);
+				gateway.getActive().appendMessage(messagePatterns.noSuchCommand, [$$.niceTime(), he(command[0])]);
 			} else {
-				gateway.statusWindow.appendMessage(messagePatterns.noSuchCommand, [gateway.niceTime(), he(command[0])]);
+				gateway.statusWindow.appendMessage(messagePatterns.noSuchCommand, [$$.niceTime(), he(command[0])]);
 			}
 		}
 	},
@@ -1071,7 +915,7 @@ var gateway = {
 				for(f in messageProcessors){
 					message = messageProcessors[f](guser.nick, active.name, message);
 				}
-				active.appendMessage(messagePatterns.yourMsg, [gateway.niceTime(), $$.nickColor(guser.nick), guser.nick, message]);
+				active.appendMessage(messagePatterns.yourMsg, [$$.niceTime(), $$.nickColor(guser.nick), guser.nick, message]);
 			} while (textToSend != "");
 			active.appendMessage('%s', [$$.parseImages(input)]);
 		}
@@ -1143,9 +987,9 @@ var gateway = {
 			}
 		} else {
 			if (gateway.getActive()) {
-				gateway.getActive().appendMessage(messagePatterns.notConnected, [gateway.niceTime()]);
+				gateway.getActive().appendMessage(messagePatterns.notConnected, [$$.niceTime()]);
 			} else {
-				gateway.statusWindow.appendMessage(messagePatterns.notConnected, [gateway.niceTime()]);
+				gateway.statusWindow.appendMessage(messagePatterns.notConnected, [$$.niceTime()]);
 			}
 		}
 		$("#input").val("");
@@ -1164,334 +1008,13 @@ var gateway = {
 			$("#input").focus();
 		}
 	},
-	'ignoring': function(nick, type, dontProcessWildcard) {
-		if(nick.isInList(servicesNicks)){
-			return false;
-		}
-		if($.inArray(nick, ignoreData.full[type]) >= 0){
-			return true;
-		}
-		if(dontProcessWildcard){
-			if($.inArray($$.wildcardToRegex(nick), ignoreData.wildcard[type]) >= 0){
-				return true;
-			}
-		} else {
-			for(var i = 0; i < ignoreData.wildcard[type].length; i++){
-				var regex = ignoreData.wildcard[type][i];
-				console.log(nick);
-				console.log(regex);
-				if(nick.match(new RegExp(regex))){
-					return true;
-				}
-			}
-		}
-		return false;
-	},
-	'getIgnoreList': function() {
-		var data = [];
-		for(var i=0; i < ignoreData.full.channel.length; i++){
-			data.push(['channel', ignoreData.full.channel[i]]);
-		}
-		for(var i=0; i < ignoreData.full.query.length; i++){
-			data.push(['query', ignoreData.full.query[i]]);
-		}
-		for(var i=0; i < ignoreData.wildcard.channel.length; i++){
-			data.push(['channel', $$.regexToWildcard(ignoreData.wildcard.channel[i])]);
-		}
-		for(var i=0; i < ignoreData.wildcard.query.length; i++){
-			data.push(['query', $$.regexToWildcard(ignoreData.wildcard.query[i])]);
-		}
-		return data;
-	},
-	'showIgnoreManagement': function() {
-		var data = gateway.getIgnoreList();
-		if($$.getDialogSelector('ignore', 'ignorelist').length != 0){
-			$$.closeDialog('ignore', 'ignorelist');
-		}
-		if(data.length == 0){
-			var html = 'Lista jest pusta.';
-		} else {
-			var html = '<div class="beIListContents"><table><tr><th>Dotyczy</th><th>Maska</th></tr></table></div>';
-		}
-		$$.displayDialog('ignore', 'ignorelist', 'Lista ignorowanych użytkowników', html);
-		for(var i=0; i<data.length; i++){
-			var ignoreT = data[i][0];
-			if(ignoreT == 'channel'){
-				var ignoreType = 'kanał';
-			} else {
-				var ignoreType = 'rozmowa prywatna';
-			}
-			var ignoreMask = data[i][1];
-			
-			var html = '<tr><td>'+ignoreType+'</td><td>'+he(ignoreMask)+'</td>' +
-				'<td><button id="unignore_'+ignoreT+'_'+md5(ignoreMask)+'">Usuń</button>' +
-				'</td></tr>';
-			$('table', $$.getDialogSelector('ignore', 'ignorelist')).append(html);
-			$('#unignore_'+ignoreT+'_'+md5(ignoreMask)).click({type: ignoreT, mask: ignoreMask}, function(e){
-				gateway.unIgnore(e.data.type, e.data.mask);
-				gateway.showIgnoreManagement();
-			});
-		}
-		var html = '<hr style="margin-top:5px;margin-bottom:5px;"><strong>Dodaj wpis do listy</strong><br>'+
-			'<p><input type="text" id="new_ignore_mask"></p>' +
-			'<p><input type="checkbox" id="new_ignore_query"> Wiadomości prywatne<br><input type="checkbox" id="new_ignore_channel"> Wiadomości na kanale</p>' +
-			'<p><input type="button" value="Dodaj" onclick="gateway.ignoreClickInput();"></p>';
-		$$.getDialogSelector('ignore', 'ignorelist').append(html);
-	},
-	'unIgnore': function(type, mask){
-		gateway.changeIgnoreList(type, mask, false);
-	},
-	'changeIgnoreList': function(type, mask, add) {
-		var wildcard = false;
-		if(mask.indexOf('?') >= 0 || mask.indexOf('*') >= 0){
-			var wildcard = true;
-			var regex = $$.wildcardToRegex(mask);
-		}
-		try {
-			if(add){
-				if(gateway.ignoring(mask, type, true)){
-					return; //już jest
-				}
-				if(wildcard){
-					ignoreData.wildcard[type].push(regex);
-				} else {
-					ignoreData.full[type].push(mask);
-				}
-				if(type == 'channel'){
-					var pattern = messagePatterns.channelIgnoreAdded;
-				} else {
-					var pattern = messagePatterns.queryIgnoreAdded;
-				}
-			} else {
-				if(!gateway.ignoring(mask, type, true)){
-					return; //nie ma czego usuwać
-				}
-				//try {
-					if(wildcard){
-						ignoreData.wildcard[type].splice(ignoreData.wildcard[type].indexOf(regex), 1);
-					} else {
-						ignoreData.full[type].splice(ignoreData.full[type].indexOf(mask), 1);
-					}
-			//	} catch (e) {
-			//	}
-				if(type == 'channel'){
-					var pattern = messagePatterns.channelIgnoreRemoved;
-				} else {
-					var pattern = messagePatterns.queryIgnoreRemoved;
-				}
-			}
-			gateway.statusWindow.appendMessage(pattern, [gateway.niceTime(), he(mask)]);
-			gateway.statusWindow.markBold();
-			localStorage.setItem('ignore', JSON.stringify(ignoreData));
-		} catch(e){
-			$$.displayDialog('error', 'ignore', 'Błąd', 'Operacja nieudana.');
-		}
-	},
-	'ignoreClickInput': function() {
-		var channel = $('#new_ignore_channel').prop('checked');
-		var query = $('#new_ignore_query').prop('checked');
-		var mask = $('#new_ignore_mask').val();
-		if(mask.length == 0){
-			$$.alert('Nie wpisano maski!');
-			return;
-		}
-		if(mask.indexOf(' ') > -1){
-			$$.alert('Maska nie może zawierać spacji!');
-			return;
-		}
-		if(!channel && !query){
-			$$.alert('Nie zaznaczono ani kanału ani query!');
-			return;
-		}
-		if(channel && mask == '*'){
-			$$.alert('Nie możesz ignorować wszystkich nicków na kanałach!');
-			return;
-		}
-		if(channel){
-			gateway.changeIgnoreList('channel', mask, true);
-		}
-		if(query){
-			gateway.changeIgnoreList('query', mask, true);
-		}
-		gateway.showIgnoreManagement();
-	},
-	'ignoreClick': function(nick) {
-		gateway.changeIgnoreList('query', nick, $('#'+nick+'_ignore_query').prop('checked'));
-		gateway.changeIgnoreList('channel', nick, $('#'+nick+'_ignore_channel').prop('checked'));
-	},
-	'askIgnore': function(nick) {
-		if(nick.isInList(servicesNicks)){
-			$$.displayDialog('error', 'ignore', 'Błąd', 'Nie możesz ignorować usługi sieciowej!', 'OK');
-			return;
-		}
-		var chanExplIgnored = gateway.ignoring(nick, 'channel', true);
-		var queryExplIgnored = gateway.ignoring(nick, 'query', true);
-		var ignoredByWildcard = false;
-		if(!chanExplIgnored && !queryExplIgnored){
-			if(gateway.ignoring(nick, 'channel') || gateway.ignoring(nick, 'query')){
-				ignoredByWildcard = true;
-			}
-		}
-		var html =
-			'<p><input type="checkbox" id="'+nick+'_ignore_query"> Ignoruj wiadomości prywatne</p>' +
-			'<p><input type="checkbox" id="'+nick+'_ignore_channel"> Ignoruj wiadomości na kanałach</p>';
-		if(ignoredByWildcard){
-			html += '<p>Ten użytkownik jest ignorowany za pomocą reguł ogólnych.</p>';
-		}
-		html += '<p><a href="javascript:gateway.showIgnoreManagement();">Zarządzaj ignorowanymi nickami</a></p>';
-		var button = [
-			{
-				text: 'Anuluj',
-				click: function(){
-					$(this).dialog('close');
-				}
-			},
-			{
-				text: 'Zastosuj',
-				click: function(){
-					gateway.ignoreClick(nick);
-					$(this).dialog('close');
-				}
-			}
-		];
-		$$.displayDialog('ignore', 'ignore', 'Ignoruj użytkownika '+nick, html, button);
-		if(chanExplIgnored){
-			$('#'+nick+'_ignore_channel').prop('checked', true);
-		}
-		if(queryExplIgnored){
-			$('#'+nick+'_ignore_query').prop('checked', true);
-		}
-	},
-	'showChanServCmds': function(chan) {
-		html = 'Uwaga: użycie każdej z funkcji wymaga odpowiednich uprawnień.<br>' +
-			'<table>'+
-			'<tr><td><button onclick="gateway.clickChanServ(\'ban\', \''+bsEscape(chan)+'\');">BAN</button></td><td>Nick/maska: <input type="text" id="cs-ban-'+md5(chan)+'"></td><td>Powód: <input type="text" id="cs-banreason-'+md5(chan)+'"></td><td>Banuj użytkownika</td></tr>'+
-			'<tr><td><button onclick="gateway.clickChanServ(\'kick\', \''+bsEscape(chan)+'\');">KICK</button></td><td>Nick/maska: <input type="text" id="cs-kick-'+md5(chan)+'"></td><td>Powód: <input type="text" id="cs-kickreason-'+md5(chan)+'"></td><td>Kop użytkownika</td></tr>'+
-			'<tr><td><button onclick="gateway.clickChanServ(\'register\', \''+bsEscape(chan)+'\');">REGISTER</button></td><td>Opis kanału: <input type="text" id="cs-register-'+md5(chan)+'"></td><td></td><td>Zarejestruj kanał</td></tr>'+
-			'<tr><td><button onclick="gateway.clickChanServ(\'status\', \''+bsEscape(chan)+'\');">STATUS</button></td><td>Nick: <input type="text" id="cs-status-'+md5(chan)+'"></td><td></td><td>Sprawdź status użytkownika w ChanServ</td></tr>'+
-			'<tr><td><button onclick="gateway.clickChanServ(\'access list\', \''+bsEscape(chan)+'\');">ACCESS LIST</button></td><td></td><td></td><td>Wyświetl listę dostępową</td></tr>'+
-			'<tr><td><button onclick="gateway.clickChanServ(\'access del\', \''+bsEscape(chan)+'\');">ACCESS DEL</button></td><td>Nick: <input type="text" id="cs-acc-del-'+md5(chan)+'"></td><td></td><td>Usuń użytkownika z listy dostępowej</td></tr>'+
-		'</table>';
-		$$.displayDialog('admin', 'cs-'+chan, 'Polecenia ChanServ na '+he(chan), html);
-		$$.alert('Funkcja w przygotowaniu - niektóre opcje mogą nie działać, a lista może być niepełna!');
-	},
-	'clickChanServ': function(cmd, chan){
-		var opts = {
-			'arg': [],
-			'argreq': [],
-			'cmd': ''
-		};
-		switch(cmd){
-			case 'ban':
-				opts.arg[0] = 'ban';
-				opts.argreq[0] = true;
-				opts.arg[1] = 'banreason';
-				opts.cmd = 'BAN '+chan;
-				break;
-			case 'kick':
-				opts.arg[0] = 'kick';
-				opts.argreq[0] = true;
-				opts.arg[1] = 'kickreason';
-				opts.cmd = 'KICK '+chan;
-				break;
-			case 'register':
-				opts.arg[0] = 'register';
-				opts.cmd = 'REGISTER '+chan;
-				break;
-			case 'status':
-				opts.arg[0] = 'status';
-				opts.argreq[0] = true;
-				opts.cmd = 'STATUS '+chan;
-				break;
-			case 'access list':
-				opts.cmd = 'ACCESS '+chan+' LIST';
-				break;
-			case 'access del':
-				opts.arg[0] = 'acc-del';
-				opts.argreq[0] = true;
-				opts.cmd = 'ACCESS '+chan+' DEL';
-				break;
-		}
-		
-		var cmdArgs = gateway.servMakeArgs(opts, cmd, chan, 'cs');
-		if(cmdArgs === false){
-			return;
-		}
-		var cmdString = 'CS '+opts.cmd+cmdArgs;
-		gateway.performCommand(cmdString);
-	},
-	'showBotServCmds': function(chan){
-		html = 'Uwaga: użycie każdej z funkcji wymaga odpowiednich uprawnień.<br>' +
-			'<table>'+
-			'<tr><td><button onclick="gateway.clickBotServ(\'botlist\', \'\');">BOTLIST</button></td><td></td><td></td><td>Pokaż listę botów</td></tr>'+
-			'<tr><td><button onclick="gateway.clickBotServ(\'assign\', \''+bsEscape(chan)+'\');">ASSIGN</button></td><td>Nick (wybrany z BOTLIST): <input type="text" id="bs-assign-'+md5(chan)+'"></td><td></td><td>Przypisz bota do kanału</td></tr>'+
-			'<tr><td><button onclick="gateway.clickBotServ(\'unassign\', \''+bsEscape(chan)+'\');">UNASSIGN</button></td><td></td><td></td><td>Usuń bota z kanału</td></tr>'+
-			'<tr><td><button onclick="gateway.clickBotServ(\'act\', \''+bsEscape(chan)+'\');">ACT</button></td><td>Wiadomość: <input type="text" id="bs-act-'+md5(chan)+'"></td><td></td><td>Wyślij wiadomość na kanał (/me wiadomość)</td></tr>'+
-			'<tr><td><button onclick="gateway.clickBotServ(\'say\', \''+bsEscape(chan)+'\');">SAY</button></td><td>Wiadomość: <input type="text" id="bs-say-'+md5(chan)+'"></td><td></td><td>Wyślij wiadomość na kanał</td></tr>'+
-		'</table>';
-		$$.displayDialog('admin', 'bs-'+chan, 'Polecenia BotServ na '+he(chan), html);
-		$$.alert('Funkcja w przygotowaniu - niektóre opcje mogą nie działać, a lista może być niepełna!');
-	},
-	'clickBotServ': function(cmd, chan){
-		var opts = {
-			'arg': [],
-			'argreq': [],
-			'cmd': ''
-		};
-		switch(cmd){
-			case 'botlist':
-				opts.cmd = 'BOTLIST';
-				break;
-			case 'assign':
-				opts.arg[0] = 'assign';
-				opts.argreq[0] = true;
-				opts.cmd = 'ASSIGN '+chan;
-				break;
-			case 'unassign':
-				opts.cmd = 'UNASSIGN '+chan;
-				break;
-			case 'act':
-				opts.arg[0] = 'act';
-				opts.argreq[0] = true;
-				opts.cmd = 'ACT '+chan;
-				break;
-			case 'say':
-				opts.arg[0] = 'say';
-				opts.argreq[0] = true;
-				opts.cmd = 'SAY '+chan;
-				break;
-		}
-		
-		var cmdArgs = gateway.servMakeArgs(opts, cmd, chan, 'bs');
-		if(cmdArgs === false){
-			return;
-		}
-		var cmdString = 'BS '+opts.cmd+cmdArgs;
-		gateway.performCommand(cmdString);
-	},
-	'servMakeArgs': function(opts, cmd, chan, service){
-		var cmdString = '';
-		for(var i=0; i<opts.arg.length; i++){
-			if(opts.arg[i]){
-				var arg = $('#'+service+'-'+opts.arg[i]+'-'+md5(chan)).val();
-				if(!arg || arg == ''){
-					if(opts.argreq[i]){
-						$$.alert('Wymagany argument dla polecenia <b>'+cmd+'</b>!');
-						return false;
-					}
-				}
-				cmdString += ' '+arg;
-			} else break;
-		}
-		return cmdString;
-	},
 	'openQuery': function(nick, id) {
 		if(gateway.ignoring(nick, 'query')){
 			var button = [
 				{
 					text: 'Zmień ustawienia',
 					click: function(){
-						gateway.askIgnore(nick);
+						ignore.askIgnore(nick);
 						$(this).dialog('close');
 					}
 				},
@@ -1692,36 +1215,6 @@ var gateway = {
 		} ];
 		$$.displayDialog('admin', 'kick-'+channel, 'KICK', html, button);
 	},
-	'showCSBan': function(channel, nick) {
-		var html = '<p>Zbanuj i wyrzuć użytkownika '+he(nick)+' z kanału '+he(channel)+
-				'. Możesz podać powód dla KICKa, który zostanie wyświetlony dla wszystkich użytkowników kanału.<br>Aby skorzystać z tej funkcji, musisz posiadać odpowiednie uprawnienia w ChanServ.</p>' +
-			'<input type="text" id="kbinput" maxlength="307" /><br>' +
-			'<input type="checkbox" id="kbtime"> Zdejmij bana automatycznie po 1 dniu';
-		var button = [ {
-			text: 'Anuluj',
-			click: function(){
-				$(this).dialog('close');
-			}
-		}, {
-			text: 'Zbanuj',
-			click: function(){
-				gateway.processCSBan(channel, nick);
-				$(this).dialog('close');
-			}
-		} ];
-		$$.displayDialog('admin', 'kb-'+channel, 'BAN', html, button);
-	},
-	'processCSBan': function(channel, nick) {
-		var banString = 'CS BAN '+channel;
-		if($('#kbtime').is(':checked')){
-			banString += ' +1d';
-		}
-		banString += ' '+nick;
-		if ($("#kbinput").val() != "") {
-			banString += ' '+$(".kickinput").val();
-		}
-		gateway.performCommand(banString);
-	},
 	/*'showBan' : function(channel, nick) {
 		$(".status-text").text(" ");
 		banData.clear();
@@ -1900,6 +1393,25 @@ var gateway = {
 				direction: 'vertical'
 			}, 300);
 			$('#'+gateway.findChannel(channel).id+'-operActions').addClass('channelAdminActive');
+		}
+	},
+	'toggleChannelOpts': function(channel) {
+		/*var html = '<p>Uwaga: ta funkcjonalność nie jest jeszcze gotowa, więc może być niekompletna lub działać niepoprawnie!</p>'+
+			'<table><tr><td>Automatycznie wchodź na ten kanał przy każdym połączeniu (wymaga zarejestrowanego nicka)</td>'+
+			'<td><button onclick="gateway.send(\'NS AJOIN ADD '+bsEscape(chan)+'\')">Włącz</button> <button onclick="gateway.send(\'NS AJOIN DEL '+bsEscape(chan)+'\')">Wyłącz</button></td>'+
+			'</tr></table>';
+		$$.displayDialog('admin', chan, 'Ustawienia dla kanału '+chan, html);*/
+		var $element = $('#'+gateway.findChannel(channel).id+'-channelOptions ul');
+		if($element.is(':visible')){
+			$element.hide('blind', {
+				direction: 'vertical'
+			}, 300);
+			$('#'+gateway.findChannel(channel).id+'-channelOptions').removeClass('channelAdminActive');
+		} else {
+			$element.show('blind', {
+				direction: 'vertical'
+			}, 300);
+			$('#'+gateway.findChannel(channel).id+'-channelOptions').addClass('channelAdminActive');
 		}
 	},
 	'showPermError': function(text) {
@@ -2198,7 +1710,7 @@ var gateway = {
 				}
 			}
 			if(nickNames != ''){
-				chan.appendMessage(messagePatterns.netsplit, [gateway.niceTime(), nickNames]);
+				chan.appendMessage(messagePatterns.netsplit, [$$.niceTime(), nickNames]);
 			}
 		}
 		gateway.quitQueue = [];
@@ -2222,7 +1734,7 @@ var gateway = {
 				nickNames += nick;
 			}
 			if(nickNames != ''){
-				chan.appendMessage(messagePatterns.netjoin, [gateway.niceTime(), nickNames]);
+				chan.appendMessage(messagePatterns.netjoin, [$$.niceTime(), nickNames]);
 			}
 		}
 		gateway.netJoinQueue = [];
@@ -2230,7 +1742,7 @@ var gateway = {
 	'processQuit': function(msg){
 		if(gateway.findQuery(msg.sender.nick)) {
 			if (!$('#showPartQuit').is(':checked')) {
-				gateway.findQuery(msg.sender.nick).appendMessage(messagePatterns.quit, [gateway.niceTime(), he(msg.sender.nick), he(msg.sender.ident), he(msg.sender.host), $$.colorize(msg.text)]);
+				gateway.findQuery(msg.sender.nick).appendMessage(messagePatterns.quit, [$$.niceTime(), he(msg.sender.nick), he(msg.sender.ident), he(msg.sender.host), $$.colorize(msg.text)]);
 			}
 		}
 
@@ -2247,7 +1759,7 @@ var gateway = {
 			if(gateway.channels[c].nicklist.findNick(msg.sender.nick)) {
 				gateway.channels[c].nicklist.removeNick(msg.sender.nick);
 				if (!$('#showPartQuit').is(':checked')) {
-					gateway.channels[c].appendMessage(messagePatterns.quit, [gateway.niceTime(), he(msg.sender.nick), he(msg.sender.ident), he(msg.sender.host), $$.colorize(msg.text)]);
+					gateway.channels[c].appendMessage(messagePatterns.quit, [$$.niceTime(), he(msg.sender.nick), he(msg.sender.ident), he(msg.sender.host), $$.colorize(msg.text)]);
 				}
 			}
 		}
@@ -2270,7 +1782,7 @@ var gateway = {
 			}
 			gateway.netJoinTimeout = setTimeout(gateway.processNetjoin, 700);
 		} else if (!$('#showPartQuit').is(':checked')) {
-			chan.appendMessage(messagePatterns.join, [gateway.niceTime(), he(msg.sender.nick), he(msg.sender.ident), he(msg.sender.host), msg.text]);
+			chan.appendMessage(messagePatterns.join, [$$.niceTime(), he(msg.sender.nick), he(msg.sender.ident), he(msg.sender.host), msg.text]);
 		}
 	},
 	'findOrCreate': function(name, setActive){
@@ -2331,335 +1843,17 @@ var gateway = {
 		gateway.send('LIST >9');
 		$('#chlist-body').html('Poczekaj, trwa ładowanie...');
 	},
-	'toggleChannelOpts': function(chan) {
-		var html = '<p>Uwaga: ta funkcjonalność nie jest jeszcze gotowa, więc może być niekompletna lub działać niepoprawnie!</p>'+
-			'<table><tr><td>Automatycznie wchodź na ten kanał przy każdym połączeniu (wymaga zarejestrowanego nicka)</td>'+
-			'<td><button onclick="gateway.send(\'NS AJOIN ADD '+bsEscape(chan)+'\')">Włącz</button> <button onclick="gateway.send(\'NS AJOIN DEL '+bsEscape(chan)+'\')">Wyłącz</button></td>'+
-			'</tr></table>';
-		$$.displayDialog('admin', chan, 'Ustawienia dla kanału '+chan, html);
+	'parseUmodes': function(modes) {
+		var plus = false;
+		for(var i=0; i<modes.length; i++){
+			var c = modes.charAt(i);
+			switch(c){
+				case '+': plus = true; break;
+				case '-': plus = false; break;
+				case ' ': return;
+				default: guser.setUmode(c, plus); break;
+			}
+		}
 	}
-}
-	
-var loaded = false;
-
-var defReadyFunc = function(){
-	if(loaded) return;
-	$('.not-connected-text > h3').html('Ładowanie');
-	$('.not-connected-text > p').html('Poczekaj chwilę, trwa ładowanie...');
-	loaded = true;
-	if($.browser.msie && parseInt($.browser.version, 10) < 8) {
-		$('.not-connected-text > h3').html('Przestarzała przeglądarka');
-		$('.not-connected-text > p').html('Twoja przeglądarka jest przestarzała i nie jest obsługiwana. Należy zaktualizować przeglądarkę Internet Explorer do wersji 8 lub wyższej albo użyć innej przeglądarki (Firefox, Opera, Chrome, Safari) w którejś z nowszych wersji.<br />Jeżeli posiadasz przeglądarkę Internet Explorer 8 lub wyższej i widzisz ten komunikat wyłącz tzw "widok zgodności" dla tej strony.');
-		gateway = 0;
-		guser = 0;
-		cmd_binds = 0;
-		$('div#wrapper').html('');
-	} else {
-		conn.gatewayInit();
-	}
-};
-
-var readyFunctions = [ defReadyFunc ];
-
-var readyFunc = function(){
-	for(f in readyFunctions){
-		readyFunctions[f]();
-	}
-}
-
-$('document').ready(function(){setTimeout(readyFunc, 100);});
-
-function onBlur() {
-	disp.focused = false;
-	var act = gateway.getActive();
-	if(act){
-		act.setMark();
-	} else {
-		gateway.statusWindow.setMark();
-	}
-};
-function onFocus(){
-	clearInterval(disp.titleBlinkInterval);
-	disp.titleBlinkInterval = false;
-	if(document.title == newMessage) document.title = he(guser.nick)+' @ PIRC.pl';
-	disp.focused = true;
-	var act = gateway.getActive();
-	if(act){
-		act.markRead();
-	} else {
-		gateway.statusWindow.markRead();
-	}
-};
-
-if (/*@cc_on!@*/false) { // check for Internet Explorer
-	document.onfocusin = onFocus;
-	document.onfocusout = onBlur;
-} else {
-	window.onfocus = onFocus;
-	window.onblur = onBlur;
-}
-
-function browserTooOld(){
-	$('.not-connected-text > h3').html('Przestarzała przeglądarka');
-	$('.not-connected-text > p').html('Twoja przeglądarka jest przestarzała i nie jest obsługiwana. Należy zainstalować aktualną wersję Internet Explorer, Mozilla Firefox, Chrome, Safari bądź innej wspieranej przeglądarki.');
-	return;
-}
-
-var conn = {
-	'my_nick': '',
-	'my_pass': '',
-	'connectTimeout': function(){
-			$('.not-connected-text > p').html('Łączenie z serwerem trwa zbyt długo, serwer bramki nie działa lub twoja przeglądarka nie funkcjonuje prawidłowo.<br />Spróbuj ponownie później lub spróbuj '+oldGatewayHtml);
-	},
-	'dispConnectDialog': function(){
-		reqChannel = guser.channels[0];
-		conn.my_nick = dnick;
-
-		try {
-			if(reqChannel == '#'){
-				if(localStorage.getItem('channel')){
-					reqChannel = localStorage.getItem('channel');
-				}
-			}
-			if(conn.my_nick == ''){
-				if(localStorage.getItem('nick')){
-					conn.my_nick = localStorage.getItem('nick');
-				}
-			}
-			if(conn.my_nick == localStorage.getItem('nick')){
-				if(localStorage.getItem('password')){
-					conn.my_pass = atob(localStorage.getItem('password'));
-				}
-			}
-		} catch(e) {}
-	
-	/*	gateway.websock = new WebSocket(server);
-		if(gateway.connectTimeoutID){
-			clearTimeout(gateway.connectTimeoutID);
-		}
-		gateway.connectTimeoutID = setTimeout(conn.connectTimeout, 20000);
-		gateway.websock.onmessage = conn.processReply;
-		gateway.websock.onerror = conn.connectTimeout;
-		gateway.websock.onclose = conn.connectTimeout;
-		gateway.websock.onopen = function(e) {
-			gateway.forceSend('SYNC '+sessionid);
-		};
-	},
-	'processReply': function(e){
-		var regexp = /^SYNC ([^ ]+)$/i
-		var rmatch = regexp.exec(e.data);
-		if(rmatch && rmatch[1]){
-			clearTimeout(gateway.connectTimeoutID);
-			connectTimeoutID = false;
-			gateway.websock.onerror = undefined;
-			gateway.websock.onclose = undefined;
-			if(rmatch[1] == '1'){
-				gateway.recoverConnection();
-			} else {*/
-				var nconn_html = '<h3>' + he(guser.channels[0]) + ' @ PIRC.pl</h3><form onsubmit="gateway.initialize();$$.closeDialog(\'connect\', \'0\')" action="javascript:void(0);"><table>';
-				nconn_html += '<tr><td style="text-align: right; padding-right: 10px;">Kanał:</td><td><input type="text" id="nschan" value="'+he(reqChannel)+'" /></td></tr>';
-				nconn_html += '<tr><td style="text-align: right; padding-right: 10px;">Nick:</td><td><input type="text" id="nsnick" value="'+conn.my_nick+'" /></td></tr>';
-				nconn_html += '<tr><td style="text-align: right; padding-right: 10px;">Hasło (jeżeli zarejestrowany):</td><td><input type="password" id="nspass" value="'+conn.my_pass+'" /></td></tr>';
-				nconn_html += '<tr><td></td><td style="text-align: left;"><input type="checkbox" id="save_password" /> Zapisz hasło</td></tr>';
-				nconn_html += '</table><input type="submit" style="display:none"></form>';
-				var button = [ {
-					text: 'Połącz z IRC',
-					click: function(){
-						if(gateway.initialize()){
-							$(this).dialog('close');
-						}
-					}
-				} ];
-				$$.displayDialog('connect', '0', 'Logowanie', nconn_html, button);
-				$('#not_connected_wrapper').fadeOut(400); 
-				if(conn.my_nick == ''){
-					$('#nsnick').focus();
-				} else {
-					$('#nspass').focus();
-				}
-		/*	}
-		}*/
-	},
-	'gatewayInit': function(){
-		$('.not-connected-text p').html('Poczekaj chwilę, trwa ładowanie...');
-		
-		try {
-			localStorage.removeItem('checkAliveReply');
-			localStorage.removeItem('checkAlive');
-			localStorage.removeItem('reqChannelJoin');
-
-			booleanSettings.forEach(function(sname){
-				if(localStorage.getItem(sname) == null){
-					return;
-				}
-				$('#'+sname).prop('checked', str2bool(localStorage.getItem(sname)));
-			});
-			comboSettings.forEach(function(sname){
-				if(localStorage.getItem(sname) == null){
-					return;
-				}
-				$('#'+sname).val(localStorage.getItem(sname));
-			});
-			numberSettings.forEach(function(sname){
-				if(localStorage.getItem(sname) == null){
-					return;
-				}
-				$('#'+sname).val(localStorage.getItem(sname));
-			});
-			disp.setSize(localStorage.getItem('tsize'));
-			var ignoreList = localStorage.getItem('ignore');
-			if(ignoreList){
-				ignoreData = JSON.parse(ignoreList);
-			}
-		} catch(e){
-			//za mało miejsca na dysku?
-		}
-		disp.changeSettings();
-		
-		$('#chatbox').click(function() {
-		/*	gateway.closeNotify();
-			gateway.closeNotice();
-			gateway.closeStatus();
-			gateway.closeError();*/
-			gateway.inputFocus();
-		});
-		$('#nicklist').click(function() {
-		/*	gateway.closeNotify();
-			gateway.closeStatus();
-			gateway.closeError();*/
-			gateway.inputFocus();
-		});
-	/*	$('#info').click(function() {
-			gateway.closeNotify();
-			gateway.closeStatus();
-			gateway.closeError();
-		});*/
-		/*$('#input').click(function() {
-			gateway.closeNotify();
-			gateway.closeNotice();
-			gateway.closeStatus();
-			gateway.closeError();
-		});*/
-		
-		$(window).resize(function () {
-			$('#chat-wrapper').scrollTop(document.getElementById('chat-wrapper').scrollHeight);
-		});
-	
-		$('#input').keydown(function(e) {
-			if(e.which == 13 || e.which == 38 || e.which == 40 || e.which == 9) {
-				e.preventDefault();
-			}
-		});
-		$('#input').keyup(function(e) {
-			if(e.which == 13) {
-				if($('#input').val() != '') {
-					if(gateway.commandHistory.length == 0 || gateway.commandHistory[gateway.commandHistory.length-1] != $('#input').val()) {
-						if(gateway.commandHistoryPos != -1 && gateway.commandHistoryPos == gateway.commandHistory.length-1) {
-							gateway.commandHistory[gateway.commandHistoryPos] = $('#input').val();
-						} else {
-							gateway.commandHistory.push($('#input').val());
-						}
-					}
-					gateway.parseUserInput($('#input').val());
-					gateway.commandHistoryPos = -1;
-				}
-				e.preventDefault();
-			} else if(e.which == 38) { //strzalka w gore
-				e.preventDefault();
-				if(gateway.commandHistoryPos == gateway.commandHistory.length-1 && $('#input').val() != '') {
-					gateway.commandHistory[gateway.commandHistoryPos] = $('#input').val();
-				}
-				if(gateway.commandHistoryPos == -1 && gateway.commandHistory.length > 0 && typeof(gateway.commandHistory[gateway.commandHistory.length-1]) == 'string') {
-					gateway.commandHistoryPos = gateway.commandHistory.length-1;
-					if($('#input').val() != '' && gateway.commandHistory[gateway.commandHistory.length-1] != $('#input').val()) {
-						gateway.commandHistory.push($('#input').val());
-					}
-					$('#input').val(gateway.commandHistory[gateway.commandHistoryPos]);
-				} else if(gateway.commandHistoryPos != -1 && gateway.commandHistoryPos != 0) {
-					gateway.commandHistoryPos--;
-					$('#input').val(gateway.commandHistory[gateway.commandHistoryPos]);
-				}
-			} else if(e.which == 40) { // strzalka w dol
-				if(gateway.commandHistoryPos == gateway.commandHistory.length-1 && $('#input').val() != '') {
-					gateway.commandHistory[gateway.commandHistoryPos] = $('#input').val();
-				}
-				if(gateway.commandHistoryPos == -1 && $('#input').val() != '' && gateway.commandHistory.length > 0 && gateway.commandHistory[gateway.commandHistory.length-1] != $('#input').val()) {
-					gateway.commandHistory.push($('#input').val());
-					$('#input').val('');
-				} else if (gateway.commandHistoryPos != -1) {
-					if(typeof(gateway.commandHistory[gateway.commandHistoryPos+1]) == 'string') {
-						gateway.commandHistoryPos++;
-						$('#input').val(gateway.commandHistory[gateway.commandHistoryPos]);
-					} else {
-						gateway.commandHistoryPos = -1;
-						$('#input').val('');
-					}
-				}
-				e.preventDefault();
-			}
-		});
-		
-		$('#input').keyup(function(e) {
-			if(e.which == 9) { // TAB
-				gateway.doComplete();
-				e.preventDefault();
-				return false;
-			} else {
-				gateway.completion.repeat = 0;
-				gateway.completion.string = '';
-				gateway.completion.array = [];
-			}
-		});
-
-		try {
-			$('#not_connected_wrapper').fadeIn(200);
-		} catch(e) {
-			browserTooOld();
-		}
-	//	$('.not-connected-text > h3').html(he(guser.channels[0]) + ' @ PIRC.pl');
-		dnick = he(guser.nick);
-		if(guser.nick == '1') {
-			dnick = ''
-			$(document).attr('title', 'Nieznany @ PIRC.pl');
-		}
-		$(window).on('beforeunload', function() {
-			if (gateway.connectStatus != statusDisconnected) {
-				if ($('#autoDisconnect').is(':checked')) {
-					gateway.send('QUIT :Użytkownik zamknął stronę');
-					gateway.userQuit = true;
-					gateway.connectStatus = statusDisconnected;
-				} else {
-					gateway.clickQuit();
-					return 'Jesteś nadal połączony z IRCem. Kliknij "Zostań na stronie" a następnie "Rozłącz" w okienku poniżej aby się rozłączyć przed wyjściem.';
-				}
-			}
-		});
-		
-		if(!navigator.cookieEnabled){
-			$('.not-connected-text > p').html('Twoja przeglądarka ma wyłączoną obsługę ciasteczek. Niektóre funkcje bramki mogą działać nieprawidłowo.<br /><input type="button" onclick="conn.dispConnectDialog();" value="Kontynuuj" />');
-			return;
-		}
-		if(window.WebSocket == null){
-			$('.not-connected-text > p').html('Twoja przeglądarka nie obsługuje WebSocket. Nie można uruchomić bramki.<br />Spróbuj '+oldGatewayHtml);
-			return;
-		}
-		
-		window.addEventListener('storage', gateway.storageHandler);
-		conn.waitForAlive = true;
-		try {
-			localStorage.setItem('checkAlive', Math.random().toString());
-		} catch(e) {}
-		conn.aliveWaitTimeout = setTimeout(function(){
-			if(conn.waitForAlive){
-				try {
-					localStorage.removeItem('checkAlive');
-				} catch(e) {}
-				conn.dispConnectDialog();
-				conn.waitForAlive = false;
-			}
-		}, 100);
-	},
-	'aliveWaitTimeout': false,
-	'waitForAlive': false
 }
 

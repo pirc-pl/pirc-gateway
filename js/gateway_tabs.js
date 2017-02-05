@@ -150,7 +150,7 @@ function NicklistUser(usernick, chan) {
 			'</tr></table>'+
 			'<ul class="options" id="'+this.id+'-opt">'+
 				'<li onClick="gateway.openQuery(\''+this.nick+'\', \''+this.id+'\')" class="switchTab">Rozmowa Prywatna (QUERY)</li>'+
-				((this.nick.toLowerCase() == guser.nick.toLowerCase())?'':'<li onClick="gateway.askIgnore(\''+this.nick+'\');">Ignoruj</li>')+
+				((this.nick.toLowerCase() == guser.nick.toLowerCase())?'':'<li onClick="ignore.askIgnore(\''+this.nick+'\');">Ignoruj</li>')+
 				'<li><div style="width:100%;" onClick="gateway.toggleNickOptInfo(\''+this.id+'\')">Informacje</div>'+
 					'<ul class="suboptions" id="'+this.id+'-opt-info'+'">'+
 						'<li onClick="' + ((this.nick.toLowerCase() == guser.nick.toLowerCase())?'gateway.displayOwnWhois = true; ':'') + 'gateway.send(\'WHOIS '+$$.sescape(this.nick)+' '+$$.sescape(this.nick)+'\');gateway.toggleNickOpt(\''+this.id+'\');">WHOIS</li>'+
@@ -161,7 +161,7 @@ function NicklistUser(usernick, chan) {
 				'<li class="' + gateway.findChannel(this.channel).id + '-operActions" style="display:none;"><div style="width:100%;" onClick="gateway.toggleNickOptAdmin(\''+this.id+'\')">Administracja</div>'+
 					'<ul class="suboptions" id="'+this.id+'-opt-admin'+'">'+
 						'<li onClick="gateway.showKick(\''+this.channel+'\', \''+this.nick+'\')">Wyrzuć z kanału</li>'+
-						'<li onClick="gateway.showCSBan(\''+this.channel+'\', \''+this.nick+'\')">Banuj (ChanServ)</li>'+
+						'<li onClick="services.showCSBan(\''+this.channel+'\', \''+this.nick+'\')">Banuj (ChanServ)</li>'+
 						'<li onClick="gateway.showStatus(\''+this.channel+'\', \''+this.nick+'\')">Daj uprawnienia</li>'+
 						'<li onClick="gateway.showStatusAnti(\''+this.channel+'\', \''+this.nick+'\')">Odbierz uprawnienia</li>'+
 					/*	'<li onClick="gateway.showBan(\''+this.channel+'\', \''+this.nick+'\')">Banuj</li>'+*/
@@ -403,7 +403,7 @@ function Query(nick) {
 
 	this.changeNick = function(newnick) {
 		var oldName = this.name.toLowerCase();
-		$('#'+this.id+'-window').vprintf(messagePatterns.nickChange, [gateway.niceTime(), he(this.name), he(newnick)]);
+		$('#'+this.id+'-window').vprintf(messagePatterns.nickChange, [$$.niceTime(), he(this.name), he(newnick)]);
 		$('#'+this.id+'-topic').html('<h1>'+he(newnick)+'</h1><h2></h2>');
 		$("#"+this.id+'-tab').html('<a href="javascript:void(0);" class="switchTab" onclick="gateway.switchTab(\''+newnick+'\')">'+he(newnick)+'</a><a href="javascript:void(0);" onclick="gateway.removeQuery(\''+newnick+'\')"><div class="close"></div></a>');
 		this.name = newnick;
@@ -448,12 +448,12 @@ function Query(nick) {
 		if(qCookie) {
 			qCookie = Base64.decode(qCookie).split('\377').join('<br>');
 			$('#'+this.id+'-window').append('<div class="backlog"></div>');
-			$('#'+this.id+'-window .backlog').vprintf(messagePatterns.queryBacklog, [gateway.niceTime(), he(this.name)]);
+			$('#'+this.id+'-window .backlog').vprintf(messagePatterns.queryBacklog, [$$.niceTime(), he(this.name)]);
 			$('#'+this.id+'-window .backlog').append(qCookie);
 		}
 	} catch(e) {}
 	
-	$('#'+this.id+'-window').vprintf(messagePatterns.startedQuery, [gateway.niceTime(), he(this.name), this.name]);
+	$('#'+this.id+'-window').vprintf(messagePatterns.startedQuery, [$$.niceTime(), he(this.name), this.name]);
 }
 
 function Channel(chan) {
@@ -586,7 +586,7 @@ function Channel(chan) {
 		if(!this.left) {
 			this.part();
 			gateway.send("PART "+this.name+" :Opuścił kanał");
-			gateway.statusWindow.appendMessage(messagePatterns.partOwn, [gateway.niceTime(), this.name, bsEscape(this.name)]);
+			gateway.statusWindow.appendMessage(messagePatterns.partOwn, [$$.niceTime(), this.name, bsEscape(this.name)]);
 		}
 		this.nicklist.remove();
 		$('#'+this.id+'-tab').remove();
@@ -599,7 +599,7 @@ function Channel(chan) {
 	}
 	this.rejoin = function() {
 		this.left = false;
-		$('#'+this.id+'-window').vprintf(messagePatterns.joinOwn, [gateway.niceTime(), this.name]);
+		$('#'+this.id+'-window').vprintf(messagePatterns.joinOwn, [$$.niceTime(), this.name]);
 		if(this.name == gateway.active) {
 			this.restoreScroll();
 		}
@@ -646,6 +646,10 @@ function Channel(chan) {
 		$('#'+this.id+'-topic').click(disp.topicClick);
 		this.topic = topic;
 	}
+	
+	this.clearWindow = function() {
+		$('#'+this.id+'-window').html(' ');
+	}
 
 	$('<span/>').attr('id', this.id+'-window').hide().appendTo('#main-window');
 	$('<span/>').attr('id', this.id+'-topic').hide().appendTo('#info');
@@ -653,7 +657,19 @@ function Channel(chan) {
 	$('<li/>').attr('id', this.id+'-tab').html('<a href="javascript:void(0);" onclick="gateway.switchTab(\''+bsEscape(this.name)+'\')" class="switchTab">'+he(this.name)+'</a>'+
 		'<a href="javascript:void(0);" onclick="gateway.removeChannel(\''+bsEscape(this.name)+'\')"><div class="close" title="Wyjdź z kanału"></div></a>').appendTo('#tabs');
 	$('#chstats').append('<div class="chstatswrapper" id="'+this.id+'-chstats"><span class="chstats-text">'+he(this.name)+'</span>'+
-		'<span class="chstats-button" onclick="gateway.toggleChannelOpts(\''+bsEscape(this.name)+'\')">Opcje kanału</span>');
+		'<span class="chstats-button" onclick="gateway.toggleChannelOpts(\''+bsEscape(this.name)+'\')">Opcje kanału</span>'+
+		'<div id="'+this.id+'-channelOptions" class="channelAdmin"><ul class="channelOptions">' +
+			'<div><span>Automatycznie wchodź na ten kanał</span>'+
+				'<li onclick="services.perform(\'ns\', \'AJOIN ADD '+bsEscape(this.name)+'\', true)">Włącz</li>' +
+				'<li onclick="services.perform(\'ns\', \'AJOIN DEL '+bsEscape(this.name)+'\', true)">Wyłącz</li>' +
+			'</div>'+
+			'<li onclick="gateway.findChannel(\''+bsEscape(this.name)+'\').clearWindow()">Wyczyść okno rozmowy</li>' +
+			/*'<li onclick="gateway.send(\'MODE '+bsEscape(this.name)+' I\')" title="Znajdujący się na liście nie potrzebują zaproszenia, gdy jest ustawiony tryb +i">Lista wyjątków i (I)</li>' +
+			'<li onclick="gateway.showChannelModes(\''+bsEscape(this.name)+'\')">Tryby kanału</li>' +
+			'<li onclick="gateway.showInvitePrompt(\''+bsEscape(this.name)+'\')">Zaproś na kanał</li>' +
+			'<li onclick="services.showChanServCmds(\''+bsEscape(this.name)+'\')">Polecenia ChanServ</li>' +
+			'<li onclick="services.showBotServCmds(\''+bsEscape(this.name)+'\')">Polecenia BotServ</li>' +*/
+		'</ul></div>');
 	var operHtml = '<div id="'+this.id+'-operActions" class="'+this.id+'-operActions channelAdmin" style="display:none">' +
 		//'<div class="channelOperActionsButton" onclick="gateway.toggleChannelOpts(\''+bsEscape(this.name)+'\')">Akcje administracyjne</div>'+
 		'<span class="chstats-button" onclick="gateway.toggleChannelOperOpts(\''+bsEscape(this.name)+'\')">Akcje administracyjne</span>'+
@@ -663,11 +679,12 @@ function Channel(chan) {
 			'<li onclick="gateway.send(\'MODE '+bsEscape(this.name)+' I\')" title="Znajdujący się na liście nie potrzebują zaproszenia, gdy jest ustawiony tryb +i">Lista wyjątków i (I)</li>' +
 			'<li onclick="gateway.showChannelModes(\''+bsEscape(this.name)+'\')">Tryby kanału</li>' +
 			'<li onclick="gateway.showInvitePrompt(\''+bsEscape(this.name)+'\')">Zaproś na kanał</li>' +
-			'<li onclick="gateway.showChanServCmds(\''+bsEscape(this.name)+'\')">Polecenia ChanServ</li>' +
-			'<li onclick="gateway.showBotServCmds(\''+bsEscape(this.name)+'\')">Polecenia BotServ</li>' +
+			'<li onclick="services.showChanServCmds(\''+bsEscape(this.name)+'\')">Polecenia ChanServ</li>' +
+			'<li onclick="services.showBotServCmds(\''+bsEscape(this.name)+'\')">Polecenia BotServ</li>' +
 		'</ul>' +
 		'</div></div>';
 	$('#'+this.id+'-chstats').append(operHtml);
+	this.setTopic('');
 	
 	try {
 		var qCookie = localStorage.getItem('channel'+md5(this.name));
@@ -675,9 +692,9 @@ function Channel(chan) {
 		if(qCookie) {
 			qCookie = Base64.decode(qCookie).split('\377').join('<br>');
 			$('#'+this.id+'-window').append('<div class="backlog"></div>');
-			$('#'+this.id+'-window .backlog').vprintf(messagePatterns.channelBacklog, [gateway.niceTime(), he(this.name)]);
+			$('#'+this.id+'-window .backlog').vprintf(messagePatterns.channelBacklog, [$$.niceTime(), he(this.name)]);
 			$('#'+this.id+'-window .backlog').append(qCookie+'<br>');
-			$('#'+this.id+'-window .backlog').vprintf(messagePatterns.channelBacklogEnd, [gateway.niceTime()]);
+			$('#'+this.id+'-window .backlog').vprintf(messagePatterns.channelBacklogEnd, [$$.niceTime()]);
 		}
 	} catch(e) {}
 }

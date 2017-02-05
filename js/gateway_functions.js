@@ -67,7 +67,7 @@ var messagePatterns = {
 	'kickOwn': '<span class="time">%s</span> &nbsp; <span class="kick">✀ <span class="modeinfo">%s</span> wyrzucił cię z <span class="modeinfo">%s</span> [Powód: %s]</span><br />',
 	'modeChange': '<span class="time">%s</span> &nbsp; <span class="mode">🔧 <span class="modeinfo">%s</span> %s na kanale <span class="modeinfo">%s</span></span><br />',
 	'mode': '<span class="time">%s</span> &nbsp; <span class="mode">🔧 Ustawienia kanału <span class="modeinfo">%s</span>: %s</span><br />',
-	'startedQuery': '<span class="time">%s</span> &nbsp; <span class="join">🢡 Rozpoczęto rozmowę z <span class="modeinfo">%s</span>. <a onclick="gateway.askIgnore(\'%s\');">Ignoruj tego użytkownika</a></span><br />',
+	'startedQuery': '<span class="time">%s</span> &nbsp; <span class="join">🢡 Rozpoczęto rozmowę z <span class="modeinfo">%s</span>. <a onclick="ignore.askIgnore(\'%s\');">Ignoruj tego użytkownika</a></span><br />',
 	'queryBacklog': '<span class="time">%s</span> &nbsp; <span class="join">✯ Zapis poprzedniej rozmowy z <span class="modeinfo">%s</span>:</span><br />',
 	'channelBacklog': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Zapis poprzedniej wizyty na <span class="modeinfo">%s</span>:</span><br />',
 	'channelBacklogEnd': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Koniec zapisu.</span><br />',
@@ -181,17 +181,6 @@ var servicesNicks = ['NickServ', 'ChanServ', 'HostServ', 'OperServ', 'Global', '
 
 var modemap2 = ['owner', 'admin', 'op', 'halfop', 'voice'];
 var newMessage = 'Nowa wiadomość';
-
-var ignoreData = {
-	'full': {
-		'channel': [],
-		'query': []
-	},
-	'wildcard': {
-		'channel': [],
-		'query': []
-	}
-};
 
 var emoji = {
 	':D':	'😃',
@@ -320,6 +309,71 @@ var stateSenderHost = 6;
 
 var settings = {
 	'backlogLength': 15
+}
+
+var loaded = false;
+
+var defReadyFunc = function(){
+	if(loaded) return;
+	$('.not-connected-text > h3').html('Ładowanie');
+	$('.not-connected-text > p').html('Poczekaj chwilę, trwa ładowanie...');
+	loaded = true;
+	if($.browser.msie && parseInt($.browser.version, 10) < 8) {
+		$('.not-connected-text > h3').html('Przestarzała przeglądarka');
+		$('.not-connected-text > p').html('Twoja przeglądarka jest przestarzała i nie jest obsługiwana. Należy zaktualizować przeglądarkę Internet Explorer do wersji 8 lub wyższej albo użyć innej przeglądarki (Firefox, Opera, Chrome, Safari) w którejś z nowszych wersji.<br />Jeżeli posiadasz przeglądarkę Internet Explorer 8 lub wyższej i widzisz ten komunikat wyłącz tzw "widok zgodności" dla tej strony.');
+		gateway = 0;
+		guser = 0;
+		cmd_binds = 0;
+		$('div#wrapper').html('');
+	} else {
+		conn.gatewayInit();
+	}
+};
+
+var readyFunctions = [ defReadyFunc ];
+
+var readyFunc = function(){
+	for(f in readyFunctions){
+		readyFunctions[f]();
+	}
+}
+
+$('document').ready(function(){setTimeout(readyFunc, 100);});
+
+function onBlur() {
+	disp.focused = false;
+	var act = gateway.getActive();
+	if(act){
+		act.setMark();
+	} else {
+		gateway.statusWindow.setMark();
+	}
+};
+function onFocus(){
+	clearInterval(disp.titleBlinkInterval);
+	disp.titleBlinkInterval = false;
+	if(document.title == newMessage) document.title = he(guser.nick)+' @ PIRC.pl';
+	disp.focused = true;
+	var act = gateway.getActive();
+	if(act){
+		act.markRead();
+	} else {
+		gateway.statusWindow.markRead();
+	}
+};
+
+if (/*@cc_on!@*/false) { // check for Internet Explorer
+	document.onfocusin = onFocus;
+	document.onfocusout = onBlur;
+} else {
+	window.onfocus = onFocus;
+	window.onblur = onBlur;
+}
+
+function browserTooOld(){
+	$('.not-connected-text > h3').html('Przestarzała przeglądarka');
+	$('.not-connected-text > p').html('Twoja przeglądarka jest przestarzała i nie jest obsługiwana. Należy zainstalować aktualną wersję Internet Explorer, Mozilla Firefox, Chrome, Safari bądź innej wspieranej przeglądarki.');
+	return;
 }
 
 var disp = {
@@ -462,7 +516,11 @@ var disp = {
 		if(!channel){
 			return;
 		}
-		var html = $('#'+channel.id+'-topic > h2').html() +
+		var topic = $('#'+channel.id+'-topic > h2').html();
+		if(topic == ''){
+			topic = 'Nie ustawiono tematu.';
+		}
+		var html = topic +
 			'<p class="' + channel.id + '-operActions" style="display:none;">' +
 				'<b>Zmodyfikuj temat kanału:</b><textarea name="topicEdit" id="topicEdit">'+$$.colorsToTags(channel.topic)+'</textarea>' +
 				'<button onclick="gateway.changeTopic(\''+channel.name+'\');">Zmień temat</button>' +
@@ -860,7 +918,7 @@ var $$ = {
 				var html = message;
 				break;
 			default:
-				var html = "<p><span class=\"time\">"+gateway.niceTime()+"</span> "+message+"</p>";
+				var html = "<p><span class=\"time\">"+$$.niceTime()+"</span> "+message+"</p>";
 				break;
 		}	
 	
@@ -953,6 +1011,18 @@ var $$ = {
 			text = text.replace(regexp, emojiRegex[i][1]+'$1');
 		}
 		return text;
+	},
+	'niceTime': function() {
+		dateobj = new Date();
+		hours = dateobj.getHours();
+		if(hours < 10) {
+			hours = '0'+hours;
+		}
+		minutes = dateobj.getMinutes();
+		if(minutes < 10) {
+			minutes = '0'+minutes;
+		}
+		return hours+':'+minutes;
 	}
 }
 
