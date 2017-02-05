@@ -1009,7 +1009,7 @@ var gateway = {
 		}
 	},
 	'openQuery': function(nick, id) {
-		if(gateway.ignoring(nick, 'query')){
+		if(ignore.ignoring(nick, 'query')){
 			var button = [
 				{
 					text: 'Zmień ustawienia',
@@ -1816,7 +1816,7 @@ var gateway = {
 			$('#chlist').css('height', '').css('top', '');
 			$('#nicklist').css('bottom', '');
 			var nicklistBottom = $('#nicklist').css('bottom');
-			$('#nicklist').css('bottom', '31%');
+			$('#nicklist').css('bottom', '36%');
 			$("#nicklist").animate({
 				"bottom":	nicklistBottom
 			}, 400);
@@ -1826,10 +1826,10 @@ var gateway = {
 			$('#chlist-button').text('⮙ lista kanałów ⮙');
 		} else {
 			$('#chlist-body').css('display', 'block');
-			$('#chlist').css('height', 'initial').css('top', '70%');
+			$('#chlist').css('height', 'initial').css('top', '64.5%');
 		//	$('#nicklist').css('bottom', '31%');
 			$("#nicklist").animate({
-				"bottom":	"31%"
+				"bottom":	"36%"
 			}, 400);
 			$('#chlist-button').text('⮛ schowaj listę ⮛');
 			if(!$('#chlist-body > table').length){

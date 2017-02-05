@@ -137,7 +137,7 @@ input, button, submit {
 }
 	
 #nicklist {
-	bottom: 5.8em;
+	bottom: 7.6em;
 	position: absolute;
 	right: 10px;
 	top: 12em;
@@ -1056,7 +1056,7 @@ span.chstats-text:before {
 #chlist {
     position: absolute;
     right: 10px;
-    bottom: 4em;
+	bottom: 5.8em;
     width: 23%;
     height: 1.4em;
 }
@@ -1165,5 +1165,26 @@ span.chstats-text:before {
 
 div.alert-dialog {
     padding-right: 50px !important;
+}
+
+#nickopts {
+    position: absolute;
+    right: 10px;
+    bottom: 4em;
+    width: 23%;
+    height: 1.4em;
+}
+
+.nickoptswrapper {
+    border-radius: 4px;
+    background: none repeat scroll 0 0 #E4E4E4;
+    border: 1px solid #9A9A9A;
+    height: 100%;
+    margin: 10px auto;
+    overflow: auto;
+    width: 98%;
+    text-align: center;
+    font-size: .9em;
+    position: relative;
 }
 
