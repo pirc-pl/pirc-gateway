@@ -18,21 +18,20 @@
 
 #nicklist {
 	top: 3.3em;
-	bottom: 14.5em;
+	bottom: 15.7em;
 }
 
 #chstats {
-	bottom: 9em;
+    bottom: 10.4em;
 	top: initial;
 }
-
 
 #inputbox {
 	bottom: 3.2em;
 }
 
 #chlist {
-    bottom: 7em;
+    bottom: 8.7em;
 }
 
 #chlist-body {
@@ -42,3 +41,8 @@
 ul.channelOperActions {
     bottom: 1.4em;
 }
+
+#nickopts {
+    bottom: 7em;
+}
+
