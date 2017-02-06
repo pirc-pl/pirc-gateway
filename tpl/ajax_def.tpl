@@ -147,7 +147,7 @@
 					<div id="chlist-button" onclick="gateway.toggleChanList()">⮙ lista kanałów ⮙</div>
 				</div>
 			</div>
-			<div id="nickopts">
+			<div id="nickopts" title="Tutaj będą opcje nicka - funkcja w przygotowaniu">
 				<div class="nickoptswrapper">✯ ✯ ✯</div>
 			</div>
 		</div>
