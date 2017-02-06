@@ -118,7 +118,7 @@ var messagePatterns = {
 };
 
 var modes = {
-	'single': ['p', 's', 'm', 'n', 't', 'i', 'r', 'R', 'c', 'O', 'Q', 'K', 'V', 'C', 'u', 'z', 'N', 'S', 'M', 'T', 'G'],
+	'single': ['p', 's', 'm', 'n', 't', 'i', 'r', 'R', 'c', 'O', 'Q', 'K', 'V', 'C', 'u', 'z', 'N', 'S', 'M', 'T', 'G', 'D'],
 	'argBoth': ['k', 'b', 'e', 'I', 'f'],
 	'argAdd': ['L', 'l'],
 	'user': ['q','a','o','h','v'],
@@ -174,7 +174,8 @@ var chModeInfo = {
 	'S': 'usuwanie kolorów',
 	'M': ['moderację niezarejestrowanych', 'niezarejestrowani są moderowani'],
 	'T': ['blokadę NOTICE', 'zablokowane NOTICE'],
-	'G': 'tryb G'
+	'G': 'tryb G',
+	'D': 'tryb D'
 };
 
 var servicesNicks = ['NickServ', 'ChanServ', 'HostServ', 'OperServ', 'Global', 'BotServ'];
@@ -500,6 +501,11 @@ var disp = {
 			if($('#sendEmoji').is(':checked')){
 				$('#dispEmoji').prop('checked', true);
 			}
+		}
+		$('#nicklist').removeAttr('style');
+		$('#chlist').removeAttr('style');
+		if($('#chlist-body').is(':visible')){
+			gateway.toggleChanList();
 		}
 	},
 	'showAbout': function() {
@@ -914,7 +920,7 @@ var $$ = {
 				if(sender.toLowerCase() == guser.nick.toLowerCase() && !gateway.displayOwnWhois){
 					return;
 				}
-			case 'warning': case 'error': case 'confirm': case 'connect': case 'admin': case 'ignore': case 'list': case 'alert': // nie wyświetlamy czasu
+			case 'warning': case 'error': case 'confirm': case 'connect': case 'admin': case 'services': case 'ignore': case 'list': case 'alert': // nie wyświetlamy czasu
 				var html = message;
 				break;
 			default:

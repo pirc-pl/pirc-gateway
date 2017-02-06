@@ -659,11 +659,12 @@ function Channel(chan) {
 	$('#chstats').append('<div class="chstatswrapper" id="'+this.id+'-chstats"><span class="chstats-text">'+he(this.name)+'</span>'+
 		'<span class="chstats-button" onclick="gateway.toggleChannelOpts(\''+bsEscape(this.name)+'\')">Opcje kanału</span>'+
 		'<div id="'+this.id+'-channelOptions" class="channelAdmin"><ul class="channelOptions">' +
-			'<div><span>Automatycznie wchodź na ten kanał</span>'+
+			'<div class="nickRegistered"><span>Automatycznie wchodź na ten kanał</span>'+
 				'<li onclick="services.perform(\'ns\', \'AJOIN ADD '+bsEscape(this.name)+'\', true)">Włącz</li>' +
 				'<li onclick="services.perform(\'ns\', \'AJOIN DEL '+bsEscape(this.name)+'\', true)">Wyłącz</li>' +
 			'</div>'+
 			'<li onclick="gateway.findChannel(\''+bsEscape(this.name)+'\').clearWindow()">Wyczyść okno rozmowy</li>' +
+			'<li onclick="gateway.send(\'NAMES '+bsEscape(this.name)+'\')">Odśwież listę nicków</li>' +
 			/*'<li onclick="gateway.send(\'MODE '+bsEscape(this.name)+' I\')" title="Znajdujący się na liście nie potrzebują zaproszenia, gdy jest ustawiony tryb +i">Lista wyjątków i (I)</li>' +
 			'<li onclick="gateway.showChannelModes(\''+bsEscape(this.name)+'\')">Tryby kanału</li>' +
 			'<li onclick="gateway.showInvitePrompt(\''+bsEscape(this.name)+'\')">Zaproś na kanał</li>' +
@@ -685,6 +686,7 @@ function Channel(chan) {
 		'</div></div>';
 	$('#'+this.id+'-chstats').append(operHtml);
 	this.setTopic('');
+	guser.setUmode(false);
 	
 	try {
 		var qCookie = localStorage.getItem('channel'+md5(this.name));

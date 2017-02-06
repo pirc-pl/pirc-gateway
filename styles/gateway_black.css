@@ -41,7 +41,7 @@ span.nick {
 	color: #9E9E9E;
 }
 
-ul.nicklist li:hover, ul.nicklist li.activeNick {
+ul.nicklist li:hover, ul.nicklist li.activeNick, .nickoptsButton:hover {
 	background-color: #2D3A4A;
 }
 
@@ -134,17 +134,17 @@ b.admin {
 	border: 1px solid #7492B6  !important;
 }*/
 
-.channelAdmin li {
+.channelAdmin li, #nickOptions li {
 	background-color: #5C738E;
 	color: #BED8FB;
 	border-color: #111111;
 }
 
-.channelAdmin li:hover {
+.channelAdmin li:hover, #nickOptions li:hover {
 	background-color: #2D3A4A;
 }
 
-.chstats-button:hover {
+.chstats-button:hover, .nickoptsButton:hover {
     background-color: #2D3A4A;
 }
 
@@ -178,7 +178,7 @@ b.admin {
 	background: url("/styles/img/notice.png") no-repeat scroll right top #031B38 !important;
 }
 
-.admin-dialog, .ignore-dialog {
+.admin-dialog, .ignore-dialog, .services-dialog {
 	background: url("/styles/img/techbg.png") no-repeat scroll right top #09294E !important;
 }
 
@@ -229,7 +229,7 @@ span.data {
 	background: url("/styles/img/techbg.png") no-repeat scroll right top #062B65 !important;
 }
 
-.chstatswrapper {
+.chstatswrapper, #nickopts-wrapper {
     background-color: #555555;
 }
 
@@ -241,7 +241,11 @@ span.data {
     background-color: #223963;
 }
 
-.channelOperActions, .channelOptions {
+.channelOperActions, .channelOptions, #nickOptions {
     background-color: #2F2F2F;
+}
+
+.alert-dialog-spec .ui-dialog-buttonpane {
+    background-color: #2D0101 !important;
 }
 

@@ -147,8 +147,23 @@
 					<div id="chlist-button" onclick="gateway.toggleChanList()">⮙ lista kanałów ⮙</div>
 				</div>
 			</div>
-			<div id="nickopts" title="Tutaj będą opcje nicka - funkcja w przygotowaniu">
-				<div class="nickoptswrapper">✯ ✯ ✯</div>
+			<div id="nickopts">
+				<div id="nickopts-wrapper">
+					<div class="nickoptsButton" onclick="gateway.toggleNickOpts()">Opcje nicka</div>
+					<ul id="nickOptions">
+						<li id="nickRegister" onclick="services.registerMyNick()">Zarejestruj nicka</li>
+						<li onclick="services.changeMyNick()">Zmień nicka</li>
+						<li class="nickRegistered" onclick="services.setCloak()">Ustaw automatycznego vhosta</li>
+						<li class="nickRegistered" onclick="services.setVhost()">Poproś o vhosta</li>
+						<li class="nickRegistered" onclick="services.perform('ns', 'alist', true)">Pokaż kanały, na których masz stałe uprawnienia</li>
+						<li class="nickRegistered" onclick="services.perform('ns', 'ajoin list', true)">Pokaż kanały, na które automatycznie wchodzisz</li>
+						<!--<li onclick="gateway.send(\'MODE '+bsEscape(this.name)+' I\')" title="Znajdujący się na liście nie potrzebują zaproszenia, gdy jest ustawiony tryb +i">Lista wyjątków i (I)</li>
+						<li onclick="gateway.showChannelModes(\''+bsEscape(this.name)+'\')">Tryby kanału</li>
+						<li onclick="gateway.showInvitePrompt(\''+bsEscape(this.name)+'\')">Zaproś na kanał</li>
+						<li onclick="services.showChanServCmds(\''+bsEscape(this.name)+'\')">Polecenia ChanServ</li>
+						<li onclick="services.showBotServCmds(\''+bsEscape(this.name)+'\')">Polecenia BotServ</li>-->
+					</ul>
+				</div>
 			</div>
 		</div>
 

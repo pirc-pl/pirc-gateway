@@ -14,7 +14,16 @@ guser.changeNick = function(newnick, silent) {
 guser.umodes = {};
 
 guser.setUmode = function(modechar, plus){
-	guser.umodes[modechar] = plus;
+	if(modechar){
+		guser.umodes[modechar] = plus;
+	}
+	if(guser.umodes.r){
+		$('#nickRegister').hide();
+		$('.nickRegistered').show();
+	} else {
+		$('#nickRegister').show();
+		$('.nickRegistered').hide();
+	}
 }
 
 guser.clearUmodes = function(){
@@ -341,6 +350,7 @@ var gateway = {
 			} catch(e) {}
 			gateway.send('USER pirc * * :'+username+'\r\n');
 			gateway.send('NICK '+guser.nick);
+			gateway.connectTime = (+new Date)/1000;
 		}
 
 	},
@@ -1387,31 +1397,40 @@ var gateway = {
 			$element.hide('blind', {
 				direction: 'vertical'
 			}, 300);
-			$('#'+gateway.findChannel(channel).id+'-operActions').removeClass('channelAdminActive');
+			$('#'+gateway.findChannel(channel).id+'-operActions .chstats-button').removeClass('channelAdminActive');
 		} else {
 			$element.show('blind', {
 				direction: 'vertical'
 			}, 300);
-			$('#'+gateway.findChannel(channel).id+'-operActions').addClass('channelAdminActive');
+			$('#'+gateway.findChannel(channel).id+'-operActions .chstats-button').addClass('channelAdminActive');
 		}
 	},
 	'toggleChannelOpts': function(channel) {
-		/*var html = '<p>Uwaga: ta funkcjonalność nie jest jeszcze gotowa, więc może być niekompletna lub działać niepoprawnie!</p>'+
-			'<table><tr><td>Automatycznie wchodź na ten kanał przy każdym połączeniu (wymaga zarejestrowanego nicka)</td>'+
-			'<td><button onclick="gateway.send(\'NS AJOIN ADD '+bsEscape(chan)+'\')">Włącz</button> <button onclick="gateway.send(\'NS AJOIN DEL '+bsEscape(chan)+'\')">Wyłącz</button></td>'+
-			'</tr></table>';
-		$$.displayDialog('admin', chan, 'Ustawienia dla kanału '+chan, html);*/
 		var $element = $('#'+gateway.findChannel(channel).id+'-channelOptions ul');
 		if($element.is(':visible')){
 			$element.hide('blind', {
 				direction: 'vertical'
 			}, 300);
-			$('#'+gateway.findChannel(channel).id+'-channelOptions').removeClass('channelAdminActive');
+			$('#'+gateway.findChannel(channel).id+'-chstats .chstats-button').removeClass('channelAdminActive');
 		} else {
 			$element.show('blind', {
 				direction: 'vertical'
 			}, 300);
-			$('#'+gateway.findChannel(channel).id+'-channelOptions').addClass('channelAdminActive');
+			$('#'+gateway.findChannel(channel).id+'-chstats .chstats-button').addClass('channelAdminActive');
+		}
+	},
+	'toggleNickOpts': function() {
+		var $element = $('#nickOptions')
+		if($element.is(':visible')){
+			$element.hide('blind', {
+				direction: 'down'
+			}, 300);
+			$('#nickopts .nickoptsButton').removeClass('channelAdminActive');
+		} else {
+			$element.show('blind', {
+				direction: 'down'
+			}, 300);
+			$('#nickopts .nickoptsButton').addClass('channelAdminActive');
 		}
 	},
 	'showPermError': function(text) {

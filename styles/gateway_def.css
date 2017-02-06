@@ -137,7 +137,7 @@ input, button, submit {
 }
 	
 #nicklist {
-	bottom: 7.6em;
+	bottom: 7.4em;
 	position: absolute;
 	right: 10px;
 	top: 12em;
@@ -534,7 +534,7 @@ ul.options li:hover {
 	cursor: pointer;
 }
 
-.admin-dialog, .ignore-dialog {
+.admin-dialog, .ignore-dialog, .services-dialog {
 	background: url("/styles/img/techbg.png") no-repeat scroll right top #E8E8E8 !important;
 }
 
@@ -883,7 +883,7 @@ span.td_right {
 	margin-left: 10px;
 }*/
 
-.channelAdmin li {
+.channelAdmin li, #nickOptions li {
 	list-style: none outside none;
 	margin-top: 3px;
 	border: 1px solid #FFFFFF;
@@ -901,7 +901,7 @@ span.td_right {
 	border-color: #7492B6;
 }
 
-ul.channelOperActions, ul.channelOptions {
+ul.channelOperActions, ul.channelOptions, #nickOptions {
     position: absolute;
     z-index: 90;
     right: 1em;
@@ -922,20 +922,20 @@ ul.channelOperActions, ul.channelOptions {
 	padding-bottom: 2px;
 }
 
-.channelOperActionsButton:hover, .channelAdmin li:hover, .channelAdminActive ul {
+.channelOperActionsButton:hover, .channelAdmin li:hover, .channelAdminActive ul, #nickOptions li:hover {
 	background-color: #e6effa;
 	border-color: #7492B6;
 }
 
-.channelOperActionsButton:hover, .channelAdmin li:hover {
+.channelOperActionsButton:hover, .channelAdmin li:hover, #nickOptions li:hover {
 	cursor: pointer;
 }
 
-.channelAdmin li:hover {
+.channelAdmin li:hover, #nickOptions li:hover {
 	background-color: rgba(255, 255, 255, 0.6);
 }
 
-.channelOperActions, .channelOptions {
+.channelOperActions, .channelOptions, #nickOptions {
 	display: none;
 	background-color: #eee;
 }
@@ -1056,7 +1056,7 @@ span.chstats-text:before {
 #chlist {
     position: absolute;
     right: 10px;
-	bottom: 5.8em;
+	bottom: 5.6em;
     width: 23%;
     height: 1.4em;
 }
@@ -1170,21 +1170,38 @@ div.alert-dialog {
 #nickopts {
     position: absolute;
     right: 10px;
-    bottom: 4em;
+	bottom: 3.9em;
     width: 23%;
-    height: 1.4em;
+    height: 1.3em;
 }
 
-.nickoptswrapper {
+.nickoptsButton {
     border-radius: 4px;
-    background: none repeat scroll 0 0 #E4E4E4;
     border: 1px solid #9A9A9A;
     height: 100%;
     margin: 10px auto;
     overflow: auto;
     width: 98%;
     text-align: center;
-    font-size: .9em;
     position: relative;
+    padding-top: .1em;
+    padding-bottom: .2em;
 }
 
+.nickoptsButton:hover {
+    background-color: #efefef;
+    cursor: pointer;
+}
+
+#nickopts-wrapper {
+    background: none repeat scroll 0 0 #E4E4E4;
+	font-size: .9em;
+}
+
+#nickOptions {
+	position: absolute;
+    bottom: .9em;
+    min-width: 12em;
+    text-align: center;
+    font-size: .8em;
+}

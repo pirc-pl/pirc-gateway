@@ -318,6 +318,122 @@ var services = {
 			return false;
 		}
 		return true;
+	},
+	'changeMyNick': function() {
+		var html = 'Nowy nick: <input type="text" value="'+guser.nick+'" id="nickChangeInput">';
+		var button = [ {
+			text: 'Anuluj',
+			click: function(){
+				$(this).dialog('close');
+			}
+		}, {
+			text: 'Zmień',
+			click: function(){
+				if(services.doChangeNick()){
+					$(this).dialog('close');
+				}
+			}
+		} ];
+		$$.displayDialog('services', 'nickserv', 'Zmiana nicka', html, button);
+	},
+	'doChangeNick': function() {
+		var newNick = $('#nickChangeInput').val();
+		if(newNick == ''){
+			$$.alert('Nie wpisano nicka!');
+			return false;
+		}
+		if(newNick.indexOf(' ') > -1){
+			$$.alert('Nick nie może zawierać spacji!');
+			return false;
+		}
+		gateway.send('NICK '+newNick);
+		return true;
+	},
+	'registerMyNick': function() {
+		var html = '<table><tr><td style="text-align: right; padding-right: 10px;">Hasło:</td><td><input type="password" id="nickRegisterPass"></td></tr>'+
+			'<tr><td style="text-align: right; padding-right: 10px;">Powtórz hasło:</td><td><input type="password" id="nickRegisterPassConf"></td></tr>'+
+			'<tr><td style="text-align: right; padding-right: 10px;">E-mail:</td><td><input type="text" id="nickRegisterMail"></td></tr>'+
+			'</table><p>Adres e-mail jest potrzebny, aby w przyszłości odzyskać hasło.</p>';
+		var button = [ {
+			text: 'Anuluj',
+			click: function(){
+				$(this).dialog('close');
+			}
+		}, {
+			text: 'Zarejestruj',
+			click: function(){
+				if(services.doRegisterNick()){
+					$(this).dialog('close');
+				}
+			}
+		} ];
+		$$.displayDialog('services', 'nickserv', 'Rejestracja nicka '+guser.nick, html, button);
+	},
+	'doRegisterNick': function() {
+		var password = $('#nickRegisterPass').val();
+		var email = $('#nickRegisterMail').val();
+		if(password == ''){
+			$$.alert('Nie wpisano hasła!');
+			return false;
+		}
+		if(password.indexOf(' ') > -1){
+			$$.alert('Hasło nie może zawierać spacji!');
+			return false;
+		}
+		if(password != $('#nickRegisterPassConf').val()){
+			$$.alert('Podane hasła nie są zgodne!');
+			return false;
+		}
+		if(email == ''){
+			$$.alert('Nie wpisano adresu e-mail!');
+			return false;
+		}
+		if(email.indexOf(' ') > -1 || email.indexOf('@') < 0 || email.indexOf('.') < 0){
+			$$.alert('Podany e-mail jest błędny!');
+			return false;
+		}
+		var timeDiff = 120 - Math.round(((+new Date)/1000) - gateway.connectTime);
+		if(timeDiff > 0){
+			$$.alert('Musisz zaczekać jeszcze '+timeDiff+' sekund(y), zanim będzie możliwa rejestracja nicka.');
+			return false;
+		}
+		gateway.send('NS REGISTER '+password+' '+email);
+		gateway.send('NS SET KILL QUICK');
+		return true;
+	},
+	'setCloak': function(){
+		var html = '<p>To polecenie ustawi vHosta o treści <b>cloak:'+guser.nick+'</b>. Jeśli masz już vHosta, zostanie on usunięty.</p>';
+		var button = [ {
+			text: 'Anuluj',
+			click: function(){
+				$(this).dialog('close');
+			}
+		}, {
+			text: 'Wykonaj',
+			click: function(){
+				gateway.send('HS CLOAK');
+				$(this).dialog('close');
+			}
+		} ];
+		$$.displayDialog('services', 'hostserv', 'Ustawianie automatycznego vhosta', html, button);
+	},
+	'setVhost': function(){
+		var html = '<p>To polecenie wyśle prośbę do administratorów o ustawienie Tobie podanego vhosta.</p>'+
+			'<p>Nowy vHost: <input type="text" id="newVhost"></p>'+
+			'<p>vHost może zawierać tylko litery i cyfry, i musi mieć w środku co najmniej jedną kropkę.</p>';
+		var button = [ {
+			text: 'Anuluj',
+			click: function(){
+				$(this).dialog('close');
+			}
+		}, {
+			text: 'Wykonaj',
+			click: function(){
+				gateway.send('HS REQUEST '+$('#newVhost').val());
+				$(this).dialog('close');
+			}
+		} ];
+		$$.displayDialog('services', 'hostserv', 'Ustawianie automatycznego vhosta', html, button);
 	}
 };
 
