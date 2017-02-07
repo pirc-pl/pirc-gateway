@@ -101,7 +101,7 @@ var colorsAllowed = function(chan){
 			return true;
 		}
 	}
-	if(chan.modes.S || chan.modes.c || chan.modes.T || chan.modes.C){
+	if(chan.modes.S || chan.modes.c || chan.modes.C){
 		return false;
 	}
 	return true;		
