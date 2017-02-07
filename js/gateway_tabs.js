@@ -143,9 +143,13 @@ function NicklistUser(usernick, chan) {
 	this.isRegistered = false;
 
 	this.makeHTML = function() {
+		var index = this.level;
+		if(this.level == 0 && this.isRegistered){
+			index = 6;
+		}
 		return '<li id="'+this.id+'" class="'+md5(this.nick)+'">'+
 			'<table><tr onclick="gateway.toggleNickOpt(\''+this.id+'\')">'+
-				'<td valign="top"><img class="chrank" alt="'+alt[this.level]+'" src="'+icons[this.level]+'" title="'+chStatusInfo[this.level]+'" /></td>'+
+				'<td valign="top"><img class="chrank" alt="'+alt[index]+'" src="'+icons[index]+'" title="'+chStatusInfo[index]+'" /></td>'+
 				'<td valign="top" style="text-align:left;width:100%;" class="'+((this.nick.toLowerCase()==guser.nick.toLowerCase())?'ownNick ':'')+'nickname">&nbsp;&nbsp;'+this.nick+'</td>'+
 			'</tr></table>'+
 			'<ul class="options" id="'+this.id+'-opt">'+
@@ -249,7 +253,12 @@ function NicklistUser(usernick, chan) {
 	}
 	this.setRegistered = function(val) {
 		this.isRegistered = val;
+		var index = this.level;
+		if(this.level == 0 && this.isRegistered){
+			index = 6;
+		}
 		this.showTitle();
+		$('#'+this.id+' .chrank').attr('alt', alt[index]).attr('src', icons[index]).attr('title', chStatusInfo[index]);
 	}
 	this.showTitle = function() {
 		var text = '';

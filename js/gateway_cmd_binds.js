@@ -366,7 +366,7 @@ var cmdBinds = {
 	],
 	'312': [	// RPL_WHOISSERVER 
 		function(msg) {
-			$$.displayDialog('whois', msg.args[1], false, "<p class='whois'><span class='info'>serwer:</span><span class='data'>" + msg.args[2] + " "+ he(msg.text) + "</span></p>");
+			$$.displayDialog('whois', msg.args[1], false, "<p class='whois'><span class='info'>Serwer:</span><span class='data'>" + msg.args[2] + " "+ he(msg.text) + "</span></p>");
 		}
 	],
 	'313': [	// RPL_WHOISOPERATOR
@@ -508,6 +508,11 @@ var cmdBinds = {
 					}
 				} catch(e) {}*/
 			}
+		}
+	],
+	'330': [	// RPL_WHOISACCOUNT
+		function(msg) {
+			$$.displayDialog('whois', msg.args[1], false, "<p class='whois'><span class='info'>Nazwa konta:</span><span class='data'>" + msg.args[2] + "</span></p>");
 		}
 	],
 	'335': [	// RPL_BOT ???

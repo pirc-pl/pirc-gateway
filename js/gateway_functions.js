@@ -5,10 +5,11 @@ var icons = [
 	'/styles/img/hop.png',
 	'/styles/img/op.png',
 	'/styles/img/prot.png',
-	'/styles/img/owner.png'
+	'/styles/img/owner.png',
+	'/styles/img/user-registered.png'
 ];
-var alt = [	'', '+', '%', '@', '&', '~' ];
-var chStatusInfo = [ '', 'Prawo głosu', 'Pół-operator', 'Operator', 'Admin', 'Właściciel' ];
+var alt = [	'', '+', '%', '@', '&', '~', '' ];
+var chStatusInfo = [ 'Niezarejestrowany', 'Prawo głosu', 'Pół-operator', 'Operator', 'Admin', 'Właściciel', 'Zarejestrowany' ];
 
 var reqChannel = '';
 
