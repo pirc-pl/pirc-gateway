@@ -74,8 +74,6 @@ var conn = {
 		}*/
 	},
 	'gatewayInit': function(){
-		$('.not-connected-text p').html('Poczekaj chwilę, trwa ładowanie...');
-		
 		try {
 			localStorage.removeItem('checkAliveReply');
 			localStorage.removeItem('checkAlive');

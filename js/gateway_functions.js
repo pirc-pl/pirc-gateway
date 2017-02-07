@@ -41,6 +41,7 @@ var banData = {
 
 var messageProcessors = []; //function (src, dst, text) returns new_text
 var nickColorProcessors = []; //function (nick)
+var settingProcessors = []; //function ()
 var addons = [];
 
 var messagePatterns = {
@@ -315,11 +316,13 @@ var settings = {
 
 var loaded = false;
 
-var defReadyFunc = function(){
+
+var readyFunctions = [ conn.gatewayInit ];
+
+var readyFunc = function(){
 	if(loaded) return;
 	$('.not-connected-text > h3').html('Ładowanie');
 	$('.not-connected-text > p').html('Poczekaj chwilę, trwa ładowanie...');
-	loaded = true;
 	if($.browser.msie && parseInt($.browser.version, 10) < 8) {
 		$('.not-connected-text > h3').html('Przestarzała przeglądarka');
 		$('.not-connected-text > p').html('Twoja przeglądarka jest przestarzała i nie jest obsługiwana. Należy zaktualizować przeglądarkę Internet Explorer do wersji 8 lub wyższej albo użyć innej przeglądarki (Firefox, Opera, Chrome, Safari) w którejś z nowszych wersji.<br />Jeżeli posiadasz przeglądarkę Internet Explorer 8 lub wyższej i widzisz ten komunikat wyłącz tzw "widok zgodności" dla tej strony.');
@@ -328,16 +331,13 @@ var defReadyFunc = function(){
 		cmd_binds = 0;
 		$('div#wrapper').html('');
 	} else {
-		conn.gatewayInit();
-	}
-};
-
-var readyFunctions = [ defReadyFunc ];
-
-var readyFunc = function(){
-	for(f in readyFunctions){
-		readyFunctions[f]();
-	}
+		loaded = true;
+		for(f in readyFunctions){
+			try {
+				readyFunctions[f]();
+			} catch(e) {}
+		}
+	}	
 }
 
 $('document').ready(function(){setTimeout(readyFunc, 100);});
@@ -492,6 +492,9 @@ var disp = {
 				var style = $('<style id="userhost_hidden">.userhost { display:none; }</style>');
 				$('html > head').append(style);
 			}
+		}
+		for(i in settingProcessors){
+			settingProcessors[i]();
 		}
 		if(!e) return;
 		if(e.currentTarget.id == 'dispEmoji') {

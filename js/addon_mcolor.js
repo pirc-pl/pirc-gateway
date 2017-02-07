@@ -117,6 +117,9 @@ var getColor = function(nick){
 }
 
 var colorMessage = function(src, dst, text){
+	if(!$('#mcolorEnable').is(':checked')){
+		return text;
+	}
 	if(dst.charAt(0) == '#'){
 		var chan = gateway.findChannel(dst);
 	} else if(src.charAt(0) == '#'){
@@ -133,6 +136,9 @@ var colorMessage = function(src, dst, text){
 }
 
 var colorNick = function(nick){
+	if(!$('#mcolorEnable').is(':checked')){
+		return false;
+	}
 	return getColor(nick);
 }
 
@@ -144,12 +150,22 @@ var insertBinding = function(list, item, handler){
 	}
 }
 
+var colorSettingsChange = function(){
+	var checked = $('#mcolorEnable').is(':checked');
+	if(checked){
+		$('.mcolor').show();
+	} else {
+		$('.mcolor').hide();
+	}
+}
+
 insertBinding(cmdBinds, 'JOIN', mcolorJoinHandler);
 insertBinding(ctcpBinds, 'MCOL', mcolorCtcpHandler);
 insertBinding(cmdBinds, '324', mcolorChModeHandler);
 insertBinding(cmdBinds, 'NICK', mcolorNickHandler);
 messageProcessors.push(colorMessage);
 nickColorProcessors.push(colorNick);
+settingProcessors.push(colorSettingsChange);
 commands['mycolor'] = {
 	'channels': false,
 	'nicks': false,
@@ -170,10 +186,13 @@ var mcolorInit = function(){
 			mcolor = ls;
 		}
 	} catch(e){}
-	$('#color-dialog h3').append(' (tymczasowo)');
-	var html = '<h3>Ustaw kolor swojego tekstu (na stałe)</h3><p>Wybierz kolor: <input type="color" id="nickColorPick"></p>' +
-		'<p><button id="clearNickColor">Skasuj kolor</button></p>';
+	$('#color-dialog h3').append('<span class="mcolor"> (tymczasowo)</span>');
+	var html = '<div class="mcolor"><h3>Ustaw kolor swojego tekstu (na stałe)</h3><p>Wybierz kolor: <input type="color" id="nickColorPick"></p>' +
+		'<p><button id="clearNickColor">Skasuj kolor</button></p></div>';
 	$('#color-dialog').append(html);
+	html = '<tr><td  class="optionsCheckBox"><input type="checkbox" id="mcolorEnable" onchange="disp.changeSettings(event)" checked="checked" /></td><td class="info">Włącz kolorowanie wiadomości</td></tr>';
+	$('#options-dialog table').prepend(html);
+	booleanSettings.push('mcolorEnable');
 	$('#nickColorPick').change(function(){
 		/*if($('#nickColorPick').val() != mcolor){
 			$('#nickColorInfo').text('Kliknij "Zatwierdź" aby zmienić');
@@ -197,6 +216,5 @@ var mcolorInit = function(){
 	});*/
 }
 
-readyFunctions.push(mcolorInit);
-
+readyFunctions.unshift(mcolorInit);
 addons.push('mcolor');
