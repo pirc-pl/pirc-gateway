@@ -786,7 +786,16 @@ var cmdBinds = {
 	'433' : [	// ERR_NICKNAMEINUSE 
 		function(msg) {
 			if(gateway.connectStatus == statusDisconnected){
-				gateway.send('NICK '+guser.nick+Math.floor(Math.random() * 999));
+				var expr = /^([^0-9]+)(\d*)$/;
+				var match = expr.exec(guser.nick);
+				if(match[2] && !isNaN(match[2])){
+					var nick = match[1];
+					var suffix = parseInt(match[2]) + 1;
+				} else {
+					var nick = guser.nick;
+					var suffix = Math.floor(Math.random() * 999);
+				}
+				gateway.send('NICK '+nick+suffix);
 			}
 			var html = '<p>Nick <b>'+he(msg.args[1])+'</b> jest już używany przez kogoś innego.</p>';
 			gateway.nickWasInUse = true;
