@@ -208,6 +208,7 @@ function NicklistUser(usernick, chan) {
 			if(nickListElement.length){
 				nickListElement.remove();
 				nicklist.insertNick(this);
+				this.showTitle();
 			}
 		}
 	}
