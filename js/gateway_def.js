@@ -1053,11 +1053,11 @@ var gateway = {
 			'<p class="statusbutton" onClick="gateway.send(\'MODE '+bsEscape(channel)+' +h '+$$.sescape(nick)+'\');">HALFOP (Pół-operator kanału)</p>' +
 			'<p class="statusbutton" onClick="gateway.send(\'MODE '+bsEscape(channel)+' +v '+$$.sescape(nick)+'\');">VOICE (Uprawnienie do głosu)</p>' +
 			'<p>Daj użytkownikowi '+he(nick)+' uprawnienia w ChanServ (na stałe) na kanale '+he(channel)+'<br>(musisz posiadać odpowiedni dostęp do serwisów):</p>' +
-			'<p class="statusbutton" onClick="gateway.performCommand(\'CS QOP '+bsEscape(channel)+' ADD "+$$.sescape(nick)+"\");">QOP: FOUNDER (Właściciel kanału)</p>' +
-			'<p class="statusbutton" onClick="gateway.performCommand(\'CS SOP '+bsEscape(channel)+' ADD "+$$.sescape(nick)+"\");">SOP: PROTECT (Ochrona przed kopnięciem)</p>' +
-			'<p class="statusbutton" onClick="gateway.performCommand(\'CS AOP '+bsEscape(channel)+' ADD "+$$.sescape(nick)+"\");">AOP: OP (Operator kanału)</p>' +
-			'<p class="statusbutton" onClick="gateway.performCommand(\'CS HOP '+bsEscape(channel)+' ADD "+$$.sescape(nick)+"\");">HOP: HALFOP (Pół-operator kanału)</p>' +
-			'<p class="statusbutton" onClick="gateway.performCommand(\'CS VOP '+bsEscape(channel)+' ADD "+$$.sescape(nick)+"\");">VOP: VOICE (Uprawnienie do głosu)</p>';
+			'<p class="statusbutton" onClick="gateway.performCommand(\'CS QOP '+bsEscape(channel)+' ADD '+$$.sescape(nick)+'\');">QOP: FOUNDER (Właściciel kanału)</p>' +
+			'<p class="statusbutton" onClick="gateway.performCommand(\'CS SOP '+bsEscape(channel)+' ADD '+$$.sescape(nick)+'\');">SOP: PROTECT (Ochrona przed kopnięciem)</p>' +
+			'<p class="statusbutton" onClick="gateway.performCommand(\'CS AOP '+bsEscape(channel)+' ADD '+$$.sescape(nick)+'\');">AOP: OP (Operator kanału)</p>' +
+			'<p class="statusbutton" onClick="gateway.performCommand(\'CS HOP '+bsEscape(channel)+' ADD '+$$.sescape(nick)+'\');">HOP: HALFOP (Pół-operator kanału)</p>' +
+			'<p class="statusbutton" onClick="gateway.performCommand(\'CS VOP '+bsEscape(channel)+' ADD '+$$.sescape(nick)+'\');">VOP: VOICE (Uprawnienie do głosu)</p>';
 		$$.displayDialog('admin', channel, 'Zarządzanie '+he(channel), html);
 	},
 	'showStatusAnti': function(channel, nick) {
