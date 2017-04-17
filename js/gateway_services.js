@@ -308,7 +308,7 @@ var services = {
 		}
 		banString += ' '+nick;
 		if ($("#kbinput").val() != "") {
-			banString += ' '+$(".kickinput").val();
+			banString += ' '+$("#kbinput").val();
 		}
 		gateway.performCommand(banString);
 	},
