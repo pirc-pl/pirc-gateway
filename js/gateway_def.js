@@ -628,10 +628,12 @@ var gateway = {
 	},
 	'changeTopic': function(channel) {
 		if(!confirm('Czy zmienić temat dla '+channel+'? Nie można tego cofnąć.')){
-			return;
+			return false;
 		}
 		var newTopic = $('#topicEdit').val().replace(/\n/g, ' ');
 		gateway.send('TOPIC '+channel+' :'+$$.tagsToColors(newTopic));
+		$$.closeDialog('confirm', 'topic');
+		return true;
 	},
 	'tabHistory': ['--status'],
 	'lasterror': '',

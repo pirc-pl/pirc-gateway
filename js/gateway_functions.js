@@ -533,7 +533,8 @@ var disp = {
 		var html = topic +
 			'<p class="' + channel.id + '-operActions" style="display:none;">' +
 				'<b>Zmodyfikuj temat kanału:</b><textarea name="topicEdit" id="topicEdit">'+$$.colorsToTags(channel.topic)+'</textarea>' +
-				'<button onclick="gateway.changeTopic(\''+channel.name+'\');">Zmień temat</button>' +
+				'<button onclick="gateway.changeTopic(\''+channel.name+'\');">Zmień temat</button><br>' +
+				'Do tematu możesz skopiować kody koloru wstawione w pole wiadomości.' +
 			'</p>';
 		$$.displayDialog('confirm', 'topic', 'Temat kanału '+channel.name, html);
 	},

@@ -653,7 +653,7 @@ function Channel(chan) {
 	}
 	this.setTopic = function(topic) {
 		$('#'+this.id+'-topic > h2').html($$.colorize(topic));
-		$('#'+this.id+'-topic').click(disp.topicClick);
+		$('#'+this.id+'-topic').unbind('click').click(disp.topicClick);
 		this.topic = topic;
 	}
 	
