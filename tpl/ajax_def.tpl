@@ -57,6 +57,10 @@
 					<td class="info">Wysyłaj powyższe emoji na IRC</td>
 				</tr>
 				<tr>
+					<td class="optionsCheckBox"><input type="checkbox" id="monoSpaceFont" onchange="disp.changeSettings(event)" /></td>
+					<td class="info">Wyświetlaj treść rozmowy fontem o stałej szerokości</td>
+				</tr>
+				<tr>
 					<td class="optionsCheckBox"><input type="checkbox" id="autoDisconnect" onchange="disp.changeSettings(event)" checked="checked" /></td>
 					<td class="info">Automatycznie rozłączaj przy zamykaniu strony</td>
 				</tr>

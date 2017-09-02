@@ -15,7 +15,7 @@ var reqChannel = '';
 
 var server = 'wss://bramka.pirc.pl:8082/';
 
-var booleanSettings = [ 'showPartQuit', 'tabsListBottom', 'showUserHostnames', 'autoReconnect', 'displayLinkWarning', 'blackTheme', 'newMsgSound', 'autoDisconnect', 'coloredNicks', 'showMode', 'dispEmoji', 'sendEmoji' ];
+var booleanSettings = [ 'showPartQuit', 'tabsListBottom', 'showUserHostnames', 'autoReconnect', 'displayLinkWarning', 'blackTheme', 'newMsgSound', 'autoDisconnect', 'coloredNicks', 'showMode', 'dispEmoji', 'sendEmoji', 'monoSpaceFont' ];
 var comboSettings = [ 'noticeDisplay' ];
 var numberSettings = [ 'backlogCount' ];
 var numberSettingsMinMax = {
@@ -484,6 +484,14 @@ var disp = {
 			}
 		} else {
 			$('#blackCss').remove();
+		}
+		if ($('#monoSpaceFont').is(':checked')) {
+			if($('#monospace_font').length == 0){
+				var style = $('<style id="monospace_font">#chat-wrapper { font-family: DejaVu Sans Mono, Consolas, monospace, Symbola; } </style>');
+				$('html > head').append(style);
+			}
+		} else {
+			$('#monospace_font').remove();
 		}
 		if ($('#showUserHostnames').is(':checked')) {
 			$('#userhost_hidden').remove();

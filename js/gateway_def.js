@@ -48,7 +48,7 @@ var irc = {
 	'parseMessage': function(msg){
 		var packets = [];
 		var packetcnt = 0;
-		var msglen = msg.length;
+/*		var msglen = msg.length;
 		var line = irc.oldData;
 		irc.oldData = '';
 		for(var i = 0; i < msglen; i++){
@@ -69,7 +69,8 @@ var irc = {
 		}
 		if(line.length > 0){
 			irc.oldData = line;
-		}
+		}*/
+		packets[packetcnt++] = irc.parseLine(msg);
 		return {'status': 2, 'packets': packets };
 	},
 	'parseLine': function(line){
