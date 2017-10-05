@@ -349,6 +349,9 @@ var gateway = {
 					username += ' "'+ckNick+'"';
 				}
 			} catch(e) {}
+			if(token != ''){
+				gateway.send(Base64.decode(token));
+			}
 			gateway.send('USER pirc * * :'+username+'\r\n');
 			gateway.send('NICK '+guser.nick);
 			gateway.connectTime = (+new Date)/1000;
