@@ -7,6 +7,7 @@ class Module extends ModuleT {
 		$gateway_url = '<a href=\"';
 //		$gateway_url = '';
 		$gateway_url .= 'https://widget01.mibbit.com/?promptPass=true&settings=10db5282f0641bc847a88fc71f2bc200&server=irc.pirc.pl&autoConnect=true&charset=UTF-8';
+		$pass = 'b61tays';
 		if(isset(Dispatcher::$args['.0'])){
 			$channel = Dispatcher::$args['.0'];
 			$gateway_url .= '&channel=%23'.$channel;
@@ -74,6 +75,7 @@ class Module extends ModuleT {
 			Template::assign('random_string', '?'.rand(100, 5000));
 		}
 		Template::assign('add_js', $add_js);
+		Template::assign('itoken', base64_encode('PASS '.$pass));
 		
 		Template::display('gateway_ajax_header');
 		Template::display('ajax_'.$glayout);
