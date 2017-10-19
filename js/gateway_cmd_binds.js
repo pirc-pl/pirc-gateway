@@ -1023,6 +1023,7 @@ var cmdBinds = {
 var ctcpBinds = {
 	'ACTION': [
 		function(msg){
+			var html = $$.parseImages(msg.text);
 			if(msg.args[0].charAt(0) == '#'){ //kanał
 				var channel = gateway.findOrCreate(msg.args[0], false);
 				if(msg.text.indexOf(guser.nick) != -1) {
@@ -1036,8 +1037,9 @@ var ctcpBinds = {
 						channel.markBold();
 					}
 				}
+				channel.appendMessage('%s', [html]);
 			} else {
-				query = gateway.findOrCreate(qnick);
+				query = gateway.findOrCreate(msg.sender.nick);
 				query.appendMessage(messagePatterns.channelAction, [$$.niceTime(), msg.sender.nick, $$.colorize(msg.ctcptext)]);
 				if(gateway.active.toLowerCase() != msg.sender.nick.toLowerCase()) {
 					gateway.findQuery(msg.sender.nick).markNew();
