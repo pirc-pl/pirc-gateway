@@ -665,6 +665,8 @@ var gateway = {
 					gateway.getActive().restoreScroll();
 				}, 250);
 			});
+			$('#nickopts').css('display', 'none');
+			$('#chlist').css('display', 'none');
 			gateway.nickListVisibility = false;
 		} else {
 			gateway.showNickList();
@@ -699,6 +701,8 @@ var gateway = {
 					tab = gateway.statusWindow;
 				}
 				tab.restoreScroll();
+				$('#nickopts').css('display', '');
+				$('#chlist').css('display', '');
 			}, 450);
 		});
 	},
@@ -778,6 +782,8 @@ var gateway = {
 						setTimeout(function(){
 							gateway.findChannel(chan).restoreScroll();
 						}, 200);
+						$('#nickopts').css('display', '');
+						$('#chlist').css('display', '');
 					});
 				});
 			} else {
@@ -819,6 +825,8 @@ var gateway = {
 					setTimeout(function(){
 						gateway.findQuery(chan).restoreScroll();
 					}, 200);
+					$('#nickopts').css('display', 'none');
+					$('#chlist').css('display', 'none');
 				});
 			} else {
 				gateway.findQuery(chan).restoreScroll();
@@ -860,6 +868,8 @@ var gateway = {
 					setTimeout(function(){
 						gateway.statusWindow.restoreScroll();
 					}, 200);
+					$('#nickopts').css('display', 'none');
+					$('#chlist').css('display', 'none');
 				});
 			} else {
 				gateway.statusWindow.restoreScroll();
