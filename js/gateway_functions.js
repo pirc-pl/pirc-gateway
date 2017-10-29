@@ -633,7 +633,7 @@ var $$ = {
 			return 'style="color:' + color +'"';
 		}
 	},
-	'colorize': function(message) {
+	'colorize': function(message, strip=false) {
 		var pageBack  = 'white';
 		var pageFront = 'black';
 		var currBack = pageBack;
@@ -642,8 +642,10 @@ var $$ = {
 		if($('#dispEmoji').is(':checked')){
 			message = $$.textToEmoji(message);
 		}
-		message = he(message); 
-		message = $$.parseLinks(message);
+		if(!strip){
+			message = he(message); 
+			message = $$.parseLinks(message);
+		}
 		var length	= message.length;
 		
 		var bold = false;
@@ -717,7 +719,7 @@ var $$ = {
 					break;
 			}
 			
-			if(isText && formatWaiting){
+			if(!strip && isText && formatWaiting){
 				formatWaiting = false;
 				if(formatSet){
 					newText += '</span>';
@@ -748,7 +750,7 @@ var $$ = {
 		}
 			
 
-		if(formatSet){
+		if(!strip && formatSet){
 			newText += '</span><wbr>';
 		}
 		return newText;

@@ -453,7 +453,7 @@ var cmdBinds = {
 		function(msg) {
 			if(gateway.smallListLoading){
 				if(msg.args[1] == '*') return;
-				gateway.smallListData.push([msg.args[1], msg.args[2], msg.text]);
+				gateway.smallListData.push([msg.args[1], msg.args[2], $$.colorize(msg.text, true)]);
 				return;
 			}
 			if (!msg.text) {
