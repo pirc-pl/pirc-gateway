@@ -15,7 +15,7 @@ var reqChannel = '';
 
 var server = 'wss://bramka.pirc.pl:8082/';
 
-var booleanSettings = [ 'showPartQuit', 'tabsListBottom', 'showUserHostnames', 'autoReconnect', 'displayLinkWarning', 'blackTheme', 'newMsgSound', 'autoDisconnect', 'coloredNicks', 'showMode', 'dispEmoji', 'sendEmoji', 'monoSpaceFont', 'autoLogIn' ];
+var booleanSettings = [ 'showPartQuit', 'tabsListBottom', 'showUserHostnames', 'autoReconnect', 'displayLinkWarning', 'blackTheme', 'newMsgSound', 'autoDisconnect', 'coloredNicks', 'showMode', 'dispEmoji', 'sendEmoji', 'monoSpaceFont', 'automLogIn' ];
 var comboSettings = [ 'noticeDisplay' ];
 var numberSettings = [ 'backlogCount' ];
 var numberSettingsMinMax = {
@@ -502,10 +502,10 @@ var disp = {
 				$('html > head').append(style);
 			}
 		}
-		if($('#autoLogIn').is(':checked')){
-			$('#autoLogIn').parent().parent().css('display', '');
+		if($('#automLogIn').is(':checked')){
+			$('#automLogIn').parent().parent().css('display', '');
 		} else {
-			$('#autoLogIn').parent().parent().css('display', 'none');
+			$('#automLogIn').parent().parent().css('display', 'none');
 		}
 		for(i in settingProcessors){
 			settingProcessors[i]();

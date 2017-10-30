@@ -51,7 +51,7 @@ var conn = {
 			if(rmatch[1] == '1'){
 				gateway.recoverConnection();
 			} else {*/
-				if($('#autoLogIn').is(':checked')){
+				if($('#automLogIn').is(':checked')){
 					var auto_initialized = false;
 					if(gateway.initialize()){
 						auto_initialized = true;
@@ -63,7 +63,7 @@ var conn = {
 					nconn_html += '<tr><td style="text-align: right; padding-right: 10px;">Nick:</td><td><input type="text" id="nsnick" value="'+conn.my_nick+'" /></td></tr>';
 					nconn_html += '<tr><td style="text-align: right; padding-right: 10px;">Hasło (jeżeli zarejestrowany):</td><td><input type="password" id="nspass" value="'+conn.my_pass+'" /></td></tr>';
 					nconn_html += '<tr><td></td><td style="text-align: left;"><input type="checkbox" id="save_password" /> Zapisz hasło</td></tr>';
-					nconn_html += '<tr><td></td><td style="text-align: left;"><input type="checkbox" id="enableAutoLogIn" onchange="if($(\'#enableAutoLogIn\').is(\':checked\')) $(\'#save_password\').prop(\'checked\', true);" /> Zapisz wszystkie dane i nie wyświetlaj ponownie tego okna</td></tr>';
+					nconn_html += '<tr><td></td><td style="text-align: left;"><input type="checkbox" id="enableautomLogIn" onchange="if($(\'#enableautomLogIn\').is(\':checked\')) $(\'#save_password\').prop(\'checked\', true);" /> Zapisz wszystkie dane i nie wyświetlaj ponownie tego okna</td></tr>';
 					nconn_html += '</table><input type="submit" style="display:none"></form>';
 					var button = [ {
 						text: 'Połącz z IRC',

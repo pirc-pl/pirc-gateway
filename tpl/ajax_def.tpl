@@ -65,7 +65,7 @@
 					<td class="info">Automatycznie rozłączaj przy zamykaniu strony</td>
 				</tr>
 				<tr style="display:none;">
-					<td class="optionsCheckBox"><input type="checkbox" id="autoLogIn" onchange="disp.changeSettings(event)" checked="checked" /></td>
+					<td class="optionsCheckBox"><input type="checkbox" id="automLogIn" onchange="disp.changeSettings(event)" /></td>
 					<td class="info">Automatyczne łączenie (bez podawania nicka i hasła)</td>
 				</tr>
 				<tr>

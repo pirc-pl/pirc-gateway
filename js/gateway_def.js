@@ -480,7 +480,7 @@ var gateway = {
 		$$.displayDialog('connect', '1', 'Łączenie', html);
 	},
 	'initialize': function() {
-		if($('#autoLogIn').is(':checked')){
+		if($('#automLogIn').is(':checked')){
 			if(conn.my_nick == '' || conn.my_reqChannel == ''){
 				$$.alert('Błąd wczytywania danych z ciasteczek. Wpisz dane.');
 				return false;
@@ -517,8 +517,8 @@ var gateway = {
 				return false;
 			}
 		}
-		if($('#enableAutoLogIn').is(':checked')){
-			$('#autoLogIn').prop('checked', true);
+		if($('#enableautomLogIn').is(':checked')){
+			$('#automLogIn').prop('checked', true);
 			disp.changeSettings();
 			var button = [ {
 				text: 'OK',
