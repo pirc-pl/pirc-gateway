@@ -1,6 +1,7 @@
 var conn = {
 	'my_nick': '',
 	'my_pass': '',
+	'my_reqChannel' : '',
 	'connectTimeout': function(){
 			$('.not-connected-text > p').html('Łączenie z serwerem trwa zbyt długo, serwer bramki nie działa lub twoja przeglądarka nie funkcjonuje prawidłowo.<br />Spróbuj ponownie później lub spróbuj '+oldGatewayHtml);
 	},
@@ -25,7 +26,8 @@ var conn = {
 				}
 			}
 		} catch(e) {}
-	
+		conn.my_reqChannel = reqChannel;
+		
 	/*	gateway.websock = new WebSocket(server);
 		if(gateway.connectTimeoutID){
 			clearTimeout(gateway.connectTimeoutID);
@@ -49,27 +51,37 @@ var conn = {
 			if(rmatch[1] == '1'){
 				gateway.recoverConnection();
 			} else {*/
-				var nconn_html = '<h3>' + he(guser.channels[0]) + ' @ PIRC.pl</h3><form onsubmit="gateway.initialize();$$.closeDialog(\'connect\', \'0\')" action="javascript:void(0);"><table>';
-				nconn_html += '<tr><td style="text-align: right; padding-right: 10px;">Kanał:</td><td><input type="text" id="nschan" value="'+he(reqChannel)+'" /></td></tr>';
-				nconn_html += '<tr><td style="text-align: right; padding-right: 10px;">Nick:</td><td><input type="text" id="nsnick" value="'+conn.my_nick+'" /></td></tr>';
-				nconn_html += '<tr><td style="text-align: right; padding-right: 10px;">Hasło (jeżeli zarejestrowany):</td><td><input type="password" id="nspass" value="'+conn.my_pass+'" /></td></tr>';
-				nconn_html += '<tr><td></td><td style="text-align: left;"><input type="checkbox" id="save_password" /> Zapisz hasło</td></tr>';
-				nconn_html += '</table><input type="submit" style="display:none"></form>';
-				var button = [ {
-					text: 'Połącz z IRC',
-					click: function(){
-						if(gateway.initialize()){
-							$(this).dialog('close');
-						}
+				if($('#autoLogIn').is(':checked')){
+					var auto_initialized = false;
+					if(gateway.initialize()){
+						auto_initialized = true;
 					}
-				} ];
-				$$.displayDialog('connect', '0', 'Logowanie', nconn_html, button);
-				$('#not_connected_wrapper').fadeOut(400); 
-				if(conn.my_nick == ''){
-					$('#nsnick').focus();
-				} else {
-					$('#nspass').focus();
 				}
+				if(!auto_initialized){
+					var nconn_html = '<h3>' + he(guser.channels[0]) + ' @ PIRC.pl</h3><form onsubmit="gateway.initialize();$$.closeDialog(\'connect\', \'0\')" action="javascript:void(0);"><table>';
+					nconn_html += '<tr><td style="text-align: right; padding-right: 10px;">Kanał:</td><td><input type="text" id="nschan" value="'+he(reqChannel)+'" /></td></tr>';
+					nconn_html += '<tr><td style="text-align: right; padding-right: 10px;">Nick:</td><td><input type="text" id="nsnick" value="'+conn.my_nick+'" /></td></tr>';
+					nconn_html += '<tr><td style="text-align: right; padding-right: 10px;">Hasło (jeżeli zarejestrowany):</td><td><input type="password" id="nspass" value="'+conn.my_pass+'" /></td></tr>';
+					nconn_html += '<tr><td></td><td style="text-align: left;"><input type="checkbox" id="save_password" /> Zapisz hasło</td></tr>';
+					nconn_html += '<tr><td></td><td style="text-align: left;"><input type="checkbox" id="enableAutoLogIn" onchange="if($(\'#enableAutoLogIn\').is(\':checked\')) $(\'#save_password\').prop(\'checked\', true);" /> Zapisz wszystkie dane i nie wyświetlaj ponownie tego okna</td></tr>';
+					nconn_html += '</table><input type="submit" style="display:none"></form>';
+					var button = [ {
+						text: 'Połącz z IRC',
+						click: function(){
+							if(gateway.initialize()){
+								$(this).dialog('close');
+							}
+						}
+					} ];
+					$$.displayDialog('connect', '0', 'Logowanie', nconn_html, button);
+					if(conn.my_nick == ''){
+						$('#nsnick').focus();
+					} else {
+						$('#nspass').focus();
+					}
+				}
+				$('#not_connected_wrapper').fadeOut(400); 
+				
 		/*	}
 		}*/
 	},

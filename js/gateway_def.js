@@ -266,7 +266,7 @@ var gateway = {
 			return;
 		}
 		//gateway.forceSend('PING :JavaScript');
-		gateway.forceSend('MODE '+guser.nick);
+		gateway.forceSend('MODE '+guser.nick); //jest aktualna informacja o umodach, a przy okazji załatwiony ping
 		if(gateway.pingcnt > 3) {
 			gateway.connectStatus = statusError;
 			if($('#autoReconnect').is(':checked')){
@@ -502,32 +502,53 @@ var gateway = {
 		$$.displayDialog('connect', '1', 'Łączenie', html);
 	},
 	'initialize': function() {
-		var nickInput = $('#nsnick').val();
-		var chanInput = $('#nschan').val();
-		var passInput = $('#nspass').val();
-		if(nickInput == ''){
-			$$.alert('Musisz podać nicka!');
-			return false;
+		if($('#autoLogIn').is(':checked')){
+			if(conn.my_nick == '' || conn.my_reqChannel == ''){
+				$$.alert('Błąd wczytywania danych z ciasteczek. Wpisz dane.');
+				return false;
+			}
+			var nickInput = conn.my_nick;
+			var chanInput = conn.my_reqChannel;
+			var passInput = conn.my_pass;
+		} else {
+			var nickInput = $('#nsnick').val();
+			var chanInput = $('#nschan').val();
+			var passInput = $('#nspass').val();
+			if(nickInput == ''){
+				$$.alert('Musisz podać nicka!');
+				return false;
+			}
+			if(chanInput == ''){
+				$$.alert('Musisz podać kanał!');
+				return false;
+			}
+			if(!nickInput.match(/^[\^\|0-9a-z_`\[\]\-]+$/i)) {
+				$$.alert('Nick zawiera niedozwolone znaki!');
+				return false;
+			}
+			if(nickInput.match(/^[0-9-]/)){
+				$$.alert('Nick nie może zaczynać się od cyfry ani minusa!');
+				return false;
+			}
+			if(!chanInput.match(/^[#,a-z0-9_\.\-\\]+$/i)) {
+				$$.alert('Kanał zawiera niedozwolone znaki!');
+				return false;
+			}
+			if(passInput.match(/[ ]+/i)) {
+				$$.alert('Hasło nie powinno zawierać spacji!');
+				return false;
+			}
 		}
-		if(chanInput == ''){
-			$$.alert('Musisz podać kanał!');
-			return false;
-		}
-		if(!nickInput.match(/^[\^\|0-9a-z_`\[\]\-]+$/i)) {
-			$$.alert('Nick zawiera niedozwolone znaki!');
-			return false;
-		}
-		if(nickInput.match(/^[0-9-]/)){
-			$$.alert('Nick nie może zaczynać się od cyfry ani minusa!');
-			return false;
-		}
-		if(!chanInput.match(/^[#,a-z0-9_\.\-\\]+$/i)) {
-			$$.alert('Kanał zawiera niedozwolone znaki!');
-			return false;
-		}
-		if(passInput.match(/[ ]+/i)) {
-			$$.alert('Hasło nie powinno zawierać spacji!');
-			return false;
+		if($('#enableAutoLogIn').is(':checked')){
+			$('#autoLogIn').prop('checked', true);
+			disp.changeSettings();
+			var button = [ {
+				text: 'OK',
+				click: function(){
+					$(this).dialog('close');
+				}
+			} ];
+			$$.displayDialog('connect', '2', 'Informacja', 'Możesz wyłączyć automatyczne łączenie, na przykład w celu zmiany danych, klikając na ikonę ustawień w prawym górnym rogu, i odznaczając pole "Automatyczne łączenie".', button);
 		}
 		if(nickInput != guser.nick) {
 			guser.changeNick(nickInput);
@@ -535,7 +556,7 @@ var gateway = {
 		guser.channels = [ chanInput ];
 		if(passInput != '') {
 			guser.nickservnick = nickInput;
-			guser.nickservpass = $('#nspass').val();
+			guser.nickservpass = passInput;
 		}
 		try {
 			if(chanInput){

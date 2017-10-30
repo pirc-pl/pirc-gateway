@@ -461,7 +461,11 @@ var cmdBinds = {
 			} else {
 				var outtext = $$.colorize(msg.text);
 			}
-			gateway.statusWindow.appendMessage(messagePatterns.chanListElement, [$$.niceTime(), msg.args[1], msg.args[1], msg.args[2], outtext]);
+			if(msg.args[1] == '*'){
+				gateway.statusWindow.appendMessage(messagePatterns.chanListElementHidden, [$$.niceTime(), msg.args[2]]);
+			} else {
+				gateway.statusWindow.appendMessage(messagePatterns.chanListElement, [$$.niceTime(), msg.args[1], msg.args[1], msg.args[2], outtext]);
+			}
 			gateway.statusWindow.markBold();
 		}
 	],

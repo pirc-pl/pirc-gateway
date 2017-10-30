@@ -15,7 +15,7 @@ var reqChannel = '';
 
 var server = 'wss://bramka.pirc.pl:8082/';
 
-var booleanSettings = [ 'showPartQuit', 'tabsListBottom', 'showUserHostnames', 'autoReconnect', 'displayLinkWarning', 'blackTheme', 'newMsgSound', 'autoDisconnect', 'coloredNicks', 'showMode', 'dispEmoji', 'sendEmoji', 'monoSpaceFont' ];
+var booleanSettings = [ 'showPartQuit', 'tabsListBottom', 'showUserHostnames', 'autoReconnect', 'displayLinkWarning', 'blackTheme', 'newMsgSound', 'autoDisconnect', 'coloredNicks', 'showMode', 'dispEmoji', 'sendEmoji', 'monoSpaceFont', 'autoLogIn' ];
 var comboSettings = [ 'noticeDisplay' ];
 var numberSettings = [ 'backlogCount' ];
 var numberSettingsMinMax = {
@@ -93,6 +93,7 @@ var messagePatterns = {
 	'ctcpRequest': '<span class="time">%s</span> &nbsp; <span class="mode">✯ <span class="modeinfo">%s</span> wysyła CTCP REQUEST: %s</span><br />',
 	'ctcpReply': '<span class="time">%s</span> &nbsp; <span class="notice">✯ <b>CTCP REPLY od %s:</b> %s</span><br />',
 	'chanListElement': '<span class="time">%s</span> &nbsp; <span class="notice">✯ <b><a href="#" onClick="gateway.send(\'JOIN %s\')">%s</a></b> (%s) - %s </span> <br />',
+	'chanListElementHidden': '<span class="time">%s</span> &nbsp; <span class="notice">✯ <b>(kanał ukryty)</b> (%s) - (temat ukryty) </span> <br />',
 /*	'banListElement': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Ban: <b>%s</b> <i>założony przez:</i> <b>%s</b> (%s) </span><br />',
 	'banListEnd': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Koniec listy banów.</span><br />',
 	'invexListElement': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Invex: <b>%s</b> <i>założony przez:</i> <b>%s</b> (%s) </span><br />',
@@ -500,6 +501,11 @@ var disp = {
 				var style = $('<style id="userhost_hidden">.userhost { display:none; }</style>');
 				$('html > head').append(style);
 			}
+		}
+		if($('#autoLogIn').is(':checked')){
+			$('#autoLogIn').parent().parent().css('display', '');
+		} else {
+			$('#autoLogIn').parent().parent().css('display', 'none');
 		}
 		for(i in settingProcessors){
 			settingProcessors[i]();

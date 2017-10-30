@@ -64,6 +64,10 @@
 					<td class="optionsCheckBox"><input type="checkbox" id="autoDisconnect" onchange="disp.changeSettings(event)" checked="checked" /></td>
 					<td class="info">Automatycznie rozłączaj przy zamykaniu strony</td>
 				</tr>
+				<tr style="display:none;">
+					<td class="optionsCheckBox"><input type="checkbox" id="autoLogIn" onchange="disp.changeSettings(event)" checked="checked" /></td>
+					<td class="info">Automatyczne łączenie (bez podawania nicka i hasła)</td>
+				</tr>
 				<tr>
 					<td><input type="text" id="backlogCount" onchange="disp.changeSettings(event)" /></td>
 					<td class="info">Ilość linii w historii rozmów z poprzedniej wizyty</td>
