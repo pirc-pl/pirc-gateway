@@ -16,8 +16,31 @@ var services = {
 			'<span class="td"><input type="submit" value="Zmień nick" /></span>'+
 		'</form>'+
 	'</div>',
+	'displayBadNickCounter': function(){
+		if(services.badNickCounter == false) return;
+		var html = '<br>Masz <span id="nickserv_timer">określony czas</span> na zmianę nicka, potem zostanie zmieniony siłą. Bez obaw: gdy wpiszesz poprawne hasło, to odzyskasz swojego nicka.';
+		$$.displayDialog('error', 'nickserv', 'Błąd', html);
+		if(services.badNickInterval){
+			clearInterval(services.badNickInterval);
+		}
+		services.badNickInterval = setInterval(function(){
+			if(!(services.badNickCounter > 0)){
+				clearInterval(services.badNickInterval);
+				services.badNickInterval = false;
+			}
+			var text = services.badNickCounter.toString() + ' sekund';
+			if(services.badNickCounter == 1){
+				text += 'ę';
+			} else if((services.badNickCounter < 10 || services.badNickCounter > 20) && services.badNickCounter%10 > 1 && services.badNickCounter%10 < 5){
+				text += 'y';
+			}
+			$('#nickserv_timer').text(text);
+			services.badNickCounter--;
+		}, 1000);
+	},
 	'nickservMessage': function(msg){
 		if (msg.text.match(/^Hasło przyjęte - jesteś zidentyfikowany\(a\)\.$/i)){
+			services.badNickCounter = false;
 			services.showTimeToChange = false;
 			$$.closeDialog('error', 'nickserv');
 			return false;
@@ -27,14 +50,14 @@ var services = {
 			guser.nickservnick = '';
 			return false;
 		}
-		if (msg.text.match(/^Nieprawid.owe has.o\.$/i)) { // złe hasło nickserv
-			services.showTimeToChange = true;
+		if (msg.text.match(/^Nieprawidłowe hasło\.$/i)) { // złe hasło nickserv
 			services.nickStore = guser.nickservnick;
 			var html = 'Podane hasło do nicka <b>'+guser.nickservnick+'</b> jest błędne. Możesz spróbować ponownie lub zmienić nicka.<br>'+services.badNickString;
 			$$.displayDialog('error', 'nickserv', 'Błąd', html);
+			services.displayBadNickCounter();
 			return true;
 		}
-		if(msg.text.match(/^Ten nick jest zarejestrowany i chroniony\.( Je.li nale.y do Ciebie,)?$/i)){
+		if(msg.text.match(/^Ten nick jest zarejestrowany i chroniony\.( Jeśli należy do Ciebie,)?$/i)){
 			if(guser.nickservpass == ''){
 				services.showTimeToChange = true;
 				services.nickStore = guser.nick;
@@ -83,40 +106,17 @@ var services = {
 			match = expr.exec(msg.text);
 		}
 		if(match){
+			if(match[1] == 'jedną minutę' || match[1] == '60 sekund(y)' || match[1] == '1 minuta(y)' || match[1] == '1 minuta'){
+				$('#nickserv_timer').text('60 sekund');
+				services.badNickCounter = 59;
+			} else if(match[1] == '20 sekund' || match[1] == '20 sekund(y)') {
+				$('#nickserv_timer').text('20 sekund');
+				services.badNickCounter = 19;
+			} else {
+				$('#nickserv_timer').text(match[1]);
+			}
 			if(services.showTimeToChange){
-				var html = '<br>Masz <span id="nickserv_timer"></span> na zmianę nicka, potem zostanie zmieniony siłą. Bez obaw: gdy wpiszesz poprawne hasło, to odzyskasz swojego nicka.';
-				$$.displayDialog('error', 'nickserv', 'Błąd', html);
-				var countStart = false;
-				if(match[1] == 'jedną minutę' || match[1] == '60 sekund(y)' || match[1] == '1 minuta(y)' || match[1] == '1 minuta'){
-					$('#nickserv_timer').text('60 sekund');
-					services.badNickCounter = 59;
-					var countStart = true;
-				} else if(match[1] == '20 sekund' || match[1] == '20 sekund(y)') {
-					$('#nickserv_timer').text('20 sekund');
-					services.badNickCounter = 19;
-					var countStart = true;
-				} else {
-					$('#nickserv_timer').text(match[1]);
-				}
-				if(countStart){
-					if(services.badNickInterval){
-						clearInterval(services.badNickInterval);
-					}
-					services.badNickInterval = setInterval(function(){
-						if(!(services.badNickCounter > 0)){
-							clearInterval(services.badNickInterval);
-							services.badNickInterval = false;
-						}
-						var text = services.badNickCounter.toString() + ' sekund';
-						if(services.badNickCounter == 1){
-							text += 'ę';
-						} else if((services.badNickCounter < 10 || services.badNickCounter > 20) && services.badNickCounter%10 > 1 && services.badNickCounter%10 < 5){
-							text += 'y';
-						}
-						$('#nickserv_timer').text(text);
-						services.badNickCounter--;
-					}, 1000);
-				}
+				services.displayBadNickCounter();
 			}
 			return true;
 		}
@@ -286,7 +286,12 @@ var services = {
 		var html = '<p>Zbanuj i wyrzuć użytkownika '+he(nick)+' z kanału '+he(channel)+
 				'. Możesz podać powód dla KICKa, który zostanie wyświetlony dla wszystkich użytkowników kanału.<br>Aby skorzystać z tej funkcji, musisz posiadać odpowiednie uprawnienia w ChanServ.</p>' +
 			'<input type="text" id="kbinput" maxlength="307" /><br>' +
-			'<input type="checkbox" id="kbtime"> Zdejmij bana automatycznie po 1 dniu';
+			'<select id="kbtime">' + 
+				'<option value=" ">Nie zdejmuj bana automatycznie</option>' +
+				'<option value="+1d">Zdejmij bana automatycznie po 1 dniu</option>' +
+				'<option value="+1h">Zdejmij po godzinie</option>' +
+				'<option value="+30d">Zdejmij po miesiącu</option>' +
+			'</select>';
 		var button = [ {
 			text: 'Anuluj',
 			click: function(){
@@ -300,13 +305,11 @@ var services = {
 			}
 		} ];
 		$$.displayDialog('admin', 'kb-'+channel, 'BAN', html, button);
+		$('#kbtime > option:eq(1)').prop('selected', true);
 	},
 	'processCSBan': function(channel, nick) {
 		var banString = 'CS BAN '+channel;
-		if($('#kbtime').is(':checked')){
-			banString += ' +1d';
-		}
-		banString += ' '+nick;
+		banString += ' '+$('#kbtime').val()+' '+nick;
 		if ($("#kbinput").val() != "") {
 			banString += ' '+$("#kbinput").val();
 		}

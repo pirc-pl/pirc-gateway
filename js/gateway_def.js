@@ -1082,30 +1082,86 @@ var gateway = {
 		}
 	},
 	'showStatus': function(channel, nick) {
-	  	var html = 
-			'<p>Daj użytkownikowi '+he(nick)+' bieżące uprawnienia na kanale '+he(channel)+':</p>' +
-			'<p class="statusbutton" onClick="gateway.send(\'MODE '+bsEscape(channel)+' +q '+$$.sescape(nick)+'\');">FOUNDER (Właściciel kanału)</p>' +
-			'<p class="statusbutton" onClick="gateway.send(\'MODE '+bsEscape(channel)+' +a '+$$.sescape(nick)+'\');">PROTECT (Ochrona przed kopnięciem)</p>' +
-			'<p class="statusbutton" onClick="gateway.send(\'MODE '+bsEscape(channel)+' +o '+$$.sescape(nick)+'\');">OP (Operator kanału)</p>' +
-			'<p class="statusbutton" onClick="gateway.send(\'MODE '+bsEscape(channel)+' +h '+$$.sescape(nick)+'\');">HALFOP (Pół-operator kanału)</p>' +
-			'<p class="statusbutton" onClick="gateway.send(\'MODE '+bsEscape(channel)+' +v '+$$.sescape(nick)+'\');">VOICE (Uprawnienie do głosu)</p>' +
-			'<p>Daj użytkownikowi '+he(nick)+' uprawnienia w ChanServ (na stałe) na kanale '+he(channel)+'<br>(musisz posiadać odpowiedni dostęp do serwisów):</p>' +
-			'<p class="statusbutton" onClick="gateway.performCommand(\'CS QOP '+bsEscape(channel)+' ADD '+$$.sescape(nick)+'\');">QOP: FOUNDER (Właściciel kanału)</p>' +
-			'<p class="statusbutton" onClick="gateway.performCommand(\'CS SOP '+bsEscape(channel)+' ADD '+$$.sescape(nick)+'\');">SOP: PROTECT (Ochrona przed kopnięciem)</p>' +
-			'<p class="statusbutton" onClick="gateway.performCommand(\'CS AOP '+bsEscape(channel)+' ADD '+$$.sescape(nick)+'\');">AOP: OP (Operator kanału)</p>' +
-			'<p class="statusbutton" onClick="gateway.performCommand(\'CS HOP '+bsEscape(channel)+' ADD '+$$.sescape(nick)+'\');">HOP: HALFOP (Pół-operator kanału)</p>' +
-			'<p class="statusbutton" onClick="gateway.performCommand(\'CS VOP '+bsEscape(channel)+' ADD '+$$.sescape(nick)+'\');">VOP: VOICE (Uprawnienie do głosu)</p>';
-		$$.displayDialog('admin', channel, 'Zarządzanie '+he(channel), html);
+		var html = '<p>Daj użytkownikowi <strong>'+he(nick)+'</strong> bieżące uprawnienia na kanale <strong>'+he(channel)+'</strong>:</p>' +
+			'<select id="admopts-add-'+md5(channel)+'">' +
+				'<option value="-">Wybierz opcję</option>'+
+				'<option value="+v">VOICE (Uprawnienie do głosu)</option>'+
+				'<option value="+h">HALFOP (Pół-operator kanału)</option>'+
+				'<option value="+o">OP (Operator kanału)</option>'+
+				'<option value="+a">PROTECT (Ochrona przed kopnięciem)</option>'+
+				'<option value="+q">FOUNDER (Właściciel kanału)</option>'+
+			'</select>' +
+			'<p>Daj użytkownikowi <strong>'+he(nick)+'</strong> uprawnienia w ChanServ (na stałe) na kanale <strong>'+he(channel)+'</strong><br>(musisz posiadać odpowiedni dostęp do serwisów):</p>' +
+			'<select id="admopts-addsvs-'+md5(channel)+'">' +
+				'<option value="-">Wybierz opcję</option>'+
+				'<option value="VOP">VOP: VOICE (Uprawnienie do głosu)</option>'+
+				'<option value="HOP">HOP: HALFOP (Pół-operator kanału)</option>'+
+				'<option value="AOP">AOP: OP (Operator kanału)</option>'+
+				'<option value="SOP">SOP: PROTECT (Ochrona przed kopnięciem)</option>'+
+				'<option value="QOP">QOP: FOUNDER (Właściciel kanału)</option>'+
+			'</select>';
+		var button = [
+			{
+				text: 'Anuluj',
+				click: function(){
+					$(this).dialog('close');
+				}
+			},
+			{
+				text: 'OK',
+				click: function(){
+					var mode = $('#admopts-add-'+md5(channel)).val();
+					var svsmode = $('#admopts-addsvs-'+md5(channel)).val();
+					if(mode == '-' && svsmode == '-'){
+						$$.alert('Wybierz jedną z opcji!');
+						return;
+					}
+					if(mode != '-') gateway.send('MODE '+channel+' '+mode+' '+nick);
+					if(svsmode != '-') gateway.performCommand('CS '+svsmode+' '+channel+' ADD '+nick);
+					$(this).dialog('close');
+				}
+			}
+		];
+		$$.displayDialog('admin', channel, 'Zarządzanie '+he(channel), html, button);
 	},
 	'showStatusAnti': function(channel, nick) {
-		var html =
-			'<p>Odbierz użytkownikowi '+he(nick)+' uprawnienia na kanale '+he(channel)+':</p>' +
-			'<p class="statusbutton" onClick="gateway.send(\'MODE '+bsEscape(channel)+' -q '+$$.sescape(nick)+'\');">FOUNDER (Właściciel kanału)</p>' +
-			'<p class="statusbutton" onClick="gateway.send(\'MODE '+bsEscape(channel)+' -a '+$$.sescape(nick)+'\');">PROTECT (Ochrona przed kopnięciem)</p>' +
-			'<p class="statusbutton" onClick="gateway.send(\'MODE '+bsEscape(channel)+' -o '+$$.sescape(nick)+'\');">OP (Operator kanału)</p>' +
-			'<p class="statusbutton" onClick="gateway.send(\'MODE '+bsEscape(channel)+' -h '+$$.sescape(nick)+'\');">HALFOP (Pół-operator kanału)</p>' +
-			'<p class="statusbutton" onClick="gateway.send(\'MODE '+bsEscape(channel)+' -v '+$$.sescape(nick)+'\');">VOICE (Uprawnienie do głosu)</p>';
-		$$.displayDialog('admin', channel, 'Zarządzanie '+he(channel), html);
+		var html = '<p>Odbierz użytkownikowi <strong>'+he(nick)+'</strong> bieżące uprawnienia na kanale <strong>'+he(channel)+'</strong>:</p>' +
+			'<select id="admopts-del-'+md5(channel)+'">' +
+				'<option value="-">Wybierz opcję</option>'+
+				'<option value="-v">VOICE (Uprawnienie do głosu)</option>'+
+				'<option value="-h">HALFOP (Pół-operator kanału)</option>'+
+				'<option value="-o">OP (Operator kanału)</option>'+
+				'<option value="-a">PROTECT (Ochrona przed kopnięciem)</option>'+
+				'<option value="-q">FOUNDER (Właściciel kanału)</option>'+
+			'</select>' +
+			'<p>Usuń całkowicie użytkownika <strong>'+he(nick)+'</strong> z listy uprawnień w ChanServ (na stałe) na kanale <strong>'+he(channel)+'</strong><br>(musisz posiadać odpowiedni dostęp do serwisów):</p>' +
+			'<select id="admopts-delsvs-'+md5(channel)+'">' +
+				'<option value="-">Nie, nie usuwaj</option>'+
+				'<option value="+">Tak, usuń</option>'+
+			'</select>';
+		var button = [
+			{
+				text: 'Anuluj',
+				click: function(){
+					$(this).dialog('close');
+				}
+			},
+			{
+				text: 'OK',
+				click: function(){
+					var mode = $('#admopts-del-'+md5(channel)).val();
+					var svsmode = $('#admopts-delsvs-'+md5(channel)).val();
+					if(mode == '-' && svsmode == '-'){
+						$$.alert('Wybierz jedną z opcji!');
+						return;
+					}
+					if(mode != '-') gateway.send('MODE '+channel+' '+mode+' '+nick);
+					if(svsmode == '+') gateway.performCommand('CS ACCESS '+channel+' DEL '+nick);
+					$(this).dialog('close');
+				}
+			}
+		];
+		$$.displayDialog('admin', channel, 'Zarządzanie '+he(channel), html, button);
 	},
 	'showChannelModes': function(channel) {
 		var channame = channel.substring(1);
