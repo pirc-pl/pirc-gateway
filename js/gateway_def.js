@@ -48,28 +48,6 @@ var irc = {
 	'parseMessage': function(msg){
 		var packets = [];
 		var packetcnt = 0;
-/*		var msglen = msg.length;
-		var line = irc.oldData;
-		irc.oldData = '';
-		for(var i = 0; i < msglen; i++){
-			var c = msg.charAt(i);
-			if(c == '\r' || c == '\n'){
-				if(line == ''){
-					continue;
-				}
-				var ircmsg = irc.parseLine(line);
-				if(ircmsg){
-					packets[packetcnt] = ircmsg;
-					packetcnt++;
-				}
-				line = '';
-			} else {
-				line += c;
-			}
-		}
-		if(line.length > 0){
-			irc.oldData = line;
-		}*/
 		packets[packetcnt++] = irc.parseLine(msg);
 		return {'status': 2, 'packets': packets };
 	},
