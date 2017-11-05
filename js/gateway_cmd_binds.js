@@ -964,7 +964,7 @@ var cmdBinds = {
 		
 			gateway.connectStatus = statusDisconnected;
 
-			if(msg.text.match(/\(NickServ \(RECOVER command used by [^ ]+\)\)$/) || msg.text.match(/\(NickServ \(Użytkownik [^ ]+\ użył komendy RECOVER)\)$/)){
+			if(msg.text.match(/\(NickServ \(RECOVER command used by [^ ]+\)\)$/) || msg.text.match(/\(NickServ \(Użytkownik [^ ]+\ użył komendy RECOVER\)\)$/)){
 				$$.displayReconnect();
 				var html = "<h2>Błąd ogólny</h2>" +
 					"<p>Inna sesja rozłączyła Cię używając polecenia RECOVER. Może masz otwartą więcej niż jedną bramkę?</p>";
