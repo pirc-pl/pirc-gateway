@@ -12,7 +12,7 @@ var mcolorJoinHandler = function(msg){
 	} else {
 		return;
 	}
-	gateway.ctcp(msg.sender.nick, 'MCOL '+color);
+	gateway.ctcp(msg.sender.nick, 'MCOL TC '+color);
 }
 
 var mcolorChModeHandler = function(msg){
@@ -24,7 +24,7 @@ var mcolorChModeHandler = function(msg){
 	} else {
 		return;
 	}
-	gateway.ctcp(msg.args[1], 'MCOL '+color);
+	gateway.ctcp(msg.args[1], 'MCOL TC '+color);
 }
 
 var mcolorNickHandler = function(msg){
@@ -44,16 +44,29 @@ var isCorrectColor = function(color){
 }
 
 var mcolorCtcpHandler = function(msg){
-	if(msg.ctptext == 'OFF'){
-		delete mcolors[md5(msg.sender.nick.toLowerCase())];
-		return;
+	var text = msg.ctcptext;
+	if(text.indexOf(' ') < 0){
+		var command = 'TC';
+		var arg = text;
+	} else {
+		var command = text.substr(0, text.indexOf(' '));
+		var arg = text.substr(text.indexOf(' ')+1);
 	}
-	if(!isCorrectColor(msg.ctcptext)){
-		console.log(msg.sender.nick+' sent bad color code: '+msg.ctcptext);
-		return;
+	var nick = msg.sender.nick.toLowerCase();
+	if(command == 'TC'){
+		if(msg.ctcptext == 'OFF'){
+			delete mcolors[md5(nick)];
+			return;
+		}
+		if(!isCorrectColor(arg)){
+			console.log(msg.sender.nick+' sent bad color code: '+arg);
+			return;
+		}
+		mcolors[md5(nick)] = arg;
+		console.log('Color set for '+msg.sender.nick+': '+arg);
+	} else {
+		console.log('Command '+command+' '+arg+' from '+msg.sender.nick+' not supported!');
 	}
-	mcolors[md5(msg.sender.nick.toLowerCase())] = msg.ctcptext;
-	console.log('Color set for '+msg.sender.nick+': '+msg.ctcptext);
 }
 
 var setMyColor = function(color){
@@ -79,7 +92,7 @@ var setMyColor = function(color){
 	for(c in gateway.channels){
 		var chan = gateway.channels[c].name;
 		if(colorsAllowed(chan)){
-			gateway.ctcp(chan, 'MCOL '+scolor);
+			gateway.ctcp(chan, 'MCOL TC '+scolor);
 		}
 	}
 	try {
@@ -218,3 +231,4 @@ var mcolorInit = function(){
 
 readyFunctions.unshift(mcolorInit);
 addons.push('mcolor');
+
