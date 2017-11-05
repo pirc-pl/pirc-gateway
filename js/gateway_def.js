@@ -1632,7 +1632,10 @@ var gateway = {
 			} else {
 				log += "Mode 'normal' "+plus+' '+modearr[i]+"\n";
 				chan.modes[modearr[i]] = plus;
-				infoText = infoText.apList(dir+' '+getModeInfo(modearr[i], type));
+				var modeInfo = getModeInfo(modearr[i], type);
+				if(modeInfo){
+					infoText = infoText.apList(dir+' '+modeInfo);
+				}
 			}
 		}
 		return infoText;

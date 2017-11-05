@@ -233,6 +233,7 @@ function getModeInfo(letter, type){
 		type = 0;
 	}
 	var data = chModeInfo[letter];
+	if(!data) return false; //nieznany tryb
 	if(data.constructor === Array){
 		return data[type];
 	} else {
