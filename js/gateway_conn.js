@@ -28,62 +28,36 @@ var conn = {
 		} catch(e) {}
 		conn.my_reqChannel = reqChannel;
 		
-	/*	gateway.websock = new WebSocket(server);
-		if(gateway.connectTimeoutID){
-			clearTimeout(gateway.connectTimeoutID);
+		if($('#automLogIn').is(':checked')){
+			var auto_initialized = false;
+			if(gateway.initialize()){
+				auto_initialized = true;
+			}
 		}
-		gateway.connectTimeoutID = setTimeout(conn.connectTimeout, 20000);
-		gateway.websock.onmessage = conn.processReply;
-		gateway.websock.onerror = conn.connectTimeout;
-		gateway.websock.onclose = conn.connectTimeout;
-		gateway.websock.onopen = function(e) {
-			gateway.forceSend('SYNC '+sessionid);
-		};
-	},
-	'processReply': function(e){
-		var regexp = /^SYNC ([^ ]+)$/i
-		var rmatch = regexp.exec(e.data);
-		if(rmatch && rmatch[1]){
-			clearTimeout(gateway.connectTimeoutID);
-			connectTimeoutID = false;
-			gateway.websock.onerror = undefined;
-			gateway.websock.onclose = undefined;
-			if(rmatch[1] == '1'){
-				gateway.recoverConnection();
-			} else {*/
-				if($('#automLogIn').is(':checked')){
-					var auto_initialized = false;
+		if(!auto_initialized){
+			var nconn_html = '<h3>' + he(guser.channels[0]) + ' @ PIRC.pl</h3><form onsubmit="gateway.initialize();$$.closeDialog(\'connect\', \'0\')" action="javascript:void(0);"><table>';
+			nconn_html += '<tr><td style="text-align: right; padding-right: 10px;">Kanał:</td><td><input type="text" id="nschan" value="'+he(reqChannel)+'" /></td></tr>';
+			nconn_html += '<tr><td style="text-align: right; padding-right: 10px;">Nick:</td><td><input type="text" id="nsnick" value="'+conn.my_nick+'" /></td></tr>';
+			nconn_html += '<tr><td style="text-align: right; padding-right: 10px;">Hasło (jeżeli zarejestrowany):</td><td><input type="password" id="nspass" value="'+conn.my_pass+'" /></td></tr>';
+			nconn_html += '<tr><td></td><td style="text-align: left;"><input type="checkbox" id="save_password" /> Zapisz hasło</td></tr>';
+			nconn_html += '<tr><td></td><td style="text-align: left;"><input type="checkbox" id="enableautomLogIn" onchange="if($(\'#enableautomLogIn\').is(\':checked\')) $(\'#save_password\').prop(\'checked\', true);" /> Zapisz wszystkie dane i nie wyświetlaj ponownie tego okna</td></tr>';
+			nconn_html += '</table><input type="submit" style="display:none"></form>';
+			var button = [ {
+				text: 'Połącz z IRC',
+				click: function(){
 					if(gateway.initialize()){
-						auto_initialized = true;
+						$(this).dialog('close');
 					}
 				}
-				if(!auto_initialized){
-					var nconn_html = '<h3>' + he(guser.channels[0]) + ' @ PIRC.pl</h3><form onsubmit="gateway.initialize();$$.closeDialog(\'connect\', \'0\')" action="javascript:void(0);"><table>';
-					nconn_html += '<tr><td style="text-align: right; padding-right: 10px;">Kanał:</td><td><input type="text" id="nschan" value="'+he(reqChannel)+'" /></td></tr>';
-					nconn_html += '<tr><td style="text-align: right; padding-right: 10px;">Nick:</td><td><input type="text" id="nsnick" value="'+conn.my_nick+'" /></td></tr>';
-					nconn_html += '<tr><td style="text-align: right; padding-right: 10px;">Hasło (jeżeli zarejestrowany):</td><td><input type="password" id="nspass" value="'+conn.my_pass+'" /></td></tr>';
-					nconn_html += '<tr><td></td><td style="text-align: left;"><input type="checkbox" id="save_password" /> Zapisz hasło</td></tr>';
-					nconn_html += '<tr><td></td><td style="text-align: left;"><input type="checkbox" id="enableautomLogIn" onchange="if($(\'#enableautomLogIn\').is(\':checked\')) $(\'#save_password\').prop(\'checked\', true);" /> Zapisz wszystkie dane i nie wyświetlaj ponownie tego okna</td></tr>';
-					nconn_html += '</table><input type="submit" style="display:none"></form>';
-					var button = [ {
-						text: 'Połącz z IRC',
-						click: function(){
-							if(gateway.initialize()){
-								$(this).dialog('close');
-							}
-						}
-					} ];
-					$$.displayDialog('connect', '0', 'Logowanie', nconn_html, button);
-					if(conn.my_nick == ''){
-						$('#nsnick').focus();
-					} else {
-						$('#nspass').focus();
-					}
-				}
-				$('#not_connected_wrapper').fadeOut(400); 
-				
-		/*	}
-		}*/
+			} ];
+			$$.displayDialog('connect', '0', 'Logowanie', nconn_html, button);
+			if(conn.my_nick == ''){
+				$('#nsnick').focus();
+			} else {
+				$('#nspass').focus();
+			}
+		}
+		$('#not_connected_wrapper').fadeOut(400);
 	},
 	'gatewayInit': function(){
 		try {
@@ -120,29 +94,11 @@ var conn = {
 		disp.changeSettings();
 		
 		$('#chatbox').click(function() {
-		/*	gateway.closeNotify();
-			gateway.closeNotice();
-			gateway.closeStatus();
-			gateway.closeError();*/
 			gateway.inputFocus();
 		});
 		$('#nicklist').click(function() {
-		/*	gateway.closeNotify();
-			gateway.closeStatus();
-			gateway.closeError();*/
 			gateway.inputFocus();
 		});
-	/*	$('#info').click(function() {
-			gateway.closeNotify();
-			gateway.closeStatus();
-			gateway.closeError();
-		});*/
-		/*$('#input').click(function() {
-			gateway.closeNotify();
-			gateway.closeNotice();
-			gateway.closeStatus();
-			gateway.closeError();
-		});*/
 		
 		$(window).resize(function () {
 			$('#chat-wrapper').scrollTop(document.getElementById('chat-wrapper').scrollHeight);
@@ -156,49 +112,15 @@ var conn = {
 		$('#input').keyup(function(e) {
 			if(e.which == 13) {
 				if($('#input').val() != '') {
-					if(gateway.commandHistory.length == 0 || gateway.commandHistory[gateway.commandHistory.length-1] != $('#input').val()) {
-						if(gateway.commandHistoryPos != -1 && gateway.commandHistoryPos == gateway.commandHistory.length-1) {
-							gateway.commandHistory[gateway.commandHistoryPos] = $('#input').val();
-						} else {
-							gateway.commandHistory.push($('#input').val());
-						}
-					}
-					gateway.parseUserInput($('#input').val());
-					gateway.commandHistoryPos = -1;
+					gateway.enterPressed();
 				}
 				e.preventDefault();
 			} else if(e.which == 38) { //strzalka w gore
 				e.preventDefault();
-				if(gateway.commandHistoryPos == gateway.commandHistory.length-1 && $('#input').val() != '') {
-					gateway.commandHistory[gateway.commandHistoryPos] = $('#input').val();
-				}
-				if(gateway.commandHistoryPos == -1 && gateway.commandHistory.length > 0 && typeof(gateway.commandHistory[gateway.commandHistory.length-1]) == 'string') {
-					gateway.commandHistoryPos = gateway.commandHistory.length-1;
-					if($('#input').val() != '' && gateway.commandHistory[gateway.commandHistory.length-1] != $('#input').val()) {
-						gateway.commandHistory.push($('#input').val());
-					}
-					$('#input').val(gateway.commandHistory[gateway.commandHistoryPos]);
-				} else if(gateway.commandHistoryPos != -1 && gateway.commandHistoryPos != 0) {
-					gateway.commandHistoryPos--;
-					$('#input').val(gateway.commandHistory[gateway.commandHistoryPos]);
-				}
+				gateway.arrowPressed('up');
 			} else if(e.which == 40) { // strzalka w dol
-				if(gateway.commandHistoryPos == gateway.commandHistory.length-1 && $('#input').val() != '') {
-					gateway.commandHistory[gateway.commandHistoryPos] = $('#input').val();
-				}
-				if(gateway.commandHistoryPos == -1 && $('#input').val() != '' && gateway.commandHistory.length > 0 && gateway.commandHistory[gateway.commandHistory.length-1] != $('#input').val()) {
-					gateway.commandHistory.push($('#input').val());
-					$('#input').val('');
-				} else if (gateway.commandHistoryPos != -1) {
-					if(typeof(gateway.commandHistory[gateway.commandHistoryPos+1]) == 'string') {
-						gateway.commandHistoryPos++;
-						$('#input').val(gateway.commandHistory[gateway.commandHistoryPos]);
-					} else {
-						gateway.commandHistoryPos = -1;
-						$('#input').val('');
-					}
-				}
 				e.preventDefault();
+				gateway.arrowPressed('down');
 			}
 		});
 		
@@ -219,7 +141,6 @@ var conn = {
 		} catch(e) {
 			browserTooOld();
 		}
-	//	$('.not-connected-text > h3').html(he(guser.channels[0]) + ' @ PIRC.pl');
 		dnick = he(guser.nick);
 		if(guser.nick == '1') {
 			dnick = ''

@@ -213,6 +213,11 @@ var cmdBinds = {
 							return;
 						}
 					}
+					if(msg.sender.nick.toLowerCase() == 'chanserv'){
+						if(services.chanservMessage(msg)) {
+							return;
+						}
+					}
 					var query = gateway.findQuery(msg.sender.nick);
 					var displayAsQuery = Boolean(query);
 					if(displayAsQuery || $("#noticeDisplay").val() == 1){ // notice jako query
@@ -959,7 +964,7 @@ var cmdBinds = {
 		
 			gateway.connectStatus = statusDisconnected;
 
-			if(msg.text.match(/\(NickServ \(RECOVER command used by [^ ]+\)\)$/)){
+			if(msg.text.match(/\(NickServ \(RECOVER command used by [^ ]+\)\)$/) || msg.text.match(/\(NickServ \(Użytkownik [^ ]+\ użył komendy RECOVER)\)$/)){
 				$$.displayReconnect();
 				var html = "<h2>Błąd ogólny</h2>" +
 					"<p>Inna sesja rozłączyła Cię używając polecenia RECOVER. Może masz otwartą więcej niż jedną bramkę?</p>";

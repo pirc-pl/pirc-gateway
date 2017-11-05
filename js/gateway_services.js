@@ -9,6 +9,7 @@ var services = {
 			'<span class="td_right">Twoje hasło:</span>'+
 			'<span class="td"><input type="password" id="nspass" /></span>'+
 			'<span class="td"><input type="submit" value="Zaloguj" /></span>'+
+			'<span class="td"><input type="checkbox" id="saveNewPassword" checked="checked" />  Zapisz to hasło</span>'+
 		'</form>'+
 		'<form class="tr" onsubmit="services.changeNick();$$.closeDialog(\'error\', \'nickserv\')" action="javascript:void(0);">'+
 			'<span class="td_right">Nowy nick:</span>'+
@@ -37,6 +38,17 @@ var services = {
 			$('#nickserv_timer').text(text);
 			services.badNickCounter--;
 		}, 1000);
+	},
+	'chanservMessage': function(msg){
+		var expr = /^Zbanowano maskę .(.*). \(dla .(.*).\)$/i;
+		var match = expr.exec(msg.text);
+		if(match){
+			try {
+				localStorage.setItem('banmask-'+md5(match[1]), match[2]);
+			} catch(e) {}
+			return true;
+		}
+		return false;
 	},
 	'nickservMessage': function(msg){
 		if (msg.text.match(/^Hasło przyjęte - jesteś zidentyfikowany\(a\)\.$/i)){
@@ -129,6 +141,11 @@ var services = {
 		}
 		guser.nickservnick = services.nickStore;
 		guser.nickservpass = $('#nspass').val();
+		if($('#saveNewPassword').is(':checked')){
+			try {
+				localStorage.setItem('password', btoa(guser.nickservpass));
+			} catch(e) {}
+		}
 		gateway.connectStatus = status001;
 		gateway.setConnectedWhenIdentified = 1;
 		gateway.processStatus();

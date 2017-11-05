@@ -563,11 +563,25 @@ var disp = {
 		var chanId = gateway.findChannel(args[1]).id;
 		var listName = disp.getNamebeI(mode);
 		if($$.getDialogSelector('list', 'list-'+mode+'-'+args[1]).length == 0){
-			var html = '<div class="beIListContents"><table><tr><th>Maska</th><th>Założony przez</th><th>Data</th></tr></table></div>';
+			var html = '<div class="beIListContents"><table><tr><th>Maska</th><th>Założony przez</th><th>Data</th>';
+			if(mode == 'b'){
+				html += '<th>Dotyczy</th>';
+			}
+			html += '</tr></table></div>';
 			$$.displayDialog('list', 'list-'+mode+'-'+args[1], 'Lista '+listName+' na kanale '+he(args[1]), html);
 		}
-		var html = '<tr><td>'+he(args[2])+'</td><td>'+he(args[3])+'</td><td>'+$$.parseTime(args[4])+'</td>' +
-			'<td class="'+chanId+'-operActions button" style="display:none">' +
+		var html = '<tr><td>'+he(args[2])+'</td><td>'+he(args[3])+'</td><td>'+$$.parseTime(args[4])+'</td>';
+			if(mode == 'b'){
+				html += '<td>';
+				try {
+					var affected = localStorage.getItem('banmask-'+md5(args[2]));
+					if(affected){
+						html += he(affected);
+					}
+				} catch(e){}
+				html += '</td>';
+			}
+			html += '<td class="'+chanId+'-operActions button" style="display:none">' +
 			'<button id="un'+mode+'-'+chanId+'-'+md5(args[2])+'">Usuń</button>' +
 			'</td></tr>';
 		$('table', $$.getDialogSelector('list', 'list-'+mode+'-'+args[1])).append(html);

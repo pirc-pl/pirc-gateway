@@ -192,22 +192,7 @@ var gateway = {
 				gateway.ping();
 			}, 20000);
 		}
-		/*if(!gateway.whoChannelsIntervalID){
-			gateway.whoChannelsIntervalID = setInterval(function(){
-				gateway.channels.forEach(function(channel){
-					gateway.send('WHO '+channel.name);
-				});
-			}, 10000);
-		}*/
-	/*	if(gateway.connectStatus == statusIdentified){
-			gateway.connectStatus = statusConnected;
-			if(guser.nickservnick != '' && guser.nick != guser.nickservnick) { //ostatnia próba zmiany nicka na właściwy
-				gateway.send('NICK '+guser.nickservnick);
-			}
-		} else {*/
-			gateway.setConnectedWhenIdentified = 1;
-		//}
-	//	$('#not_connected_wrapper').fadeOut(400); //schować szare tło!
+		gateway.setConnectedWhenIdentified = 1;
 		$$.closeDialog('connect', '1');
 		clearTimeout(gateway.connectTimeoutID); //już ok więc nie czekam na nieudane połączenie
 		connectTimeoutID = false;
@@ -279,44 +264,6 @@ var gateway = {
 	'connect': function(force) {
 		gateway.userQuit = false;
 		gateway.connectTimeoutID = setTimeout(gateway.connectTimeout, 20000);
-		/*if(!gateway.websock || gateway.websock.readyState == WebSocket.CLOSING || gateway.websock.readyState == WebSocket.CLOSED){
-			gateway.websock = new WebSocket(server);
-			gateway.websock.onmessage = function(e){
-				var regexp = /^SYNC ([^ ]+)$/i
-				var rmatch = regexp.exec(e.data);
-				if(rmatch[1]){
-					if(rmatch[1] == '1'){
-						gateway.recoverConnection();
-					} else {
-						gateway.connect(true);
-					}
-				}
-
-			};
-			gateway.websock.onopen = function(){
-				gateway.forceSend('SYNC '+sessionid);
-			};
-			
-		} else {
-			if(guser.nickservpass != '' && guser.nickservnick != ''){
-				gateway.websock.onmessage = function(e){
-					var regexp = /^SYNC ([^ ]+)$/i
-					var rmatch = regexp.exec(e.data);
-					if(rmatch[1]){
-						if(rmatch[1] == '1'){
-							gateway.recoverConnection();
-						} else {
-							gateway.configureConnection();
-							gateway.forceSend('NEW '+sessionid+' ' + guser.nick + ' ' + md5(guser.nickservpass));
-						}
-					}
-				};
-				gateway.forceSend('FIND '+ guser.nickservnick + ' ' + md5(guser.nickservpass) + ' '+ sessionid);
-			} else {
-				gateway.configureConnection();
-				gateway.forceSend('NEW '+sessionid+' ' + guser.nick + ' x');
-			}
-		}*/
 		gateway.websock = new WebSocket(server);
 		gateway.websock.onopen = function(e){
 			gateway.configureConnection();
@@ -336,32 +283,6 @@ var gateway = {
 		}
 
 	},
-	/*'recoverConnection': function() {
-		$('#not_connected_wrapper').fadeOut(400);
-		if(gateway.connectTimeoutID){
-			clearTimeout(gateway.connectTimeoutID);
-		}
-		gateway.connectTimeoutID = setTimeout(gateway.connectTimeout, 20000);
-		// już jest połączenie
-		gateway.configureConnection();
-		gateway.statusWindow.appendMessage(messagePatterns.existingConnection, [$$.niceTime()]);
-		$$.displayDialog('error', 'error', 'Ostrzeżenie', 'UWAGA: jeśli posiadasz już otwartą bramkę, zamknij ją, aby uniknąć problemów!');
-		gateway.send('PRIVMSG');
-			
-		if(guser.nick == localStorage.getItem('nick') && localStorage.getItem('password')){
-			guser.nickservnick = guser.nick;
-			guser.nickservpass = atob(localStorage.getItem('password'));
-		}
-			
-		setTimeout(function(){
-			if(reqChannel && reqChannel.match(/^#[^ ]/)){
-				gateway.send('JOIN '+reqChannel);
-			}
-			if(guser.channels[0] && guser.channels[0] != reqChannel && guser.channels[0].match(/^#[^ ]/)){
-				gateway.send('JOIN '+guser.channels[0]);
-			}
-		}, 500);
-	},*/
 	'processData': function(data) {
 		for (i in data.packets) { //wywoływanie funkcji 'handlerów' od poleceń
 			var msg = data.packets[i];
@@ -1942,6 +1863,50 @@ var gateway = {
 				case '-': plus = false; break;
 				case ' ': return;
 				default: guser.setUmode(c, plus); break;
+			}
+		}
+	},
+	'enterPressed': function(){
+		if(gateway.commandHistory.length == 0 || gateway.commandHistory[gateway.commandHistory.length-1] != $('#input').val()) {
+			if(gateway.commandHistoryPos != -1 && gateway.commandHistoryPos == gateway.commandHistory.length-1) {
+				gateway.commandHistory[gateway.commandHistoryPos] = $('#input').val();
+			} else {
+				gateway.commandHistory.push($('#input').val());
+			}
+		}
+		gateway.parseUserInput($('#input').val());
+		gateway.commandHistoryPos = -1;
+	},
+	'arrowPressed': function(dir){
+		if(dir == 'up'){
+			if(gateway.commandHistoryPos == gateway.commandHistory.length-1 && $('#input').val() != '') {
+				gateway.commandHistory[gateway.commandHistoryPos] = $('#input').val();
+			}
+			if(gateway.commandHistoryPos == -1 && gateway.commandHistory.length > 0 && typeof(gateway.commandHistory[gateway.commandHistory.length-1]) == 'string') {
+				gateway.commandHistoryPos = gateway.commandHistory.length-1;
+				if($('#input').val() != '' && gateway.commandHistory[gateway.commandHistory.length-1] != $('#input').val()) {
+					gateway.commandHistory.push($('#input').val());
+				}
+				$('#input').val(gateway.commandHistory[gateway.commandHistoryPos]);
+			} else if(gateway.commandHistoryPos != -1 && gateway.commandHistoryPos != 0) {
+				gateway.commandHistoryPos--;
+				$('#input').val(gateway.commandHistory[gateway.commandHistoryPos]);
+			}
+		} else {
+			if(gateway.commandHistoryPos == gateway.commandHistory.length-1 && $('#input').val() != '') {
+				gateway.commandHistory[gateway.commandHistoryPos] = $('#input').val();
+			}
+			if(gateway.commandHistoryPos == -1 && $('#input').val() != '' && gateway.commandHistory.length > 0 && gateway.commandHistory[gateway.commandHistory.length-1] != $('#input').val()) {
+				gateway.commandHistory.push($('#input').val());
+				$('#input').val('');
+			} else if (gateway.commandHistoryPos != -1) {
+				if(typeof(gateway.commandHistory[gateway.commandHistoryPos+1]) == 'string') {
+					gateway.commandHistoryPos++;
+					$('#input').val(gateway.commandHistory[gateway.commandHistoryPos]);
+				} else {
+					gateway.commandHistoryPos = -1;
+					$('#input').val('');
+				}
 			}
 		}
 	}
