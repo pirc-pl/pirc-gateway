@@ -4,6 +4,7 @@ class Module extends ModuleT {
 	private static $nick = '';
 
 	public static function run() {
+		$timestamp = time();
 		$gateway_url = '<a href=\"';
 //		$gateway_url = '';
 		$gateway_url .= 'https://widget01.mibbit.com/?promptPass=true&settings=10db5282f0641bc847a88fc71f2bc200&server=irc.pirc.pl&autoConnect=true&charset=UTF-8';
@@ -43,7 +44,11 @@ class Module extends ModuleT {
 		}
 		foreach($add_js_list_default as $addon){
 			if(in_array($addon, $disable_addons)) continue;
-			$add_js .= '<script type="text/javascript" src="/js/addon_'.$addon.'.js"></script>'."\n";
+			$add_js .= '<script type="text/javascript" src="/js/addon_'.$addon.'.js';
+			if(settings::$gateway['version'] != 'testowa k4be'){
+				$add_js .= '?'.$timestamp;
+			}
+			$add_js .= '"></script>'."\n";
 		}
 
 		$nick = htmlspecialchars($nick);
@@ -72,7 +77,7 @@ class Module extends ModuleT {
 		Template::assign('sid', session_id());
 		Template::assign('old_gateway_html', $gateway_url);
 		if(settings::$gateway['version'] != 'testowa k4be'){
-			Template::assign('random_string', '?'.rand(100, 5000));
+			Template::assign('random_string', '?'.$timestamp);
 		}
 		Template::assign('add_js', $add_js);
 		Template::assign('itoken', base64_encode('PASS '.$pass));
