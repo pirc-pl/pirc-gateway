@@ -44,28 +44,31 @@ var isCorrectColor = function(color){
 }
 
 var mcolorCtcpHandler = function(msg){
+	var nick = msg.sender.nick.toLowerCase();
 	var text = msg.ctcptext;
 	if(text.indexOf(' ') < 0){
-		var command = 'TC';
-		var arg = text;
+		var commands = ['TC '+text];
 	} else {
-		var command = text.substr(0, text.indexOf(' '));
-		var arg = text.substr(text.indexOf(' ')+1);
+		var commands = text.split(',');
 	}
-	var nick = msg.sender.nick.toLowerCase();
-	if(command == 'TC'){
-		if(msg.ctcptext == 'OFF'){
-			delete mcolors[md5(nick)];
-			return;
+	console.log(commands);
+	for(var i=0; i<commands.length; i++){
+		var command = commands[i].substr(0, commands[i].indexOf(' '));
+		var arg = commands[i].substr(commands[i].indexOf(' ')+1);
+		if(command == 'TC'){
+			if(msg.ctcptext == 'OFF'){
+				delete mcolors[md5(nick)];
+				return;
+			}
+			if(!isCorrectColor(arg)){
+				console.log(msg.sender.nick+' sent bad color code: '+arg);
+				return;
+			}
+			mcolors[md5(nick)] = arg;
+			console.log('Color set for '+msg.sender.nick+': '+arg);
+		} else {
+			console.log('Command '+command+' '+arg+' from '+msg.sender.nick+' not supported!');
 		}
-		if(!isCorrectColor(arg)){
-			console.log(msg.sender.nick+' sent bad color code: '+arg);
-			return;
-		}
-		mcolors[md5(nick)] = arg;
-		console.log('Color set for '+msg.sender.nick+': '+arg);
-	} else {
-		console.log('Command '+command+' '+arg+' from '+msg.sender.nick+' not supported!');
 	}
 }
 
@@ -192,6 +195,18 @@ commands['mycolor'] = {
 	}
 };
 
+var colorExampleApply = function(){
+	if(mcolor){
+		var lightColor = mcolor;
+		var darkColor = mcolor;
+	} else {
+		var lightColor = '#000000';
+		var darkColor = '#E6E6E6';
+	}
+	$('#lightBgPreview').css('color', lightColor);
+	$('#darkBgPreview').css('color', darkColor);
+};
+
 var mcolorInit = function(){
 	try {
 		var ls = localStorage.getItem('mcolor')
@@ -201,8 +216,11 @@ var mcolorInit = function(){
 	} catch(e){}
 	$('#color-dialog h3').append('<span class="mcolor"> (tymczasowo)</span>');
 	var html = '<div class="mcolor"><h3>Ustaw kolor swojego tekstu (na stałe)</h3><p>Wybierz kolor: <input type="color" id="nickColorPick"></p>' +
-		'<p><button id="clearNickColor">Skasuj kolor</button></p></div>';
+		'<p><button id="clearNickColor">Skasuj kolor</button></p></div>' +
+		'<div> Podgląd na jasnym tle:<div id="lightBgPreview" style="background-color: #ffffff; padding: 5px;">przykładowy tekst</div></div>' +
+		'<div> Podgląd na ciemnym tle:<div id="darkBgPreview" style="background-color: #000000; padding: 5px;">przykładowy tekst</div></div>';
 	$('#color-dialog').append(html);
+	colorExampleApply();
 	html = '<tr><td  class="optionsCheckBox"><input type="checkbox" id="mcolorEnable" onchange="disp.changeSettings(event)" checked="checked" /></td><td class="info">Włącz kolorowanie wiadomości</td></tr>';
 	$('#options-dialog table').prepend(html);
 	booleanSettings.push('mcolorEnable');
@@ -213,6 +231,7 @@ var mcolorInit = function(){
 			$('#nickColorInfo').text(' ');
 		}*/
 		setMyColor($('#nickColorPick').val());
+		colorExampleApply();
 	});
 /*	$('#setNickColor').click(function(){
 		setMyColor($('#nickColorPick').val());
@@ -220,6 +239,7 @@ var mcolorInit = function(){
 	$('#clearNickColor').click(function(){
 		setMyColor(false);
 		$('#nickColorPick').val('#000000');
+		colorExampleApply();
 	});
 	if(mcolor){
 		$('#nickColorPick').val(mcolor);
