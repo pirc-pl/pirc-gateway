@@ -43,33 +43,19 @@ var isCorrectColor = function(color){
 	return false;
 }
 
-var mcolorCtcpHandler = function(msg){
+var mcolorTCHandler = function(msg){
 	var nick = msg.sender.nick.toLowerCase();
-	var text = msg.ctcptext;
-	if(text.indexOf(' ') < 0){
-		var commands = ['TC '+text];
-	} else {
-		var commands = text.split(',');
+	var arg = msg.mcolarg;
+	if(arg == 'OFF'){
+		delete mcolors[md5(nick)];
+		return;
 	}
-	console.log(commands);
-	for(var i=0; i<commands.length; i++){
-		var command = commands[i].substr(0, commands[i].indexOf(' '));
-		var arg = commands[i].substr(commands[i].indexOf(' ')+1);
-		if(command == 'TC'){
-			if(msg.ctcptext == 'OFF'){
-				delete mcolors[md5(nick)];
-				return;
-			}
-			if(!isCorrectColor(arg)){
-				console.log(msg.sender.nick+' sent bad color code: '+arg);
-				return;
-			}
-			mcolors[md5(nick)] = arg;
-			console.log('Color set for '+msg.sender.nick+': '+arg);
-		} else {
-			console.log('Command '+command+' '+arg+' from '+msg.sender.nick+' not supported!');
-		}
+	if(!isCorrectColor(arg)){
+		console.log(msg.sender.nick+' sent bad color code: '+arg);
+		return;
 	}
+	mcolors[md5(nick)] = arg;
+	console.log('Color set for '+msg.sender.nick+': '+arg);
 }
 
 var setMyColor = function(color){
@@ -158,14 +144,6 @@ var colorNick = function(nick){
 	return getColor(nick);
 }
 
-var insertBinding = function(list, item, handler){
-	if(list[item]){
-		list[item].push(handler);
-	} else {
-		list[item] = [ handler ];
-	}
-}
-
 var colorSettingsChange = function(){
 	var checked = $('#mcolorEnable').is(':checked');
 	if(checked){
@@ -176,7 +154,7 @@ var colorSettingsChange = function(){
 }
 
 insertBinding(cmdBinds, 'JOIN', mcolorJoinHandler);
-insertBinding(ctcpBinds, 'MCOL', mcolorCtcpHandler);
+insertBinding(mcolBinds, 'TC', mcolorTCHandler);
 insertBinding(cmdBinds, '324', mcolorChModeHandler);
 insertBinding(cmdBinds, 'NICK', mcolorNickHandler);
 messageProcessors.push(colorMessage);

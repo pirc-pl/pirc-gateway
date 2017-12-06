@@ -837,6 +837,11 @@ var cmdBinds = {
 			gateway.statusWindow.appendMessage(messagePatterns.alreadyOnChannel, [$$.niceTime(), he(msg.args[2]), he(msg.args[1])]);
 		}
 	],
+	'465' : [	// ERR_YOUREBANNEDCREEP
+		function(msg) {
+			gateway.displayGlobalBanInfo(msg.text);
+		}
+	],
 	'474' : [	// ERR_BANNEDFROMCHAN
 		function(msg) {
 			gateway.iKnowIAmConnected(); // TODO inne powody, przez które nie można wejść
@@ -954,6 +959,15 @@ var cmdBinds = {
 			gateway.lasterror = msg.text;
 
 			gateway.disconnected(msg.text);
+			
+			var expr = /^Closing Link: [^ ]+\[([^ ]+)\] \(User has been banned from/;
+			var match = expr.exec(msg.text);
+			if(match){
+				console.log('IP: '+match[1]);
+				gateway.displayGlobalBanInfo(msg.text);
+				gateway.connectStatus = statusBanned;
+			} 
+			if(gateway.connectStatus = statusBanned) return;
 
 			if(gateway.connectStatus == statusDisconnected) {
 				if(gateway.firstConnect){
@@ -1101,6 +1115,26 @@ var ctcpBinds = {
 	],
 	'MCOL': [
 		function(msg){
+			var elements = msg.ctcptext.split(',');
+			for(var i=0; i<elements.length; i++){
+				var element = elements[i];
+				if(element.indexOf(' ') > 0){
+					var command = element.substr(0, element.indexOf(' '));
+					var arg = element.substr(element.indexOf(' ')+1);
+				} else {
+					var command = element;
+					var arg = '';
+				}
+				msg.mcolarg = arg;
+				if(command in mcolBinds){
+					for(func in mcolBinds[command]){
+						mcolBinds[command][func](msg);
+					}
+				}
+			}
 		}
 	]
+};
+
+var mcolBinds = {
 };

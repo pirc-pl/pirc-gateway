@@ -297,7 +297,7 @@ var gateway = {
 	'sockError': function(e) {
 		console.log('WebSocket error!');
 		setTimeout(function(){
-			if(gateway.connectStatus != statusDisconnected && gateway.connectStatus != statusError){
+			if(gateway.connectStatus != statusDisconnected && gateway.connectStatus != statusError && gateway.connectStatus != statusBanned){
 				gateway.connectStatus = statusError;
 				//gateway.disconnected('Błąd serwera bramki');
 				gateway.disconnected('Utracono połączenie z serwerem');
@@ -1912,6 +1912,25 @@ var gateway = {
 				}
 			}
 		}
+	},
+	'displayGlobalBanInfo': function(text){
+		var html = '<p>Serwer nie zezwolił na to połączenie. Prawdopodobnie Twój adres IP został zbanowany.</p><p>Jeśli masz pewność, że nie zrobiłeś(aś) nic złego (sprawdź <a href="https://pirc.pl/teksty/zasady/" target="_blank">regulamin</a>), spróbuj następujących kroków:'+
+			'<ul>'+
+			'<li>Wyłącz usługi typu VPN, Proxy, TOR. Użytkownicy tych usług tak często dokonują nadużyć, że PIRC nie zezwala im na dostęp.</li>'+
+			'<li>Zresetuj swój router. Być może Twój dostawca internetu przypadkowo przypisał Tobie adres, za pomocą którego ktoś inny zrobił kiedyś coś złego.</li>'+
+			'<li>Skontaktuj się z administracją PIRC pod adresem e-mail abuse'+String.fromCharCode(64)+'pirc.pl</li>'+
+			'</ul><br><p>Komunikat od serwera:<br>'+he(text)+'</p>';
+		$$.closeDialog('connect', '1');
+		$$.displayDialog('error', 'noaccess', 'Brak dostępu', html);
+		gateway.connectStatus = statusBanned;
+	}
+}
+
+var insertBinding = function(list, item, handler){
+	if(list[item]){
+		list[item].push(handler);
+	} else {
+		list[item] = [ handler ];
 	}
 }
 

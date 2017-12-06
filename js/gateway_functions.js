@@ -301,6 +301,7 @@ var statusIdentified = 3;
 var statusConnected = 4;
 var statusGhostAndNickSent = 5;
 var statusError = 6;
+var statusBanned = 7;
 
 // stany parsera irc
 
@@ -982,6 +983,8 @@ var $$ = {
 		$dialog.scrollTop($dialog.prop("scrollHeight"));
 		if(type == 'connect'){
 			$dialog.dialog({ modal: true, dialogClass: 'no-close' });
+		} else if(sender == 'noaccess') {
+			$dialog.dialog({ modal: true, dialogClass: 'no-access' });
 		} else {
 			$dialog.dialog({ dialogClass: type+'-dialog-spec' });
 		}
