@@ -446,12 +446,25 @@ var cmdBinds = {
 	],
 	'320': [	//RPL_WHOISSPECIAL
 		function(msg) {
-			var sel = $$.getDialogSelector('whois', msg.args[1]).find('span.admin');
-			if(sel.length){
-				sel.append(' ('+msg.text+')');
+			var expr = /connected from (.*) \(([^ ]+)\)/;
+			var match = expr.exec(msg.text);
+			if(match){
+				var cname = geoip.getName(match[2]);
+				var html = 'Łączy się z: ';
+				if(!cname){
+					html += match[1] + ' (' + match[2] + ')';
+				} else {
+					html += '<img src="/styles/img/flagi/'+match[2]+'-flag.png" alt="('+match[2]+')"> '+cname;
+				}
 			} else {
-				$$.displayDialog('whois', msg.args[1], false, "<p class='whois'><span class='info'><br /></span><span class='data'>"+msg.text+"</span></p>");
+				var sel = $$.getDialogSelector('whois', msg.args[1]).find('span.admin');
+				if(sel.length){
+					sel.append(' ('+msg.text+')');
+					return;
+				}
+				var html = msg.text;
 			}
+			$$.displayDialog('whois', msg.args[1], false, "<p class='whois'><span class='info'><br /></span><span class='data'>"+html+"</span></p>");
 		}
 	],
 	'322': [	// RPL_LIST

@@ -1213,3 +1213,10 @@ div.alert-dialog {
     text-align: center;
     font-size: .8em;
 }
+
+span.data img {
+    margin-top: -20px;
+    position: relative;
+    top: 10px;
+}
+
