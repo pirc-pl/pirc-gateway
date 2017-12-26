@@ -1889,7 +1889,7 @@ var gateway = {
 		}
 	},
 	'enterPressed': function(){
-		if(gateway.connectStatus == statusDisonnected || gateway.connectStatus == statusError){
+		if(gateway.connectStatus == statusDisconnected || gateway.connectStatus == statusError){
 			$$.alert('Nie możesz teraz wykonać komendy ani wysłać wiadomości, ponieważ nie masz połączenia z IRC.');
 			return;
 		}
