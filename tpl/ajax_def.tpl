@@ -197,7 +197,7 @@
 					<td style="padding-right: 10px; padding-left: 5px;"> <input id="input" type="text" name="input" class="input" /></td>
 					<td style="width: 10px;"><input type="image" src="/styles/img/smiley_mu.png" class="symbols" onClick="disp.symbolWindowShow()" title="Emotikony i symbole" /></td>
 					<td style="width: 10px;"><input type="image" src="/styles/img/kolorki.png" value="" class="insertColor" onClick="disp.colorWindowShow()" title="Kolory i formatowanie" /></td>
-					<td style="width: 10px;"><input type="submit" value="&bull;" class="submit" OnClick="gateway.parseUserInput($('#input').val())" title="Wyślij [Enter]" /></td>
+					<td style="width: 10px;"><input type="submit" value="&bull;" class="submit" OnClick="gateway.enterPressed()" title="Wyślij [Enter]" /></td>
 				</tr></table>
 			</div>
 		</div>

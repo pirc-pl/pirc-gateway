@@ -974,7 +974,7 @@ var cmdBinds = {
 				gateway.displayGlobalBanInfo(msg.text);
 				gateway.connectStatus = statusBanned;
 			} 
-			if(gateway.connectStatus = statusBanned) return;
+			if(gateway.connectStatus == statusBanned) return;
 
 			if(gateway.connectStatus == statusDisconnected) {
 				if(gateway.firstConnect){
