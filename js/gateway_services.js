@@ -70,7 +70,13 @@ var services = {
 			return true;
 		}
 		if(msg.text.match(/^Ten nick jest zarejestrowany i chroniony\.( Jeśli należy do Ciebie,)?$/i)){
-			if(guser.nickservpass == ''){
+			if(gateway.connectStatus == statusGhostAndNickSent){
+				gateway.send('PRIVMSG NickServ :IDENTIFY '+guser.nickservpass);
+				gateway.connectStatus = statusIdentified;
+				return true;
+			}
+			gateway.connectStatus = statusWrongPassword;
+			if($$.getDialogSelector('error', 'nickserv').length < 1){
 				services.showTimeToChange = true;
 				services.nickStore = guser.nick;
 				var html = 'Wybrany nick <b>'+guser.nick+'</b> jest zarejestrowany. Musisz go zmienić lub podać hasło.<br>'+services.badNickString;
@@ -88,7 +94,7 @@ var services = {
 				return true;
 		}
 		if(msg.text.match(/^Odmowa dostępu\.$/i)){
-			if(gateway.connectStatus == statusGhostSent || gateway.connectStatus == statusGhostAndNickSent){
+			if(gateway.connectStatus == statusGhostSent){
 				gateway.connectStatus = statusIdentified;
 				services.nickStore = guser.nickservnick;
 				guser.nickservnick = '';
@@ -104,10 +110,8 @@ var services = {
 			return false;
 		}
 		if(msg.text.match(/^Nick został usunięty z sieci\.$/i) || msg.text.match(/^Serwisy właśnie zwolniły.*nicka.*\.$/i)){
-			if(gateway.connectStatus == statusGhostSent){
-				gateway.send("NICK "+guser.nickservnick);
-				gateway.connectStatus = statusGhostAndNickSent;
-			}
+			gateway.send('NICK '+guser.nickservnick);
+			gateway.connectStatus = statusGhostAndNickSent;
 			return true;
 		}
 		var time = false;
@@ -146,10 +150,9 @@ var services = {
 				localStorage.setItem('password', btoa(guser.nickservpass));
 			} catch(e) {}
 		}
-		gateway.connectStatus = status001;
+		gateway.connectStatus = statusReIdentify;
 		gateway.setConnectedWhenIdentified = 1;
 		gateway.processStatus();
-		gateway.send('PING :Init');
 		$(".errorwindow").fadeOut(250);
 		return true;
 	},

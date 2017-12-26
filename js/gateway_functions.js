@@ -90,6 +90,7 @@ var messagePatterns = {
 	'yourNotice': '<span class="time">%s</span> &nbsp; <span class="notice"><b>-NOTICE/%s-</b> %s</span><br />',
 	'notEnoughParams': '<span class="time">%s</span> &nbsp; <span class="mode">⮿ <span class="modeinfo">%s</span>: za mało argumentów: %s</span><br />',
 	'motd': '<span class="time">%s</span> &nbsp; <span class="motd">✯ %s</span><br />',
+	'SaslAuthenticate': '<span class="time">%s</span> &nbsp; <span class="motd">🔧 %s</span><br />',
 	'ctcpRequest': '<span class="time">%s</span> &nbsp; <span class="mode">✯ <span class="modeinfo">%s</span> wysyła CTCP REQUEST: %s</span><br />',
 	'ctcpReply': '<span class="time">%s</span> &nbsp; <span class="notice">✯ <b>CTCP REPLY od %s:</b> %s</span><br />',
 	'chanListElement': '<span class="time">%s</span> &nbsp; <span class="notice">✯ <b><a href="#" onClick="gateway.send(\'JOIN %s\')">%s</a></b> (%s) - %s </span> <br />',
@@ -299,9 +300,11 @@ var status001 = 1;
 var statusGhostSent = 2;
 var statusIdentified = 3;
 var statusConnected = 4;
-var statusGhostAndNickSent = 5;
+var statusReIdentify = 5;
 var statusError = 6;
 var statusBanned = 7;
+var statusWrongPassword = 8;
+var statusGhostAndNickSent = 9;
 
 // stany parsera irc
 

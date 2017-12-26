@@ -37,13 +37,6 @@ var cmdBinds = {
 			gateway.connectStatus = status001;
 		}
 	],
-	/*'PONG': [
-		function(msg) {
-			if(msg.text.match(/JavaScript/i)){
-				gateway.pingcnt = 0;
-			}
-		}
-	],*/
 	'NICK': [
 		function(msg) {
 			if(msg.sender.nick == guser.nick) {
@@ -522,7 +515,7 @@ var cmdBinds = {
 				if (!$('#showMode').is(':checked')) {
 					chanO.appendMessage(messagePatterns.mode, [$$.niceTime(), chan, info]);
 				}
-				gateway.send('CAP REQ :multi-prefix userhost-in-names away-notify\r\nCAP END');//\r\nNAMES '+chan);
+			//	gateway.send('CAP REQ :multi-prefix userhost-in-names away-notify\r\nCAP END');//\r\nNAMES '+chan);
 				/*try {
 					var ckNick = localStorage.getItem('origNick');
   				 	if(ckNick){
@@ -802,6 +795,7 @@ var cmdBinds = {
 				html += "<p>Twój bieżący nick to <b>"+guser.nick+"</b>.</p>";
 			}
 			$$.displayDialog('warning', 'warning', 'Ostrzeżenie', html);
+			gateway.nickWasInUse = true;
 			gateway.statusWindow.appendMessage(messagePatterns.badNick, [$$.niceTime(), msg.args[1]]);
 		}
 	],
@@ -1052,6 +1046,62 @@ var cmdBinds = {
 					chan.appendMessage(messagePatterns.modeChange, [$$.niceTime(), he(msg.sender.nick), /*he(modestr)*/info, he(chanName)]);
 				}
 			}
+		}
+	],
+	'CAP': [
+		function(msg) {
+			switch(msg.args[1]){
+				case 'LS':
+					var availableCaps = msg.text.split(' ');
+					var caps = ['userhost-in-names', 'away-notify', 'multi-prefix'];
+					if(guser.nickservpass != '' && guser.nickservnick != ''){
+						caps.push('sasl');
+					}
+					var useCaps = '';
+					caps.forEach(function(cap){
+						if(availableCaps.indexOf(cap) >= 0){
+							if(useCaps.length > 0) useCaps += ' ';
+							useCaps += cap;
+						}
+					});
+					gateway.send('CAP REQ :'+useCaps);
+					break;
+				case 'ACK':
+					var caps = msg.text.split(' ');
+					if(caps.indexOf('sasl') >= 0){
+						gateway.sasl = true;
+					}
+					if(guser.nickservpass != '' && guser.nickservnick != '' && gateway.sasl){
+						gateway.send('AUTHENTICATE PLAIN');
+						gateway.statusWindow.appendMessage(messagePatterns.SaslAuthenticate, [$$.niceTime(), 'Próba logowania za pomocą SASL...']);
+					} else {
+						gateway.send('CAP END');
+					}
+					break;
+			}
+		}
+	],
+	'AUTHENTICATE': [
+		function(msg) {
+			if(msg.args[0] == '+'){
+				gateway.send('AUTHENTICATE '+Base64.encode(guser.nickservnick + '\0' + guser.nickservnick + '\0' + guser.nickservpass));
+				gateway.statusWindow.appendMessage(messagePatterns.SaslAuthenticate, [$$.niceTime(), 'SASL: logowanie do konta '+he(guser.nickservnick)]);
+			} else {
+				gateway.send('CAP END'); //nie udało się
+			}
+		}
+	],
+	'900': [ // RPL_LOGGEDIN
+		function(msg) {
+			gateway.send('CAP END');
+			gateway.statusWindow.appendMessage(messagePatterns.SaslAuthenticate, [$$.niceTime(), 'SASL: zalogowano jako '+he(msg.args[2])]);
+		}
+	],
+	'904': [ // ERR_SASLFAIL
+		function(msg) {
+			gateway.send('CAP END');
+			gateway.statusWindow.appendMessage(messagePatterns.SaslAuthenticate, [$$.niceTime(), 'SASL: logowanie nieudane!']);
+			gateway.sasl = false;
 		}
 	]
 };

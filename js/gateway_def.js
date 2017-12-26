@@ -165,6 +165,7 @@ var gateway = {
 	'allowNewSend' : true,
 	'statusWindow': new Status(),
 	'userQuit': false,
+	'sasl': false,
 	'chanPassword': function(chan) {
 		if($('#chpass').val() == ''){
 			$$.alert('Nie podałeś hasła!');
@@ -277,8 +278,10 @@ var gateway = {
 			if(token != ''){
 				gateway.send(Base64.decode(token));
 			}
+			gateway.send('CAP LS');
 			gateway.send('USER pirc * * :'+username+'\r\n');
 			gateway.send('NICK '+guser.nick);
+			gateway.sasl = false;
 			gateway.connectTime = (+new Date)/1000;
 		}
 
@@ -333,13 +336,18 @@ var gateway = {
 				if(guser.nick != guser.nickservnick) { //auto-ghost
 					gateway.connectStatus = statusGhostSent;
 					gateway.send("PRIVMSG NickServ :RECOVER "+guser.nickservnick+" "+guser.nickservpass);
+				} else gatewayStatus = statusIdentified;
+			} // normalnie się logujemy przez SASL, dlatego nie ma innych opcji
+			if(gateway.connectStatus == statusReIdentify){
+				if(guser.nick != guser.nickservnick){
+					gateway.connectStatus = statusGhostSent;
+					gateway.send("PRIVMSG NickServ :RECOVER "+guser.nickservnick+" "+guser.nickservpass);
 				} else {
-					gateway.send("PRIVMSG NickServ :IDENTIFY "+guser.nickservpass);
 					gateway.connectStatus = statusIdentified;
+					gateway.send('PRIVMSG NickServ :IDENTIFY '+guser.nickservpass);
 				}
 			}
-			if(gateway.connectStatus == statusGhostAndNickSent && guser.nick == guser.nickservnick){ //ghost się udał
-				gateway.send("PRIVMSG NickServ :IDENTIFY "+guser.nickservpass);
+			if(gateway.connectStatus == statusGhostSent && guser.nick == guser.nickservnick){ //ghost się udał
 				if(gateway.nickWasInUse){
 					var html = '<p>I już nie jest: usunąłem go używając twojego hasła :)</p>';
 					$$.displayDialog('warning', 'warning', 'Ostrzeżenie', html);
@@ -493,7 +501,7 @@ var gateway = {
 		gateway.toSend.push(data);
 	},
 	'send': function(data) {
-		if(gateway.websock.readyState === gateway.websock.OPEN && gateway.sendDelayCnt < 3){
+		if(gateway.websock.readyState === gateway.websock.OPEN && (gateway.sendDelayCnt < 3 || gateway.connectStatus != statusConnected)){
 			gateway.forceSend(data);
 			gateway.sendDelayCnt++;
 		} else {
@@ -1881,7 +1889,7 @@ var gateway = {
 		}
 	},
 	'enterPressed': function(){
-		if(gateway.connectStatus != statusConnected){
+		if(gateway.connectStatus == statusDisonnected || gateway.connectStatus == statusError){
 			$$.alert('Nie możesz teraz wykonać komendy ani wysłać wiadomości, ponieważ nie masz połączenia z IRC.');
 			return;
 		}
