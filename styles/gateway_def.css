@@ -953,7 +953,7 @@ ul.channelOperActions, ul.channelOptions, #nickOptions {
 	font-family: inherit;
 }
 
-#options-dialog {
+#options-dialog, #query-umodes-dialog {
 	display: none;
 	background: url("/styles/img/techbg.png") no-repeat scroll right top #E8E8E8;
 }
@@ -1057,7 +1057,7 @@ span.chstats-text:before {
     content: "⮚ ";
 }
 
-#options-dialog td.info {
+#options-dialog td.info, #query-umodes-dialog td.info {
     padding-left: .5em;
 }
 

@@ -9,7 +9,20 @@
 				</div>
 			</div>
 		</div>	
-			
+		
+		<div id="query-umodes-dialog" title="Blokowanie wiadomości prywatnych">
+			Nie chcę otrzymywać wiadomości prywatnych:
+			<table>
+				<tr>
+					<td class="optionsCheckBox"><input type="checkbox" id="setUmodeD" onchange="disp.changeSettings(event)" /></td>
+					<td class="info">żadnych (tryb +D)</td>
+				</tr>
+				<tr>
+					<td class="optionsCheckBox"><input type="checkbox" id="setUmodeR" onchange="disp.changeSettings(event)" /></td>
+					<td class="info">od niezarejestrowanych użytkowników (tryb +R)</td>
+				</tr>
+			</table>
+		</div>
 		<div id="options-dialog" title="Ustawienia">
 			<table>
 				<tr>
@@ -161,6 +174,7 @@
 					<ul id="nickOptions">
 						<li id="nickRegister" onclick="services.registerMyNick()">Zarejestruj nicka</li>
 						<li onclick="services.changeMyNick()">Zmień nicka</li>
+						<li onclick="disp.showQueryUmodes()">Blokowanie wiadomości prywatnych</li>
 						<li class="nickRegistered" onclick="services.setCloak()">Ustaw automatycznego vhosta</li>
 						<li class="nickRegistered" onclick="services.setVhost()">Poproś o vhosta</li>
 						<li class="nickRegistered" onclick="services.perform('ns', 'alist', true)">Pokaż kanały, na których masz stałe uprawnienia</li>

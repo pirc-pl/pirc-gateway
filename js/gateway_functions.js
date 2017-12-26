@@ -15,7 +15,7 @@ var reqChannel = '';
 
 var server = 'wss://bramka.pirc.pl:8082/';
 
-var booleanSettings = [ 'showPartQuit', 'tabsListBottom', 'showUserHostnames', 'autoReconnect', 'displayLinkWarning', 'blackTheme', 'newMsgSound', 'autoDisconnect', 'coloredNicks', 'showMode', 'dispEmoji', 'sendEmoji', 'monoSpaceFont', 'automLogIn' ];
+var booleanSettings = [ 'showPartQuit', 'tabsListBottom', 'showUserHostnames', 'autoReconnect', 'displayLinkWarning', 'blackTheme', 'newMsgSound', 'autoDisconnect', 'coloredNicks', 'showMode', 'dispEmoji', 'sendEmoji', 'monoSpaceFont', 'automLogIn', 'setUmodeD', 'setUmodeR' ];
 var comboSettings = [ 'noticeDisplay' ];
 var numberSettings = [ 'backlogCount' ];
 var numberSettingsMinMax = {
@@ -69,7 +69,7 @@ var messagePatterns = {
 	'kickOwn': '<span class="time">%s</span> &nbsp; <span class="kick">✀ <span class="modeinfo">%s</span> wyrzucił cię z <span class="modeinfo">%s</span> [Powód: %s]</span><br />',
 	'modeChange': '<span class="time">%s</span> &nbsp; <span class="mode">🔧 <span class="modeinfo">%s</span> %s na kanale <span class="modeinfo">%s</span></span><br />',
 	'mode': '<span class="time">%s</span> &nbsp; <span class="mode">🔧 Ustawienia kanału <span class="modeinfo">%s</span>: %s</span><br />',
-	'startedQuery': '<span class="time">%s</span> &nbsp; <span class="join">🢡 Rozpoczęto rozmowę z <span class="modeinfo">%s</span>. <a onclick="ignore.askIgnore(\'%s\');">Ignoruj tego użytkownika</a></span><br />',
+	'startedQuery': '<span class="time">%s</span> &nbsp; <span class="join">🢡 Rozpoczęto rozmowę z <span class="modeinfo">%s</span>. <a onclick="ignore.askIgnore(\'%s\');">Ignoruj tego użytkownika</a> / <a onclick="disp.showQueryUmodes()">Blokowanie wiadomości prywatnych</a></span><br />',
 	'queryBacklog': '<span class="time">%s</span> &nbsp; <span class="join">✯ Zapis poprzedniej rozmowy z <span class="modeinfo">%s</span>:</span><br />',
 	'channelBacklog': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Zapis poprzedniej wizyty na <span class="modeinfo">%s</span>:</span><br />',
 	'channelBacklogEnd': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Koniec zapisu.</span><br />',
@@ -471,6 +471,7 @@ var disp = {
 				localStorage.setItem(sname, value);
 			} catch(e){}
 		});
+		gateway.showNickList(); //WORKAROUND: pokaż panel nawet w prywatnej i w statusie, inaczej poniższe dłubanie w CSS powoduje popsucie interfejsu graficznego
 		settings.backlogLength = parseInt($('#backlogCount').val());
 		if ($('#tabsListBottom').is(':checked')) {
 			$('#top_menu').detach().insertAfter('#inputbox');
@@ -512,7 +513,9 @@ var disp = {
 		for(i in settingProcessors){
 			settingProcessors[i]();
 		}
-		if(!e) return;
+		if(!e){
+			return;
+		}
 		if(e.currentTarget.id == 'dispEmoji') {
 			if(!$('#dispEmoji').is(':checked')){
 				$('#sendEmoji').prop('checked', false);
@@ -520,6 +523,31 @@ var disp = {
 		} else if(e.currentTarget.id == 'sendEmoji'){
 			if($('#sendEmoji').is(':checked')){
 				$('#dispEmoji').prop('checked', true);
+			}
+		}
+		if(e.currentTarget.id == 'setUmodeD') {
+			if($('#setUmodeD').is(':checked')){
+				$('#setUmodeR').prop('checked', true);
+				gateway.send('MODE '+guser.nick+' +R');
+				if(!guser.umodes.D){
+					gateway.send('MODE '+guser.nick+' +D');
+				}
+			} else {
+				if(guser.umodes.D){
+					gateway.send('MODE '+guser.nick+' -D');
+				}
+			}
+		} else if(e.currentTarget.id == 'setUmodeR') {
+			if(!$('#setUmodeR').is(':checked')){
+				$('#setUmodeD').prop('checked', false);
+				gateway.send('MODE '+guser.nick+' -D');
+				if(guser.umodes.R){
+					gateway.send('MODE '+guser.nick+' -R');
+				}
+			} else {
+				if(!guser.umodes.R){
+					gateway.send('MODE '+guser.nick+' +R');
+				}
 			}
 		}
 		$('#nicklist').removeAttr('style');
@@ -533,6 +561,9 @@ var disp = {
 	},
 	'showOptions': function() {
 		disp.displaySpecialDialog('options-dialog', 'OK');
+	},
+	'showQueryUmodes': function() {
+		disp.displaySpecialDialog('query-umodes-dialog', 'OK');
 	},
 	'showSizes': function() {
 		disp.displaySpecialDialog('size-dialog', 'Zamknij');
@@ -982,9 +1013,9 @@ var $$ = {
 		$dialog.append(html);
 		$dialog.scrollTop($dialog.prop("scrollHeight"));
 		if(type == 'connect'){
-			$dialog.dialog({ modal: true, dialogClass: 'no-close' });
+			$dialog.dialog({/* modal: true,*/ dialogClass: 'no-close' });
 		} else if(sender == 'noaccess') {
-			$dialog.dialog({ modal: true, dialogClass: 'no-access' });
+			$dialog.dialog({ /*modal: true, */dialogClass: 'no-access' });
 		} else {
 			$dialog.dialog({ dialogClass: type+'-dialog-spec' });
 		}

@@ -362,6 +362,17 @@ var gateway = {
 			//	gateway.joinChannels();
 				gateway.joined = 1;
 				gateway.disconnectMessageShown = 0; //tutaj resetuję
+				// ustawianie usermode wg konfiguracji dopiero teraz
+				if(guser.umodes.R && !$('#setUmodeR').is(':checked')){
+					gateway.send('MODE '+guser.nick+' -R');
+				} else if(!guser.umodes.R && $('#setUmodeR').is(':checked')){
+					gateway.send('MODE '+guser.nick+' +R');
+				}
+				if(guser.umodes.D && !$('#setUmodeD').is(':checked')){
+					gateway.send('MODE '+guser.nick+' -D');
+				} else if(!guser.umodes.D && $('#setUmodeD').is(':checked')){
+					gateway.send('MODE '+guser.nick+' +D');
+				}
 			}
 		} else {
 			gateway.joined = 0;
@@ -605,11 +616,11 @@ var gateway = {
 	'showNickList': function() {
 		$("#nicklist-closed").fadeOut(200, function () {
 			$("#nicklist").animate({
-				"opacity": "toggle",
+				"opacity": "show",
 				"width":	"23%"
 			}, 400);
 			$("#chstats").animate({
-				"opacity": "toggle",
+				"opacity": "show",
 				"width":	"23%"
 			}, 400);
 			$("#chatbox").animate({
@@ -1870,6 +1881,10 @@ var gateway = {
 		}
 	},
 	'enterPressed': function(){
+		if(gateway.connectStatus != statusConnected){
+			$$.alert('Nie możesz teraz wykonać komendy ani wysłać wiadomości, ponieważ nie masz połączenia z IRC.');
+			return;
+		}
 		if(gateway.commandHistory.length == 0 || gateway.commandHistory[gateway.commandHistory.length-1] != $('#input').val()) {
 			if(gateway.commandHistoryPos != -1 && gateway.commandHistoryPos == gateway.commandHistory.length-1) {
 				gateway.commandHistory[gateway.commandHistoryPos] = $('#input').val();
