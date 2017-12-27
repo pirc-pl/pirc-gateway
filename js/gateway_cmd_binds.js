@@ -16,7 +16,7 @@ var cmdBinds = {
 			}
 			gateway.statusWindow.appendMessage(messagePatterns.motd, [$$.niceTime(), he(msg.text)]);
 			gateway.pingcnt = 0;
-			gateway.connectStatus = status001;
+			if(!gateway.sasl) gateway.connectStatus = status001;
 		}
 	],
 	'411': [ //	ERR_NORECIPIENT - brzydki sposób na uzyskanie bieżącego nicka
@@ -1089,6 +1089,7 @@ var cmdBinds = {
 			} else {
 				gateway.send('CAP END'); //nie udało się
 			}
+			gateway.connectStatus = statusIdentified;
 		}
 	],
 	'900': [ // RPL_LOGGEDIN
@@ -1101,7 +1102,7 @@ var cmdBinds = {
 		function(msg) {
 			gateway.send('CAP END');
 			gateway.statusWindow.appendMessage(messagePatterns.SaslAuthenticate, [$$.niceTime(), 'SASL: logowanie nieudane!']);
-			gateway.sasl = false;
+//			gateway.sasl = false;
 		}
 	]
 };
