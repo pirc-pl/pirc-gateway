@@ -804,7 +804,7 @@ var cmdBinds = {
 			if(gateway.connectStatus == statusDisconnected){
 				var expr = /^([^0-9]+)(\d*)$/;
 				var match = expr.exec(guser.nick);
-				if(match[2] && !isNaN(match[2])){
+				if(match && match[2] && !isNaN(match[2])){
 					var nick = match[1];
 					var suffix = parseInt(match[2]) + 1;
 				} else {
