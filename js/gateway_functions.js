@@ -122,7 +122,7 @@ var messagePatterns = {
 };
 
 var modes = {
-	'single': ['p', 's', 'm', 'n', 't', 'i', 'r', 'R', 'c', 'O', 'Q', 'K', 'V', 'C', 'u', 'z', 'N', 'S', 'M', 'T', 'G', 'D'],
+	'single': ['p', 's', 'm', 'n', 't', 'i', 'r', 'R', 'c', 'O', 'Q', 'K', 'V', 'C', 'u', 'z', 'N', 'S', 'M', 'T', 'G', 'D', 'd'],
 	'argBoth': ['k', 'b', 'e', 'I', 'f'],
 	'argAdd': ['L', 'l'],
 	'user': ['q','a','o','h','v'],
@@ -135,7 +135,8 @@ var modes = {
 		['Q', 'Zakaz kopania'],
 		['M', 'Do mówienia wymagany zarejestrowany nick lub co najmniej +v'],
 		['t', 'Tylko operator może zmieniać temat'],
-		['n', 'Nie można wysyłać wiadomości nie będąc na kanale']
+		['n', 'Nie można wysyłać wiadomości nie będąc na kanale'],
+		['D', 'Użytkownicy będą widoczni na liście tylko wtedy, gdy coś napiszą']
 	],
 	'changeableArg': [
 		['k', 'Hasło do kanału'],
@@ -179,7 +180,8 @@ var chModeInfo = {
 	'M': ['moderację niezarejestrowanych', 'niezarejestrowani są moderowani'],
 	'T': ['blokadę NOTICE', 'zablokowane NOTICE'],
 	'G': 'tryb G',
-	'D': 'tryb D'
+	'D': 'tryb D: użytkownicy będą widoczni na liście tylko wtedy, gdy coś napiszą',
+	'd': 'tryb d'
 };
 
 var servicesNicks = ['NickServ', 'ChanServ', 'HostServ', 'OperServ', 'Global', 'BotServ'];
@@ -647,7 +649,11 @@ var $$ = {
 	'parseTime': function(timestamp) {
 		var nd = new Date();
 		nd.setTime(timestamp*1000);
-		return $.vsprintf("%s, %s %s, %02s:%02s:%02s", [ $$.dateWeek[nd.getDay()], nd.getDate(), $$.dateMonth[nd.getMonth()], nd.getHours(), nd.getMinutes(), nd.getSeconds() ] );
+		if((new Date()).getFullYear() != nd.getFullYear()){
+			return $.vsprintf("%s, %s %s %s, %02s:%02s:%02s", [ $$.dateWeek[nd.getDay()], nd.getDate(), $$.dateMonth[nd.getMonth()], nd.getFullYear(), nd.getHours(), nd.getMinutes(), nd.getSeconds() ] );
+		} else {
+			return $.vsprintf("%s, %s %s, %02s:%02s:%02s", [ $$.dateWeek[nd.getDay()], nd.getDate(), $$.dateMonth[nd.getMonth()], nd.getHours(), nd.getMinutes(), nd.getSeconds() ] );
+		}
 	},
 	'dateWeek': [ 'Niedziela', 'Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota' ],
 	'dateMonth': [ 'sty', 'lut', 'mar', 'kwi', 'maj', 'cze', 'lip', 'sie', 'wrz', 'paź', 'lis', 'gru' ],
@@ -689,9 +695,15 @@ var $$ = {
 			return 'style="color:' + color +'"';
 		}
 	},
-	'colorize': function(message, strip=false) {
-		var pageBack  = 'white';
-		var pageFront = 'black';
+	'colorize': function(message, strip) {
+		if(strip == undefined) var strip = false;
+		if ($('#blackTheme').is(':checked')) {
+			var pageFront = 'white';
+			var pageBack = 'black';
+		} else {
+			var pageBack  = 'white';
+			var pageFront = 'black';
+		}
 		var currBack = pageBack;
 		var currFront = pageFront;
 		var newText = '';
@@ -719,18 +731,26 @@ var $$ = {
 			
 			switch (message.charAt(i)) {		
 				case String.fromCharCode(3):
+					var fgCode = null;
+					var bgCode = null;
 					if (!isNaN(parseInt(message.charAt(i+1)))) {
 						if (!isNaN(parseInt(message.charAt(++i+1)))) {
-							currFront = $$.getColor(parseInt(message.charAt(i)) * 10 + parseInt(message.charAt(++i)), "foreground");
+							fgCode = parseInt(message.charAt(i)) * 10 + parseInt(message.charAt(++i));
 						} else {
-							currFront = $$.getColor(parseInt(message.charAt(i)), "foreground");
+							fgCode = parseInt(message.charAt(i));
 						}
 						if ((message.charAt(i+1) == ',') && !isNaN(parseInt(message.charAt(++i+1)))) {
 							if (!isNaN(parseInt(message.charAt(++i+1)))) {
-								currBack = $$.getColor(parseInt(message.charAt(i)) * 10 + parseInt(message.charAt(++i)), "background");
+								bgCode = parseInt(message.charAt(i)) * 10 + parseInt(message.charAt(++i));
 							} else {
-								currBack = $$.getColor(parseInt(message.charAt(i)), "background");
+								bgCode = parseInt(message.charAt(i));
 							}
+						}
+						if(fgCode != null){
+							currFront = $$.getColor(fgCode, "foreground");
+						}
+						if(bgCode != null){
+							currBack = $$.getColor(bgCode, "background");
 						}
 					} else {
 						currFront = pageFront;
@@ -884,9 +904,9 @@ var $$ = {
 			});
 		}
 		
-		var rexpr = /https?:\/\/www.youtube.com\/watch\?[^ ]*v=([^ ]+)/i;
+		var rexpr = /https?:\/\/(?:(?:www|m)\.youtube\.com\/watch\?[^ ]*v=|youtu\.be\/)([^ ]+)/i;
 		
-		var fmatch = text.match(/(https?:\/\/www.youtube.com\/watch\?[^ ]*v=[^ ?&]+)/gi);
+		var fmatch = text.match(/(https?:\/\/(?:(?:www|m)\.youtube\.com\/watch\?[^ ]*v=|youtu\.be\/)[^ ?&]+)/gi);
 		if(fmatch){
 			fmatch.forEach(function(arg){
 				var rmatch = rexpr.exec(arg);
@@ -944,7 +964,8 @@ var $$ = {
 					break;
 				case stateChannel:
 					var c = text.charAt(i);
-					if(c != ' ' && c != ','){
+					var code = c.charCodeAt();
+					if(c != ' ' && c != ',' && code > 10){
 						currLink += c;
 					} else {
 						newText += '<a href="javascript:gateway.send(\'JOIN '+bsEscape(currLink)+'\')"' + confirmChan + '>'+currLink+'</a> ';
@@ -953,7 +974,8 @@ var $$ = {
 					break;
 				case stateUrl:
 					var c = text.charAt(i);
-					if(c != ' '){
+					var code = c.charCodeAt();
+					if(c != ' ' && code > 10 && c != '<'){
 						currLink += c;
 					} else {
 						newText += '<a href="'+currLink+'" target="_blank"' + confirm + '>'+currLink+'</a> ';

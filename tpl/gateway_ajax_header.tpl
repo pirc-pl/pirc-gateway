@@ -34,7 +34,8 @@
 		<script type="text/javascript" src="/js/gateway_cmd_binds.js{$random_string}"></script>
 		<script type="text/javascript" src="/js/gateway_user_commands.js{$random_string}"></script>
 		<script type="text/javascript" src="/js/gateway_tabs.js{$random_string}"></script>
-		<script type="text/javascript" src="/js/geoip.js"></script>
+		<script type="text/javascript" src="/js/geoip.js{$random_string}"></script>
+		<script type="text/javascript" src="/js/gateway_cmds.js{$random_string}"></script>
 		<script type="text/javascript" src="/js/gateway_def.js{$random_string}"></script>
 		{$add_js}
 	</head>

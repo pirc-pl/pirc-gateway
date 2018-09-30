@@ -171,7 +171,8 @@ var gateway = {
 			$$.alert('Nie podałeś hasła!');
 			return false;
 		}
-		gateway.send('JOIN '+chan+' '+$('#chpass').val());
+		//gateway.send('JOIN '+chan+' '+$('#chpass').val());
+		ircCommand.channelJoin(chan, $('#chpass').val());
 		$(".errorwindow").fadeOut(250);
 		return true;
 	},
@@ -278,9 +279,12 @@ var gateway = {
 			if(token != ''){
 				gateway.send(Base64.decode(token));
 			}
-			gateway.send('CAP LS');
-			gateway.send('USER pirc * * :'+username+'\r\n');
-			gateway.send('NICK '+guser.nick);
+			//gateway.send('CAP LS');
+			ircCommand.performQuick('CAP', ['LS']);
+			//gateway.send('USER pirc * * :'+username+'\r\n');
+			ircCommand.performQuick('USER', ['pirc', '*', '*'], username);
+//			gateway.send('NICK '+guser.nick);
+			ircCommand.changeNick(guser.nick);
 			gateway.sasl = false;
 			gateway.connectTime = (+new Date)/1000;
 		}
@@ -328,23 +332,28 @@ var gateway = {
 //		gateway.processStatus();
 	},
 	'ctcp': function(dest, text) {
-		gateway.send('PRIVMSG '+dest+' :\001'+text+'\001');
+		//gateway.send('PRIVMSG '+dest+' :\001'+text+'\001');
+		ircCommand.sendCtcpRequest(dest, text);
+		console.log('użyto gateway.ctcp, powinno być ircCommand.sendCtcpRequest');
 	},
 	'processStatus': function() {
 		if(guser.nickservpass != '' && guser.nickservnick != ''){
 			if(gateway.connectStatus == status001) {
 				if(guser.nick != guser.nickservnick) { //auto-ghost
 					gateway.connectStatus = statusGhostSent;
-					gateway.send("PRIVMSG NickServ :RECOVER "+guser.nickservnick+" "+guser.nickservpass);
+					//gateway.send("PRIVMSG NickServ :RECOVER "+guser.nickservnick+" "+guser.nickservpass);
+					ircCommand.NickServ('RECOVER', [guser.nickservnick, guser.nickservpass]);
 				} else gatewayStatus = statusIdentified;
 			} // normalnie się logujemy przez SASL, dlatego nie ma innych opcji
 			if(gateway.connectStatus == statusReIdentify){
 				if(guser.nick != guser.nickservnick){
 					gateway.connectStatus = statusGhostSent;
-					gateway.send("PRIVMSG NickServ :RECOVER "+guser.nickservnick+" "+guser.nickservpass);
+					//gateway.send("PRIVMSG NickServ :RECOVER "+guser.nickservnick+" "+guser.nickservpass);
+					ircCommand.NickServ('RECOVER', [guser.nickservnick, guser.nickservpass]);
 				} else {
 					gateway.connectStatus = statusIdentified;
-					gateway.send('PRIVMSG NickServ :IDENTIFY '+guser.nickservpass);
+//					gateway.send('PRIVMSG NickServ :IDENTIFY '+guser.nickservpass);
+					ircCommand.NickServ('IDENTIFY', guser.nickservpass);
 				}
 			}
 			if(gateway.connectStatus == statusGhostSent && guser.nick == guser.nickservnick){ //ghost się udał
@@ -372,14 +381,18 @@ var gateway = {
 				gateway.disconnectMessageShown = 0; //tutaj resetuję
 				// ustawianie usermode wg konfiguracji dopiero teraz
 				if(guser.umodes.R && !$('#setUmodeR').is(':checked')){
-					gateway.send('MODE '+guser.nick+' -R');
+					//gateway.send('MODE '+guser.nick+' -R');
+					ircCommand.umode('-R');
 				} else if(!guser.umodes.R && $('#setUmodeR').is(':checked')){
-					gateway.send('MODE '+guser.nick+' +R');
+					//gateway.send('MODE '+guser.nick+' +R');
+					ircCommand.umode('+R');
 				}
 				if(guser.umodes.D && !$('#setUmodeD').is(':checked')){
-					gateway.send('MODE '+guser.nick+' -D');
+//					gateway.send('MODE '+guser.nick+' -D');
+					ircCommand.umode('-D');
 				} else if(!guser.umodes.D && $('#setUmodeD').is(':checked')){
-					gateway.send('MODE '+guser.nick+' +D');
+					//ateway.send('MODE '+guser.nick+' +D');
+					ircCommand.umode('+D');
 				}
 			}
 		} else {
@@ -387,11 +400,13 @@ var gateway = {
 		}
 	},
 	'joinChannels': function() {
-		var joinstr = guser.channels[0]?('JOIN '+guser.channels[0]+'\r\n'):'';
+	/*	var joinstr = guser.channels[0]?('JOIN '+guser.channels[0]+'\r\n'):'';
 		for(c in gateway.channels) {
 			joinstr += "JOIN "+gateway.channels[c].name+"\r\n";
 		}
-		gateway.send(joinstr);
+		gateway.send(joinstr);*/
+		ircCommand.channelJoin(guser.channels);
+		ircCommand.channelJoin(gateway.channels);
 	},
 	'connectTimeout': function() {
 		gateway.connectTimeoutID = false;
@@ -411,8 +426,8 @@ var gateway = {
 	},
 	'stopAndReconnect': function () {
 		gateway.disconnected('Zbyt długi czas łączenia');
-		gateway.send('QUIT :Błąd bramki >> łączenie trwało zbyt długo');
-		gateway.connectStatus = statusDisconnected;
+		//gateway.send('QUIT :Błąd bramki >> łączenie trwało zbyt długo');
+		ircCommand.quit('Błąd bramki >> łączenie trwało zbyt długo');
 		setTimeout('gateway.reconnect()', 500);
 	},
 	'initSys': function() {
@@ -574,7 +589,8 @@ var gateway = {
 			return false;
 		}
 		var newTopic = $('#topicEdit').val().replace(/\n/g, ' ');
-		gateway.send('TOPIC '+channel+' :'+$$.tagsToColors(newTopic));
+		//gateway.send('TOPIC '+channel+' :'+$$.tagsToColors(newTopic));
+		ircCommand.channelTopic(channel, $$.tagsToColors(newTopic));
 		$$.closeDialog('confirm', 'topic');
 		return true;
 	},
@@ -868,21 +884,42 @@ var gateway = {
 			}
 		}
 	},
+	'sendSingleMessage': function(text, active){
+		ircCommand.sendMessage(gateway.getActive().name, text);
+		var message = $$.colorize(text);
+		for(f in messageProcessors){
+			message = messageProcessors[f](guser.nick, active.name, message);
+		}
+		active.appendMessage(messagePatterns.yourMsg, [$$.niceTime(), $$.nickColor(guser.nick), guser.nick, message]);
+	},
 	'parseUserMessage': function(input){
 		var active = gateway.getActive();
-		if(gateway.getActive()) {
+		if(active) {
 			var textToSend = input;
-			do {
-				var sendNow = textToSend.substring(0, 420);
-				textToSend = textToSend.substring(420);
-				gateway.send("PRIVMSG " + gateway.getActive().name + " :" + sendNow);
-				var message = $$.colorize(sendNow);
-				for(f in messageProcessors){
-					message = messageProcessors[f](guser.nick, active.name, message);
-				}
-				active.appendMessage(messagePatterns.yourMsg, [$$.niceTime(), $$.nickColor(guser.nick), guser.nick, message]);
-			} while (textToSend != "");
-			active.appendMessage('%s', [$$.parseImages(input)]);
+			if(textToSend.length >= 420){
+				var button = [ {
+					text: 'Tak',
+					click: function(){
+						do {
+							var sendNow = textToSend.substring(0, 420);
+							textToSend = textToSend.substring(420);
+							gateway.sendSingleMessage(sendNow, active);
+						} while (textToSend != "");
+						active.appendMessage('%s', [$$.parseImages(input)]);
+						$(this).dialog('close');
+					}
+				}, {
+					text: 'Nie',
+					click: function(){
+						$(this).dialog('close');
+					}
+				} ];
+				var html = 'Wpisany tekst nie zmieści się w jednej linijce. Czy na pewno chcesz go wysłać?<br><br><strong>'+$$.sescape(input)+'</strong>';
+				$$.displayDialog('confirm', 'command', 'Potwierdź', html, button);
+			} else {
+				gateway.sendSingleMessage(input, active);
+				active.appendMessage('%s', [$$.parseImages(input)]);
+			}
 		}
 	},
 	'parseUserInput': function(input) {
@@ -918,7 +955,7 @@ var gateway = {
 						$(this).dialog('close');
 					}
 				} ];
-				var html = 'Wpisany tekst zaczyna się od znaku "/", ale poprzedzonego spacją. Aby uniknąć pomyłki, wybierz, co chcesz zrobić.<br><br><strong>'+$$.sescape(input)+'</string>';
+				var html = 'Wpisany tekst zaczyna się od znaku "/", ale poprzedzonego spacją. Aby uniknąć pomyłki, wybierz, co chcesz zrobić.<br><br><strong>'+$$.sescape(input)+'</strong>';
 				$$.displayDialog('confirm', 'command', 'Potwierdź', html, button);
 			} else {
 				regexp = /^(#[^ ,]{1,25})$/;
@@ -933,7 +970,8 @@ var gateway = {
 					}, {
 						text: 'Dołącz do '+input,
 						click: function(){
-							gateway.send('JOIN '+input);
+							//gateway.send('JOIN '+input);
+							ircCommand.channelJoin(input);
 							$(this).dialog('close');
 						}
 					}, {
@@ -1034,8 +1072,10 @@ var gateway = {
 						$$.alert('Wybierz jedną z opcji!');
 						return;
 					}
-					if(mode != '-') gateway.send('MODE '+channel+' '+mode+' '+nick);
-					if(svsmode != '-') gateway.performCommand('CS '+svsmode+' '+channel+' ADD '+nick);
+//					if(mode != '-') gateway.send('MODE '+channel+' '+mode+' '+nick);
+					if(mode != '-') ircCommand.mode(channel, mode+' '+nick);
+//					if(svsmode != '-') gateway.performCommand('CS '+svsmode+' '+channel+' ADD '+nick);
+					if(svsmode != '-') ircCommand.ChanServ('CS', svsmode, [channel, 'ADD', nick]);
 					$(this).dialog('close');
 				}
 			}
@@ -1073,8 +1113,10 @@ var gateway = {
 						$$.alert('Wybierz jedną z opcji!');
 						return;
 					}
-					if(mode != '-') gateway.send('MODE '+channel+' '+mode+' '+nick);
-					if(svsmode == '+') gateway.performCommand('CS ACCESS '+channel+' DEL '+nick);
+					//if(mode != '-') gateway.send('MODE '+channel+' '+mode+' '+nick);
+					if(mode != '-') ircCommand.mode(channel, mode +' '+nick);
+					//if(svsmode == '+') gateway.performCommand('CS ACCESS '+channel+' DEL '+nick);
+					if(svsmode == '+') ircCommand.ChanServ('ACCESS', [channel, 'DEL', nick]);
 					$(this).dialog('close');
 				}
 			}
@@ -1178,8 +1220,9 @@ var gateway = {
 			}
 		}, this);
 		
-		var modeStr = 'MODE '+channel+' '+modesw+' '+modearg;
-		gateway.send(modeStr);
+		//var modeStr = 'MODE '+channel+' '+modesw+' '+modearg;
+		//gateway.send(modeStr);
+		ircCommand.mode(channel, modesw+' '+modearg);
 		setTimeout(function(){ gateway.showChannelModes(channel); }, 2000);
 	},
 	'showInvitePrompt': function(channel) {
@@ -1197,7 +1240,8 @@ var gateway = {
 					$$.alert('Musisz podać nicka!');
 					return;
 				}
-				gateway.send('INVITE '+nick+' '+channel);
+				//gateway.send('INVITE '+nick+' '+channel);
+				ircCommand.channelInvite(channel, nick);
 				$(this).dialog('close');
 			}
 		} ];
@@ -1208,7 +1252,8 @@ var gateway = {
 		var button = [ {
 			text: 'Zaproś',
 			click: function(){
-				gateway.send('INVITE '+nick+' '+channel);
+				//gateway.send('INVITE '+nick+' '+channel);
+				ircCommand.channelInvite(channel, nick);
 				$(this).dialog('close');
 			}
 		} ];
@@ -1226,11 +1271,12 @@ var gateway = {
 			text: 'Wyrzuć',
 			click: function(){
 				var reason = $('#kickinput').val();
-				if(reason != ''){
+				/*if(reason != ''){
 					gateway.send('KICK '+channel+' '+nick+' '+reason);
 				} else {
 					gateway.send('KICK '+channel+' '+nick);
-				}
+				}*/
+				ircCommand.channelKick(channel, nick, reason);
 				$(this).dialog('close');
 			}
 		} ];
@@ -1706,7 +1752,8 @@ var gateway = {
 					}, {
 						text: 'Dołącz',
 						click: function(){
-							gateway.send('JOIN '+chan);
+							//gateway.send('JOIN '+chan);
+							ircCommand.channelJoin(chan);
 							$(this).dialog('close');
 						}
 					} ];
@@ -1757,8 +1804,12 @@ var gateway = {
 			var chan = gateway.channels[c];
 			var nicklist = chan.nicklist;
 			for(n in gateway.netJoinQueue){
-				if(gateway.netJoinQueue[n].msg.text.toLowerCase() != chan.name.toLowerCase()){
-					continue;
+				try {
+					if(gateway.netJoinQueue[n].msg.text.toLowerCase() != chan.name.toLowerCase()){
+						continue;
+					}
+				} catch(e) {
+					console.error(e);
 				}
 				var nick = gateway.netJoinQueue[n].sender.nick;
 				if(nickNames != ''){
@@ -1867,13 +1918,15 @@ var gateway = {
 			$('#chlist-button').text('⮛ schowaj listę ⮛');
 			if(!$('#chlist-body > table').length){
 				gateway.smallListLoading = true;
-				gateway.send('LIST >9');
+				//gateway.send('LIST >9');
+				ircCommand.listChannels('>9');
 			}
 		}
 	},
 	'refreshChanList': function() {
 		gateway.smallListLoading = true;
-		gateway.send('LIST >9');
+		//gateway.send('LIST >9');
+		ircCommand.listChannels('>9');
 		$('#chlist-body').html('Poczekaj, trwa ładowanie...');
 	},
 	'parseUmodes': function(modes) {

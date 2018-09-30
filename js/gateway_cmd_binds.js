@@ -29,11 +29,13 @@ var cmdBinds = {
 			} else if(msg.args[0] != guser.nick) {
 				var oldNick = guser.nick;
 				setTimeout(function(){
-					gateway.send('NICK '+oldNick);
+					//gateway.send('NICK '+oldNick);
+					ircCommand.changeNick(oldNick);
 				}, 500);
 				guser.changeNick(msg.args[0], true);
 			}
-			gateway.send('WHOIS '+guser.nick);
+			//gateway.send('WHOIS '+guser.nick);
+			ircCommand.whois(guser.nick);
 			gateway.connectStatus = status001;
 		}
 	],
@@ -280,7 +282,9 @@ var cmdBinds = {
 					var chan = gateway.findOrCreate(msg.text, true);
 					chan.appendMessage(messagePatterns.joinOwn, [$$.niceTime(), msg.text]);
 				}
-				gateway.send("MODE "+msg.text+"\r\nWHO "+msg.text);
+				//gateway.send("MODE "+msg.text+"\r\nWHO "+msg.text);
+				ircCommand.mode(msg.text, '');
+				ircCommand.who(msg.text);
 			}
 		},
 		function(msg) {
@@ -289,6 +293,7 @@ var cmdBinds = {
 			var nicklistUser = chan.nicklist.findNick(msg.sender.nick);
 			if(msg.sender.nick != guser.nick) {
 				gateway.processJoin(msg);
+				ircCommand.who(msg.sender.nick);
 			}
 			if(!nicklistUser) {
 				chan.nicklist.addNick(msg.sender.nick);
@@ -302,7 +307,7 @@ var cmdBinds = {
 			}
 			nicklistUser.setIdent(msg.sender.ident);
 			nicklistUser.setUserHost(msg.sender.host);
-			gateway.send('WHO '+msg.sender.nick);
+			//gateway.send('WHO '+msg.sender.nick);
 		}
 	],
 	'PART': [
@@ -415,7 +420,7 @@ var cmdBinds = {
 						}
 					}
 					chanName = he(chanName);
-					chanHtml += chanPrefix + '<a href="javascript:gateway.send(\'JOIN ' + chanName + '\')" title="Dołącz do kanału ' + chanName + '">' + chanName + '</a> ';
+					chanHtml += chanPrefix + '<a href="javascript:ircCommand.channelJoin(\'' + chanName + '\')" title="Dołącz do kanału ' + chanName + '">' + chanName + '</a> ';
 				});
 				$$.displayDialog('whois', msg.args[1], false, "<p class='whois'><span class='info'>Kanały:</span><span class='data'> "+ chanHtml + "</span></p>");
 			} else {	// sprawdzam, na jakich kanałach sam jestem
@@ -430,7 +435,10 @@ var cmdBinds = {
 							} else {
 								gateway.findOrCreate(channel[0]);
 							}
-							gateway.send('NAMES '+channel[0]+'\r\nTOPIC '+channel[0]+'\r\nMODE '+channel[0]+'\r\nWHO '+channel[0]);
+							//gateway.send('NAMES '+channel[0]+'\r\nTOPIC '+channel[0]+'\r\nMODE '+channel[0]+'\r\nWHO '+channel[0]);
+							ircCommand.channelNames(channel[0]);
+							ircCommand.channelTopic(channel[0]);
+							ircCommand.who(channel[0]);
 						}
 					});
 				}
@@ -493,7 +501,7 @@ var cmdBinds = {
 			var html = '<p><span class="chlist_button" onclick="gateway.performCommand(\'LIST\')">Pełna lista</span> <span class="chlist_button" onclick="gateway.refreshChanList()">Odśwież</span><p>Największe kanały:</p><table>';
 			for(i in gateway.smallListData){
 				var item = gateway.smallListData[i];
-				html += '<tr title="'+he(item[2])+'"><td class="chname" onclick="gateway.send(\'JOIN '+bsEscape(item[0])+'\')">'+he(item[0])+'</td><td class="chusers">'+he(item[1])+'</td></tr>';
+				html += '<tr title="'+he(item[2])+'"><td class="chname" onclick="ircCommand.channelJoin(\''+bsEscape(item[0])+'\')">'+he(item[0])+'</td><td class="chusers">'+he(item[1])+'</td></tr>';
 			}
 			html += '</table>';
 			$('#chlist-body').html(html);
@@ -711,7 +719,8 @@ var cmdBinds = {
 			var button = [ {
 				text: 'Wejdź',
 				click: function(){
-					gateway.send('JOIN '+msg.text);
+					//gateway.send('JOIN '+msg.text);
+					ircCommand.channelJoin(msg.text);
 					$(this).dialog('close');
 				}
 			}, {
@@ -788,7 +797,8 @@ var cmdBinds = {
 	'432' : [	// ERR_ERRONEUSNICKNAME 
 		function(msg) {
 			if(gateway.connectStatus == statusDisconnected){
-				gateway.send('NICK PIRC-'+Math.round(Math.random()*100));
+				//gateway.send('NICK PIRC-'+Math.round(Math.random()*100));
+				ircCommand.changeNick('PIRC-'+Math.round(Math.random()*100));
 			}
 			var html = '<p>Nick <b>'+he(msg.args[1])+'</b> jest niedostępny. Spróbuj poczekać kilka minut.</p>';
 			if(gateway.connectStatus != statusDisconnected){
@@ -811,7 +821,8 @@ var cmdBinds = {
 					var nick = guser.nick;
 					var suffix = Math.floor(Math.random() * 999);
 				}
-				gateway.send('NICK '+nick+suffix);
+//				gateway.send('NICK '+nick+suffix);
+				ircCommand.changeNick(nick+suffix);
 			}
 			var html = '<p>Nick <b>'+he(msg.args[1])+'</b> jest już używany przez kogoś innego.</p>';
 			gateway.nickWasInUse = true;
@@ -868,7 +879,8 @@ var cmdBinds = {
 			var button = [ {
 				text: 'Poproś operatorów o możliwość wejścia',
 				click: function(){
-					gateway.send('KNOCK '+msg.args[1]+' :Proszę o możliwość wejścia na kanał');
+					//gateway.send('KNOCK '+msg.args[1]+' :Proszę o możliwość wejścia na kanał');
+					ircCommand.channelKnock(msg.args[1], 'Proszę o możliwość wejścia na kanał');
 					$(this).dialog('close');
 				}
 			} ];
@@ -1064,7 +1076,8 @@ var cmdBinds = {
 							useCaps += cap;
 						}
 					});
-					gateway.send('CAP REQ :'+useCaps);
+					//gateway.send('CAP REQ :'+useCaps);
+					ircCommand.performQuick('CAP', ['REQ'], useCaps);
 					break;
 				case 'ACK':
 					var caps = msg.text.split(' ');
@@ -1072,10 +1085,12 @@ var cmdBinds = {
 						gateway.sasl = true;
 					}
 					if(guser.nickservpass != '' && guser.nickservnick != '' && gateway.sasl){
-						gateway.send('AUTHENTICATE PLAIN');
+						//gateway.send('AUTHENTICATE PLAIN');
+						ircCommand.performQuick('AUTHENTICATE', ['PLAIN']);
 						gateway.statusWindow.appendMessage(messagePatterns.SaslAuthenticate, [$$.niceTime(), 'Próba logowania za pomocą SASL...']);
 					} else {
-						gateway.send('CAP END');
+						//gateway.send('CAP END');
+						ircCommand.performQuick('CAP', ['END']);
 					}
 					break;
 			}
@@ -1084,23 +1099,27 @@ var cmdBinds = {
 	'AUTHENTICATE': [
 		function(msg) {
 			if(msg.args[0] == '+'){
-				gateway.send('AUTHENTICATE '+Base64.encode(guser.nickservnick + '\0' + guser.nickservnick + '\0' + guser.nickservpass));
+				//gateway.send('AUTHENTICATE '+Base64.encode(guser.nickservnick + '\0' + guser.nickservnick + '\0' + guser.nickservpass));
+				ircCommand.performQuick('AUTHENTICATE', [Base64.encode(guser.nickservnick + '\0' + guser.nickservnick + '\0' + guser.nickservpass)]);
 				gateway.statusWindow.appendMessage(messagePatterns.SaslAuthenticate, [$$.niceTime(), 'SASL: logowanie do konta '+he(guser.nickservnick)]);
 			} else {
-				gateway.send('CAP END'); //nie udało się
+				//gateway.send('CAP END'); //nie udało się
+				ircCommand.performQuick('CAP', ['END']);
 			}
 			gateway.connectStatus = statusIdentified;
 		}
 	],
 	'900': [ // RPL_LOGGEDIN
 		function(msg) {
-			gateway.send('CAP END');
+			//gateway.send('CAP END');
+			ircCommand.performQuick('CAP', ['END']);
 			gateway.statusWindow.appendMessage(messagePatterns.SaslAuthenticate, [$$.niceTime(), 'SASL: zalogowano jako '+he(msg.args[2])]);
 		}
 	],
 	'904': [ // ERR_SASLFAIL
 		function(msg) {
-			gateway.send('CAP END');
+			//gateway.send('CAP END');
+			ircCommand.performQuick('CAP', ['END']);
 			gateway.statusWindow.appendMessage(messagePatterns.SaslAuthenticate, [$$.niceTime(), 'SASL: logowanie nieudane!']);
 //			gateway.sasl = false;
 		}
@@ -1149,7 +1168,8 @@ var ctcpBinds = {
 				}
 			}
 			version_string += ', na '+navigator.userAgent;
-			gateway.sendDelayed('NOTICE '+msg.sender.nick+ ' \001VERSION '+version_string+'\x01');
+			//gateway.sendDelayed('NOTICE '+msg.sender.nick+ ' \001VERSION '+version_string+'\x01');
+			ircCommand.sendCtcpReply(msg.sender.nick, 'VERSION '+version_string);
 		}
 	],
 	'USERINFO': [
@@ -1165,7 +1185,8 @@ var ctcpBinds = {
 				}
 			}
 			version_string += ', na '+navigator.userAgent;
-			gateway.sendDelayed('NOTICE '+msg.sender.nick+ ' \001VERSION '+version_string+'\x01');
+			//gateway.sendDelayed('NOTICE '+msg.sender.nick+ ' \001VERSION '+version_string+'\x01');
+			ircCommand.sendCtcpReply(msg.sender.nick, 'USERINFO '+version_string);
 		}
 	],
 	'REFERER': [
@@ -1174,7 +1195,8 @@ var ctcpBinds = {
 			if(referer_string == ''){
 				referer_string = 'Nieznany';
 			}
-			gateway.sendDelayed('NOTICE '+msg.sender.nick+ ' \001REFERER '+referer_string+'\x01');
+			//gateway.sendDelayed('NOTICE '+msg.sender.nick+ ' \001REFERER '+referer_string+'\x01');
+			ircCommand.sendCtcpReply(msg.sender.nick, 'REFERER '+referer_string);
 		}
 	],
 	'MCOL': [
