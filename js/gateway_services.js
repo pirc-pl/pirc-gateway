@@ -424,7 +424,7 @@ var services = {
 		gateway.send('NS SET KILL QUICK');
 		return true;
 	},
-	'setCloak': function(){
+	/*'setCloak': function(){
 		var html = '<p>To polecenie ustawi vHosta o treści <b>cloak:'+guser.nick+'</b>. Jeśli masz już vHosta, zostanie on usunięty.</p>';
 		var button = [ {
 			text: 'Anuluj',
@@ -439,7 +439,7 @@ var services = {
 			}
 		} ];
 		$$.displayDialog('services', 'hostserv', 'Ustawianie automatycznego vhosta', html, button);
-	},
+	},*/
 	'setVhost': function(){
 		var html = '<p>To polecenie wyśle prośbę do administratorów o ustawienie Tobie podanego vhosta.</p>'+
 			'<p>Nowy vHost: <input type="text" id="newVhost"></p>'+

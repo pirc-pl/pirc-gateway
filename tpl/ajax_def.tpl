@@ -175,7 +175,7 @@
 						<li id="nickRegister" onclick="services.registerMyNick()">Zarejestruj nicka</li>
 						<li onclick="services.changeMyNick()">Zmień nicka</li>
 						<li onclick="disp.showQueryUmodes()">Blokowanie wiadomości prywatnych</li>
-						<li class="nickRegistered" onclick="services.setCloak()">Ustaw automatycznego vhosta</li>
+						<!--<li class="nickRegistered" onclick="services.setCloak()">Ustaw automatycznego vhosta</li>-->
 						<li class="nickRegistered" onclick="services.setVhost()">Poproś o vhosta</li>
 						<li class="nickRegistered" onclick="services.perform('ns', 'alist', true)">Pokaż kanały, na których masz stałe uprawnienia</li>
 						<li class="nickRegistered" onclick="services.perform('ns', 'ajoin list', true)">Pokaż kanały, na które automatycznie wchodzisz</li>
