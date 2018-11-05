@@ -1075,7 +1075,7 @@ var gateway = {
 //					if(mode != '-') gateway.send('MODE '+channel+' '+mode+' '+nick);
 					if(mode != '-') ircCommand.mode(channel, mode+' '+nick);
 //					if(svsmode != '-') gateway.performCommand('CS '+svsmode+' '+channel+' ADD '+nick);
-					if(svsmode != '-') ircCommand.ChanServ('CS', svsmode, [channel, 'ADD', nick]);
+					if(svsmode != '-') ircCommand.ChanServ(svsmode, [channel, 'ADD', nick]);
 					$(this).dialog('close');
 				}
 			}
