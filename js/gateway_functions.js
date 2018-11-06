@@ -136,7 +136,8 @@ var modes = {
 		['M', 'Do mówienia wymagany zarejestrowany nick lub co najmniej +v'],
 		['t', 'Tylko operator może zmieniać temat'],
 		['n', 'Nie można wysyłać wiadomości nie będąc na kanale'],
-		['D', 'Użytkownicy będą widoczni na liście tylko wtedy, gdy coś napiszą']
+		['D', 'Użytkownicy będą widoczni na liście tylko wtedy, gdy coś napiszą'],
+		['U', 'Zakaz powtarzania wiadomości']
 	],
 	'changeableArg': [
 		['k', 'Hasło do kanału'],
@@ -181,7 +182,8 @@ var chModeInfo = {
 	'T': ['blokadę NOTICE', 'zablokowane NOTICE'],
 	'G': 'tryb G',
 	'D': 'tryb D: użytkownicy będą widoczni na liście tylko wtedy, gdy coś napiszą',
-	'd': 'tryb d'
+	'd': 'tryb d',
+	'U': 'zakaz powtarzania wiadomości'
 };
 
 var servicesNicks = ['NickServ', 'ChanServ', 'HostServ', 'OperServ', 'Global', 'BotServ'];
