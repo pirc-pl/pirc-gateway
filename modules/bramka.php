@@ -7,8 +7,7 @@ class Module extends ModuleT {
 		$timestamp = time();
 		$gateway_url = '<a href=\"';
 //		$gateway_url = '';
-		$gateway_url .= 'https://widget01.mibbit.com/?promptPass=true&settings=10db5282f0641bc847a88fc71f2bc200&server=irc.pirc.pl&autoConnect=true&charset=UTF-8';
-		$pass = 'b61tays';
+		$gateway_url .= 'https://widget01.mibbit.com/?promptPass=true&settings=10db5282f0641bc847a88fc71f2bc200&server=irc.pirc.pl&autoConnect=true&charset=UTF-8'; // tego używamy gdy nasza nie działa
 		if(isset(Dispatcher::$args['.0'])){
 			$channel = Dispatcher::$args['.0'];
 			$gateway_url .= '&channel=%23'.$channel;
@@ -40,11 +39,11 @@ class Module extends ModuleT {
 		}
 		foreach($addons as $addon){
 			if(!in_array($addon, $add_js_list) || in_array($addon, $disable_addons) || in_array($addon, $add_js_list_default)) continue;
-			$add_js .= '<script type="text/javascript" src="/js/addon_'.$addon.'.js"></script>'."\n";
+			$add_js .= '<script type="text/javascript" src="/js/addons/addon_'.$addon.'.js"></script>'."\n";
 		}
 		foreach($add_js_list_default as $addon){
 			if(in_array($addon, $disable_addons)) continue;
-			$add_js .= '<script type="text/javascript" src="/js/addon_'.$addon.'.js';
+			$add_js .= '<script type="text/javascript" src="/js/addons/addon_'.$addon.'.js';
 			if(settings::$gateway['version'] != 'testowa k4be'){
 				$add_js .= '?'.$timestamp;
 			}
@@ -80,7 +79,7 @@ class Module extends ModuleT {
 			Template::assign('random_string', '?'.$timestamp);
 		}
 		Template::assign('add_js', $add_js);
-		Template::assign('itoken', base64_encode('PASS '.$pass));
+		Template::assign('itoken', base64_encode('PASS '.settings::$gateway['itoken']));
 		
 		Template::display('gateway_ajax_header');
 		Template::display('ajax_'.$glayout);
