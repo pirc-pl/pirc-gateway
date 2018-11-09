@@ -126,43 +126,17 @@ var cmdBinds = {
 					return;
 				}
 				var channel = gateway.findOrCreate(msg.args[0]);
-				/* poprawka by ms */
 				
-				var highlight_chars=" ,:.!?"; // spacja, przecinek, dwukropek po nicku
-				var nickindex = message.indexOf(guser.nick, nickindex);
-				while(nickindex != -1){
-					var endofnickpos = nickindex+guser.nick.length;
+				var pattern = "\\b"+guser.nick+"\\b";
+				var re = new RegExp(pattern);
+				var match = re.test(message);
+				console.log("highlight pattern="+pattern+", returned="+match)
 
-					console.log("hajlajt ms, msglen="+message.length+", nickindex="+nickindex+", endofnickpos="+endofnickpos+", message[nickindex-1]='"+message[nickindex-1]+"', message[endofnickpos]='"+message[endofnickpos]+"'")
-
-					if((nickindex == 0 || message[nickindex-1] == ' ') && (message.length == endofnickpos || highlight_chars.indexOf(message[endofnickpos]) >= 0)) { //hajlajt
+				if(match) { //hajlajt
 						channel.appendMessage(messagePatterns.channelMsgHilight, [$$.niceTime(), msg.sender.nick, message]);
 						if(gateway.active != msg.args[0].toLowerCase() || !disp.focused) {
 							channel.markNew();
 						}
-
-						break;
-					}
-
-					nickindex = message.indexOf(guser.nick, endofnickpos);
-				}
-
-				if(nickindex == -1){ //bez hajlajtu
-					for(f in messageProcessors){
-						message = messageProcessors[f](msg.sender.nick, msg.args[0], message);
-					}
-					channel.appendMessage(messagePatterns.channelMsg, [$$.niceTime(), $$.nickColor(msg.sender.nick), msg.sender.nick, message]);
-					if(gateway.active.toLowerCase() != msg.args[0].toLowerCase() || !disp.focused) {
-						channel.markBold();
-					}
-				}
-                                
-				/* koniec poprawki */
-				/*if(message.indexOf(guser.nick) != -1) { //hajlajt
-					channel.appendMessage(messagePatterns.channelMsgHilight, [$$.niceTime(), msg.sender.nick, message]);
-					if(gateway.active != msg.args[0].toLowerCase() || !disp.focused) {
-						channel.markNew();
-					}
 				} else { //bez hajlajtu
 					for(f in messageProcessors){
 						message = messageProcessors[f](msg.sender.nick, msg.args[0], message);
@@ -171,7 +145,7 @@ var cmdBinds = {
 					if(gateway.active.toLowerCase() != msg.args[0].toLowerCase() || !disp.focused) {
 						channel.markBold();
 					}
-				}*/
+				}
 				channel.appendMessage('%s', [html]);
 			} else if(!msg.sender.server/* && msg.sender.nick != guser.nick*/){ // wiadomość prywatna
 				if(msg.sender.nick == guser.nick){
