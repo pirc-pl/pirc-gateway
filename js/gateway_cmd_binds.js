@@ -126,13 +126,13 @@ var cmdBinds = {
 					return;
 				}
 				var channel = gateway.findOrCreate(msg.args[0]);
-				/* poprawka by ms */
 				
 				var pattern = "\\b"+guser.nick+"\\b";
 				var re = new RegExp(pattern);
-				console.log("highlight pattern="+pattern+", returned="+re.test(message))
+				var match = re.test(message);
+				console.log("highlight pattern="+pattern+", returned="+match)
 
-				if(re.test(message)) { //hajlajt
+				if(match) { //hajlajt
 						channel.appendMessage(messagePatterns.channelMsgHilight, [$$.niceTime(), msg.sender.nick, message]);
 						if(gateway.active != msg.args[0].toLowerCase() || !disp.focused) {
 							channel.markNew();
@@ -146,22 +146,6 @@ var cmdBinds = {
 						channel.markBold();
 					}
 				}
-                                
-				/* koniec poprawki */
-				/*if(message.indexOf(guser.nick) != -1) { //hajlajt
-					channel.appendMessage(messagePatterns.channelMsgHilight, [$$.niceTime(), msg.sender.nick, message]);
-					if(gateway.active != msg.args[0].toLowerCase() || !disp.focused) {
-						channel.markNew();
-					}
-				} else { //bez hajlajtu
-					for(f in messageProcessors){
-						message = messageProcessors[f](msg.sender.nick, msg.args[0], message);
-					}
-					channel.appendMessage(messagePatterns.channelMsg, [$$.niceTime(), $$.nickColor(msg.sender.nick), msg.sender.nick, message]);
-					if(gateway.active.toLowerCase() != msg.args[0].toLowerCase() || !disp.focused) {
-						channel.markBold();
-					}
-				}*/
 				channel.appendMessage('%s', [html]);
 			} else if(!msg.sender.server/* && msg.sender.nick != guser.nick*/){ // wiadomość prywatna
 				if(msg.sender.nick == guser.nick){
