@@ -47,22 +47,25 @@ var ircCommand = {
 		
 	},
 	'channelJoin': function(channels, passwords){ // TODO obsługa haseł jeśli tablice
-		if(typeof channels === 'string'){
-
+		if(Array.isArray(channels)){
+			var channelString = '';
+			if(channels.length == 0) return;
+			for(var i=0; i<channels.length; i++){
+				var channel = channels[i];
+				if(channel instanceof Channel){
+					channel = channel.name;
+				}
+				if(i>0) channelString += ',';
+				channelString += channel;
+			}
+			ircCommand.perform('JOIN', [channelString]);
+		} else {
 			if(passwords){
 				ircCommand.perform('JOIN', [channels, passwords]);
 			} else {
 				ircCommand.perform('JOIN', [channels]);
 			}
 			
-		} else {
-			var channelString = '';
-			if(channels.length == 0) return;
-			for(var i=0; i<channels.length; i++){
-				if(i>0) channelString += ',';
-				channelString += channels[i];
-			}
-			ircCommand.perform('JOIN', [channelString]);
 		}
 	},
 	'channelTopic': function(chan, text){

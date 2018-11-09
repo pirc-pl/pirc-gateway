@@ -13,8 +13,6 @@ var chStatusInfo = [ 'Niezarejestrowany', 'Prawo głosu', 'Pół-operator', 'Ope
 
 var reqChannel = '';
 
-var server = 'wss://bramka.pirc.pl:8082/';
-
 var booleanSettings = [ 'showPartQuit', 'tabsListBottom', 'showUserHostnames', 'autoReconnect', 'displayLinkWarning', 'blackTheme', 'newMsgSound', 'autoDisconnect', 'coloredNicks', 'showMode', 'dispEmoji', 'sendEmoji', 'monoSpaceFont', 'automLogIn', 'setUmodeD', 'setUmodeR' ];
 var comboSettings = [ 'noticeDisplay' ];
 var numberSettings = [ 'backlogCount' ];

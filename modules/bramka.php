@@ -80,6 +80,7 @@ class Module extends ModuleT {
 		}
 		Template::assign('add_js', $add_js);
 		Template::assign('itoken', base64_encode('PASS '.settings::$gateway['itoken']));
+		Template::assign('server', settings::$gateway['server']);
 		
 		Template::display('gateway_ajax_header');
 		Template::display('ajax_'.$glayout);

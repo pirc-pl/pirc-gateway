@@ -19,6 +19,7 @@
 			var gatewayVersion = "{$gateway_version}";
 			var oldGatewayHtml = "{$old_gateway_html}";
 			var token = "{$itoken}";
+			var server = "{$server}";
 		</script>
 		<script type="text/javascript" src="/js/md5.js"></script>
 		<script type="text/javascript" src="/js/foreach.js"></script>

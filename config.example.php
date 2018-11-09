@@ -10,11 +10,9 @@ class settings {
 	public static $modules = array('bajax', 'bramka', 'index'); // pliki php w /modules
 	public static $lay = array('def', 'test'); // rodzaje bramek
 	public static $gateway = array(
-/*		'master_pass' => '117bcwhmsaz2l6U5n5z9qpW8UScNxJUR81',
-		'tunpath' => '/home/pirc/bramka_debug/webirc.sock',
-		'queuepath' => '/home/pirc/bramka_debug/queues/',*/ // nie są już używane
 		'version' => 'testowa k4be',
-		'itoken' => 'b61tays' // hasło do ircd
+		'itoken' => 'b61tays', // hasło do ircd
+		'server' => 'wss://bramka.pirc.pl:8082/'
 	);
 }
 

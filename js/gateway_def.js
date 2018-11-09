@@ -171,7 +171,6 @@ var gateway = {
 			$$.alert('Nie podałeś hasła!');
 			return false;
 		}
-		//gateway.send('JOIN '+chan+' '+$('#chpass').val());
 		ircCommand.channelJoin(chan, $('#chpass').val());
 		$(".errorwindow").fadeOut(250);
 		return true;
@@ -341,18 +340,15 @@ var gateway = {
 			if(gateway.connectStatus == status001) {
 				if(guser.nick != guser.nickservnick) { //auto-ghost
 					gateway.connectStatus = statusGhostSent;
-					//gateway.send("PRIVMSG NickServ :RECOVER "+guser.nickservnick+" "+guser.nickservpass);
 					ircCommand.NickServ('RECOVER', [guser.nickservnick, guser.nickservpass]);
 				} else gatewayStatus = statusIdentified;
-			} // normalnie się logujemy przez SASL, dlatego nie ma innych opcji
-			if(gateway.connectStatus == statusReIdentify){
+			}
+			if(gateway.connectStatus == statusReIdentify){ // TODO nie zmienia się nick
 				if(guser.nick != guser.nickservnick){
 					gateway.connectStatus = statusGhostSent;
-					//gateway.send("PRIVMSG NickServ :RECOVER "+guser.nickservnick+" "+guser.nickservpass);
 					ircCommand.NickServ('RECOVER', [guser.nickservnick, guser.nickservpass]);
 				} else {
 					gateway.connectStatus = statusIdentified;
-//					gateway.send('PRIVMSG NickServ :IDENTIFY '+guser.nickservpass);
 					ircCommand.NickServ('IDENTIFY', guser.nickservpass);
 				}
 			}
@@ -381,17 +377,13 @@ var gateway = {
 				gateway.disconnectMessageShown = 0; //tutaj resetuję
 				// ustawianie usermode wg konfiguracji dopiero teraz
 				if(guser.umodes.R && !$('#setUmodeR').is(':checked')){
-					//gateway.send('MODE '+guser.nick+' -R');
 					ircCommand.umode('-R');
 				} else if(!guser.umodes.R && $('#setUmodeR').is(':checked')){
-					//gateway.send('MODE '+guser.nick+' +R');
 					ircCommand.umode('+R');
 				}
 				if(guser.umodes.D && !$('#setUmodeD').is(':checked')){
-//					gateway.send('MODE '+guser.nick+' -D');
 					ircCommand.umode('-D');
 				} else if(!guser.umodes.D && $('#setUmodeD').is(':checked')){
-					//ateway.send('MODE '+guser.nick+' +D');
 					ircCommand.umode('+D');
 				}
 			}
@@ -970,7 +962,6 @@ var gateway = {
 					}, {
 						text: 'Dołącz do '+input,
 						click: function(){
-							//gateway.send('JOIN '+input);
 							ircCommand.channelJoin(input);
 							$(this).dialog('close');
 						}
@@ -1752,7 +1743,6 @@ var gateway = {
 					}, {
 						text: 'Dołącz',
 						click: function(){
-							//gateway.send('JOIN '+chan);
 							ircCommand.channelJoin(chan);
 							$(this).dialog('close');
 						}
