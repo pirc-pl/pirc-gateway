@@ -38,6 +38,7 @@ body {
 
 input, button, submit {
 	font-size: 1em;
+	font-family: inherit;
 }
 
 #not_connected_wrapper, #background-wrapper {
