@@ -426,7 +426,7 @@ var cmdBinds = {
 		}
 	],
 	'307': [	// RPL_WHOISREGNICK 
-		function(msg) { //	'displayDialog': function(type, sender, title, message, button){
+		function(msg) {
 			$$.displayDialog('whois', msg.args[1], false, '<p class="whois"><span class="info"><br /></span><span class="data">Ten nick jest zarejestrowany</span></p>');
 		}
 	],
@@ -593,7 +593,6 @@ var cmdBinds = {
 				var chan = msg.args[1];
 				var mody = JSON.parse(JSON.stringify(msg.args));
 				mody.splice(0,2);
-				//modyText = mody.join(" ");
 				var chanO = gateway.findChannel(chan);
 				var info = gateway.parseChannelMode(mody, chanO, 1);
 				if(info == ''){
@@ -838,7 +837,6 @@ var cmdBinds = {
 			} else if(msg.args[0] != guser.nick) {
 				var oldNick = guser.nick;
 				setTimeout(function(){
-					//gateway.send('NICK '+oldNick);
 					ircCommand.changeNick(oldNick);
 				}, 500);
 				guser.changeNick(msg.args[0], true);
@@ -850,7 +848,6 @@ var cmdBinds = {
 	'432' : [	// ERR_ERRONEUSNICKNAME 
 		function(msg) {
 			if(gateway.connectStatus == statusDisconnected){
-				//gateway.send('NICK PIRC-'+Math.round(Math.random()*100));
 				ircCommand.changeNick('PIRC-'+Math.round(Math.random()*100));
 			}
 			var html = '<p>Nick <b>'+he(msg.args[1])+'</b> jest niedostępny. Spróbuj poczekać kilka minut.</p>';
@@ -931,7 +928,6 @@ var cmdBinds = {
 			var button = [ {
 				text: 'Poproś operatorów o możliwość wejścia',
 				click: function(){
-					//gateway.send('KNOCK '+msg.args[1]+' :Proszę o możliwość wejścia na kanał');
 					ircCommand.channelKnock(msg.args[1], 'Proszę o możliwość wejścia na kanał');
 					$(this).dialog('close');
 				}
