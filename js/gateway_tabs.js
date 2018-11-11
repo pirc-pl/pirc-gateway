@@ -141,6 +141,7 @@ function NicklistUser(usernick, chan) {
 	this.ircOp = false;
 	this.isBot = false;
 	this.isRegistered = false;
+	this.account = false;
 
 	this.makeHTML = function() {
 		var index = this.level;
@@ -261,6 +262,10 @@ function NicklistUser(usernick, chan) {
 		this.showTitle();
 		$('#'+this.id+' .chrank').attr('alt', alt[index]).attr('src', icons[index]).attr('title', chStatusInfo[index]);
 	}
+	this.setAccount = function(acc) {
+		this.account = acc;
+		this.showTitle();
+	}
 	this.showTitle = function() {
 		var text = '';
 		if(this.ident && this.host){
@@ -293,11 +298,17 @@ function NicklistUser(usernick, chan) {
 			}
 			text += 'Ten użytkownik jest botem';
 		}
-		if(this.isRegistered){
+		if(this.isRegistered && this.account == false){
 			if(text != ''){
 				text += '\n';
 			}
 			text += 'Ten nick jest zarejestrowany';
+		}
+		if(this.account != false){
+			if(text != ''){
+				text += '\n';
+			}
+			text += 'Ten użytkownik jest zalogowany do konta '+this.account;
 		}
 		if(text != ''){
 			$('#'+this.id).attr('title', text);

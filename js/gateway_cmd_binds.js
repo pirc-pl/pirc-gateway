@@ -1,43 +1,7 @@
+var activeCaps = [];
+var isupport = [];
+
 var cmdBinds = {
-	'001': [	// RPL_WELCOME 
-		function(msg) {
-			try {
-				var ckNick = localStorage.getItem('origNick');
-				if(!ckNick){
-					localStorage.setItem('origNick', guser.nick);
-				}
-			} catch(e){
-			}
-			
-			if(msg.args[0] != guser.nick) {
-				irc.lastNick = guser.nick;
-				guser.nick = msg.args[0];
-				$$.displayDialog('warning', 'warning', 'Ostrzeżenie', '<p>Twój bieżący nick to <b>'+guser.nick+'</b>.</p>');
-			}
-			gateway.statusWindow.appendMessage(messagePatterns.motd, [$$.niceTime(), he(msg.text)]);
-			gateway.pingcnt = 0;
-			if(!gateway.sasl) gateway.connectStatus = status001;
-		}
-	],
-	'411': [ //	ERR_NORECIPIENT - brzydki sposób na uzyskanie bieżącego nicka
-		function(msg) {
-			if(gateway.connectStatus != statusDisconnected){
-				return;
-			}
-			if(guser.nick == ''){
-				guser.nick = msg.args[0];
-			} else if(msg.args[0] != guser.nick) {
-				var oldNick = guser.nick;
-				setTimeout(function(){
-					//gateway.send('NICK '+oldNick);
-					ircCommand.changeNick(oldNick);
-				}, 500);
-				guser.changeNick(msg.args[0], true);
-			}
-			ircCommand.whois(guser.nick);
-			gateway.connectStatus = status001;
-		}
-	],
 	'NICK': [
 		function(msg) {
 			if(msg.sender.nick == guser.nick) {
@@ -65,6 +29,22 @@ var cmdBinds = {
 				var nicklistUser = gateway.channels[c].nicklist.findNick(msg.sender.nick);
 				nicklistUser.setIdent(msg.args[0]);
 				nicklistUser.setUserHost(msg.args[1]);
+			}
+		}
+	],
+	'ACCOUNT': [
+		function(msg) {
+			for(c in gateway.channels) {
+				var nicklistUser = gateway.channels[c].nicklist.findNick(msg.sender.nick);
+				if(msg.args[0] == '*'){
+					nicklistUser.setAccount(false);
+					nicklistUser.setRegistered(false);
+				} else {
+					nicklistUser.setAccount(msg.args[0]);
+					if(msg.args[0] == msg.sender.nick){
+						nicklistUser.setRegistered(true);
+					}
+				}
 			}
 		}
 	],
@@ -288,26 +268,36 @@ var cmdBinds = {
 		}
 	],
 	'JOIN': [
-		function(msg) {
+		function(msg) { // mój własny join
 			if(msg.sender.nick == guser.nick) {
-				if(gateway.findChannel(msg.text)) {
-					gateway.findChannel(msg.text).rejoin();
+				if(activeCaps.indexOf('extended-join') >= 0){
+					var channame = msg.args[0];
 				} else {
-					var chan = gateway.findOrCreate(msg.text, true);
-					chan.appendMessage(messagePatterns.joinOwn, [$$.niceTime(), msg.text]);
+					var channame = msg.text;
 				}
-				ircCommand.mode(msg.text, '');
-				ircCommand.who(msg.text);
+				if(gateway.findChannel(channame)) {
+					gateway.findChannel(channame).rejoin();
+				} else {
+					var chan = gateway.findOrCreate(channame, true);
+					chan.appendMessage(messagePatterns.joinOwn, [$$.niceTime(), channame]);
+				}
+				ircCommand.mode(channame, '');
+				ircCommand.who(channame);
 			}
 		},
-		function(msg) {
-			var chan = gateway.findChannel(msg.text);
-			if(!chan) return;
-			var nicklistUser = chan.nicklist.findNick(msg.sender.nick);
+		function(msg) { // wszystkie
 			if(msg.sender.nick != guser.nick) {
 				gateway.processJoin(msg);
-				ircCommand.who(msg.sender.nick);
 			}
+			if(activeCaps.indexOf('extended-join') >= 0){
+				var channame = msg.args[0];
+			} else {
+				var channame = msg.text;
+				ircCommand.who(msg.sender.nick); // fallback
+			}
+			var chan = gateway.findChannel(channame);
+			if(!chan) return;
+			var nicklistUser = chan.nicklist.findNick(msg.sender.nick);
 			if(!nicklistUser) {
 				chan.nicklist.addNick(msg.sender.nick);
 				nicklistUser = chan.nicklist.findNick(msg.sender.nick);
@@ -320,7 +310,15 @@ var cmdBinds = {
 			}
 			nicklistUser.setIdent(msg.sender.ident);
 			nicklistUser.setUserHost(msg.sender.host);
-			//gateway.send('WHO '+msg.sender.nick);
+			if(activeCaps.indexOf('extended-join') >= 0){
+				if(msg.args[1] != '*'){
+					nicklistUser.setAccount(msg.args[1]);
+					if(msg.args[1] == msg.sender.nick){
+						nicklistUser.setRegistered(true);
+					}
+				}
+				nicklistUser.setRealname(msg.text);
+			}
 		}
 	],
 	'PART': [
@@ -347,6 +345,75 @@ var cmdBinds = {
 				} else {
 					gateway.findChannel(msg.args[0]).appendMessage(messagePatterns.kickOwn, [$$.niceTime(), he(msg.sender.nick), msg.args[0], $$.colorize(msg.text)]);
 					gateway.findChannel(msg.args[0]).part();
+				}
+			}
+		}
+	],
+	'AWAY': [
+		function(msg) {
+			if(msg.text == ''){
+				var away = false;
+			} else {
+				var away = true;
+				var reason = msg.text;
+			}
+			gateway.channels.forEach(function(channel){
+				var nickListItem = channel.nicklist.findNick(msg.sender.nick);
+				if(nickListItem){
+					nickListItem.setAway(away);
+					if(away){
+						nickListItem.setAwayReason(reason);
+					}
+				}
+			});
+		}
+	],
+	'INVITE': [
+		function(msg) {
+			var html = '<b>'+he(msg.sender.nick)+'</b> zaprasza Cię na kanał <b>'+he(msg.text);
+			var button = [ {
+				text: 'Wejdź',
+				click: function(){
+					ircCommand.channelJoin(msg.text);
+					$(this).dialog('close');
+				}
+			}, {
+				text: 'Zignoruj',
+				click: function(){
+					$(this).dialog('close');
+				}
+			} ];
+			$$.displayDialog('invite', msg.sender.nick+msg.text, 'Zaproszenie', html, button);
+		}
+	],
+	'001': [	// RPL_WELCOME 
+		function(msg) {
+			try {
+				var ckNick = localStorage.getItem('origNick');
+				if(!ckNick){
+					localStorage.setItem('origNick', guser.nick);
+				}
+			} catch(e){
+			}
+			
+			if(msg.args[0] != guser.nick) {
+				irc.lastNick = guser.nick;
+				guser.nick = msg.args[0];
+				$$.displayDialog('warning', 'warning', 'Ostrzeżenie', '<p>Twój bieżący nick to <b>'+guser.nick+'</b>.</p>');
+			}
+			gateway.statusWindow.appendMessage(messagePatterns.motd, [$$.niceTime(), he(msg.text)]);
+			gateway.pingcnt = 0;
+			if(!gateway.sasl) gateway.connectStatus = status001;
+		}
+	],
+	'005': [	// RPL_ISUPPORT
+		function(msg){
+			for(var i=1; i<msg.args.length; i++){
+				var data = msg.args[i].split("=");
+				if(data.length < 2){
+					isupport[data[0]] = true;
+				} else {
+					isupport[data[0]] = data[1];
 				}
 			}
 		}
@@ -584,25 +651,6 @@ var cmdBinds = {
 			}
 		}
 	],
-	'AWAY': [
-		function(msg) {
-			if(msg.text == ''){
-				var away = false;
-			} else {
-				var away = true;
-				var reason = msg.text;
-			}
-			gateway.channels.forEach(function(channel){
-				var nickListItem = channel.nicklist.findNick(msg.sender.nick);
-				if(nickListItem){
-					nickListItem.setAway(away);
-					if(away){
-						nickListItem.setAwayReason(reason);
-					}
-				}
-			});
-		}
-	],
 	'305': [	// RPL_UNAWAY 
 		function(msg) {
 			gateway.channels.forEach(function(channel){
@@ -718,25 +766,6 @@ var cmdBinds = {
 			gateway.joinChannels()
 		}
 	],
-	'INVITE': [
-		function(msg) {
-			var html = '<b>'+he(msg.sender.nick)+'</b> zaprasza Cię na kanał <b>'+he(msg.text);
-			var button = [ {
-				text: 'Wejdź',
-				click: function(){
-					//gateway.send('JOIN '+msg.text);
-					ircCommand.channelJoin(msg.text);
-					$(this).dialog('close');
-				}
-			}, {
-				text: 'Zignoruj',
-				click: function(){
-					$(this).dialog('close');
-				}
-			} ];
-			$$.displayDialog('invite', msg.sender.nick+msg.text, 'Zaproszenie', html, button);
-		}
-	],
 	'341': [	// RPL_INVITING
 		function(msg) {
 			var chan = gateway.findChannel(msg.args[2]);
@@ -797,6 +826,25 @@ var cmdBinds = {
 			} else {
 				$$.displayDialog('error', 'error', 'Błąd', '<p>Nie można wysłać wiadomości do '+he(msg.args[1])+'</p><p>Komunikat od serwera: '+msg.text+'</p>');
 			}
+		}
+	],
+	'411': [ //	ERR_NORECIPIENT - brzydki sposób na uzyskanie bieżącego nicka
+		function(msg) {
+			if(gateway.connectStatus != statusDisconnected){
+				return;
+			}
+			if(guser.nick == ''){
+				guser.nick = msg.args[0];
+			} else if(msg.args[0] != guser.nick) {
+				var oldNick = guser.nick;
+				setTimeout(function(){
+					//gateway.send('NICK '+oldNick);
+					ircCommand.changeNick(oldNick);
+				}, 500);
+				guser.changeNick(msg.args[0], true);
+			}
+			ircCommand.whois(guser.nick);
+			gateway.connectStatus = status001;
 		}
 	],
 	'432' : [	// ERR_ERRONEUSNICKNAME 
@@ -1069,7 +1117,7 @@ var cmdBinds = {
 			switch(msg.args[1]){
 				case 'LS':
 					var availableCaps = msg.text.split(' ');
-					var caps = ['userhost-in-names', 'away-notify', 'multi-prefix', 'chghost'];
+					var caps = ['userhost-in-names', 'away-notify', 'multi-prefix', 'chghost', 'extended-join', 'account-notify'];
 					if(guser.nickservpass != '' && guser.nickservnick != ''){
 						caps.push('sasl');
 					}
@@ -1083,8 +1131,8 @@ var cmdBinds = {
 					ircCommand.performQuick('CAP', ['REQ'], useCaps);
 					break;
 				case 'ACK':
-					var caps = msg.text.split(' ');
-					if(caps.indexOf('sasl') >= 0){
+					activeCaps = msg.text.split(' ');
+					if(activeCaps.indexOf('sasl') >= 0){
 						gateway.sasl = true;
 					}
 					if(guser.nickservpass != '' && guser.nickservnick != '' && gateway.sasl){

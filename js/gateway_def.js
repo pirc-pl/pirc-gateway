@@ -166,6 +166,7 @@ var gateway = {
 	'statusWindow': new Status(),
 	'userQuit': false,
 	'sasl': false,
+	'commandProcessing': false,
 	'chanPassword': function(chan) {
 		if($('#chpass').val() == ''){
 			$$.alert('Nie podałeś hasła!');
@@ -278,11 +279,8 @@ var gateway = {
 			if(token != ''){
 				gateway.send(Base64.decode(token));
 			}
-			//gateway.send('CAP LS');
 			ircCommand.performQuick('CAP', ['LS']);
-			//gateway.send('USER pirc * * :'+username+'\r\n');
 			ircCommand.performQuick('USER', ['pirc', '*', '*'], username);
-//			gateway.send('NICK '+guser.nick);
 			ircCommand.changeNick(guser.nick);
 			gateway.sasl = false;
 			gateway.connectTime = (+new Date)/1000;
@@ -290,15 +288,24 @@ var gateway = {
 
 	},
 	'processData': function(data) {
+	//	while(gateway.commandProcessing); // potrzebne czy nie?
+		gateway.commandProcessing = true;
 		for (i in data.packets) { //wywoływanie funkcji 'handlerów' od poleceń
-			var msg = data.packets[i];
-			var command = msg.command
-			if(command in cmdBinds) {
-				for(func in cmdBinds[command]) {
-					cmdBinds[command][func](msg);
+			try {
+				var msg = data.packets[i];
+				var command = msg.command
+				if(command in cmdBinds) {
+					for(func in cmdBinds[command]) {
+						cmdBinds[command][func](msg);
+					}
 				}
+			} catch(error) {
+				console.log('Błąd przetwarzania komunikatu!');
+				console.log(msg);
+				console.log(error);
 			}
 		}
+		gateway.commandProcessing = false;
 	},
 	'sockError': function(e) {
 		console.log('WebSocket error!');
@@ -1839,7 +1846,12 @@ var gateway = {
 		}
 	},
 	'processJoin': function(msg){
-		var chan = gateway.findChannel(msg.text);
+		if(activeCaps.indexOf('extended-join') >= 0){
+			var channame = msg.args[0];
+		} else {
+			var channame = msg.text;
+		}
+		var chan = gateway.findChannel(channame);
 		var dlimit = (+new Date)/1000 - 300;
 		if(!chan) return;
 		var netjoin = false;
@@ -1856,7 +1868,7 @@ var gateway = {
 			}
 			gateway.netJoinTimeout = setTimeout(gateway.processNetjoin, 700);
 		} else if (!$('#showPartQuit').is(':checked')) {
-			chan.appendMessage(messagePatterns.join, [$$.niceTime(), he(msg.sender.nick), he(msg.sender.ident), he(msg.sender.host), msg.text]);
+			chan.appendMessage(messagePatterns.join, [$$.niceTime(), he(msg.sender.nick), he(msg.sender.ident), he(msg.sender.host), channame]);
 		}
 	},
 	'findOrCreate': function(name, setActive){
