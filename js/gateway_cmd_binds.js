@@ -34,7 +34,6 @@ var cmdBinds = {
 				}, 500);
 				guser.changeNick(msg.args[0], true);
 			}
-			//gateway.send('WHOIS '+guser.nick);
 			ircCommand.whois(guser.nick);
 			gateway.connectStatus = status001;
 		}
@@ -57,6 +56,15 @@ var cmdBinds = {
 				if(gateway.findQuery(msg.sender.nick)) {
 					gateway.findQuery(msg.sender.nick).changeNick(msg.text);
 				}
+			}
+		}
+	],
+	'CHGHOST': [
+		function(msg) {
+			for(c in gateway.channels) {
+				var nicklistUser = gateway.channels[c].nicklist.findNick(msg.sender.nick);
+				nicklistUser.setIdent(msg.args[0]);
+				nicklistUser.setUserHost(msg.args[1]);
 			}
 		}
 	],
@@ -288,7 +296,6 @@ var cmdBinds = {
 					var chan = gateway.findOrCreate(msg.text, true);
 					chan.appendMessage(messagePatterns.joinOwn, [$$.niceTime(), msg.text]);
 				}
-				//gateway.send("MODE "+msg.text+"\r\nWHO "+msg.text);
 				ircCommand.mode(msg.text, '');
 				ircCommand.who(msg.text);
 			}
@@ -441,7 +448,6 @@ var cmdBinds = {
 							} else {
 								gateway.findOrCreate(channel[0]);
 							}
-							//gateway.send('NAMES '+channel[0]+'\r\nTOPIC '+channel[0]+'\r\nMODE '+channel[0]+'\r\nWHO '+channel[0]);
 							ircCommand.channelNames(channel[0]);
 							ircCommand.channelTopic(channel[0]);
 							ircCommand.who(channel[0]);
@@ -529,13 +535,6 @@ var cmdBinds = {
 				if (!$('#showMode').is(':checked')) {
 					chanO.appendMessage(messagePatterns.mode, [$$.niceTime(), chan, info]);
 				}
-			//	gateway.send('CAP REQ :multi-prefix userhost-in-names away-notify\r\nCAP END');//\r\nNAMES '+chan);
-				/*try {
-					var ckNick = localStorage.getItem('origNick');
-  				 	if(ckNick){
-						gateway.send('SETNAME Użytkownik bramki PIRC.pl "' + ckNick + '"');
-					}
-				} catch(e) {}*/
 			}
 		}
 	],
@@ -827,7 +826,6 @@ var cmdBinds = {
 					var nick = guser.nick;
 					var suffix = Math.floor(Math.random() * 999);
 				}
-//				gateway.send('NICK '+nick+suffix);
 				ircCommand.changeNick(nick+suffix);
 			}
 			var html = '<p>Nick <b>'+he(msg.args[1])+'</b> jest już używany przez kogoś innego.</p>';
@@ -1071,7 +1069,7 @@ var cmdBinds = {
 			switch(msg.args[1]){
 				case 'LS':
 					var availableCaps = msg.text.split(' ');
-					var caps = ['userhost-in-names', 'away-notify', 'multi-prefix'];
+					var caps = ['userhost-in-names', 'away-notify', 'multi-prefix', 'chghost'];
 					if(guser.nickservpass != '' && guser.nickservnick != ''){
 						caps.push('sasl');
 					}
@@ -1082,7 +1080,6 @@ var cmdBinds = {
 							useCaps += cap;
 						}
 					});
-					//gateway.send('CAP REQ :'+useCaps);
 					ircCommand.performQuick('CAP', ['REQ'], useCaps);
 					break;
 				case 'ACK':
@@ -1091,11 +1088,9 @@ var cmdBinds = {
 						gateway.sasl = true;
 					}
 					if(guser.nickservpass != '' && guser.nickservnick != '' && gateway.sasl){
-						//gateway.send('AUTHENTICATE PLAIN');
 						ircCommand.performQuick('AUTHENTICATE', ['PLAIN']);
 						gateway.statusWindow.appendMessage(messagePatterns.SaslAuthenticate, [$$.niceTime(), 'Próba logowania za pomocą SASL...']);
 					} else {
-						//gateway.send('CAP END');
 						ircCommand.performQuick('CAP', ['END']);
 					}
 					break;
@@ -1105,11 +1100,9 @@ var cmdBinds = {
 	'AUTHENTICATE': [
 		function(msg) {
 			if(msg.args[0] == '+'){
-				//gateway.send('AUTHENTICATE '+Base64.encode(guser.nickservnick + '\0' + guser.nickservnick + '\0' + guser.nickservpass));
 				ircCommand.performQuick('AUTHENTICATE', [Base64.encode(guser.nickservnick + '\0' + guser.nickservnick + '\0' + guser.nickservpass)]);
 				gateway.statusWindow.appendMessage(messagePatterns.SaslAuthenticate, [$$.niceTime(), 'SASL: logowanie do konta '+he(guser.nickservnick)]);
 			} else {
-				//gateway.send('CAP END'); //nie udało się
 				ircCommand.performQuick('CAP', ['END']);
 			}
 			gateway.connectStatus = statusIdentified;
@@ -1117,14 +1110,12 @@ var cmdBinds = {
 	],
 	'900': [ // RPL_LOGGEDIN
 		function(msg) {
-			//gateway.send('CAP END');
 			ircCommand.performQuick('CAP', ['END']);
 			gateway.statusWindow.appendMessage(messagePatterns.SaslAuthenticate, [$$.niceTime(), 'SASL: zalogowano jako '+he(msg.args[2])]);
 		}
 	],
 	'904': [ // ERR_SASLFAIL
 		function(msg) {
-			//gateway.send('CAP END');
 			ircCommand.performQuick('CAP', ['END']);
 			gateway.statusWindow.appendMessage(messagePatterns.SaslAuthenticate, [$$.niceTime(), 'SASL: logowanie nieudane!']);
 //			gateway.sasl = false;
@@ -1174,7 +1165,6 @@ var ctcpBinds = {
 				}
 			}
 			version_string += ', na '+navigator.userAgent;
-			//gateway.sendDelayed('NOTICE '+msg.sender.nick+ ' \001VERSION '+version_string+'\x01');
 			ircCommand.sendCtcpReply(msg.sender.nick, 'VERSION '+version_string);
 		}
 	],
@@ -1191,7 +1181,6 @@ var ctcpBinds = {
 				}
 			}
 			version_string += ', na '+navigator.userAgent;
-			//gateway.sendDelayed('NOTICE '+msg.sender.nick+ ' \001VERSION '+version_string+'\x01');
 			ircCommand.sendCtcpReply(msg.sender.nick, 'USERINFO '+version_string);
 		}
 	],
@@ -1201,7 +1190,6 @@ var ctcpBinds = {
 			if(referer_string == ''){
 				referer_string = 'Nieznany';
 			}
-			//gateway.sendDelayed('NOTICE '+msg.sender.nick+ ' \001REFERER '+referer_string+'\x01');
 			ircCommand.sendCtcpReply(msg.sender.nick, 'REFERER '+referer_string);
 		}
 	],
@@ -1230,3 +1218,4 @@ var ctcpBinds = {
 
 var mcolBinds = {
 };
+
