@@ -2,6 +2,248 @@ var activeCaps = [];
 var isupport = [];
 
 var cmdBinds = {
+	'ACCOUNT': [
+		function(msg) {
+			for(c in gateway.channels) {
+				var nicklistUser = gateway.channels[c].nicklist.findNick(msg.sender.nick);
+				if(msg.args[0] == '*'){
+					nicklistUser.setAccount(false);
+					nicklistUser.setRegistered(false);
+				} else {
+					nicklistUser.setAccount(msg.args[0]);
+					if(msg.args[0] == msg.sender.nick){
+						nicklistUser.setRegistered(true);
+					}
+				}
+			}
+		}
+	],
+	'AUTHENTICATE': [
+		function(msg) {
+			if(msg.args[0] == '+'){
+				ircCommand.performQuick('AUTHENTICATE', [Base64.encode(guser.nickservnick + '\0' + guser.nickservnick + '\0' + guser.nickservpass)]);
+				gateway.statusWindow.appendMessage(messagePatterns.SaslAuthenticate, [$$.niceTime(), 'SASL: logowanie do konta '+he(guser.nickservnick)]);
+			} else {
+				ircCommand.performQuick('CAP', ['END']);
+			}
+			gateway.connectStatus = statusIdentified;
+		}
+	],
+	'AWAY': [
+		function(msg) {
+			if(msg.text == ''){
+				var away = false;
+			} else {
+				var away = true;
+				var reason = msg.text;
+			}
+			gateway.channels.forEach(function(channel){
+				var nickListItem = channel.nicklist.findNick(msg.sender.nick);
+				if(nickListItem){
+					nickListItem.setAway(away);
+					if(away){
+						nickListItem.setAwayReason(reason);
+					}
+				}
+			});
+		}
+	],
+	'CAP': [
+		function(msg) {
+			switch(msg.args[1]){
+				case 'LS':
+					var availableCaps = msg.text.split(' ');
+					var caps = ['userhost-in-names', 'away-notify', 'multi-prefix', 'chghost', 'extended-join', 'account-notify'];
+					if(guser.nickservpass != '' && guser.nickservnick != ''){
+						caps.push('sasl');
+					}
+					var useCaps = '';
+					caps.forEach(function(cap){
+						if(availableCaps.indexOf(cap) >= 0){
+							if(useCaps.length > 0) useCaps += ' ';
+							useCaps += cap;
+						}
+					});
+					ircCommand.performQuick('CAP', ['REQ'], useCaps);
+					break;
+				case 'ACK':
+					activeCaps = msg.text.split(' ');
+					if(activeCaps.indexOf('sasl') >= 0){
+						gateway.sasl = true;
+					}
+					if(guser.nickservpass != '' && guser.nickservnick != '' && gateway.sasl){
+						ircCommand.performQuick('AUTHENTICATE', ['PLAIN']);
+						gateway.statusWindow.appendMessage(messagePatterns.SaslAuthenticate, [$$.niceTime(), 'Próba logowania za pomocą SASL...']);
+					} else {
+						ircCommand.performQuick('CAP', ['END']);
+					}
+					break;
+			}
+		}
+	],
+	'CHGHOST': [
+		function(msg) {
+			for(c in gateway.channels) {
+				var nicklistUser = gateway.channels[c].nicklist.findNick(msg.sender.nick);
+				nicklistUser.setIdent(msg.args[0]);
+				nicklistUser.setUserHost(msg.args[1]);
+			}
+		}
+	],
+	'ERROR' : [
+		function(msg) {
+			gateway.lasterror = msg.text;
+
+			gateway.disconnected(msg.text);
+			
+			var expr = /^Closing Link: [^ ]+\[([^ ]+)\] \(User has been banned from/;
+			var match = expr.exec(msg.text);
+			if(match){
+				console.log('IP: '+match[1]);
+				gateway.displayGlobalBanInfo(msg.text);
+				gateway.connectStatus = statusBanned;
+			} 
+			if(gateway.connectStatus == statusBanned) return;
+
+			if(gateway.connectStatus == statusDisconnected) {
+				if(gateway.firstConnect){
+					gateway.reconnect();
+				}
+				return;
+			}
+		
+			gateway.connectStatus = statusDisconnected;
+
+			if(msg.text.match(/\(NickServ \(RECOVER command used by [^ ]+\)\)$/) || msg.text.match(/\(NickServ \(Użytkownik [^ ]+\ użył komendy RECOVER\)\)$/)){
+				$$.displayReconnect();
+				var html = "<h2>Błąd ogólny</h2>" +
+					"<p>Inna sesja rozłączyła Cię używając polecenia RECOVER. Może masz otwartą więcej niż jedną bramkę?</p>";
+				$$.displayDialog('error', 'herror', 'Błąd', html);
+			} else {
+				var html = "<h3>Serwer przerwał połączenie</h3>" +
+					"<p>Informacje: "+msg.text+"</p>";
+				$$.displayDialog('error', 'error', 'Błąd', html);
+				if($('#autoReconnect').is(':checked')){
+					gateway.reconnect();
+				} else {
+					$$.displayReconnect();
+				}
+			}
+		}
+	],
+	'INVITE': [
+		function(msg) {
+			var html = '<b>'+he(msg.sender.nick)+'</b> zaprasza Cię na kanał <b>'+he(msg.text);
+			var button = [ {
+				text: 'Wejdź',
+				click: function(){
+					ircCommand.channelJoin(msg.text);
+					$(this).dialog('close');
+				}
+			}, {
+				text: 'Zignoruj',
+				click: function(){
+					$(this).dialog('close');
+				}
+			} ];
+			$$.displayDialog('invite', msg.sender.nick+msg.text, 'Zaproszenie', html, button);
+		}
+	],
+	'JOIN': [
+		function(msg) { // mój własny join
+			if(msg.sender.nick == guser.nick) {
+				if(activeCaps.indexOf('extended-join') >= 0){
+					var channame = msg.args[0];
+				} else {
+					var channame = msg.text;
+				}
+				if(gateway.findChannel(channame)) {
+					gateway.findChannel(channame).rejoin();
+				} else {
+					var chan = gateway.findOrCreate(channame, true);
+					chan.appendMessage(messagePatterns.joinOwn, [$$.niceTime(), channame]);
+				}
+				ircCommand.mode(channame, '');
+				if("WHOX" in isupport){
+					ircCommand.whox(channame, "tuhanfr,101"); // to pozwoli nam dostać też nazwę konta
+				} else {
+					ircCommand.who(channame);
+				}
+			}
+		},
+		function(msg) { // wszystkie
+			if(msg.sender.nick != guser.nick) {
+				gateway.processJoin(msg);
+			}
+			if(activeCaps.indexOf('extended-join') >= 0){
+				var channame = msg.args[0];
+			} else {
+				var channame = msg.text;
+				ircCommand.who(msg.sender.nick); // fallback
+			}
+			var chan = gateway.findChannel(channame);
+			if(!chan) return;
+			var nicklistUser = chan.nicklist.findNick(msg.sender.nick);
+			if(!nicklistUser) {
+				chan.nicklist.addNick(msg.sender.nick);
+				nicklistUser = chan.nicklist.findNick(msg.sender.nick);
+			} else {
+				nicklistUser.setMode('owner', false);
+				nicklistUser.setMode('admin', false);
+				nicklistUser.setMode('op', false);
+				nicklistUser.setMode('halfop', false);
+				nicklistUser.setMode('voice', false);
+			}
+			nicklistUser.setIdent(msg.sender.ident);
+			nicklistUser.setUserHost(msg.sender.host);
+			if(activeCaps.indexOf('extended-join') >= 0){
+				if(msg.args[1] != '*'){
+					nicklistUser.setAccount(msg.args[1]);
+					if(msg.args[1] == msg.sender.nick){
+						nicklistUser.setRegistered(true);
+					}
+				}
+				nicklistUser.setRealname(msg.text);
+			}
+		}
+	],
+	'KICK': [
+		function(msg) {
+			if(gateway.findChannel(msg.args[0])) {
+				if(msg.args[1] != guser.nick) {
+					gateway.findChannel(msg.args[0]).appendMessage(messagePatterns.kick, [$$.niceTime(), he(msg.sender.nick), msg.args[1], msg.args[0], $$.colorize(msg.text)]);
+					gateway.findChannel(msg.args[0]).nicklist.removeNick(msg.args[1]);
+				} else {
+					gateway.findChannel(msg.args[0]).appendMessage(messagePatterns.kickOwn, [$$.niceTime(), he(msg.sender.nick), msg.args[0], $$.colorize(msg.text)]);
+					gateway.findChannel(msg.args[0]).part();
+				}
+			}
+		}
+	],
+	'MODE': [
+		function(msg) {
+			var chanName = msg.args[0];
+			if(chanName == guser.nick){
+				gateway.parseUmodes(msg.text);
+			} else if(gateway.findChannel(chanName)) {
+				var modestr = '';
+				for (i in msg.args) {
+					if(i != 0) {
+						modestr += msg.args[i]+' ';
+					}
+				}
+				modestr = modestr.slice(0,-1);
+	
+				var chan = gateway.findChannel(chanName);
+				var args2 = msg.args;
+				args2.shift();
+				var info = gateway.parseChannelMode(args2, chan);
+				if (!$('#showMode').is(':checked') || msg.sender.nick.toLowerCase() == guser.nick.toLowerCase()) {
+					chan.appendMessage(messagePatterns.modeChange, [$$.niceTime(), he(msg.sender.nick), /*he(modestr)*/info, he(chanName)]);
+				}
+			}
+		}
+	],
 	'NICK': [
 		function(msg) {
 			if(msg.sender.nick == guser.nick) {
@@ -20,137 +262,6 @@ var cmdBinds = {
 				if(gateway.findQuery(msg.sender.nick)) {
 					gateway.findQuery(msg.sender.nick).changeNick(msg.text);
 				}
-			}
-		}
-	],
-	'CHGHOST': [
-		function(msg) {
-			for(c in gateway.channels) {
-				var nicklistUser = gateway.channels[c].nicklist.findNick(msg.sender.nick);
-				nicklistUser.setIdent(msg.args[0]);
-				nicklistUser.setUserHost(msg.args[1]);
-			}
-		}
-	],
-	'ACCOUNT': [
-		function(msg) {
-			for(c in gateway.channels) {
-				var nicklistUser = gateway.channels[c].nicklist.findNick(msg.sender.nick);
-				if(msg.args[0] == '*'){
-					nicklistUser.setAccount(false);
-					nicklistUser.setRegistered(false);
-				} else {
-					nicklistUser.setAccount(msg.args[0]);
-					if(msg.args[0] == msg.sender.nick){
-						nicklistUser.setRegistered(true);
-					}
-				}
-			}
-		}
-	],
-	'QUIT': [
-		function(msg) {
-			if(msg.sender.nick == guser.nick) {
-				for(c in gateway.channels) {
-					gateway.channels[c].part();
-					//gateway.channels[c].appendMessage(messagePatterns.nickChange, [$$.niceTime(), msg.sender.nick, msg.text]);
-				}
-			} else {
-				gateway.processQuit(msg);
-			}
-		}
-	],
-	'PRIVMSG': [
-		function(msg) {
-			if (msg.text === false) {
-				msg.text = " ";
-			}
-			
-			if(msg.args[0].indexOf('#') == 0) { // wiadomość kanałowa
-				if(ignore.ignoring(msg.sender.nick, 'channel')){
-					console.log('Ignoring message on '+msg.args[0]+' by '+msg.sender.nick);
-					return;
-				}
-			} else { //prywatna
-				if(ignore.ignoring(msg.sender.nick, 'query')){
-					console.log('Ignoring private message by '+msg.sender.nick);
-					return;
-				}
-			}
-			
-			var html = $$.parseImages(msg.text);
-			
-			if(msg.text.match(/^\001.*\001$/i)) { //CTCP
-				var space = msg.text.indexOf(' ');
-				if(space > -1){
-					var ctcp = msg.text.substring(1, space);
-					msg.ctcptext = msg.text.substring(space+1, msg.text.length-1);
-				} else {
-					var ctcp = msg.text.slice(1, -1);
-					msg.ctcptext = '';
-				}
-				if(ctcp in ctcpBinds){
-					for(func in ctcpBinds[ctcp]){
-						ctcpBinds[ctcp][func](msg);
-					}
-				} else {
-					var query = gateway.findQuery(qnick);
-					var acttext = msg.text.replace(/^\001(.*)\001$/i, '$1');
-					if(query) {
-						query.appendMessage(messagePatterns.ctcpRequest, [$$.niceTime(), msg.sender.nick, $$.colorize(acttext)]);
-					} else {
-						gateway.statusWindow.appendMessage(messagePatterns.ctcpRequest, [$$.niceTime(), msg.sender.nick, $$.colorize(acttext)]);
-						gateway.statusWindow.markBold();
-					}
-				}
-				return;
-			}
-			
-			var message = $$.colorize(msg.text);
-			
-			if(msg.args[0].indexOf('#') == 0) { // wiadomość kanałowa
-				if(ignore.ignoring(msg.sender.nick, 'channel')){
-					console.log('Ignoring message on '+msg.args[0]+' by '+msg.sender.nick);
-					return;
-				}
-				var channel = gateway.findOrCreate(msg.args[0]);
-				
-				var pattern = "\\b"+guser.nick+"\\b";
-				var re = new RegExp(pattern);
-				var match = re.test(message);
-				console.log("highlight pattern="+pattern+", returned="+match)
-
-				if(match) { //hajlajt
-						channel.appendMessage(messagePatterns.channelMsgHilight, [$$.niceTime(), msg.sender.nick, message]);
-						if(gateway.active != msg.args[0].toLowerCase() || !disp.focused) {
-							channel.markNew();
-						}
-				} else { //bez hajlajtu
-					for(f in messageProcessors){
-						message = messageProcessors[f](msg.sender.nick, msg.args[0], message);
-					}
-					channel.appendMessage(messagePatterns.channelMsg, [$$.niceTime(), $$.nickColor(msg.sender.nick), msg.sender.nick, message]);
-					if(gateway.active.toLowerCase() != msg.args[0].toLowerCase() || !disp.focused) {
-						channel.markBold();
-					}
-				}
-				channel.appendMessage('%s', [html]);
-			} else if(!msg.sender.server/* && msg.sender.nick != guser.nick*/){ // wiadomość prywatna
-				if(msg.sender.nick == guser.nick){
-					var qnick = msg.args[0];
-				} else {
-					var qnick = msg.sender.nick;
-				}
-				for(f in messageProcessors){
-					message = messageProcessors[f](msg.sender.nick, guser.nick, message);
-				}
-
-				query = gateway.findOrCreate(qnick);
-				query.appendMessage(messagePatterns.channelMsg, [$$.niceTime(), '', msg.sender.nick, message]);
-				if(gateway.active.toLowerCase() != msg.sender.nick.toLowerCase() || !disp.focused) {
-					query.markNew();
-				}
-				query.appendMessage('%s', [html]);
 			}
 		}
 	],
@@ -267,58 +378,9 @@ var cmdBinds = {
 			}
 		}
 	],
-	'JOIN': [
-		function(msg) { // mój własny join
-			if(msg.sender.nick == guser.nick) {
-				if(activeCaps.indexOf('extended-join') >= 0){
-					var channame = msg.args[0];
-				} else {
-					var channame = msg.text;
-				}
-				if(gateway.findChannel(channame)) {
-					gateway.findChannel(channame).rejoin();
-				} else {
-					var chan = gateway.findOrCreate(channame, true);
-					chan.appendMessage(messagePatterns.joinOwn, [$$.niceTime(), channame]);
-				}
-				ircCommand.mode(channame, '');
-				ircCommand.who(channame);
-			}
-		},
-		function(msg) { // wszystkie
-			if(msg.sender.nick != guser.nick) {
-				gateway.processJoin(msg);
-			}
-			if(activeCaps.indexOf('extended-join') >= 0){
-				var channame = msg.args[0];
-			} else {
-				var channame = msg.text;
-				ircCommand.who(msg.sender.nick); // fallback
-			}
-			var chan = gateway.findChannel(channame);
-			if(!chan) return;
-			var nicklistUser = chan.nicklist.findNick(msg.sender.nick);
-			if(!nicklistUser) {
-				chan.nicklist.addNick(msg.sender.nick);
-				nicklistUser = chan.nicklist.findNick(msg.sender.nick);
-			} else {
-				nicklistUser.setMode('owner', false);
-				nicklistUser.setMode('admin', false);
-				nicklistUser.setMode('op', false);
-				nicklistUser.setMode('halfop', false);
-				nicklistUser.setMode('voice', false);
-			}
-			nicklistUser.setIdent(msg.sender.ident);
-			nicklistUser.setUserHost(msg.sender.host);
-			if(activeCaps.indexOf('extended-join') >= 0){
-				if(msg.args[1] != '*'){
-					nicklistUser.setAccount(msg.args[1]);
-					if(msg.args[1] == msg.sender.nick){
-						nicklistUser.setRegistered(true);
-					}
-				}
-				nicklistUser.setRealname(msg.text);
-			}
+	'PING' : [
+		function(msg) {
+			gateway.forceSend('PONG :'+msg.text);
 		}
 	],
 	'PART': [
@@ -336,54 +398,124 @@ var cmdBinds = {
 			}
 		}
 	],
-	'KICK': [
+	'PRIVMSG': [
 		function(msg) {
-			if(gateway.findChannel(msg.args[0])) {
-				if(msg.args[1] != guser.nick) {
-					gateway.findChannel(msg.args[0]).appendMessage(messagePatterns.kick, [$$.niceTime(), he(msg.sender.nick), msg.args[1], msg.args[0], $$.colorize(msg.text)]);
-					gateway.findChannel(msg.args[0]).nicklist.removeNick(msg.args[1]);
-				} else {
-					gateway.findChannel(msg.args[0]).appendMessage(messagePatterns.kickOwn, [$$.niceTime(), he(msg.sender.nick), msg.args[0], $$.colorize(msg.text)]);
-					gateway.findChannel(msg.args[0]).part();
+			if (msg.text === false) {
+				msg.text = " ";
+			}
+			
+			if(msg.args[0].indexOf('#') == 0) { // wiadomość kanałowa
+				if(ignore.ignoring(msg.sender.nick, 'channel')){
+					console.log('Ignoring message on '+msg.args[0]+' by '+msg.sender.nick);
+					return;
+				}
+			} else { //prywatna
+				if(ignore.ignoring(msg.sender.nick, 'query')){
+					console.log('Ignoring private message by '+msg.sender.nick);
+					return;
 				}
 			}
-		}
-	],
-	'AWAY': [
-		function(msg) {
-			if(msg.text == ''){
-				var away = false;
-			} else {
-				var away = true;
-				var reason = msg.text;
-			}
-			gateway.channels.forEach(function(channel){
-				var nickListItem = channel.nicklist.findNick(msg.sender.nick);
-				if(nickListItem){
-					nickListItem.setAway(away);
-					if(away){
-						nickListItem.setAwayReason(reason);
+			
+			var html = $$.parseImages(msg.text);
+			
+			if(msg.text.match(/^\001.*\001$/i)) { //CTCP
+				var space = msg.text.indexOf(' ');
+				if(space > -1){
+					var ctcp = msg.text.substring(1, space);
+					msg.ctcptext = msg.text.substring(space+1, msg.text.length-1);
+				} else {
+					var ctcp = msg.text.slice(1, -1);
+					msg.ctcptext = '';
+				}
+				if(ctcp in ctcpBinds){
+					for(func in ctcpBinds[ctcp]){
+						ctcpBinds[ctcp][func](msg);
+					}
+				} else {
+					var query = gateway.findQuery(qnick);
+					var acttext = msg.text.replace(/^\001(.*)\001$/i, '$1');
+					if(query) {
+						query.appendMessage(messagePatterns.ctcpRequest, [$$.niceTime(), msg.sender.nick, $$.colorize(acttext)]);
+					} else {
+						gateway.statusWindow.appendMessage(messagePatterns.ctcpRequest, [$$.niceTime(), msg.sender.nick, $$.colorize(acttext)]);
+						gateway.statusWindow.markBold();
 					}
 				}
-			});
+				return;
+			}
+			
+			var message = $$.colorize(msg.text);
+			
+			if(msg.args[0].indexOf('#') == 0) { // wiadomość kanałowa
+				if(ignore.ignoring(msg.sender.nick, 'channel')){
+					console.log('Ignoring message on '+msg.args[0]+' by '+msg.sender.nick);
+					return;
+				}
+				var channel = gateway.findOrCreate(msg.args[0]);
+				
+				var pattern = "\\b"+guser.nick+"\\b";
+				var re = new RegExp(pattern);
+				var match = re.test(message);
+				console.log("highlight pattern="+pattern+", returned="+match)
+
+				if(match) { //hajlajt
+						channel.appendMessage(messagePatterns.channelMsgHilight, [$$.niceTime(), msg.sender.nick, message]);
+						if(gateway.active != msg.args[0].toLowerCase() || !disp.focused) {
+							channel.markNew();
+						}
+				} else { //bez hajlajtu
+					for(f in messageProcessors){
+						message = messageProcessors[f](msg.sender.nick, msg.args[0], message);
+					}
+					channel.appendMessage(messagePatterns.channelMsg, [$$.niceTime(), $$.nickColor(msg.sender.nick), msg.sender.nick, message]);
+					if(gateway.active.toLowerCase() != msg.args[0].toLowerCase() || !disp.focused) {
+						channel.markBold();
+					}
+				}
+				channel.appendMessage('%s', [html]);
+			} else if(!msg.sender.server/* && msg.sender.nick != guser.nick*/){ // wiadomość prywatna
+				if(msg.sender.nick == guser.nick){
+					var qnick = msg.args[0];
+				} else {
+					var qnick = msg.sender.nick;
+				}
+				for(f in messageProcessors){
+					message = messageProcessors[f](msg.sender.nick, guser.nick, message);
+				}
+
+				query = gateway.findOrCreate(qnick);
+				query.appendMessage(messagePatterns.channelMsg, [$$.niceTime(), '', msg.sender.nick, message]);
+				if(gateway.active.toLowerCase() != msg.sender.nick.toLowerCase() || !disp.focused) {
+					query.markNew();
+				}
+				query.appendMessage('%s', [html]);
+			}
 		}
 	],
-	'INVITE': [
+	'QUIT': [
 		function(msg) {
-			var html = '<b>'+he(msg.sender.nick)+'</b> zaprasza Cię na kanał <b>'+he(msg.text);
-			var button = [ {
-				text: 'Wejdź',
-				click: function(){
-					ircCommand.channelJoin(msg.text);
-					$(this).dialog('close');
+			if(msg.sender.nick == guser.nick) {
+				for(c in gateway.channels) {
+					gateway.channels[c].part();
+					//gateway.channels[c].appendMessage(messagePatterns.nickChange, [$$.niceTime(), msg.sender.nick, msg.text]);
 				}
-			}, {
-				text: 'Zignoruj',
-				click: function(){
-					$(this).dialog('close');
+			} else {
+				gateway.processQuit(msg);
+			}
+		}
+	],
+	'TOPIC':  [
+		function(msg) {
+			if(gateway.findChannel(msg.args[0])) {
+				if(msg.text) {
+					gateway.findChannel(msg.args[0]).setTopic(msg.text);
+					gateway.findChannel(msg.args[0]).appendMessage(messagePatterns.changeTopic, [$$.niceTime(), he(msg.sender.nick), $$.colorize(msg.text)]);
+				} else {
+					gateway.findChannel(msg.args[0]).setTopic('');
+					gateway.findChannel(msg.args[0]).appendMessage(messagePatterns.deleteTopic, [$$.niceTime(), he(msg.sender.nick), msg.args[0]]);
 				}
-			} ];
-			$$.displayDialog('invite', msg.sender.nick+msg.text, 'Zaproszenie', html, button);
+
+			}
 		}
 	],
 	'001': [	// RPL_WELCOME 
@@ -425,6 +557,36 @@ var cmdBinds = {
 			gateway.pingcnt = 0;
 		}
 	],
+	'301': [	// RPL_AWAY
+		function(msg) {
+			var query = gateway.findQuery(msg.args[1]);
+			if(query){
+				query.appendMessage(messagePatterns.away, [$$.niceTime(), he(msg.args[1]), he(msg.text)]);
+			} else {
+				$$.displayDialog('whois', msg.args[1], false, "<p class='whois'><span class='info'>Nieobecny:</span><span class='data'>" + he(msg.args[1]) + " jest nieobecny(a): " + he(msg.text) + "</span></p>");
+			}
+		}
+	],
+	'305': [	// RPL_UNAWAY 
+		function(msg) {
+			gateway.channels.forEach(function(channel){
+				var nickListItem = channel.nicklist.findNick(guser.nick);
+				nickListItem.setAway(false);
+			});
+			gateway.statusWindow.appendMessage(messagePatterns.yourAwayDisabled, [$$.niceTime()]);
+			gateway.statusWindow.markBold();
+		}
+	],
+	'306': [	// RPL_NOWAWAY
+		function(msg) {
+			gateway.channels.forEach(function(channel){
+				var nickListItem = channel.nicklist.findNick(guser.nick);
+				nickListItem.setAway(true);
+			});
+			gateway.statusWindow.appendMessage(messagePatterns.yourAwayEnabled, [$$.niceTime()]);
+			gateway.statusWindow.markBold();
+		}
+	],
 	'307': [	// RPL_WHOISREGNICK 
 		function(msg) {
 			$$.displayDialog('whois', msg.args[1], false, '<p class="whois"><span class="info"><br /></span><span class="data">Ten nick jest zarejestrowany</span></p>');
@@ -435,16 +597,6 @@ var cmdBinds = {
 			var html = "<p class='whois'><span class='info'>Pełna maska:</span><span class='data'> " + he(msg.args[1]) + "!" + msg.args[2] + "@" + msg.args[3] + "</span></p>" +
 				"<p class='whois'><span class='info'>Realname:</span><span class='data'> " + he(msg.text) + "</span></p>";
 			$$.displayDialog('whois', msg.args[1], 'Informacje o użytkowniku '+he(msg.args[1]), html);
-		}
-	],
-	'301': [	// RPL_AWAY
-		function(msg) {
-			var query = gateway.findQuery(msg.args[1]);
-			if(query){
-				query.appendMessage(messagePatterns.away, [$$.niceTime(), he(msg.args[1]), he(msg.text)]);
-			} else {
-				$$.displayDialog('whois', msg.args[1], false, "<p class='whois'><span class='info'>Nieobecny:</span><span class='data'>" + he(msg.args[1]) + " jest nieobecny(a): " + he(msg.text) + "</span></p>");
-			}
 		}
 	],
 	'312': [	// RPL_WHOISSERVER 
@@ -609,19 +761,65 @@ var cmdBinds = {
 			$$.displayDialog('whois', msg.args[1], false, "<p class='whois'><span class='info'>Nazwa konta:</span><span class='data'>" + msg.args[2] + "</span></p>");
 		}
 	],
+	'332': [	// RPL_TOPIC 
+		function(msg) {
+			if(gateway.findChannel(msg.args[1])) {
+				if(msg.text) {
+					gateway.findChannel(msg.args[1]).setTopic(msg.text);
+					gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.topic, [$$.niceTime(), msg.args[1], $$.colorize(msg.text)]);
+				} else {
+					gateway.findChannel(msg.args[1]).setTopic('');
+					gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.topicNotSet, [$$.niceTime(), msg.args[1]]);
+				}
+			}
+		}
+	],
+	'333': [	// RPL_TOPICWHOTIME 
+		function(msg) {
+			if(gateway.findChannel(msg.args[1])) {
+				gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.topicTime, [$$.niceTime(), msg.args[2], $$.parseTime(msg.args[3])]);
+			}
+		}
+	],
 	'335': [	// RPL_BOT ???
 		function(msg){
 			$$.displayDialog('whois', msg.args[1], false, '<p class="whois"><span class="info"><br /></span><span class="data">Ten użytkownik to <b>bot</b></span></p>');
+		}
+	],
+	'341': [	// RPL_INVITING
+		function(msg) {
+			var chan = gateway.findChannel(msg.args[2]);
+			if(chan){
+				chan.appendMessage(messagePatterns.yourInvite, [$$.niceTime(), he(msg.args[1]), he(msg.args[2])]);
+			} else {
+				gateway.statusWindow.appendMessage(messagePatterns.yourInvite, [$$.niceTime(), he(msg.args[1]), he(msg.args[2])]);
+			}
+		}
+	],
+	'346': [	// RPL_INVITELIST
+		function(msg) {
+			disp.insertLinebeI('I', msg.args);
+		}
+	],
+	'347': [	// RPL_INVITELISTEND
+		function(msg) {
+			disp.endListbeI('I', msg.args[1]);
+		}			
+	],
+	'348': [	// RPL_EXCEPTLIST
+		function(msg) {
+			disp.insertLinebeI('e', msg.args);
+		}
+	],
+	'349': [	// RPL_ENDOFEXCEPTLIST 
+		function(msg) {
+			disp.endListbeI('e', msg.args[1]);
 		}
 	],
 	'352': [	// RPL_WHOREPLY
 		function(msg) {
 			for(var i=0; i<gateway.channels.length; i++){
 				var channel = gateway.channels[i];
-//			var channel = gateway.findChannel(msg.args[1]);
-//			if(!channel){
-//				return;
-//			}
 				var nickListItem = channel.nicklist.findNick(msg.args[5]);
 				if(!nickListItem){
 					continue;
@@ -648,26 +846,6 @@ var cmdBinds = {
 					nickListItem.setRegistered(false);
 				}
 			}
-		}
-	],
-	'305': [	// RPL_UNAWAY 
-		function(msg) {
-			gateway.channels.forEach(function(channel){
-				var nickListItem = channel.nicklist.findNick(guser.nick);
-				nickListItem.setAway(false);
-			});
-			gateway.statusWindow.appendMessage(messagePatterns.yourAwayDisabled, [$$.niceTime()]);
-			gateway.statusWindow.markBold();
-		}
-	],
-	'306': [	// RPL_NOWAWAY
-		function(msg) {
-			gateway.channels.forEach(function(channel){
-				var nickListItem = channel.nicklist.findNick(guser.nick);
-				nickListItem.setAway(true);
-			});
-			gateway.statusWindow.appendMessage(messagePatterns.yourAwayEnabled, [$$.niceTime()]);
-			gateway.statusWindow.markBold();
 		}
 	],
 	'353': [	// RPL_NAMREPLY 
@@ -705,45 +883,45 @@ var cmdBinds = {
 			}
 		}
 	],
-	'332': [	// RPL_TOPIC 
+	'354': [	// RPL_WHOSPCRPL (WHOX)
 		function(msg) {
-			if(gateway.findChannel(msg.args[1])) {
-				if(msg.text) {
-					gateway.findChannel(msg.args[1]).setTopic(msg.text);
-					gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.topic, [$$.niceTime(), msg.args[1], $$.colorize(msg.text)]);
+			if(msg.args[1] != "101"){ //%tuhanfr,101
+				return;
+			}
+			for(var i=0; i<gateway.channels.length; i++){
+				var channel = gateway.channels[i];
+				var nickListItem = channel.nicklist.findNick(msg.args[4]);
+				if(!nickListItem){
+					continue;
+				}
+				nickListItem.setIdent(msg.args[2]);
+				nickListItem.setUserHost(msg.args[3]);
+				nickListItem.setRealname(msg.text);
+				if(msg.args[5].charAt(0) == 'G'){
+					nickListItem.setAway(true);
 				} else {
-					gateway.findChannel(msg.args[1]).setTopic('');
-					gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.topicNotSet, [$$.niceTime(), msg.args[1]]);
+					nickListItem.setAway(false);
+				}
+				if(msg.args[5].indexOf('*') > -1){
+					nickListItem.setIrcOp();
+				}
+				if(msg.args[5].indexOf('B') > -1){
+					nickListItem.setBot(true);
+				} else {
+					nickListItem.setBot(false);
+				}
+				if(msg.args[5].indexOf('r') > -1){
+					nickListItem.setRegistered(true);
+				} else {
+					nickListItem.setRegistered(false);
+				}
+				if(msg.args[6] == "0"){
+					nickListItem.setAccount(false);
+				} else {
+					nickListItem.setAccount(msg.args[6]);
 				}
 			}
 		}
-	],
-	'333': [	// RPL_TOPICWHOTIME 
-		function(msg) {
-			if(gateway.findChannel(msg.args[1])) {
-				gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.topicTime, [$$.niceTime(), msg.args[2], $$.parseTime(msg.args[3])]);
-			}
-		}
-	],
-	'348': [	// RPL_EXCEPTLIST
-		function(msg) {
-			disp.insertLinebeI('e', msg.args);
-		}
-	],
-	'349': [	// RPL_ENDOFEXCEPTLIST 
-		function(msg) {
-			disp.endListbeI('e', msg.args[1]);
-		}
-	],
-	'346': [	// RPL_INVITELIST
-		function(msg) {
-			disp.insertLinebeI('I', msg.args);
-		}
-	],
-	'347': [	// RPL_INVITELISTEND
-		function(msg) {
-			disp.endListbeI('I', msg.args[1]);
-		}			
 	],
 	'367': [	// RPL_BANLIST 
 		function(msg) {
@@ -763,16 +941,6 @@ var cmdBinds = {
 	'376': [	// RPL_ENDOFMOTD
 		function(msg) {
 			gateway.joinChannels()
-		}
-	],
-	'341': [	// RPL_INVITING
-		function(msg) {
-			var chan = gateway.findChannel(msg.args[2]);
-			if(chan){
-				chan.appendMessage(messagePatterns.yourInvite, [$$.niceTime(), he(msg.args[1]), he(msg.args[2])]);
-			} else {
-				gateway.statusWindow.appendMessage(messagePatterns.yourInvite, [$$.niceTime(), he(msg.args[1]), he(msg.args[2])]);
-			}
 		}
 	],
 	'401': [	// ERR_NOSUCHNICK
@@ -883,13 +1051,6 @@ var cmdBinds = {
 			gateway.statusWindow.appendMessage(messagePatterns.nickInUse, [$$.niceTime(), msg.args[1]]);
 		}
 	],
-	'447' : [	// ERR_NONICKCHANGE 
-		function(msg) {
-			var html = "<p>Nie można zmienić nicka.<br>Komunikat od serwera: " + he(msg.text) + '</p>';
-			$$.displayDialog('error', 'error', 'Błąd', html);
-			gateway.statusWindow.appendMessage(messagePatterns.notOnChannel, [$$.niceTime(), he(msg.args[1])]);
-		}
-	],
 	'442' : [	// ERR_NOTONCHANNEL
 		function(msg) {
 			var html = '<p>'+he(msg.args[1])+": nie jesteś na tym kanale.</p>";
@@ -904,20 +1065,16 @@ var cmdBinds = {
 			gateway.statusWindow.appendMessage(messagePatterns.alreadyOnChannel, [$$.niceTime(), he(msg.args[2]), he(msg.args[1])]);
 		}
 	],
+	'447' : [	// ERR_NONICKCHANGE 
+		function(msg) {
+			var html = "<p>Nie można zmienić nicka.<br>Komunikat od serwera: " + he(msg.text) + '</p>';
+			$$.displayDialog('error', 'error', 'Błąd', html);
+			gateway.statusWindow.appendMessage(messagePatterns.notOnChannel, [$$.niceTime(), he(msg.args[1])]);
+		}
+	],
 	'465' : [	// ERR_YOUREBANNEDCREEP
 		function(msg) {
 			gateway.displayGlobalBanInfo(msg.text);
-		}
-	],
-	'474' : [	// ERR_BANNEDFROMCHAN
-		function(msg) {
-			gateway.iKnowIAmConnected(); // TODO inne powody, przez które nie można wejść
-			var html =  "<p>Nie można dołączyć do kanału <b>" + msg.args[1] + "</b>";
-			if (msg.text == "Cannot join channel (+b)") {
-				html += "<br>Jesteś zbanowany.</p>";
-				gateway.statusWindow.appendMessage(messagePatterns.cannotJoin, [$$.niceTime(), msg.args[1], "Jesteś zbanowany"]);
-			}
-			$$.displayDialog('error', 'error', 'Błąd', html);
 		}
 	],
 	'473' : [	// ERR_INVITEONLYCHAN
@@ -936,29 +1093,14 @@ var cmdBinds = {
 			$$.displayDialog('warning', 'warning', 'Ostrzeżenie', html, button);
 		}
 	],
-	'480' : [	// ERR_CANNOTKNOCK
+	'474' : [	// ERR_BANNEDFROMCHAN
 		function(msg) {
-			var html = "<p>Nie można zapukać do kanału.<br>" +
-				"Komunikat serwera: "+he(msg.text) + '</p>';
-			gateway.statusWindow.appendMessage(messagePatterns.alreadyOnChannel, [$$.niceTime(), 'Komunikat serwera', he(msg.text)]);
-			$$.displayDialog('error', 'error', 'Błąd', html);
-		}
-	],
-	'489' : [	// ERR_SECUREONLYCHAN 
-		function(msg) {
-			gateway.iKnowIAmConnected();
-			var html = "<p>Nie można dołączyć do kanału <b>" + he(msg.args[1]) + "</b>" +
-				'<br>Kanał wymaga połączenia z włączonym SSL (tryb +z). Nie jest dostępny z bramki.<br>Możesz spróbować użyć programu HexChat według instrukcji z <a href="http://pirc.pl/teksty/p_instalacja_i_konfiguracja" target="_blank">tej strony</a>.</p?';
-			gateway.statusWindow.appendMessage(messagePatterns.cannotJoin, [$$.niceTime(), msg.args[1], "Kanał wymaga połączenia SSL"]);
-			$$.displayDialog('error', 'error', 'Błąd', html);
-		}
-	],
-	'477' : [	// ERR_NEEDREGGEDNICK
-		function(msg) {
-			gateway.iKnowIAmConnected();
-			var html = "<p>Nie można dołączyć do kanału <b>" + he(msg.args[1]) + "</b>" +
-				'<br>Kanał wymaga, aby Twój nick był zarejestrowany. Zastosuj się do instrukcji otrzymanych od NickServ lub zajrzyj <a href="http://pirc.pl/teksty/p_nickserv" target="_blank">tutaj</a>.</p>';
-			gateway.statusWindow.appendMessage(messagePatterns.cannotJoin, [$$.niceTime(), msg.args[1], "Kanał wymaga zarejestrowanego nicka"]);
+			gateway.iKnowIAmConnected(); // TODO inne powody, przez które nie można wejść
+			var html =  "<p>Nie można dołączyć do kanału <b>" + msg.args[1] + "</b>";
+			if (msg.text == "Cannot join channel (+b)") {
+				html += "<br>Jesteś zbanowany.</p>";
+				gateway.statusWindow.appendMessage(messagePatterns.cannotJoin, [$$.niceTime(), msg.args[1], "Jesteś zbanowany"]);
+			}
 			$$.displayDialog('error', 'error', 'Błąd', html);
 		}
 	],
@@ -971,6 +1113,23 @@ var cmdBinds = {
 				'Hasło do '+he(msg.args[1])+': <input type="password" id="chpass" /> <input type="submit" value="Wejdź" /></form></p>';
 			gateway.statusWindow.appendMessage(messagePatterns.cannotJoin, [$$.niceTime(), msg.args[1], "Wymagane hasło"]);
 			$$.displayDialog('warning', 'warning', 'Ostrzeżenie', html);
+		}
+	],
+	'477' : [	// ERR_NEEDREGGEDNICK
+		function(msg) {
+			gateway.iKnowIAmConnected();
+			var html = "<p>Nie można dołączyć do kanału <b>" + he(msg.args[1]) + "</b>" +
+				'<br>Kanał wymaga, aby Twój nick był zarejestrowany. Zastosuj się do instrukcji otrzymanych od NickServ lub zajrzyj <a href="http://pirc.pl/teksty/p_nickserv" target="_blank">tutaj</a>.</p>';
+			gateway.statusWindow.appendMessage(messagePatterns.cannotJoin, [$$.niceTime(), msg.args[1], "Kanał wymaga zarejestrowanego nicka"]);
+			$$.displayDialog('error', 'error', 'Błąd', html);
+		}
+	],
+	'480' : [	// ERR_CANNOTKNOCK
+		function(msg) {
+			var html = "<p>Nie można zapukać do kanału.<br>" +
+				"Komunikat serwera: "+he(msg.text) + '</p>';
+			gateway.statusWindow.appendMessage(messagePatterns.alreadyOnChannel, [$$.niceTime(), 'Komunikat serwera', he(msg.text)]);
+			$$.displayDialog('error', 'error', 'Błąd', html);
 		}
 	],
 	'482' : [	// ERR_CHANOPRIVSNEEDED 
@@ -998,6 +1157,15 @@ var cmdBinds = {
 			}					
 		}
 	],
+	'489' : [	// ERR_SECUREONLYCHAN 
+		function(msg) {
+			gateway.iKnowIAmConnected();
+			var html = "<p>Nie można dołączyć do kanału <b>" + he(msg.args[1]) + "</b>" +
+				'<br>Kanał wymaga połączenia z włączonym SSL (tryb +z). Nie jest dostępny z bramki.<br>Możesz spróbować użyć programu HexChat według instrukcji z <a href="http://pirc.pl/teksty/p_instalacja_i_konfiguracja" target="_blank">tej strony</a>.</p?';
+			gateway.statusWindow.appendMessage(messagePatterns.cannotJoin, [$$.niceTime(), msg.args[1], "Kanał wymaga połączenia SSL"]);
+			$$.displayDialog('error', 'error', 'Błąd', html);
+		}
+	],
 	'499' : [	// ERR_CHANOWNPRIVNEEDED
 		function(msg) {
 			var html = msg.args[1] + ": brak uprawnień." +
@@ -1006,150 +1174,6 @@ var cmdBinds = {
 				gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.noPerms, [$$.niceTime(), msg.args[1]]);
 			}
 			$$.displayDialog('error', 'error', 'Błąd', html);
-		}
-	],
-	'974' : [	// ERR_CHANOPRIVSNEEDED 
-		function(msg) {
-			gateway.showPermError(msg.text);
-			if(gateway.getActive()) {
-				gateway.getActive().appendMessage(messagePatterns.noPerms, [$$.niceTime(), msg.args[1]]);
-			}
-		}
-	],
-	'PING' : [
-		function(msg) {
-			gateway.forceSend('PONG :'+msg.text);
-		}
-	],
-	'ERROR' : [
-		function(msg) {
-			gateway.lasterror = msg.text;
-
-			gateway.disconnected(msg.text);
-			
-			var expr = /^Closing Link: [^ ]+\[([^ ]+)\] \(User has been banned from/;
-			var match = expr.exec(msg.text);
-			if(match){
-				console.log('IP: '+match[1]);
-				gateway.displayGlobalBanInfo(msg.text);
-				gateway.connectStatus = statusBanned;
-			} 
-			if(gateway.connectStatus == statusBanned) return;
-
-			if(gateway.connectStatus == statusDisconnected) {
-				if(gateway.firstConnect){
-					gateway.reconnect();
-				}
-				return;
-			}
-		
-			gateway.connectStatus = statusDisconnected;
-
-			if(msg.text.match(/\(NickServ \(RECOVER command used by [^ ]+\)\)$/) || msg.text.match(/\(NickServ \(Użytkownik [^ ]+\ użył komendy RECOVER\)\)$/)){
-				$$.displayReconnect();
-				var html = "<h2>Błąd ogólny</h2>" +
-					"<p>Inna sesja rozłączyła Cię używając polecenia RECOVER. Może masz otwartą więcej niż jedną bramkę?</p>";
-				$$.displayDialog('error', 'herror', 'Błąd', html);
-			} else {
-				var html = "<h3>Serwer przerwał połączenie</h3>" +
-					"<p>Informacje: "+msg.text+"</p>";
-				$$.displayDialog('error', 'error', 'Błąd', html);
-				if($('#autoReconnect').is(':checked')){
-					gateway.reconnect();
-				} else {
-					$$.displayReconnect();
-				}
-			}
-		}
-	],
-	'972' : [	// ERR_CANNOTDOCOMMAND 
-		function(msg) {
-			gateway.showPermError(msg.text);
-			if(gateway.getActive()) {
-				gateway.getActive().appendMessage(messagePatterns.noPerms, [$$.niceTime(), msg.args[1]]);
-			}
-		}
-	],
-	'TOPIC':  [
-		function(msg) {
-			if(gateway.findChannel(msg.args[0])) {
-				if(msg.text) {
-					gateway.findChannel(msg.args[0]).setTopic(msg.text);
-					gateway.findChannel(msg.args[0]).appendMessage(messagePatterns.changeTopic, [$$.niceTime(), he(msg.sender.nick), $$.colorize(msg.text)]);
-				} else {
-					gateway.findChannel(msg.args[0]).setTopic('');
-					gateway.findChannel(msg.args[0]).appendMessage(messagePatterns.deleteTopic, [$$.niceTime(), he(msg.sender.nick), msg.args[0]]);
-				}
-
-			}
-		}
-	],
-	'MODE': [
-		function(msg) {
-			var chanName = msg.args[0];
-			if(chanName == guser.nick){
-				gateway.parseUmodes(msg.text);
-			} else if(gateway.findChannel(chanName)) {
-				var modestr = '';
-				for (i in msg.args) {
-					if(i != 0) {
-						modestr += msg.args[i]+' ';
-					}
-				}
-				modestr = modestr.slice(0,-1);
-	
-				var chan = gateway.findChannel(chanName);
-				var args2 = msg.args;
-				args2.shift();
-				var info = gateway.parseChannelMode(args2, chan);
-				if (!$('#showMode').is(':checked') || msg.sender.nick.toLowerCase() == guser.nick.toLowerCase()) {
-					chan.appendMessage(messagePatterns.modeChange, [$$.niceTime(), he(msg.sender.nick), /*he(modestr)*/info, he(chanName)]);
-				}
-			}
-		}
-	],
-	'CAP': [
-		function(msg) {
-			switch(msg.args[1]){
-				case 'LS':
-					var availableCaps = msg.text.split(' ');
-					var caps = ['userhost-in-names', 'away-notify', 'multi-prefix', 'chghost', 'extended-join', 'account-notify'];
-					if(guser.nickservpass != '' && guser.nickservnick != ''){
-						caps.push('sasl');
-					}
-					var useCaps = '';
-					caps.forEach(function(cap){
-						if(availableCaps.indexOf(cap) >= 0){
-							if(useCaps.length > 0) useCaps += ' ';
-							useCaps += cap;
-						}
-					});
-					ircCommand.performQuick('CAP', ['REQ'], useCaps);
-					break;
-				case 'ACK':
-					activeCaps = msg.text.split(' ');
-					if(activeCaps.indexOf('sasl') >= 0){
-						gateway.sasl = true;
-					}
-					if(guser.nickservpass != '' && guser.nickservnick != '' && gateway.sasl){
-						ircCommand.performQuick('AUTHENTICATE', ['PLAIN']);
-						gateway.statusWindow.appendMessage(messagePatterns.SaslAuthenticate, [$$.niceTime(), 'Próba logowania za pomocą SASL...']);
-					} else {
-						ircCommand.performQuick('CAP', ['END']);
-					}
-					break;
-			}
-		}
-	],
-	'AUTHENTICATE': [
-		function(msg) {
-			if(msg.args[0] == '+'){
-				ircCommand.performQuick('AUTHENTICATE', [Base64.encode(guser.nickservnick + '\0' + guser.nickservnick + '\0' + guser.nickservpass)]);
-				gateway.statusWindow.appendMessage(messagePatterns.SaslAuthenticate, [$$.niceTime(), 'SASL: logowanie do konta '+he(guser.nickservnick)]);
-			} else {
-				ircCommand.performQuick('CAP', ['END']);
-			}
-			gateway.connectStatus = statusIdentified;
 		}
 	],
 	'900': [ // RPL_LOGGEDIN
@@ -1163,6 +1187,22 @@ var cmdBinds = {
 			ircCommand.performQuick('CAP', ['END']);
 			gateway.statusWindow.appendMessage(messagePatterns.SaslAuthenticate, [$$.niceTime(), 'SASL: logowanie nieudane!']);
 //			gateway.sasl = false;
+		}
+	],
+	'972' : [	// ERR_CANNOTDOCOMMAND 
+		function(msg) {
+			gateway.showPermError(msg.text);
+			if(gateway.getActive()) {
+				gateway.getActive().appendMessage(messagePatterns.noPerms, [$$.niceTime(), msg.args[1]]);
+			}
+		}
+	],
+	'974' : [	// ERR_CHANOPRIVSNEEDED 
+		function(msg) {
+			gateway.showPermError(msg.text);
+			if(gateway.getActive()) {
+				gateway.getActive().appendMessage(messagePatterns.noPerms, [$$.niceTime(), msg.args[1]]);
+			}
 		}
 	]
 };

@@ -133,6 +133,9 @@ var ircCommand = {
 	},
 	'who': function(dest){ // TODO dorobić zabezpieczenie przed dużą ilością żądań na raz
 		ircCommand.perform('WHO', [dest]);
+	},
+	'whox': function(dest, args){
+		ircCommand.perform('WHO', [dest, '%'+args]);	
 	}
 };
 
