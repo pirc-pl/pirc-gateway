@@ -535,7 +535,7 @@ var cmdBinds = {
 			}
 			gateway.statusWindow.appendMessage(messagePatterns.motd, [$$.niceTime(), he(msg.text)]);
 			gateway.pingcnt = 0;
-			if(!gateway.sasl) gateway.connectStatus = status001;
+			gateway.connectStatus = status001;
 		}
 	],
 	'005': [	// RPL_ISUPPORT

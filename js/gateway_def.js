@@ -343,6 +343,7 @@ var gateway = {
 				if(guser.nick != guser.nickservnick) { //auto-ghost
 					gateway.connectStatus = statusGhostSent;
 					ircCommand.NickServ('RECOVER', [guser.nickservnick, guser.nickservpass]);
+					gatewayStatus = statusGhostSent;
 				} else gatewayStatus = statusIdentified;
 			}
 			if(gateway.connectStatus == statusReIdentify){ // TODO nie zmienia się nick
@@ -354,9 +355,9 @@ var gateway = {
 					ircCommand.NickServ('IDENTIFY', guser.nickservpass);
 				}
 			}
-			if(gateway.connectStatus == statusGhostSent && guser.nick == guser.nickservnick){ //ghost się udał
+			if(gateway.connectStatus == statusGhostAndNickSent && guser.nick == guser.nickservnick){ //ghost się udał
 				if(gateway.nickWasInUse){
-					var html = '<p>I już nie jest: usunąłem go używając twojego hasła :)</p>';
+					var html = '<p>I już nie jest: usunąłem go używając Twojego hasła :)</p>';
 					$$.displayDialog('warning', 'warning', 'Ostrzeżenie', html);
 					gateway.nickWasInUse = false;
 				}
