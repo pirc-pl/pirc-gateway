@@ -93,19 +93,13 @@ var messagePatterns = {
 	'ctcpReply': '<span class="time">%s</span> &nbsp; <span class="notice">✯ <b>CTCP REPLY od %s:</b> %s</span><br />',
 	'chanListElement': '<span class="time">%s</span> &nbsp; <span class="notice">✯ <b><a href="#" onClick="gateway.send(\'JOIN %s\')">%s</a></b> (%s) - %s </span> <br />',
 	'chanListElementHidden': '<span class="time">%s</span> &nbsp; <span class="notice">✯ <b>(kanał ukryty)</b> (%s) - (temat ukryty) </span> <br />',
-/*	'banListElement': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Ban: <b>%s</b> <i>założony przez:</i> <b>%s</b> (%s) </span><br />',
-	'banListEnd': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Koniec listy banów.</span><br />',
-	'invexListElement': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Invex: <b>%s</b> <i>założony przez:</i> <b>%s</b> (%s) </span><br />',
-	'invexListEnd': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Koniec listy invex.</span><br />',
-	'exceptListElement': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Except: <b>%s</b> <i>założony przez:</i> <b>%s</b> (%s) </span><br />',
-	'exceptListEnd': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Koniec listy except.</span><br />',*/
 	'error': '<span class="time">%s</span> &nbsp; <span class="mode"> ⮿ Rozłączono z serwerem: %s</span><br />',
 	'existingConnection': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Połączenie już istnieje, dołączam się do niego.</span><br />',
 	'away': '<span class="time">%s</span> &nbsp; <span class="mode">🍵 <span class="modeinfo">%s</span> otrzymał twoją wiadomość, ale jest teraz nieobecny: %s</span><br />',
 	'yourAwayEnabled': '<span class="time">%s</span> &nbsp; <span class="mode">🍵 Jesteś teraz oznaczony jako nieobecny</span><br />',
 	'yourAwayDisabled': '<span class="time">%s</span> &nbsp; <span class="mode">🍵 Nie jesteś już oznaczony jako nieobecny</span><br />',
 	'yourInvite': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Zaprosiłeś użytkownika <span class="modeinfo">%s</span> na kanał <span class="modeinfo">%s</span></span><br />',
-	'knocked': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Poprosiłeś o dostęp ("zapukałeś") na <span class="modeinfo">%s</span>, czekaj na zaproszenie od operatora</span><br />',
+	'knocked': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Poprosiłeś o dostęp ("zapukałeś") na <span class="modeinfo">%s</span>, czekaj na zaproszenie od operatora. Pamiętaj, że w danej chwili żaden operator może nie być przy komputerze. W takiej sytuacji zaczekaj kilkadziesiąt minut i spróbuj jeszcze raz.</span><br />',
 	'listShown': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Lista kanałów będzie wyświetlona w zakładce statusu.</span><br />',
 	'channelIgnoreAdded': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Dodano <b>%s</b> do ignorowanych na kanałach.</span><br />',
 	'channelIgnoreRemoved': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Usunięto <b>%s</b> z ignorowanych na kanałach.</span><br />',
@@ -932,6 +926,18 @@ var $$ = {
 		});
 		return ret;
 	},
+	'correctLink': function(link){
+		var append = '';
+		var text = link;
+		if(link.slice(-1) == '.') {
+			link = currLink.slice(0, -1);
+			append = '.';
+		}
+		if(link.startsWith('www.')){
+			link = 'http://' + link;
+		}
+		return {'link': link, 'append': append, 'text': text};
+	},
 	'parseLinks': function(text){
 		var newText = '';
 		var currLink = '';
@@ -950,7 +956,7 @@ var $$ = {
 			switch(state){
 				case stateText:
 					var stub = text.substring(i);
-					var found = $$.checkLinkStart(stub, ['ftp://', 'http://', 'https://']);
+					var found = $$.checkLinkStart(stub, ['ftp://', 'http://', 'https://', 'www.']);
 					if(found.found){
 						currLink = found.linkBegin;
 						i += found.beginLength-1;
@@ -968,7 +974,9 @@ var $$ = {
 					if(c != ' ' && c != ',' && code > 10){
 						currLink += c;
 					} else {
-						newText += '<a href="javascript:gateway.send(\'JOIN '+bsEscape(currLink)+'\')"' + confirmChan + '>'+currLink+'</a> ';
+						var append = '';
+						var link = $$.correctLink(currLink);
+						newText += '<a href="javascript:gateway.send(\'JOIN '+bsEscape(link.link)+'\')"' + confirmChan + '>'+link.text+'</a>' + c + link.append;
 						state = stateText;
 					}
 					break;
@@ -978,17 +986,20 @@ var $$ = {
 					if(c != ' ' && code > 10 && c != '<'){
 						currLink += c;
 					} else {
-						newText += '<a href="'+currLink+'" target="_blank"' + confirm + '>'+currLink+'</a> ';
+						var link = $$.correctLink(currLink);
+						newText += '<a href="'+link.link+'" target="_blank"' + confirm + '>'+link.text+'</a>' + c + link.append;
 						state = stateText;
 					}
 					break;
 			}			
 		}
 		if(state == stateUrl){
-			newText += '<a href="'+currLink+'" target="_blank"' + confirm + '>'+currLink+'</a>';
+			var link = $$.correctLink(currLink);
+			newText += '<a href="'+link.link+'" target="_blank"' + confirm + '>'+link.text+'</a>' + link.append;
 		}
 		if(state == stateChannel){
-			newText += '<a href="javascript:gateway.send(\'JOIN '+currLink+'\')"' + confirmChan + '>'+currLink+'</a>';
+			var link = $$.correctLink(currLink);
+			newText += '<a href="javascript:gateway.send(\'JOIN '+link.link+'\')"' + confirmChan + '>'+link.text+'</a>' + link.append;
 		}
 		return newText;
 	},

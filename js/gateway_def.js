@@ -139,13 +139,8 @@ var irc = {
 			ircmsg.sender.user = true;
 		}
 	
-	//	console.log(line);
 		console.log(ircmsg);
-	
-	/*	packets[packetcnt] = ircmsg;
-		packetcnt++;*/
 
-//		return {'status': 2, 'packets': packets };
 		return ircmsg;
 	}
 };
@@ -399,11 +394,6 @@ var gateway = {
 		}
 	},
 	'joinChannels': function() {
-	/*	var joinstr = guser.channels[0]?('JOIN '+guser.channels[0]+'\r\n'):'';
-		for(c in gateway.channels) {
-			joinstr += "JOIN "+gateway.channels[c].name+"\r\n";
-		}
-		gateway.send(joinstr);*/
 		ircCommand.channelJoin(guser.channels);
 		ircCommand.channelJoin(gateway.channels);
 	},
@@ -425,7 +415,6 @@ var gateway = {
 	},
 	'stopAndReconnect': function () {
 		gateway.disconnected('Zbyt długi czas łączenia');
-		//gateway.send('QUIT :Błąd bramki >> łączenie trwało zbyt długo');
 		ircCommand.quit('Błąd bramki >> łączenie trwało zbyt długo');
 		setTimeout('gateway.reconnect()', 500);
 	},
@@ -588,7 +577,6 @@ var gateway = {
 			return false;
 		}
 		var newTopic = $('#topicEdit').val().replace(/\n/g, ' ');
-		//gateway.send('TOPIC '+channel+' :'+$$.tagsToColors(newTopic));
 		ircCommand.channelTopic(channel, $$.tagsToColors(newTopic));
 		$$.closeDialog('confirm', 'topic');
 		return true;
@@ -1070,9 +1058,7 @@ var gateway = {
 						$$.alert('Wybierz jedną z opcji!');
 						return;
 					}
-//					if(mode != '-') gateway.send('MODE '+channel+' '+mode+' '+nick);
 					if(mode != '-') ircCommand.mode(channel, mode+' '+nick);
-//					if(svsmode != '-') gateway.performCommand('CS '+svsmode+' '+channel+' ADD '+nick);
 					if(svsmode != '-') ircCommand.ChanServ(svsmode, [channel, 'ADD', nick]);
 					$(this).dialog('close');
 				}
@@ -1111,9 +1097,7 @@ var gateway = {
 						$$.alert('Wybierz jedną z opcji!');
 						return;
 					}
-					//if(mode != '-') gateway.send('MODE '+channel+' '+mode+' '+nick);
 					if(mode != '-') ircCommand.mode(channel, mode +' '+nick);
-					//if(svsmode == '+') gateway.performCommand('CS ACCESS '+channel+' DEL '+nick);
 					if(svsmode == '+') ircCommand.ChanServ('ACCESS', [channel, 'DEL', nick]);
 					$(this).dialog('close');
 				}
@@ -1218,8 +1202,6 @@ var gateway = {
 			}
 		}, this);
 		
-		//var modeStr = 'MODE '+channel+' '+modesw+' '+modearg;
-		//gateway.send(modeStr);
 		ircCommand.mode(channel, modesw+' '+modearg);
 		setTimeout(function(){ gateway.showChannelModes(channel); }, 2000);
 	},
@@ -1238,7 +1220,6 @@ var gateway = {
 					$$.alert('Musisz podać nicka!');
 					return;
 				}
-				//gateway.send('INVITE '+nick+' '+channel);
 				ircCommand.channelInvite(channel, nick);
 				$(this).dialog('close');
 			}
@@ -1250,7 +1231,6 @@ var gateway = {
 		var button = [ {
 			text: 'Zaproś',
 			click: function(){
-				//gateway.send('INVITE '+nick+' '+channel);
 				ircCommand.channelInvite(channel, nick);
 				$(this).dialog('close');
 			}
@@ -1269,11 +1249,6 @@ var gateway = {
 			text: 'Wyrzuć',
 			click: function(){
 				var reason = $('#kickinput').val();
-				/*if(reason != ''){
-					gateway.send('KICK '+channel+' '+nick+' '+reason);
-				} else {
-					gateway.send('KICK '+channel+' '+nick);
-				}*/
 				ircCommand.channelKick(channel, nick, reason);
 				$(this).dialog('close');
 			}
@@ -1920,14 +1895,12 @@ var gateway = {
 			$('#chlist-button').text('⮛ schowaj listę ⮛');
 			if(!$('#chlist-body > table').length){
 				gateway.smallListLoading = true;
-				//gateway.send('LIST >9');
 				ircCommand.listChannels('>9');
 			}
 		}
 	},
 	'refreshChanList': function() {
 		gateway.smallListLoading = true;
-		//gateway.send('LIST >9');
 		ircCommand.listChannels('>9');
 		$('#chlist-body').html('Poczekaj, trwa ładowanie...');
 	},

@@ -1158,7 +1158,7 @@ var cmdBinds = {
 		}
 	],
 	'489' : [	// ERR_SECUREONLYCHAN 
-		function(msg) {
+		function(msg) { // to się nie zdarzy gdy używamy wss
 			gateway.iKnowIAmConnected();
 			var html = "<p>Nie można dołączyć do kanału <b>" + he(msg.args[1]) + "</b>" +
 				'<br>Kanał wymaga połączenia z włączonym SSL (tryb +z). Nie jest dostępny z bramki.<br>Możesz spróbować użyć programu HexChat według instrukcji z <a href="http://pirc.pl/teksty/p_instalacja_i_konfiguracja" target="_blank">tej strony</a>.</p?';
