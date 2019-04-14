@@ -344,9 +344,9 @@ var gateway = {
 					gateway.connectStatus = statusGhostSent;
 					ircCommand.NickServ('RECOVER', [guser.nickservnick, guser.nickservpass]);
 					gatewayStatus = statusGhostSent;
-				} else gatewayStatus = statusIdentified;
+				} else gateway.connectStatus = statusIdentified;
 			}
-			if(gateway.connectStatus == statusReIdentify){ // TODO nie zmienia się nick
+			if(gateway.connectStatus == statusReIdentify){
 				if(guser.nick != guser.nickservnick){
 					gateway.connectStatus = statusGhostSent;
 					ircCommand.NickServ('RECOVER', [guser.nickservnick, guser.nickservpass]);
