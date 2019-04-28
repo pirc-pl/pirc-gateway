@@ -256,7 +256,7 @@ var cmdBinds = {
 				for(c in gateway.channels) {
 					if(gateway.channels[c].nicklist.findNick(msg.sender.nick)) {
 						gateway.channels[c].nicklist.changeNick(msg.sender.nick, msg.text);
-						gateway.channels[c].appendMessage(messagePatterns.nickChange, [$$.niceTime(), he(msg.sender.nick), he(msg.text)]);
+						if (!$('#showNickChanges').is(':checked')) gateway.channels[c].appendMessage(messagePatterns.nickChange, [$$.niceTime(), he(msg.sender.nick), he(msg.text)]);
 					}
 				}
 				if(gateway.findQuery(msg.sender.nick)) {

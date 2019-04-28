@@ -30,6 +30,10 @@
 					<td class="info">Nie pokazuj wiadomości PART/JOIN/QUIT (wejścia/wyjścia z kanałów)</td>
 				</tr>
 				<tr>
+					<td class="optionsCheckBox"><input type="checkbox" id="showNickChanges" onchange="disp.changeSettings(event)" /></td>
+					<td class="info">Nie pokazuj informacji o zmianach nicków</td>
+				</tr>
+				<tr>
 					<td class="optionsCheckBox"><input type="checkbox" id="showMode" onchange="disp.changeSettings(event)" /></td>
 					<td class="info">Nie pokazuj wiadomości MODE (zmian trybów)</td>
 				</tr>

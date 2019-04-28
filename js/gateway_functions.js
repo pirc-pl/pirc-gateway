@@ -13,7 +13,7 @@ var chStatusInfo = [ 'Niezarejestrowany', 'Prawo głosu', 'Pół-operator', 'Ope
 
 var reqChannel = '';
 
-var booleanSettings = [ 'showPartQuit', 'tabsListBottom', 'showUserHostnames', 'autoReconnect', 'displayLinkWarning', 'blackTheme', 'newMsgSound', 'autoDisconnect', 'coloredNicks', 'showMode', 'dispEmoji', 'sendEmoji', 'monoSpaceFont', 'automLogIn', 'setUmodeD', 'setUmodeR' ];
+var booleanSettings = [ 'showPartQuit', 'showNickChanges', 'tabsListBottom', 'showUserHostnames', 'autoReconnect', 'displayLinkWarning', 'blackTheme', 'newMsgSound', 'autoDisconnect', 'coloredNicks', 'showMode', 'dispEmoji', 'sendEmoji', 'monoSpaceFont', 'automLogIn', 'setUmodeD', 'setUmodeR' ];
 var comboSettings = [ 'noticeDisplay' ];
 var numberSettings = [ 'backlogCount' ];
 var numberSettingsMinMax = {
