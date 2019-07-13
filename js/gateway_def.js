@@ -1031,7 +1031,7 @@ var gateway = {
 				'<option value="+v">VOICE (Uprawnienie do głosu)</option>'+
 				'<option value="+h">HALFOP (Pół-operator kanału)</option>'+
 				'<option value="+o">OP (Operator kanału)</option>'+
-				'<option value="+a">PROTECT (Ochrona przed kopnięciem)</option>'+
+				'<option value="+a">PROTECT/SOP (Administrator, ochrona przed kopnięciem)</option>'+
 				'<option value="+q">FOUNDER (Właściciel kanału)</option>'+
 			'</select>' +
 			'<p>Daj użytkownikowi <strong>'+he(nick)+'</strong> uprawnienia w ChanServ (na stałe) na kanale <strong>'+he(channel)+'</strong><br>(musisz posiadać odpowiedni dostęp do serwisów):</p>' +
@@ -1040,7 +1040,7 @@ var gateway = {
 				'<option value="VOP">VOP: VOICE (Uprawnienie do głosu)</option>'+
 				'<option value="HOP">HOP: HALFOP (Pół-operator kanału)</option>'+
 				'<option value="AOP">AOP: OP (Operator kanału)</option>'+
-				'<option value="SOP">SOP: PROTECT (Ochrona przed kopnięciem)</option>'+
+				'<option value="SOP">SOP: PROTECT/SOP (Administrator, ochrona przed kopnięciem)</option>'+
 				'<option value="QOP">QOP: FOUNDER (Właściciel kanału)</option>'+
 			'</select>';
 		var button = [
@@ -1975,6 +1975,11 @@ var gateway = {
 		$$.closeDialog('connect', '1');
 		$$.displayDialog('error', 'noaccess', 'Brak dostępu', html);
 		gateway.connectStatus = statusBanned;
+	},
+	'inputPaste': function(e){
+		console.log(e);
+		var items = (e.clipboardData || e.originalEvent.clipboardData).items;
+		console.log(items);
 	}
 }
 

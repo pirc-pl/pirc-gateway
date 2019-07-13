@@ -452,6 +452,26 @@ var commands = {
 			}
 		}
 	},
+	'names': {
+		'channels': true,
+		'nicks': false,
+		'custom': [],
+		'callback': function(command, input){
+			if (command[1]) {
+				if (command[1].indexOf('#') != 0) {
+					gateway.notEnoughParams("names", "musisz podać kanał jako pierwszy argument.");
+				} else {
+					ircCommand.channelNames(command[1]);
+				}
+			} else {
+				if (gateway.getActive()) {
+					ircCommand.channelNames(gateway.active);
+				} else {
+					gateway.notEnoughParams("names", "musisz podać kanał jako pierwszy argument.");
+				}
+			}
+		}
+	},
 	'me': {
 		'channels': true,
 		'nicks': true,

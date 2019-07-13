@@ -420,8 +420,12 @@ span.yournickname {
 	height: 5em;
 }
 
-.whois-dialog, .warning-dialog, .confirm-dialog {
+.whois-dialog, .warning-dialog, .confirm-dialog, .names-dialog {
 	background: url("/styles/img/info.png") no-repeat scroll right top #D7E4F3 !important;
+}
+
+.names-dialog td, .names-dialog th {
+	border: 1px solid gray;
 }
 
 .notice-dialog {

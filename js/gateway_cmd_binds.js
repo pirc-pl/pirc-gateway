@@ -853,10 +853,26 @@ var cmdBinds = {
 			var regexp = /^(~)?(&)?(@)?(%)?(\+)?([^~&@%+!]*)(?:!([^@]*)@(.*))?$/
 			gateway.iKnowIAmConnected();
 			var channel = gateway.findChannel(msg.args[2]);
-			if(!channel){
+			var names = msg.text.split(' ');
+			if(!channel || channel.hasNames){ // manual NAMES request
+				var html = '<table><tr><th></th><th>Nick</th><th>ident@host</th></tr>';
+				var names = msg.text.split(' ');
+				for ( name in names ) {
+					var rmatch = regexp.exec(names[name]);
+					html += '<tr><td>';
+					for(var i=0; i<5; i++){
+						if(rmatch[i+1]) html += rmatch[i+1];
+					}
+					html += '</td><td><b>'+rmatch[6]+'</b></td><td>';
+					if(rmatch[7] && rmatch[8]){
+						html += rmatch[7]+'@'+rmatch[8];
+					}
+					html += '</td></tr>';
+				}
+				html += '</table>';
+				$$.displayDialog('names', msg.args[2], 'Lista nicków dla '+msg.args[2], html);
 				return;
 			}
-			var names = msg.text.split(' ');
 			for ( name in names ) {
 				var rmatch = regexp.exec(names[name]);
 				channel.nicklist.addNick(rmatch[6]);
@@ -921,6 +937,15 @@ var cmdBinds = {
 					nickListItem.setAccount(msg.args[6]);
 				}
 			}
+		}
+	],
+	'366': [	// RPL_ENDOFNAMES
+		function(msg) {
+			var channel = gateway.findChannel(msg.args[1]);
+			if(!channel){
+				return;
+			}
+			channel.hasNames = true;
 		}
 	],
 	'367': [	// RPL_BANLIST 

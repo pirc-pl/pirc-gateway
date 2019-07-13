@@ -332,9 +332,9 @@ var readyFunc = function(){
 	if(loaded) return;
 	$('.not-connected-text > h3').html('Ładowanie');
 	$('.not-connected-text > p').html('Poczekaj chwilę, trwa ładowanie...');
-	if($.browser.msie && parseInt($.browser.version, 10) < 8) {
+	if($.browser.msie && parseInt($.browser.version, 10) < 9) {
 		$('.not-connected-text > h3').html('Przestarzała przeglądarka');
-		$('.not-connected-text > p').html('Twoja przeglądarka jest przestarzała i nie jest obsługiwana. Należy zaktualizować przeglądarkę Internet Explorer do wersji 8 lub wyższej albo użyć innej przeglądarki (Firefox, Opera, Chrome, Safari) w którejś z nowszych wersji.<br />Jeżeli posiadasz przeglądarkę Internet Explorer 8 lub wyższej i widzisz ten komunikat wyłącz tzw "widok zgodności" dla tej strony.');
+		$('.not-connected-text > p').html('Twoja przeglądarka jest przestarzała i nie jest obsługiwana. Należy zaktualizować przeglądarkę Internet Explorer do wersji 9 lub wyższej albo użyć innej przeglądarki (Firefox, Opera, Chrome, Safari) w którejś z nowszych wersji.<br />Jeżeli posiadasz przeglądarkę Internet Explorer w wersji 9 lub wyższej i widzisz ten komunikat wyłącz tzw "widok zgodności" dla tej strony.');
 		gateway = 0;
 		guser = 0;
 		cmd_binds = 0;

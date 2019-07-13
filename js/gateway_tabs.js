@@ -489,6 +489,7 @@ function Channel(chan) {
 	this.scrollSaved = false;
 	this.topic = '';
 	this.newLines = false;
+	this.hasNames = false;
 
 	this.part = function() {
 		this.left = true;
@@ -685,7 +686,7 @@ function Channel(chan) {
 				'<li onclick="services.perform(\'ns\', \'AJOIN DEL '+bsEscape(this.name)+'\', true)">Wyłącz</li>' +
 			'</div>'+
 			'<li onclick="gateway.findChannel(\''+bsEscape(this.name)+'\').clearWindow()">Wyczyść okno rozmowy</li>' +
-			'<li onclick="gateway.send(\'NAMES '+bsEscape(this.name)+'\')">Odśwież listę nicków</li>' +
+			'<li onclick="ircCommand.channelRedoNames(\''+bsEscape(this.name)+'\')">Odśwież listę nicków</li>' +
 			/*'<li onclick="gateway.send(\'MODE '+bsEscape(this.name)+' I\')" title="Znajdujący się na liście nie potrzebują zaproszenia, gdy jest ustawiony tryb +i">Lista wyjątków i (I)</li>' +
 			'<li onclick="gateway.showChannelModes(\''+bsEscape(this.name)+'\')">Tryby kanału</li>' +
 			'<li onclick="gateway.showInvitePrompt(\''+bsEscape(this.name)+'\')">Zaproś na kanał</li>' +

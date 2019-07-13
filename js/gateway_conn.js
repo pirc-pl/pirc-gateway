@@ -182,6 +182,7 @@ var conn = {
 				conn.waitForAlive = false;
 			}
 		}, 100);
+		$('#input').on('paste', gateway.inputPaste);
 	},
 	'aliveWaitTimeout': false,
 	'waitForAlive': false

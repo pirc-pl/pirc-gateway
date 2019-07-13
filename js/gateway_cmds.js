@@ -85,6 +85,13 @@ var ircCommand = {
 	'channelNames': function(chan){
 		ircCommand.perform('NAMES', [chan]);
 	},
+	'channelRedoNames': function(chan){ // do /NAMES silently
+		var channel = gateway.findChannel(chan);
+		if(channel){
+			channel.hasNames = false;
+		}
+		ircCommand.perform('NAMES', [chan]);
+	},
 	'listChannels': function(text){
 		if(text){
 			ircCommand.perform('LIST', [text]);
