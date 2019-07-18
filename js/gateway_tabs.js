@@ -493,6 +493,7 @@ function Channel(chan) {
 
 	this.part = function() {
 		this.left = true;
+		this.hasNames = false;
 		this.nicklist.remove();
 		this.nicklist = new Nicklist(this.name, this.id);
 	}
