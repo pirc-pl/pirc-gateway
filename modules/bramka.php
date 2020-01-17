@@ -1,10 +1,11 @@
 <?php
 
 class Module extends ModuleT {
-	private static $nick = '';
+	private static $nick;
 
 	public static function run() {
 		$timestamp = time();
+		$nick = '';
 		$gateway_url = '<a href=\"';
 //		$gateway_url = '';
 		$gateway_url .= 'https://widget01.mibbit.com/?promptPass=true&settings=10db5282f0641bc847a88fc71f2bc200&server=irc.pirc.pl&autoConnect=true&charset=UTF-8'; // tego używamy gdy nasza nie działa
@@ -31,10 +32,10 @@ class Module extends ModuleT {
 		$add_js = '';
 		$addons = array();
 		$disable_addons = array();
-		if($_GET['addons']){
+		if(@$_GET['addons']){
 			$addons = explode(',', $_GET['addons']);
 		}
-		if($_GET['disable_addons']){
+		if(@$_GET['disable_addons']){
 			$disable_addons = explode(',', $_GET['disable_addons']);
 		}
 		foreach($addons as $addon){
