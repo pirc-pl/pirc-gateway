@@ -387,6 +387,10 @@ function browserTooOld(){
 	return;
 }
 
+function escapeRegExp(string) {
+	return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
+}
+
 var disp = {
 	'size': 1,
 	'focused': true,

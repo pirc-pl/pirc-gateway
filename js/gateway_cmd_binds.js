@@ -453,7 +453,7 @@ var cmdBinds = {
 				}
 				var channel = gateway.findOrCreate(msg.args[0]);
 				
-				var pattern = "\\b"+guser.nick+"\\b";
+				var pattern = "\\b"+escapeRegExp(guser.nick)+"\\b";
 				var re = new RegExp(pattern);
 				var match = re.test(message);
 				console.log("highlight pattern="+pattern+", returned="+match)
