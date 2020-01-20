@@ -114,9 +114,9 @@ var messagePatterns = {
 };
 
 var modes = {
-	'single': ['p', 's', 'm', 'n', 't', 'i', 'r', 'R', 'c', 'O', 'Q', 'K', 'V', 'C', 'u', 'z', 'N', 'S', 'M', 'T', 'G', 'D', 'd'],
-	'argBoth': ['k', 'b', 'e', 'I', 'f'],
-	'argAdd': ['L', 'l'],
+	'single': ['p', 's', 'm', 'n', 't', 'i', 'r', 'R', 'c', 'O', 'Q', 'K', 'V', 'C', 'z', 'N', 'S', 'M', 'T', 'G', 'D', 'd'],
+	'argBoth': ['k', 'b', 'e', 'I', 'L', 'f'],
+	'argAdd': ['H', 'l'],
 	'user': ['q','a','o','h','v'],
 	'changeableSingle': [
 		['m', 'Kanał moderowany'],
@@ -129,7 +129,7 @@ var modes = {
 		['t', 'Tylko operator może zmieniać temat'],
 		['n', 'Nie można wysyłać wiadomości nie będąc na kanale'],
 		['D', 'Użytkownicy będą widoczni na liście tylko wtedy, gdy coś napiszą'],
-		['U', 'Zakaz powtarzania wiadomości']
+//		['U', 'Zakaz powtarzania wiadomości']
 	],
 	'changeableArg': [
 		['k', 'Hasło do kanału'],
@@ -166,7 +166,7 @@ var chModeInfo = {
 	'K': ['blokadę pukania', 'zablokowane pukanie'],
 	'V': ['blokadę zaproszeń', 'zablokowane zaproszenia'],
 	'C': ['blokadę CTCP', 'zablokowane CTCP'],
-	'u': 'tryb u',
+//	'u': 'tryb u',
 	'z': 'wejście tylko dla połączeń szyfrowanych',
 	'N': ['blokadę zmian nicków', 'zablokowana zmiana nicków'],
 	'S': 'usuwanie kolorów',
@@ -175,7 +175,9 @@ var chModeInfo = {
 	'G': 'tryb G',
 	'D': 'tryb D: użytkownicy będą widoczni na liście tylko wtedy, gdy coś napiszą',
 	'd': 'tryb d',
-	'U': 'zakaz powtarzania wiadomości'
+	'H-add': 'pamięć historii kanału',
+	'H-remove': 'pamięć historii kanału'
+//	'U': 'zakaz powtarzania wiadomości'
 };
 
 var servicesNicks = ['NickServ', 'ChanServ', 'HostServ', 'OperServ', 'Global', 'BotServ'];
@@ -318,6 +320,7 @@ var stateMessage = 3;
 var stateCommand = 4;
 var stateSenderUser = 5;
 var stateSenderHost = 6;
+var stateTags = 7;
 
 var settings = {
 	'backlogLength': 15
@@ -387,8 +390,9 @@ function browserTooOld(){
 	return;
 }
 
-function escapeRegExp(string) {
-	return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
+function parseISOString(s) {
+	var b = s.split(/\D+/);
+	return new Date(Date.UTC(b[0], --b[1], b[2], b[3], b[4], b[5], b[6]));
 }
 
 var disp = {
@@ -1135,8 +1139,12 @@ var $$ = {
 		}
 		return text;
 	},
-	'niceTime': function() {
-		dateobj = new Date();
+	'niceTime': function(date) {
+		if(date){
+			dateobj = date;
+		} else {
+			dateobj = new Date();
+		}
 		hours = dateobj.getHours();
 		if(hours < 10) {
 			hours = '0'+hours;
@@ -1147,5 +1155,9 @@ var $$ = {
 		}
 		return hours+':'+minutes;
 	}
+}
+
+function escapeRegExp(string) { // my editor syntax colouring fails at this, so moved to the end
+	return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
 }
 

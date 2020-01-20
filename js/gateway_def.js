@@ -30,11 +30,16 @@ guser.clearUmodes = function(){
 	guser.umodes = {};
 }
 
+var tagStateKeyName = 0;
+var tagStateKeyValue = 1;
+var tagStateKeyValueEscape = 2;
+
 var irc = {
 	'lastNick': '',
 	'messagedata': function() {
 		this.text = '';
 		this.args = [];
+		this.tags = [];
 		this.command = '';
 		this.sender = {
 			'nick': '',
@@ -51,6 +56,52 @@ var irc = {
 		packets[packetcnt++] = irc.parseLine(msg);
 		return {'status': 2, 'packets': packets };
 	},
+	'parseTags': function(tagsLine){
+		var tags = [];
+		var tagState = tagStateKeyName;
+		var keyValue;
+		var keyName = '';
+		for(var i = 0; i < tagsLine.length; i++){
+			var cchar = tagsLine.charAt(i);
+			switch(tagState){
+				case tagStateKeyName:
+					switch(cchar){
+						case '=':
+							tagState = tagStateKeyValue;
+							keyValue = '';
+							break;
+						case ';':
+							tags[keyName] = '';
+							keyName = ''; // staying in tagStateKeyName
+							break;
+						default: keyName += cchar; break;
+					}
+					break;
+				case tagStateKeyValue:
+					switch(cchar){
+						case '\\': tagState = tagStateKeyValueEscape; break;
+						case ';':
+							tags[keyName] = keyValue;
+							keyName = '';
+							tagState = tagStateKeyName;
+							break;
+						default: keyValue += cchar; break;
+					}
+					break;
+				case tagStateKeyValueEscape:
+					switch(cchar){
+						case ':': keyValue += ';'; break;
+						case 's': keyValue += ' '; break;
+						case 'r': keyValue += '\r'; break;
+						case 'n': keyValue += '\n'; break;
+						default: keyValue += cchar; break;
+					}
+					break;
+			}
+		}
+		if(keyName.length > 0) tags[keyName] = keyValue; // flush last tag
+		return tags;
+	},
 	'parseLine': function(line){
 		var ircmsg = new irc.messagedata();
 
@@ -65,12 +116,14 @@ var irc = {
 	
 		var pstate = stateStart;
 		var currArg = '';
+		var tags = '';
 
 		for(var i = 0; i < msglen; i++){
 			var cchar = line.charAt(i);
 			switch(pstate){
 				case stateStart:
 					switch(cchar){
+						case '@': pstate = stateTags; break;
 						case ':': pstate = stateSenderNick; break;
 						default:
 							pstate = stateCommand; 
@@ -78,6 +131,26 @@ var irc = {
 							break;
 					}
 					break;
+				case stateTags:
+					switch(cchar){
+		//				case '\\': pstate = stateTagsEscape; break;
+						case ' ':
+							pstate = stateStart;
+							ircmsg.tags = irc.parseTags(tags);
+							break;
+						default: tags += cchar; break;
+					}
+					break;
+		/*		case stateTagsEscape:
+					switch(cchar){
+						case ':': tags += ';'; break;
+						case 's': tags += ' '; break;
+						case 'r': tags += '\r'; break;
+						case 'n': tags += '\n'; break;
+						default: tags += cchar; break;
+					}
+					pstate = stateTags;
+					break;		*/			
 				case stateSenderNick:
 					switch(cchar){
 						case '!': pstate = stateSenderUser; break;
@@ -137,6 +210,10 @@ var irc = {
 			ircmsg.sender.server = true;
 		} else {
 			ircmsg.sender.user = true;
+		}
+		
+		if('time' in ircmsg.tags){
+			ircmsg.time = parseISOString(ircmsg.tags['time']);
 		}
 	
 		console.log(ircmsg);
@@ -1677,8 +1754,8 @@ var gateway = {
 				}
 			}
 		}
+		console.log(log);
 		return infoText;
-	//	console.log(log);
 	},
 	'storageHandler': function(evt) {
 		if(!evt.newValue){
