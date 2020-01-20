@@ -133,7 +133,6 @@ var irc = {
 					break;
 				case stateTags:
 					switch(cchar){
-		//				case '\\': pstate = stateTagsEscape; break;
 						case ' ':
 							pstate = stateStart;
 							ircmsg.tags = irc.parseTags(tags);
@@ -141,16 +140,6 @@ var irc = {
 						default: tags += cchar; break;
 					}
 					break;
-		/*		case stateTagsEscape:
-					switch(cchar){
-						case ':': tags += ';'; break;
-						case 's': tags += ' '; break;
-						case 'r': tags += '\r'; break;
-						case 'n': tags += '\n'; break;
-						default: tags += cchar; break;
-					}
-					pstate = stateTags;
-					break;		*/			
 				case stateSenderNick:
 					switch(cchar){
 						case '!': pstate = stateSenderUser; break;
