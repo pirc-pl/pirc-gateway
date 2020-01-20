@@ -30,10 +30,6 @@ guser.clearUmodes = function(){
 	guser.umodes = {};
 }
 
-var tagStateKeyName = 0;
-var tagStateKeyValue = 1;
-var tagStateKeyValueEscape = 2;
-
 var irc = {
 	'lastNick': '',
 	'messagedata': function() {
@@ -96,6 +92,7 @@ var irc = {
 						case 'n': keyValue += '\n'; break;
 						default: keyValue += cchar; break;
 					}
+					tagState = tagStateKeyValue;
 					break;
 			}
 		}

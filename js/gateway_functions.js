@@ -322,6 +322,12 @@ var stateSenderUser = 5;
 var stateSenderHost = 6;
 var stateTags = 7;
 
+// tags parser states
+
+var tagStateKeyName = 0;
+var tagStateKeyValue = 1;
+var tagStateKeyValueEscape = 2;
+
 var settings = {
 	'backlogLength': 15
 }
