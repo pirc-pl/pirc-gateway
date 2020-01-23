@@ -550,6 +550,7 @@ var cmdBinds = {
 					isupport[data[0]] = data[1];
 				}
 			}
+			gateway.parseIsupport();
 		}
 	],
 	'221': [	// RPL_UMODES
@@ -852,22 +853,69 @@ var cmdBinds = {
 	],
 	'353': [	// RPL_NAMREPLY 
 		function(msg) {
-			var regexp = /^(~)?(&)?(@)?(%)?(\+)?([^~&@%+!]*)(?:!([^@]*)@(.*))?$/
 			gateway.iKnowIAmConnected();
 			var channel = gateway.findChannel(msg.args[2]);
 			var names = msg.text.split(' ');
+			
+			var users = [];
+			for(var i=0; i<names.length; i++){
+				var name = names[i];
+				var user = {
+					'modes': [],
+					'flags': [],
+					'nick': null,
+					'ident': null,
+					'host': null
+				};
+				var state = 'flags';
+				for(var j=0; j<name.length; j++){
+					var cchar = name.charAt(j);
+					switch(state){
+						case 'flags':
+							if(cchar in modes.reversePrefixes){
+								user.modes.push(modes.reversePrefixes[cchar]);
+								user.flags.push(cchar);
+							} else {
+								state = 'nick';
+								user.nick = cchar;
+							}
+							break;
+						case 'nick':
+							if(cchar == '!'){
+								state = 'ident';
+								user.ident = '';
+							} else {
+								user.nick += cchar;
+							}
+							break;
+						case 'ident':
+							if(cchar == '@'){
+								state = 'host';
+								user.host = '';
+							} else {
+								user.ident += cchar;
+							}
+							break;
+						case 'host':
+							user.host += cchar;
+							break;
+					}
+				}
+				users.push(user);
+			}
+			
+			console.log(users);
+			
 			if(!channel || channel.hasNames){ // manual NAMES request
 				var html = '<table><tr><th></th><th>Nick</th><th>ident@host</th></tr>';
 				var names = msg.text.split(' ');
-				for ( name in names ) {
-					var rmatch = regexp.exec(names[name]);
+				for(userId in users){
+					var user = users[userId];
 					html += '<tr><td>';
-					for(var i=0; i<5; i++){
-						if(rmatch[i+1]) html += rmatch[i+1];
-					}
-					html += '</td><td><b>'+rmatch[6]+'</b></td><td>';
-					if(rmatch[7] && rmatch[8]){
-						html += rmatch[7]+'@'+rmatch[8];
+					for(var i=0; i<user.flags.length; i++) html += user.flags[i];
+					html += '</td><td><b>'+user.nick+'</b></td><td>';
+					if(user.ident && user.host){
+						html += user.ident+'@'+user.host;
 					}
 					html += '</td></tr>';
 				}
@@ -875,27 +923,18 @@ var cmdBinds = {
 				$$.displayDialog('names', msg.args[2], 'Lista nicków dla '+msg.args[2], html);
 				return;
 			}
-			for ( name in names ) {
-				var rmatch = regexp.exec(names[name]);
-				channel.nicklist.addNick(rmatch[6]);
-				var nickListItem = channel.nicklist.findNick(rmatch[6]);
-				if(rmatch[7]){
-					nickListItem.setIdent(rmatch[7]);
-				}
-				if(rmatch[8]){
-					nickListItem.setUserHost(rmatch[8]);
-				}
-				for(var i=0; i<5; i++){
-					if(rmatch[i+1]){
-						var mode = '';
-						switch(rmatch[i+1]){
-							case '~': mode = 'owner'; break;
-							case '&': mode = 'admin'; break;
-							case '@': mode = 'op'; break;
-							case '%': mode = 'halfop'; break;
-							case '+': mode = 'voice'; break;
-						}
-						nickListItem.setMode(mode, true);
+			for(userId in users){
+				var user = users[userId];
+				console.log(user);
+				channel.nicklist.addNick(user.nick);
+				var nickListItem = channel.nicklist.findNick(user.nick);
+				if(user.ident) nickListItem.setIdent(user.ident);
+				if(user.host) nickListItem.setUserHost(user.host);
+				for(var i=0; i<user.modes.length; i++){
+					if(user.modes[i] in chStatusNames){
+						nickListItem.setMode(chStatusNames[user.modes[i]], true);
+					} else {
+						nickListItem.setMode(user.modes[i], true); // unlisted mode char
 					}
 				}
 			}

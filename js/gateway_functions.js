@@ -114,10 +114,13 @@ var messagePatterns = {
 };
 
 var modes = {
-	'single': ['p', 's', 'm', 'n', 't', 'i', 'r', 'R', 'c', 'O', 'Q', 'K', 'V', 'C', 'z', 'N', 'S', 'M', 'T', 'G', 'D', 'd'],
-	'argBoth': ['k', 'b', 'e', 'I', 'L', 'f'],
-	'argAdd': ['H', 'l'],
-	'user': ['q','a','o','h','v'],
+	/* default modes from rfc1459, we're overwriting it with ISUPPORT data later */
+	'single': ['p', 's', 'i', 't', 'n', 'm'],
+	'argBoth': ['k'],
+	'argAdd': ['l'],
+	'list': ['b'],
+	'user': ['o', 'v'],
+	/* unrealircd mode comments */
 	'changeableSingle': [
 		['m', 'Kanał moderowany'],
 		['i', 'Tylko na zaproszenie'],
@@ -128,13 +131,21 @@ var modes = {
 		['M', 'Do mówienia wymagany zarejestrowany nick lub co najmniej +v'],
 		['t', 'Tylko operator może zmieniać temat'],
 		['n', 'Nie można wysyłać wiadomości nie będąc na kanale'],
-		['D', 'Użytkownicy będą widoczni na liście tylko wtedy, gdy coś napiszą'],
-//		['U', 'Zakaz powtarzania wiadomości']
+		['D', 'Użytkownicy będą widoczni na liście tylko wtedy, gdy coś napiszą']
 	],
 	'changeableArg': [
 		['k', 'Hasło do kanału'],
 		['l', 'Maksymalna ilość użytkowników']
-	]
+	],
+	/* again defaults from rfc1459 */
+	'prefixes': {
+		'o': '@',
+		'v': '+'
+	},
+	'reversePrefixes': {
+		'@': 'o',
+		'+': 'v'
+	}
 };
 
 var chModeInfo = {
@@ -148,10 +159,6 @@ var chModeInfo = {
 	'e': 'wyjątek bana na',
 	'I': 'stałe zaproszenie na',
 	'f': 'zabezpieczenie przed floodem:',
-	'L-add': 'przekierowanie na kanał',
-	'L-remove': 'przekierowanie na inny kanał',
-	'l-add': 'limit użytkowników na',
-	'l-remove': 'limit użytkowników',
 	'p': 'tryb prywatny',
 	's': 'tryb ukryty',
 	'm': ['moderację', 'kanał moderowany'],
@@ -166,7 +173,6 @@ var chModeInfo = {
 	'K': ['blokadę pukania', 'zablokowane pukanie'],
 	'V': ['blokadę zaproszeń', 'zablokowane zaproszenia'],
 	'C': ['blokadę CTCP', 'zablokowane CTCP'],
-//	'u': 'tryb u',
 	'z': 'wejście tylko dla połączeń szyfrowanych',
 	'N': ['blokadę zmian nicków', 'zablokowana zmiana nicków'],
 	'S': 'usuwanie kolorów',
@@ -175,14 +181,24 @@ var chModeInfo = {
 	'G': 'tryb G',
 	'D': 'tryb D: użytkownicy będą widoczni na liście tylko wtedy, gdy coś napiszą',
 	'd': 'tryb d',
+	'L-add': 'przekierowanie na kanał',
+	'L-remove': 'przekierowanie na inny kanał',
+	'l-add': 'limit użytkowników na',
+	'l-remove': 'limit użytkowników',
 	'H-add': 'pamięć historii kanału',
 	'H-remove': 'pamięć historii kanału'
-//	'U': 'zakaz powtarzania wiadomości'
+};
+
+var chStatusNames = {
+	'q': 'owner',
+	'a': 'admin',
+	'o': 'op',
+	'h': 'halfop',
+	'v': 'voice'
 };
 
 var servicesNicks = ['NickServ', 'ChanServ', 'HostServ', 'OperServ', 'Global', 'BotServ'];
 
-var modemap2 = ['owner', 'admin', 'op', 'halfop', 'voice'];
 var newMessage = 'Nowa wiadomość';
 
 var emoji = {
@@ -231,8 +247,8 @@ function getModeInfo(letter, type){
 	if(!type){
 		type = 0;
 	}
+	if(!(letter in chModeInfo)) return 'tryb '+letter; //nieznany tryb
 	var data = chModeInfo[letter];
-	if(!data) return false; //nieznany tryb
 	if(data.constructor === Array){
 		return data[type];
 	} else {
@@ -295,8 +311,8 @@ for(i in emoji){
 	out1 += emoji[i] + ' ';
 	out2 += i + ' ';
 }
-console.log(out1);
-console.log(out2);
+/*console.log(out1); // emoji setup logging
+console.log(out2);*/
 
 // zmienna gateway.connectStatus
 

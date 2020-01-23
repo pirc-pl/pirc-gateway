@@ -12,7 +12,7 @@ var mcolorJoinHandler = function(msg){
 	} else {
 		return;
 	}
-	gateway.ctcp(msg.sender.nick, 'MCOL TC '+color);
+	ircCommand.sendCtcpRequest(msg.sender.nick, 'MCOL TC '+color);
 }
 
 var mcolorChModeHandler = function(msg){
@@ -24,7 +24,7 @@ var mcolorChModeHandler = function(msg){
 	} else {
 		return;
 	}
-	gateway.ctcp(msg.args[1], 'MCOL TC '+color);
+	ircCommand.sendCtcpRequest(msg.args[1], 'MCOL TC '+color);
 }
 
 var mcolorNickHandler = function(msg){
@@ -81,7 +81,7 @@ var setMyColor = function(color){
 	for(c in gateway.channels){
 		var chan = gateway.channels[c].name;
 		if(colorsAllowed(chan)){
-			gateway.ctcp(chan, 'MCOL TC '+scolor);
+			ircCommand.sendCtcpRequest(chan, 'MCOL TC '+scolor);
 		}
 	}
 	try {

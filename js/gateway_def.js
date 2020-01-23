@@ -114,6 +114,9 @@ var irc = {
 		var pstate = stateStart;
 		var currArg = '';
 		var tags = '';
+		var haveText = false;
+		
+		console.log(line);
 
 		for(var i = 0; i < msglen; i++){
 			var cchar = line.charAt(i);
@@ -183,6 +186,7 @@ var irc = {
 					}
 					break;
 				case stateMessage:
+					haveText = true;
 					ircmsg.text += cchar;
 					break;
 			}
@@ -196,6 +200,12 @@ var irc = {
 			ircmsg.sender.server = true;
 		} else {
 			ircmsg.sender.user = true;
+		}
+
+		if(!haveText){
+			ircmsg.text = ircmsg.args[ircmsg.args.length-1]; // handling last argument as text if : is missing
+		} else {
+			ircmsg.args.push(ircmsg.text); // handling text as a last argument as required by the protocol
 		}
 		
 		if('time' in ircmsg.tags){
@@ -1175,12 +1185,12 @@ var gateway = {
 		
 		var html = "<p>Zmień tryby kanału "+he(channel)+":</p>" +
 			"<table><tr><th></th><th>Litera</th><th>Opis</th></tr>";
-		//generacja HTML z tabelą z wszystkimi trybami
+		//generate HTML table with all supported and settable chanmodes
 		modes.changeableSingle.forEach(function(mode){
-			html += '<tr><td><input type="checkbox" id="'+ch+'_mode_'+mode[0]+'"></td><td>'+mode[0]+'</td><td>'+mode[1]+'</td></tr>';
+			if($.inArray(mode[0], modes['single']) >= 0) html += '<tr><td><input type="checkbox" id="'+ch+'_mode_'+mode[0]+'"></td><td>'+mode[0]+'</td><td>'+mode[1]+'</td></tr>';
 		}, this);
 		modes.changeableArg.forEach(function(mode){
-			html += '<tr><td><input type="checkbox" id="'+ch+'_mode_'+mode[0]+'"></td><td>'+mode[0]+'</td><td>'+mode[1]+'</td><td><input type="text" id="'+ch+'_mode_'+mode[0]+'_text"></td></tr>';
+			if($.inArray(mode[0], modes['argAdd']) >= 0 || $.inArray(mode[0], modes['argBoth']) >= 0) html += '<tr><td><input type="checkbox" id="'+ch+'_mode_'+mode[0]+'"></td><td>'+mode[0]+'</td><td>'+mode[1]+'</td><td><input type="text" id="'+ch+'_mode_'+mode[0]+'_text"></td></tr>';
 		}, this);
 		html += '</table>';
 
@@ -1628,120 +1638,141 @@ var gateway = {
 			}
 		}
 	},
-	'parseChannelMode': function(args, chan, type) {
+	'parseChannelMode': function(args, chan, dispType /* 1 - joining a channel, 0 - changed when already on a channel */) {
 		var plus = true;
 		var nextarg = 1;
-		var modearr = args[0].split('');
 		var log = '';
 		var mode = '';
 		var modechar = '';
 		var infoText = '';
 		var dir = '';
-		for (i in modearr) {
-			if(modearr[i] == '+') {
-				log += "Change +\n";
-				plus = true;
-				if(type == 1){
-					dir = '';
-				} else {
-					dir = 'ustawił ';
-				}
-			} else if(modearr[i] == '-') {
-				if(type == 1){
-					continue;
-				}
-				dir = 'zdjął ';
-				log += "Change -\n";
-				plus = false;
-			} else if($.inArray(modearr[i], modes.argBoth) > -1) {
-				log += "Mode 'both' "+plus+' '+modearr[i]+' '+args[nextarg]+"\n";
-				infoText = infoText.apList(dir+getModeInfo(modearr[i], type)+' '+args[nextarg]);
-				if(modearr[i] == 'k' || modearr[i] == 'f'){
-					if(plus){
-						chan.modes[modearr[i]] = args[nextarg];
+		for (var i=0; i<args[0].length; i++) {
+			var cchar = args[0][i];
+			switch(cchar){
+				case '+':
+					log += "Change +\n";
+					plus = true;
+					if(dispType == 1){
+						dir = '';
 					} else {
-						chan.modes[modearr[i]] = false;
+						dir = 'ustawił ';
 					}
-				}
-				nextarg++;
-			} else if($.inArray(modearr[i], modes.argAdd) > -1 ) {
-				log += "Mode 'add' "+plus+' '+modearr[i]+' '+args[nextarg]+"\n";
-				if(plus){
-					chan.modes[modearr[i]] = args[nextarg];
-					infoText = infoText.apList(dir+getModeInfo(modearr[i]+'-add', type)+' '+args[nextarg]);
-					nextarg++;
-				} else {
-					infoText = infoText.apList(dir+getModeInfo(modearr[i]+'-remove', type));
-					chan.modes[modearr[i]] = false;
-				}
-			} else if($.inArray(modearr[i], modes.user) > -1) {
-				modechar = modearr[i];
-				log += "Mode 'user' "+plus+' '+modearr[i]+' '+args[nextarg]+"\n";
-				if(plus) {
-					if(chan.nicklist.findNick(args[nextarg])) {
-						mode = '';
-						switch (modechar) {
-							case 'q':
-								mode = 'owner'
-								break;
-							case 'a':
-								mode = 'admin'
-								break;
-							case 'o':
-								mode = 'op'
-								break;
-							case 'h':
-								mode = 'halfop'
-								break;
-							case 'v':
-								mode = 'voice'
-								break;
-							default:
-								//i tak nie nastapi
-								break;
-						}
-						chan.nicklist.findNick(args[nextarg]).setMode(mode, true);
-						infoText = infoText.apList('dał '+getModeInfo(modechar, type)+' dla <span class="modevictim">'+args[nextarg]+'</span>');
+					break;
+				case '-':
+					if(dispType == 1) continue;
+					dir = 'zdjął ';
+					log += "Change -\n";
+					plus = false;
+					break;
+				default:
+					var mtype = 'single';
+					if($.inArray(cchar, modes.argBoth) >= 0){
+						mtype = 'both';
+					} else if($.inArray(cchar, modes.argAdd) >= 0){
+						mtype = 'add';
+					} else if($.inArray(cchar, modes.list) >= 0){
+						mtype = 'list';
+					} else if($.inArray(cchar, modes.user) >= 0){
+						mtype = 'user';
 					}
-				} else {
-					if(chan.nicklist.findNick(args[nextarg])) {
-						mode = '';
-						switch (modechar) {
-							case 'q':
-								mode = 'owner'
-								break;
-							case 'a':
-								mode = 'admin'
-								break;
-							case 'o':
-								mode = 'op'
-								break;
-							case 'h':
-								mode = 'halfop'
-								break;
-							case 'v':
-								mode = 'voice'
-								break;
-							default:
-								//i tak nie nastapi
-								break;
-						}
-						chan.nicklist.findNick(args[nextarg]).setMode(mode, false);
-						infoText = infoText.apList('odebrał '+getModeInfo(modechar, type)+' <span class="modevictim">'+args[nextarg]+'</span>');
+					
+					switch(mtype){
+						case 'both': case 'list':
+							log += "Mode 'both' "+plus+' '+cchar+' '+args[nextarg]+"\n";
+							infoText = infoText.apList(dir+getModeInfo(cchar, dispType)+' '+args[nextarg]);
+							if(mtype != 'list'){
+								if(plus){
+									chan.modes[cchar] = args[nextarg];
+								} else {
+									chan.modes[cchar] = false;
+								}
+							}
+							nextarg++;
+							break;
+						case 'add':
+							log += "Mode 'add' "+plus+' '+cchar+' '+args[nextarg]+"\n";
+							if(plus){
+								chan.modes[cchar] = args[nextarg];
+								infoText = infoText.apList(dir+getModeInfo(cchar+'-add', dispType)+' '+args[nextarg]);
+								nextarg++;
+							} else {
+								infoText = infoText.apList(dir+getModeInfo(cchar+'-remove', dispType));
+								chan.modes[cchar] = false;
+							}
+							break;
+						case 'user':
+							log += "Mode 'user' "+plus+' '+cchar+' '+args[nextarg]+"\n";
+							if(chan.nicklist.findNick(args[nextarg])) {
+								if(cchar in chStatusNames){
+									mode = chStatusNames[cchar];
+								} else {
+									mode = cchar;
+								}
+								
+								chan.nicklist.findNick(args[nextarg]).setMode(mode, plus);					
+								infoText = infoText.apList((plus?'dał ':'odebrał ')+getModeInfo(cchar, dispType)+(plus?' dla':'')+' <span class="modevictim">'+args[nextarg]+'</span>');
+							}
+							nextarg++;
+							break;
+						default:
+							log += "Mode 'normal' "+plus+' '+cchar+"\n";
+							chan.modes[cchar] = plus;
+							infoText = infoText.apList(dir+' '+getModeInfo(cchar, dispType));
+							break;
 					}
-				}
-				nextarg++;
-			} else {
-				log += "Mode 'normal' "+plus+' '+modearr[i]+"\n";
-				chan.modes[modearr[i]] = plus;
-				var modeInfo = getModeInfo(modearr[i], type);
-				if(modeInfo){
-					infoText = infoText.apList(dir+' '+modeInfo);
+					break;
+			}
+		}
+		//console.log(log); // MODE debugging
+		return infoText;
+	},
+	'parseIsupport': function() {
+		if('CHANMODES' in isupport){
+			var modeTypes = isupport['CHANMODES'].split(',');
+			if(modeTypes.length != 4){
+				console.log('Error parsing CHANMODES isupport!');
+				return;
+			}
+			modes.single = [];
+			modes.argBoth = [];
+			modes.argAdd = [];
+
+			for(var i=0; i<4; i++){
+				var modeChars = modeTypes[i];
+				for(var j=0; j<modeChars.length; j++){
+					switch(i){
+						case 0: // list type (argBoth)
+							modes.argBoth.push(modeChars.charAt(j));
+							break;
+						case 1: // add and remove with arguments (argBoth)
+							modes.argBoth.push(modeChars.charAt(j));
+							break;
+						case 2: // add with arguments (argAdd)
+							modes.argAdd.push(modeChars.charAt(j));
+							break;
+						case 3: // no arguments (single)
+							modes.single.push(modeChars.charAt(j));
+							break;
+					}
 				}
 			}
 		}
-		console.log(log);
-		return infoText;
+		if('PREFIX' in isupport){
+			var expr = /^\(([^)]+)\)(.+)$/;
+			var prefix = expr.exec(isupport['PREFIX']);
+			if(!prefix || prefix[1].length != prefix[2].length){
+				console.log('Error parsing PREFIX isupport!');
+				return;
+			}
+			modes.user = [];
+			modes.prefixes = [];
+			
+			for(var i=0; i<prefix[1].length; i++){
+				modes.user.push(prefix[1].charAt(i));
+				modes.prefixes[prefix[1].charAt(i)] = prefix[2].charAt(i);
+				modes.reversePrefixes[prefix[2].charAt(i)] = prefix[1].charAt(i);
+			}
+		}
 	},
 	'storageHandler': function(evt) {
 		if(!evt.newValue){
