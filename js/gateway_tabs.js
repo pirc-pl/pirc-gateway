@@ -490,6 +490,7 @@ function Channel(chan) {
 	this.topic = '';
 	this.newLines = false;
 	this.hasNames = false;
+	this.msgidHistory = [];
 
 	this.part = function() {
 		this.left = true;
@@ -664,6 +665,16 @@ function Channel(chan) {
 		}
 		this.newLines = true;
 	}
+	
+	this.appendMsgid = function(msgid){
+		this.msgidHistory.push(msgid);
+	}
+	
+	this.hasMsgid = function(msgid){
+		if(this.msgidHistory.indexOf(msgid) >= 0) return true;
+		return false;
+	}
+	
 	this.setTopic = function(topic) {
 		$('#'+this.id+'-topic > h2').html($$.colorize(topic));
 		$('#'+this.id+'-topic').unbind('click').click(disp.topicClick);

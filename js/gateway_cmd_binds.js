@@ -1,6 +1,6 @@
 var activeCaps = [];
 var isupport = [];
-var supportedCaps = ['userhost-in-names', 'away-notify', 'multi-prefix', 'chghost', 'extended-join', 'account-notify', 'message-tags', 'server-time'];
+var supportedCaps = ['userhost-in-names', 'away-notify', 'multi-prefix', 'chghost', 'extended-join', 'account-notify', 'message-tags', 'server-time', 'echo-message'];
 
 var cmdBinds = {
 	'ACCOUNT': [
@@ -465,6 +465,8 @@ var cmdBinds = {
 				var match = re.test(message);
 				console.log("highlight pattern="+pattern+", returned="+match)
 
+				if(channel.hasMsgid(msg.tags.msgid)) return; //we already received this message and this is a history entry
+				
 				if(match) { //hajlajt
 						channel.appendMessage(messagePatterns.channelMsgHilight, [$$.niceTime(msg.time), msg.sender.nick, message]);
 						if(gateway.active != msg.args[0].toLowerCase() || !disp.focused) {
@@ -479,6 +481,7 @@ var cmdBinds = {
 						channel.markBold();
 					}
 				}
+				channel.appendMsgid(msg.tags.msgid);
 				channel.appendMessage('%s', [html]);
 			} else if(!msg.sender.server/* && msg.sender.nick != guser.nick*/){ // wiadomość prywatna
 				if(msg.sender.nick == guser.nick){
@@ -492,7 +495,7 @@ var cmdBinds = {
 
 				query = gateway.findOrCreate(qnick);
 				query.appendMessage(messagePatterns.channelMsg, [$$.niceTime(msg.time), '', msg.sender.nick, message]);
-				if(gateway.active.toLowerCase() != msg.sender.nick.toLowerCase() || !disp.focused) {
+				if(msg.sender.nick != guser.nick && (gateway.active.toLowerCase() != qnick.toLowerCase() || !disp.focused)) {
 					query.markNew();
 				}
 				query.appendMessage('%s', [html]);
@@ -1245,6 +1248,21 @@ var cmdBinds = {
 				gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.noPerms, [$$.niceTime(msg.time), msg.args[1]]);
 			}
 			$$.displayDialog('error', 'error', 'Błąd', html);
+		}
+	],
+	'531' : [	// ERR_CANTSENDTOUSER
+		function(msg) {
+			var expr = /^You must identify to a registered nick to private message this user$/;
+			var match = expr.exec(msg.text);
+			if(match){
+				var query = gateway.findQuery(msg.args[1]);
+				if(query){
+					query.appendMessage(messagePatterns.cannotSendToUser, [$$.niceTime(msg.time), msg.args[1], 'Twój nick musi być zarejestrowany']);
+				}
+				$$.displayDialog('error', 'error', 'Błąd', '<p>Nie można wysłać prywatnej wiadomości do <b>'+msg.args[1]+'</b></p><p>Użytkownik akceptuje prywatne wiadomości tylko od zarejestrowanych nicków.</p>');
+			} else {
+				$$.displayDialog('error', 'error', 'Błąd', '<p>Nie można wysłać prywatnej wiadomości.</p><p>Komunikat od serwera: '+he(msg.text)+'</p>');
+			}					
 		}
 	],
 	'900': [ // RPL_LOGGEDIN

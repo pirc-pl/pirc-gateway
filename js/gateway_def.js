@@ -950,7 +950,7 @@ var gateway = {
 		for(f in messageProcessors){
 			message = messageProcessors[f](guser.nick, active.name, message);
 		}
-		active.appendMessage(messagePatterns.yourMsg, [$$.niceTime(), $$.nickColor(guser.nick), guser.nick, message]);
+		if(activeCaps.indexOf('echo-message') <= 0) active.appendMessage(messagePatterns.yourMsg, [$$.niceTime(), $$.nickColor(guser.nick), guser.nick, message]);
 	},
 	'parseUserMessage': function(input){
 		var active = gateway.getActive();
@@ -970,7 +970,7 @@ var gateway = {
 							textToSend = textToSend.substring(420);*/
 							gateway.sendSingleMessage(sendNow, active);
 						} while (textToSend != "");
-						active.appendMessage('%s', [$$.parseImages(input)]);
+						if(activeCaps.indexOf('echo-message') <= 0) active.appendMessage('%s', [$$.parseImages(input)]);
 						$(this).dialog('close');
 					}
 				}, {
@@ -983,7 +983,7 @@ var gateway = {
 				$$.displayDialog('confirm', 'command', 'Potwierdź', html, button);
 			} else {
 				gateway.sendSingleMessage(input, active);
-				active.appendMessage('%s', [$$.parseImages(input)]);
+				if(activeCaps.indexOf('echo-message') <= 0) active.appendMessage('%s', [$$.parseImages(input)]);
 			}
 		}
 	},
@@ -1191,10 +1191,10 @@ var gateway = {
 			"<table><tr><th></th><th>Litera</th><th>Opis</th></tr>";
 		//generate HTML table with all supported and settable chanmodes
 		modes.changeableSingle.forEach(function(mode){
-			if($.inArray(mode[0], modes['single']) >= 0) html += '<tr><td><input type="checkbox" id="'+ch+'_mode_'+mode[0]+'"></td><td>'+mode[0]+'</td><td>'+mode[1]+'</td></tr>';
+			if(modes['single'].indexOf(mode[0]) >= 0) html += '<tr><td><input type="checkbox" id="'+ch+'_mode_'+mode[0]+'"></td><td>'+mode[0]+'</td><td>'+mode[1]+'</td></tr>';
 		}, this);
 		modes.changeableArg.forEach(function(mode){
-			if($.inArray(mode[0], modes['argAdd']) >= 0 || $.inArray(mode[0], modes['argBoth']) >= 0) html += '<tr><td><input type="checkbox" id="'+ch+'_mode_'+mode[0]+'"></td><td>'+mode[0]+'</td><td>'+mode[1]+'</td><td><input type="text" id="'+ch+'_mode_'+mode[0]+'_text"></td></tr>';
+			if(modes['argAdd'].indexOf(mode[0]) >= 0 || modes['argBoth'].indexOf(mode[0]) >= 0) html += '<tr><td><input type="checkbox" id="'+ch+'_mode_'+mode[0]+'"></td><td>'+mode[0]+'</td><td>'+mode[1]+'</td><td><input type="text" id="'+ch+'_mode_'+mode[0]+'_text"></td></tr>';
 		}, this);
 		html += '</table>';
 
@@ -1670,13 +1670,13 @@ var gateway = {
 					break;
 				default:
 					var mtype = 'single';
-					if($.inArray(cchar, modes.argBoth) >= 0){
+					if(modes.argBoth.indexOf(cchar) >= 0){
 						mtype = 'both';
-					} else if($.inArray(cchar, modes.argAdd) >= 0){
+					} else if(modes.argAdd.indexOf(cchar) >= 0){
 						mtype = 'add';
-					} else if($.inArray(cchar, modes.list) >= 0){
+					} else if(modes.list.indexOf(cchar) >= 0){
 						mtype = 'list';
-					} else if($.inArray(cchar, modes.user) >= 0){
+					} else if(modes.user.indexOf(cchar) >= 0){
 						mtype = 'user';
 					}
 					
