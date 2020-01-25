@@ -385,6 +385,11 @@ var cmdBinds = {
 			gateway.forceSend('PONG :'+msg.text);
 		}
 	],
+	'PONG' : [
+		function(msg) {
+			gateway.pingcnt = 0;
+		}
+	],
 	'PART': [
 		function(msg) {
 			if(gateway.findChannel(msg.args[0])) {

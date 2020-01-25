@@ -35,7 +35,7 @@ var conn = {
 			}
 		}
 		if(!auto_initialized){
-			var nconn_html = '<h3>' + he(guser.channels[0]) + ' @ PIRC.pl</h3><form onsubmit="gateway.initialize();$$.closeDialog(\'connect\', \'0\')" action="javascript:void(0);"><table>';
+			var nconn_html = '<h3>' + he(guser.channels[0]) + ' @ PIRC.pl</h3><form onsubmit="if(gateway.initialize()){$$.closeDialog(\'connect\', \'0\');}" action="javascript:void(0);"><table>';
 			nconn_html += '<tr><td style="text-align: right; padding-right: 10px;">Kanał:</td><td><input type="text" id="nschan" value="'+he(reqChannel)+'" /></td></tr>';
 			nconn_html += '<tr><td style="text-align: right; padding-right: 10px;">Nick:</td><td><input type="text" id="nsnick" value="'+conn.my_nick+'" /></td></tr>';
 			nconn_html += '<tr><td style="text-align: right; padding-right: 10px;">Hasło (jeżeli zarejestrowany):</td><td><input type="password" id="nspass" value="'+conn.my_pass+'" /></td></tr>';

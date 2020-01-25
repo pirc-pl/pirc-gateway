@@ -417,6 +417,12 @@ function parseISOString(s) {
 	return new Date(Date.UTC(b[0], --b[1], b[2], b[3], b[4], b[5], b[6]));
 }
 
+function lengthInUtf8Bytes(str) {
+	// Matches only the 10.. bytes that are non-initial characters in a multi-byte sequence.
+	var m = encodeURIComponent(str).match(/%[89ABab]/g);
+	return str.length + (m ? m.length : 0);
+}
+
 var disp = {
 	'size': 1,
 	'focused': true,

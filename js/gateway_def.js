@@ -264,6 +264,7 @@ var gateway = {
 		}
 		gateway.setConnectedWhenIdentified = 1;
 		$$.closeDialog('connect', '1');
+		$$.closeDialog('connect', 'reconnect');
 		clearTimeout(gateway.connectTimeoutID); //już ok więc nie czekam na nieudane połączenie
 		connectTimeoutID = false;
 		gateway.firstConnect = 0;
@@ -298,8 +299,8 @@ var gateway = {
 			gateway.pingcnt = 0;
 			return;
 		}
-		//gateway.forceSend('PING :JavaScript');
-		gateway.forceSend('MODE '+guser.nick); //jest aktualna informacja o umodach, a przy okazji załatwiony ping
+		gateway.forceSend('PING :JavaScript');
+	//	gateway.forceSend('MODE '+guser.nick); //jest aktualna informacja o umodach, a przy okazji załatwiony ping
 		if(gateway.pingcnt > 3) {
 			gateway.connectStatus = statusError;
 			if($('#autoReconnect').is(':checked')){
@@ -380,7 +381,6 @@ var gateway = {
 		setTimeout(function(){
 			if(gateway.connectStatus != statusDisconnected && gateway.connectStatus != statusError && gateway.connectStatus != statusBanned){
 				gateway.connectStatus = statusError;
-				//gateway.disconnected('Błąd serwera bramki');
 				gateway.disconnected('Utracono połączenie z serwerem');
 				if($('#autoReconnect').is(':checked')){
 					gateway.reconnect();
@@ -406,7 +406,6 @@ var gateway = {
 //		gateway.processStatus();
 	},
 	'ctcp': function(dest, text) {
-		//gateway.send('PRIVMSG '+dest+' :\001'+text+'\001');
 		ircCommand.sendCtcpRequest(dest, text);
 		console.log('użyto gateway.ctcp, powinno być ircCommand.sendCtcpRequest');
 	},
@@ -489,7 +488,7 @@ var gateway = {
 	},
 	'stopAndReconnect': function () {
 		gateway.disconnected('Zbyt długi czas łączenia');
-		ircCommand.quit('Błąd bramki >> łączenie trwało zbyt długo');
+		if(gateway.websock.readyState === OPEN) ircCommand.quit('Błąd bramki >> łączenie trwało zbyt długo');
 		setTimeout('gateway.reconnect()', 500);
 	},
 	'initSys': function() {
@@ -517,7 +516,7 @@ var gateway = {
 				$$.alert('Musisz podać kanał!');
 				return false;
 			}
-			if(!nickInput.match(/^[\^\|0-9a-z_`\[\]\-]+$/i)) {
+			if(!nickInput.match(/^[\^\|0-9a-z_`\{\}\[\]\-]+$/i)) {
 				$$.alert('Nick zawiera niedozwolone znaki!');
 				return false;
 			}
@@ -957,13 +956,18 @@ var gateway = {
 		var active = gateway.getActive();
 		if(active) {
 			var textToSend = input;
-			if(textToSend.length >= 420){
+			if(lengthInUtf8Bytes(textToSend) >= 420){
 				var button = [ {
 					text: 'Tak',
 					click: function(){
 						do {
-							var sendNow = textToSend.substring(0, 420);
-							textToSend = textToSend.substring(420);
+							var sendNow = '';
+							while(lengthInUtf8Bytes(sendNow)<420 && textToSend.length > 0){
+								sendNow += textToSend.charAt(0);
+								textToSend = textToSend.substring(1);
+							}
+							/*var sendNow = textToSend.substring(0, 420);
+							textToSend = textToSend.substring(420);*/
 							gateway.sendSingleMessage(sendNow, active);
 						} while (textToSend != "");
 						active.appendMessage('%s', [$$.parseImages(input)]);
