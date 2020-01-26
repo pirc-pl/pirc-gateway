@@ -67,6 +67,7 @@ var messagePatterns = {
 	'kickOwn': '<span class="time">%s</span> &nbsp; <span class="kick">✀ <span class="modeinfo">%s</span> wyrzucił cię z <span class="modeinfo">%s</span> [Powód: %s]</span><br />',
 	'modeChange': '<span class="time">%s</span> &nbsp; <span class="mode">🔧 <span class="modeinfo">%s</span> %s na kanale <span class="modeinfo">%s</span></span><br />',
 	'mode': '<span class="time">%s</span> &nbsp; <span class="mode">🔧 Ustawienia kanału <span class="modeinfo">%s</span>: %s</span><br />',
+	'creationTime': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Kanał stworzony: %s</span><br />',
 	'startedQuery': '<span class="time">%s</span> &nbsp; <span class="join">🢡 Rozpoczęto rozmowę z <span class="modeinfo">%s</span>. <a onclick="ignore.askIgnore(\'%s\');">Ignoruj tego użytkownika</a> / <a onclick="disp.showQueryUmodes()">Blokowanie wiadomości prywatnych</a></span><br />',
 	'queryBacklog': '<span class="time">%s</span> &nbsp; <span class="join">✯ Zapis poprzedniej rozmowy z <span class="modeinfo">%s</span>:</span><br />',
 	'channelBacklog': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Zapis poprzedniej wizyty na <span class="modeinfo">%s</span>:</span><br />',
@@ -88,7 +89,7 @@ var messagePatterns = {
 	'yourNotice': '<span class="time">%s</span> &nbsp; <span class="notice"><b>-NOTICE/%s-</b> %s</span><br />',
 	'notEnoughParams': '<span class="time">%s</span> &nbsp; <span class="mode">⮿ <span class="modeinfo">%s</span>: za mało argumentów: %s</span><br />',
 	'motd': '<span class="time">%s</span> &nbsp; <span class="motd">✯ %s</span><br />',
-	'SaslAuthenticate': '<span class="time">%s</span> &nbsp; <span class="motd">🔧 %s</span><br />',
+	'SaslAuthenticate': '<span class="time">%s</span> &nbsp; <span class="sinfo">🔧 %s</span><br />',
 	'ctcpRequest': '<span class="time">%s</span> &nbsp; <span class="mode">✯ <span class="modeinfo">%s</span> wysyła CTCP REQUEST: %s</span><br />',
 	'ctcpReply': '<span class="time">%s</span> &nbsp; <span class="notice">✯ <b>CTCP REPLY od %s:</b> %s</span><br />',
 	'chanListElement': '<span class="time">%s</span> &nbsp; <span class="notice">✯ <b><a href="#" onClick="gateway.send(\'JOIN %s\')">%s</a></b> (%s) - %s </span> <br />',
@@ -110,7 +111,10 @@ var messagePatterns = {
 	'ignoreListEmpty': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Lista ignorowanych jest pusta.</span><br />',
 	'ignoreListItem': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Typ: <b>%s</b>, maska: <b>%s</b></span><br />',
 	'netsplit': '<span class="time">%s</span> &nbsp; <span class="part">🢠 <span class="netsplit">Netsplit</span>, wychodzą: %s</span><br />',
-	'netjoin': '<span class="time">%s</span> &nbsp; <span class="join">🢡 Po <span class="netjoin">netsplicie</span> wchodzą: %s</span><br />'
+	'netjoin': '<span class="time">%s</span> &nbsp; <span class="join">🢡 Po <span class="netjoin">netsplicie</span> wchodzą: %s</span><br />',
+	'displayedHost': '<span class="time">%s</span> &nbsp; <span class="sinfo">🔧 Twój host jest teraz widoczny jako %s</span><br />',
+	'unimplemented': '<span class="time">%s</span> &nbsp; <span class="sinfo">✯ %s</span><br />',
+	'unimplementedError': '<span class="time">%s</span> &nbsp; <span class="kick">⮿ %s</span><br />'
 };
 
 var modes = {

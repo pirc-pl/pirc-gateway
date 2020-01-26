@@ -249,8 +249,13 @@ span.time {
 span.motd {
 	color: #848484;
 	font-family: Monospace,courier;
+	white-space: pre;
 }
-	
+
+span.sinfo {
+	color: #848484;
+}
+
 span.nick {
 	color: #808080;
 }

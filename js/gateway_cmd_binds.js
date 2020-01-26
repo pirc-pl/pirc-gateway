@@ -548,6 +548,12 @@ var cmdBinds = {
 			gateway.connectStatus = status001;
 		}
 	],
+	'002': [	// RPL_YOURHOST
+	],
+	'003': [	// RPL_CREATED
+	],
+	'004': [	// RPL_MYINFO
+	],
 	'005': [	// RPL_ISUPPORT
 		function(msg){
 			for(var i=1; i<msg.args.length; i++){
@@ -568,6 +574,8 @@ var cmdBinds = {
 			gateway.pingcnt = 0;
 		}
 	],
+	'300': [	// RPL_NONE
+	],
 	'301': [	// RPL_AWAY
 		function(msg) {
 			var query = gateway.findQuery(msg.args[1]);
@@ -577,6 +585,12 @@ var cmdBinds = {
 				$$.displayDialog('whois', msg.args[1], false, "<p class='whois'><span class='info'>Nieobecny:</span><span class='data'>" + he(msg.args[1]) + " jest nieobecny(a): " + he(msg.text) + "</span></p>");
 			}
 		}
+	],
+	'302': [	// RPL_USERHOST
+	],
+	'303': [	// RPL_ISON
+	],
+	'304': [	// RPL_TEXT
 	],
 	'305': [	// RPL_UNAWAY 
 		function(msg) {
@@ -602,6 +616,12 @@ var cmdBinds = {
 		function(msg) {
 			$$.displayDialog('whois', msg.args[1], false, '<p class="whois"><span class="info"><br /></span><span class="data">Ten nick jest zarejestrowany</span></p>');
 		}
+	],
+	'308': [	// RPL_RULESSTART
+	],
+	'309': [	// RPL_ENDOFRULES
+	],
+	'310': [	// RPL_WHOISHELPOP
 	],
 	'311': [	// RPL_WHOISUSER 
 		function(msg) {
@@ -631,6 +651,13 @@ var cmdBinds = {
 			$$.displayDialog('whois', msg.args[1], false, "<p class='whois'><span class='info'><br /></span><span class='data admin'>"+info+"</span></p>");
 		}
 	],
+	'314': [	// RPL_WHOWASUSER
+	],
+	'315': [	// RPL_ENDOFWHO
+		function(msg){
+		}
+	],
+	// 316 reserved
 	'317': [	// RPL_WHOISIDLE 
 		function(msg) {
 			$$.displayDialog('whois', msg.args[1], false, "<p class='whois'><span class='info'>Połączył się:</span><span class='data'>" + $$.parseTime(msg.args[3]) + "</span></p>");
@@ -710,6 +737,8 @@ var cmdBinds = {
 			$$.displayDialog('whois', msg.args[1], false, "<p class='whois'><span class='info'><br /></span><span class='data'>"+html+"</span></p>");
 		}
 	],
+	'321': [	// RPL_LISTSTART
+	],
 	'322': [	// RPL_LIST
 		function(msg) {
 			if(gateway.smallListLoading){
@@ -767,10 +796,22 @@ var cmdBinds = {
 			}
 		}
 	],
-	'330': [	// RPL_WHOISACCOUNT
+	'329': [	// RPL_CREATIONTIME
+		function(msg) {
+			if(gateway.findChannel(msg.args[1])) {
+				var tab = gateway.findChannel(msg.args[1]);
+			} else {
+				var tab = gateway.statusWindow;
+			}
+			tab.appendMessage(messagePatterns.creationTime, [$$.niceTime(msg.time), $$.parseTime(msg.args[2])]);
+		}
+	],
+	'330': [	// RPL_WHOISLOGGEDIN
 		function(msg) {
 			$$.displayDialog('whois', msg.args[1], false, "<p class='whois'><span class='info'>Nazwa konta:</span><span class='data'>" + msg.args[2] + "</span></p>");
 		}
+	],
+	'331': [	// RPL_NOTOPIC
 	],
 	'332': [	// RPL_TOPIC 
 		function(msg) {
@@ -792,10 +833,18 @@ var cmdBinds = {
 			}
 		}
 	],
-	'335': [	// RPL_BOT ???
+	'334': [	// RPL_LISTSYNTAX
+	],
+	'335': [	// RPL_WHOISBOT
 		function(msg){
 			$$.displayDialog('whois', msg.args[1], false, '<p class="whois"><span class="info"><br /></span><span class="data">Ten użytkownik to <b>bot</b></span></p>');
 		}
+	],
+	'336': [	// RPL_INVITELIST
+	],
+	'337': [	// RPL_ENDOFINVITELIST
+	],
+	'340': [	// RPL_USERIP
 	],
 	'341': [	// RPL_INVITING
 		function(msg) {
@@ -806,6 +855,8 @@ var cmdBinds = {
 				gateway.statusWindow.appendMessage(messagePatterns.yourInvite, [$$.niceTime(msg.time), he(msg.args[1]), he(msg.args[2])]);
 			}
 		}
+	],
+	'342': [	// RPL_SUMMONING
 	],
 	'346': [	// RPL_INVITELIST
 		function(msg) {
@@ -826,6 +877,8 @@ var cmdBinds = {
 		function(msg) {
 			disp.endListbeI('e', msg.args[1]);
 		}
+	],
+	'351': [	// RPL_VERSION
 	],
 	'352': [	// RPL_WHOREPLY
 		function(msg) {
@@ -988,6 +1041,16 @@ var cmdBinds = {
 			}
 		}
 	],
+	'361': [	// RPL_KILLDONE
+	],
+	'362': [	// RPL_CLOSING
+	],
+	'363': [	// RPL_CLOSEEND
+	],
+	'364': [	// RPL_LINKS
+	],
+	'365': [	// RPL_ENDOFLINKS
+	],
 	'366': [	// RPL_ENDOFNAMES
 		function(msg) {
 			var channel = gateway.findChannel(msg.args[1]);
@@ -1007,14 +1070,63 @@ var cmdBinds = {
 			disp.endListbeI('b', msg.args[1]);
 		}			
 	],
+	'371': [	// RPL_INFO
+	],
 	'372': [	// RPL_MOTD
 		function(msg) {
 			gateway.statusWindow.appendMessage(messagePatterns.motd, [$$.niceTime(msg.time), msg.text]);
 		}
 	],
+	'373': [	// RPL_INFOSTART
+	],
+	'374': [	// RPL_ENDOFINFO
+	],
+	'375': [	// RPL_MOTDSTART
+	],
 	'376': [	// RPL_ENDOFMOTD
 		function(msg) {
 			gateway.joinChannels()
+		}
+	],
+	'378': [	// RPL_WHOISHOST
+		function(msg) { // not displaying hostname
+		}
+	],
+	'379': [	// RPL_WHOISMODES
+		function(msg) { // not displaying modes
+		}
+	],
+	'381': [	// RPL_YOUREOPER
+	],
+	'382': [	// RPL_REHASHING
+	],
+	'383': [	// RPL_YOURESERVICE
+	],
+	'384': [	// RPL_MYPORTIS
+	],
+	'385': [	// RPL_NOTOPERANYMORE
+	],
+	'386': [	// RPL_QLIST
+	],
+	'387': [	// RPL_ENDOFQLIST
+	],
+	'388': [	// RPL_ALIST
+	],
+	'389': [	// RPL_ENDOFALIST
+	],
+	'391': [	// RPL_TIME
+	],
+	'392': [	// RPL_USERSSTART
+	],
+	'393': [	// RPL_USERS
+	],
+	'394': [	// RPL_ENDOFUSERS
+	],
+	'395': [	//	RPL_NOUSERS
+	],
+	'396': [	// RPL_HOSTHIDDEN
+		function(msg) {
+			gateway.statusWindow.appendMessage(messagePatterns.displayedHost, [$$.niceTime(msg.time), he(msg.args[1])]);
 		}
 	],
 	'401': [	// ERR_NOSUCHNICK
@@ -1069,7 +1181,19 @@ var cmdBinds = {
 			}
 		}
 	],
-	'411': [ //	ERR_NORECIPIENT - brzydki sposób na uzyskanie bieżącego nicka
+	'405': [	// ERR_TOOMANYCHANNELS
+	],
+	'406': [	// ERR_WASNOSUCHNICK
+	],
+	'407': [	// ERR_TOOMANYTARGETS
+	],
+	'408': [	// ERR_NOSUCHSERVICE
+	],
+	'409': [	// ERR_NOORIGIN
+	],
+	'410': [	// ERR_INVALIDCAPCMD
+	],
+	'411': [	//ERR_NORECIPIENT - that was a hack to discover own nick with previous websocket interface
 		function(msg) {
 			if(gateway.connectStatus != statusDisconnected){
 				return;
@@ -1087,7 +1211,29 @@ var cmdBinds = {
 			gateway.connectStatus = status001;
 		}
 	],
-	'432' : [	// ERR_ERRONEUSNICKNAME 
+	'412': [	// ERR_ERR_NOTEXTTOSEND
+	],
+	'413': [	// ERR_NOTOPLEVEL
+	],
+	'414': [	// ERR_WILDTOPLEVEL
+	],
+	'416': [	// ERR_TOOMANYMATCHES
+	],
+	'421': [	// ERR_UNKNOWNCOMMAND
+	],
+	'422': [	// ERR_NOMOTD
+	],
+	'423': [	// ERR_NOADMININFO
+	],
+	'424': [	// ERR_FILEERROR
+	],
+	'425': [	// ERR_NOOPERMOTD
+	],
+	'429': [	// ERR_TOOMANYAWAY
+	],
+	'431': [	// ERR_NONICKNAMEGIVEN
+	],
+	'432': [	// ERR_ERRONEUSNICKNAME 
 		function(msg) {
 			if(gateway.connectStatus == statusDisconnected){
 				ircCommand.changeNick('PIRC-'+Math.round(Math.random()*100));
@@ -1101,7 +1247,7 @@ var cmdBinds = {
 			gateway.statusWindow.appendMessage(messagePatterns.badNick, [$$.niceTime(msg.time), msg.args[1]]);
 		}
 	],
-	'433' : [	// ERR_NICKNAMEINUSE 
+	'433': [	// ERR_NICKNAMEINUSE 
 		function(msg) {
 			if(gateway.connectStatus == statusDisconnected){
 				var expr = /^([^0-9]+)(\d*)$/;
@@ -1125,33 +1271,87 @@ var cmdBinds = {
 			gateway.statusWindow.appendMessage(messagePatterns.nickInUse, [$$.niceTime(msg.time), msg.args[1]]);
 		}
 	],
-	'442' : [	// ERR_NOTONCHANNEL
+	'434': [	// ERR_NORULES
+	],
+	'435': [	// ERR_SERVICECONFUSED
+	],
+	'436': [	// ERR_NICKCOLLISION
+	],
+	'437': [	// ERR_BANNICKCHANGE
+	],
+	'438': [	// ERR_NCHANGETOOFAST
+	],
+	'439': [	// ERR_TARGETTOOFAST
+	],
+	'440': [	// ERR_SERVICESDOWN
+	],
+	'441': [	// ERR_USERNOTINCHANNEL
+	],
+	'442': [	// ERR_NOTONCHANNEL
 		function(msg) {
 			var html = '<p>'+he(msg.args[1])+": nie jesteś na tym kanale.</p>";
 			$$.displayDialog('error', 'error', 'Błąd', html);
 			gateway.statusWindow.appendMessage(messagePatterns.notOnChannel, [$$.niceTime(msg.time), he(msg.args[1])]);
 		}
 	],
-	'443' : [	// ERR_USERONCHANNEL
+	'443': [	// ERR_USERONCHANNEL
 		function(msg) {
 			var html = '<p>'+he(msg.args[2])+": <b>"+he(msg.args[1])+"</b> jest już na tym kanale.</p>";
 			$$.displayDialog('error', 'error', 'Błąd', html);
 			gateway.statusWindow.appendMessage(messagePatterns.alreadyOnChannel, [$$.niceTime(msg.time), he(msg.args[2]), he(msg.args[1])]);
 		}
 	],
-	'447' : [	// ERR_NONICKCHANGE 
+	'444': [	// ERR_NOLOGIN
+	],
+	'445': [	// ERR_SUMMONDISABLED
+	],
+	'446': [	// ERR_USERSDISABLED
+	],
+	'447': [	// ERR_NONICKCHANGE 
 		function(msg) {
 			var html = "<p>Nie można zmienić nicka.<br>Komunikat od serwera: " + he(msg.text) + '</p>';
 			$$.displayDialog('error', 'error', 'Błąd', html);
 			gateway.statusWindow.appendMessage(messagePatterns.notOnChannel, [$$.niceTime(msg.time), he(msg.args[1])]);
 		}
 	],
-	'465' : [	// ERR_YOUREBANNEDCREEP
+	'448': [	// ERR_FORBIDDENCHANNEL
+	],
+	'451': [	// ERR_NOTREGISTERED
+	],
+	'455': [	// ERR_HOSTILENAME
+	],
+	'459': [	// ERR_NOHIDING
+	],
+	'460': [	// ERR_NOTFORHALFOPS
+	],
+	'461': [	// ERR_NEEDMOREPARAMS
+	],
+	'462': [	// ERR_ALREADYREGISTRED
+	],
+	'463': [	// ERR_NOPERMFORHOST
+	],
+	'464': [	// ERR_PASSWDMISMATCH
+	],
+	'465': [	// ERR_YOUREBANNEDCREEP
 		function(msg) {
 			gateway.displayGlobalBanInfo(msg.text);
 		}
 	],
-	'473' : [	// ERR_INVITEONLYCHAN
+	'466': [	// ERR_YOUWILLBEBANNED
+	],
+	'467': [	// ERR_KEYSET
+	],
+	'468': [	// ERR_ONLYSERVERSCANCHANGE
+	],
+	'469': [	// ERR_LINKSET
+	],
+	'470': [	// ERR_LINKCHANNEL
+	],
+	'471': [	// ERR_CHANNELISFULL
+	],
+	'472': [	// ERR_UNKNOWNMODE
+	],
+	'473': [	// ERR_INVITEONLYCHAN
 		function(msg) {
 			gateway.iKnowIAmConnected();
 			var html = '<p>Nie można dołączyć do kanału <b>' + he(msg.args[1]) + '</b>' +
@@ -1167,7 +1367,7 @@ var cmdBinds = {
 			$$.displayDialog('warning', 'warning', 'Ostrzeżenie', html, button);
 		}
 	],
-	'474' : [	// ERR_BANNEDFROMCHAN
+	'474': [	// ERR_BANNEDFROMCHAN
 		function(msg) {
 			gateway.iKnowIAmConnected(); // TODO inne powody, przez które nie można wejść
 			var html =  "<p>Nie można dołączyć do kanału <b>" + msg.args[1] + "</b>";
@@ -1178,7 +1378,7 @@ var cmdBinds = {
 			$$.displayDialog('error', 'error', 'Błąd', html);
 		}
 	],
-	'475' : [	// ERR_BADCHANNELKEY
+	'475': [	// ERR_BADCHANNELKEY
 		function(msg) {
 			gateway.iKnowIAmConnected();
 			var html = "<p>Nie można dołączyć do kanału <b>" + msg.args[1] + "</b>" +
@@ -1189,7 +1389,7 @@ var cmdBinds = {
 			$$.displayDialog('warning', 'warning', 'Ostrzeżenie', html);
 		}
 	],
-	'477' : [	// ERR_NEEDREGGEDNICK
+	'477': [	// ERR_NEEDREGGEDNICK
 		function(msg) {
 			gateway.iKnowIAmConnected();
 			var html = "<p>Nie można dołączyć do kanału <b>" + he(msg.args[1]) + "</b>" +
@@ -1198,7 +1398,11 @@ var cmdBinds = {
 			$$.displayDialog('error', 'error', 'Błąd', html);
 		}
 	],
-	'480' : [	// ERR_CANNOTKNOCK
+	'478': [	// ERR_BANLISTFULL
+	],
+	'479': [	// ERR_LINKFAIL
+	],
+	'480': [	// ERR_CANNOTKNOCK
 		function(msg) {
 			var html = "<p>Nie można zapukać do kanału.<br>" +
 				"Komunikat serwera: "+he(msg.text) + '</p>';
@@ -1206,7 +1410,9 @@ var cmdBinds = {
 			$$.displayDialog('error', 'error', 'Błąd', html);
 		}
 	],
-	'482' : [	// ERR_CHANOPRIVSNEEDED 
+	'481': [	// ERR_NOPRIVILEGES
+	],
+	'482': [	// ERR_CHANOPRIVSNEEDED 
 		function(msg) {
 			var html = msg.args[1] + ": brak uprawnień." +
 				"<br>Nie masz wystarczających uprawnień aby wykonać żądaną akcję.";
@@ -1216,7 +1422,7 @@ var cmdBinds = {
 			$$.displayDialog('error', 'error', 'Błąd', html);
 		}
 	],
-	'486' : [	// ERR_NONONREG
+	'486': [	// ERR_NONONREG
 		function(msg) {
 			var expr = /^You must identify to a registered nick to private message ([^ ]*)$/;
 			var match = expr.exec(msg.text);
@@ -1231,7 +1437,9 @@ var cmdBinds = {
 			}					
 		}
 	],
-	'489' : [	// ERR_SECUREONLYCHAN 
+	'487': [	// ERR_NOTFORUSERS
+	],
+	'489': [	// ERR_SECUREONLYCHAN 
 		function(msg) { // to się nie zdarzy gdy używamy wss
 			gateway.iKnowIAmConnected();
 			var html = "<p>Nie można dołączyć do kanału <b>" + he(msg.args[1]) + "</b>" +
@@ -1240,7 +1448,13 @@ var cmdBinds = {
 			$$.displayDialog('error', 'error', 'Błąd', html);
 		}
 	],
-	'499' : [	// ERR_CHANOWNPRIVNEEDED
+	'490':	[	// ERR_NOSWEAR
+	],
+	'491':	[	// ERR_NOOPERHOST
+	],
+	'492':	[	// ERR_NOCTCP
+	],
+	'499': [	// ERR_CHANOWNPRIVNEEDED
 		function(msg) {
 			var html = msg.args[1] + ": brak uprawnień." +
 				"<br>Nie masz wystarczających uprawnień aby wykonać żądaną akcję.";
@@ -1250,7 +1464,31 @@ var cmdBinds = {
 			$$.displayDialog('error', 'error', 'Błąd', html);
 		}
 	],
-	'531' : [	// ERR_CANTSENDTOUSER
+	'500': [	// ERR_TOOMANYJOINS
+	],
+	'501': [	// ERR_UMODEUNKNOWNFLAG
+	],
+	'502': [	// ERR_USERSDONTMATCH
+	],
+	'511': [	// ERR_SILELISTFULL
+	],
+	'512': [	// ERR_TOOMANYWATCH
+	],
+	'513': [	// ERR_NEEDPONG
+	],
+	'514': [	// ERR_TOOMANYDCC
+	],
+	'517': [	// ERR_DISABLED
+	],
+	'518': [	// ERR_NOINVITE
+	],
+	'519': [	// ERR_ADMONLY
+	],
+	'520': [	// ERR_OPERONLY
+	],
+	'521': [	// ERR_LISTSYNTAX
+	],
+	'531': [	// ERR_CANTSENDTOUSER
 		function(msg) {
 			var expr = /^You must identify to a registered nick to private message this user$/;
 			var match = expr.exec(msg.text);
@@ -1265,20 +1503,63 @@ var cmdBinds = {
 			}					
 		}
 	],
-	'900': [ // RPL_LOGGEDIN
+	'597': [	// RPL_REAWAY
+	],
+	'598': [	// RPL_GONEAWAY
+	],
+	'599': [	// RPL_NOTAWAY
+	],
+	'600': [	// RPL_LOGON
+	],
+	'601': [	// RPL_LOGOFF
+	],
+	'602': [	// RPL_WATCHOFF
+	],
+	'603': [	// RPL_WATCHSTAT
+	],
+	'604': [	// RPL_NOWON
+	],
+	'605': [	// RPL_NOWOFF
+	],
+	'606': [	// RPL_WATCHLIST
+	],
+	'607': [	// RPL_ENDOFWATCHLIST
+	],
+	'608': [	// RPL_CLEARWATCH
+	],
+	'609': [	// RPL_NOWISAWAY
+	],
+	'671': [	// RPL_WHOISSECURE
+		function(msg) {
+			$$.displayDialog('whois', msg.args[1], false, "<p class='whois'><span class='info'>TLS:</span><span class='data'>Używa bezpiecznego połączenia</span></p>");
+		}
+	],
+	'742': [	// ERR_MLOCKRESTRICTED
+	],
+	'900': [	// RPL_LOGGEDIN
 		function(msg) {
 			ircCommand.performQuick('CAP', ['END']);
 			gateway.statusWindow.appendMessage(messagePatterns.SaslAuthenticate, [$$.niceTime(msg.time), 'SASL: zalogowano jako '+he(msg.args[2])]);
 		}
 	],
-	'904': [ // ERR_SASLFAIL
+	'903': [	// RPL_SASLSUCCESS
+		function(msg) {
+			gateway.statusWindow.appendMessage(messagePatterns.SaslAuthenticate, [$$.niceTime(msg.time), 'SASL: logowanie udane.']);
+		}
+	],
+	'904': [	// ERR_SASLFAIL
 		function(msg) {
 			ircCommand.performQuick('CAP', ['END']);
 			gateway.statusWindow.appendMessage(messagePatterns.SaslAuthenticate, [$$.niceTime(msg.time), 'SASL: logowanie nieudane!']);
 //			gateway.sasl = false;
 		}
 	],
-	'972' : [	// ERR_CANNOTDOCOMMAND 
+	'906': [	// ERR_SASLABORTED
+		function(msg) {
+			gateway.statusWindow.appendMessage(messagePatterns.SaslAuthenticate, [$$.niceTime(msg.time), 'SASL: nie zalogowano.']);
+		}
+	],
+	'972': [	// ERR_CANNOTDOCOMMAND 
 		function(msg) {
 			gateway.showPermError(msg.text);
 			if(gateway.getActive()) {
@@ -1286,7 +1567,7 @@ var cmdBinds = {
 			}
 		}
 	],
-	'974' : [	// ERR_CHANOPRIVSNEEDED 
+	'974': [	// ERR_CANNOTCHANGECHANMODE
 		function(msg) {
 			gateway.showPermError(msg.text);
 			if(gateway.getActive()) {
@@ -1390,5 +1671,26 @@ var ctcpBinds = {
 };
 
 var mcolBinds = {
+};
+
+function cmdNotImplemented(msg){
+	var tab = gateway.statusWindow;
+	var text = '('+msg.command+') ';
+	var startIndex = 1;
+
+	if(msg.args[1].charAt(0) == '#' && gateway.findChannel(msg.args[1])){
+		tab = gateway.findChannel(msg.args[1]);
+		startIndex = 2;
+	}
+	
+	for(var i=startIndex; i<msg.args.length; i++){
+		text += ' ' + msg.args[i];
+	}
+	
+	if(msg.command.charAt(0) == '4'){
+		tab.appendMessage(messagePatterns.unimplementedError, [$$.niceTime(msg.time), text]);
+	} else {
+		tab.appendMessage(messagePatterns.unimplemented, [$$.niceTime(msg.time), text]);
+	}
 };
 

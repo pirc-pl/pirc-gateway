@@ -178,6 +178,7 @@ var irc = {
 						case ':':
 							if(prevChar == ' '){
 								pstate = stateMessage;
+								haveText = true;
 							} else {
 								currArg += cchar;
 							}
@@ -186,7 +187,6 @@ var irc = {
 					}
 					break;
 				case stateMessage:
-					haveText = true;
 					ircmsg.text += cchar;
 					break;
 			}
@@ -364,9 +364,15 @@ var gateway = {
 				var msg = data.packets[i];
 				var command = msg.command
 				if(command in cmdBinds) {
-					for(func in cmdBinds[command]) {
-						cmdBinds[command][func](msg);
+					if(cmdBinds[command].length == 0){ // implementation empty
+						cmdNotImplemented(msg);
+					} else {
+						for(func in cmdBinds[command]) {
+							cmdBinds[command][func](msg);
+						}
 					}
+				} else { // not implemented
+					cmdNotImplemented(msg);
 				}
 			} catch(error) {
 				console.log('Błąd przetwarzania komunikatu!');
