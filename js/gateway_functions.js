@@ -83,7 +83,7 @@ var messagePatterns = {
 	'cannotSendToChan': '<span class="time">%s</span> &nbsp; <span class="kick">⮿ Nie można wysłać na <span class="modeinfo">%s</span>: %s. Wiadomość nie została dostarczona.</span><br />',
 	'cannotSendToUser': '<span class="time">%s</span> &nbsp; <span class="kick">⮿ Nie można pisać do <span class="modeinfo">%s</span>: %s. Wiadomość nie została dostarczona.</span><br />',
 	'cannotJoin': '<span class="time">%s</span> &nbsp; <span class="kick">⮿ Nie można dołączyć do kanału <span class="modeinfo">%s</span>: %s</span><br />',
-	'noPerms': '<span class="time">%s</span> &nbsp; <span class="kick">⮿ Brak uprawnien.</span><br />',
+	'noPerms': '<span class="time">%s</span> &nbsp; <span class="kick">⮿ Brak uprawnień.</span><br />',
 	'notice': '<span class="time">%s</span> &nbsp; <span class="notice-nick"><b>-%s-</b></span><span class="userhost">(<span class="notice-nick">%s</span>@<span class="notice-nick">%s</span>)</span> <span class="notice">%s</span><br />',
 	'serverNotice': '<span class="time">%s</span> &nbsp; <span class="notice-nick">Wiadomość od serwera <b>%s</b>:</span> <span class="notice">%s</span><br />',
 	'yourNotice': '<span class="time">%s</span> &nbsp; <span class="notice"><b>-NOTICE/%s-</b> %s</span><br />',
@@ -113,6 +113,7 @@ var messagePatterns = {
 	'netsplit': '<span class="time">%s</span> &nbsp; <span class="part">🢠 <span class="netsplit">Netsplit</span>, wychodzą: %s</span><br />',
 	'netjoin': '<span class="time">%s</span> &nbsp; <span class="join">🢡 Po <span class="netjoin">netsplicie</span> wchodzą: %s</span><br />',
 	'displayedHost': '<span class="time">%s</span> &nbsp; <span class="sinfo">🔧 Twój host jest teraz widoczny jako %s</span><br />',
+	'invalidMode': '<span class="time">%s</span> &nbsp; <span class="kick">⮿ Nieprawidłowy tryb "%s"</span><br />',
 	'unimplemented': '<span class="time">%s</span> &nbsp; <span class="sinfo">✯ %s</span><br />',
 	'unimplementedError': '<span class="time">%s</span> &nbsp; <span class="kick">⮿ %s</span><br />'
 };

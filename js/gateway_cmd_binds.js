@@ -1151,7 +1151,7 @@ var cmdBinds = {
 	],
 	'404': [	// ERR_CANNOTSENDTOCHAN
 		function(msg) {
-			if(gateway.findChannel(msg.args[1])) {
+			if(msg.args[1].charAt(0) == '#') {
 				var reason = '';
 				if(msg.text.match(/Newly connected users have to wait before they can send any links \(.*\)/)){
 					reason = 'Twoja wiadomość została rozpoznana jako link. Musisz odczekać kilka minut po połączeniu i spróbować ponownie. Zarejestruj nick, aby uniknąć tego ograniczenia w przyszłości';
@@ -1166,9 +1166,14 @@ var cmdBinds = {
 				} else if(msg.text.match(/You must have a registered nick \(\+r\) to talk on this channel \(.*\)/)){
 					reason = 'Musisz mieć zarejestrowanego nicka, aby teraz pisać na tym kanale';
 				} else {
-					reason = msg.text;
+					reason = 'Komunikat od serwera: ' + msg.text;
 				}
-				gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.cannotSendToChan, [$$.niceTime(msg.time), msg.args[1], reason]);
+				if(gateway.findChannel(msg.args[1])){
+					gateway.findChannel(msg.args[1]).appendMessage(messagePatterns.cannotSendToChan, [$$.niceTime(msg.time), msg.args[1], reason]);
+				} else {
+					$$.displayDialog('error', 'error', 'Błąd', '<p>Nie można wysłać wiadomości do '+he(msg.args[1])+'</p><p>'+reason+'</p>');
+					gateway.statusWindow.appendMessage(messagePatterns.cannotSendToChan, [$$.niceTime(msg.time), msg.args[1], reason]);
+				}
 			} else if(gateway.findQuery(msg.args[1])){
 				if(msg.text.match(/Newly connected users have to wait before they can send any links/)){
 					reason = 'Twoja wiadomość została rozpoznana jako link. Musisz odczekać kilka minut po połączeniu i spróbować ponownie. Zarejestruj nick, aby uniknąć tego ograniczenia w przyszłości';
@@ -1350,6 +1355,11 @@ var cmdBinds = {
 	'471': [	// ERR_CHANNELISFULL
 	],
 	'472': [	// ERR_UNKNOWNMODE
+		function(msg) {
+			gateway.statusWindow.appendMessage(messagePatterns.invalidMode, [$$.niceTime(msg.time), msg.args[1]]);
+			var html = 'Nieprawidłowy tryb: "'+msg.args[1]+'"';
+			$$.displayDialog('error', 'error', 'Błąd', html);
+		}
 	],
 	'473': [	// ERR_INVITEONLYCHAN
 		function(msg) {

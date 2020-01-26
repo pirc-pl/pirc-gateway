@@ -494,7 +494,7 @@ var gateway = {
 	},
 	'stopAndReconnect': function () {
 		gateway.disconnected('Zbyt długi czas łączenia');
-		if(gateway.websock.readyState === OPEN) ircCommand.quit('Błąd bramki >> łączenie trwało zbyt długo');
+		if(gateway.websock.readyState === WebSocket.OPEN) ircCommand.quit('Błąd bramki >> łączenie trwało zbyt długo');
 		setTimeout('gateway.reconnect()', 500);
 	},
 	'initSys': function() {
