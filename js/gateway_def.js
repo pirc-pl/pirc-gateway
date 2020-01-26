@@ -235,6 +235,7 @@ var gateway = {
 	'userQuit': false,
 	'sasl': false,
 	'commandProcessing': false,
+	'whowasExpect312': false,
 	'chanPassword': function(chan) {
 		if($('#chpass').val() == ''){
 			$$.alert('Nie podałeś hasła!');

@@ -632,7 +632,14 @@ var cmdBinds = {
 	],
 	'312': [	// RPL_WHOISSERVER 
 		function(msg) {
-			$$.displayDialog('whois', msg.args[1], false, "<p class='whois'><span class='info'>Serwer:</span><span class='data'>" + msg.args[2] + " "+ he(msg.text) + "</span></p>");
+			if(!gateway.whowasExpect312){
+				var html = "<p class='whois'><span class='info'>Serwer:</span><span class='data'>" + msg.args[2] + " "+ he(msg.text) + "</span></p>";
+			} else {
+				gateway.whowasExpect312 = false;
+				var html = "<p class='whois'><span class='info'>Serwer:</span><span class='data'>" + msg.args[2] + "</span></p>" +
+					"<p class='whois'><span class='info'>Widziano:</span><span class='data'>" + msg.text + "</span></p>";
+			}
+			$$.displayDialog('whois', msg.args[1], false, html);
 		}
 	],
 	'313': [	// RPL_WHOISOPERATOR
@@ -652,6 +659,12 @@ var cmdBinds = {
 		}
 	],
 	'314': [	// RPL_WHOWASUSER
+		function(msg){
+			var html = "<p class='whois'><span class='info'>Pełna maska:</span><span class='data'> " + msg.args[1] + '!' + msg.args[2] + '@' + msg.args[3] + '</span></p>' + 
+				"<p class='whois'><span class='info'>Realname:</span><span class='data'> " + he(msg.text) + "</span></p>";
+			$$.displayDialog('whois', msg.args[1], 'Poprzednie wizyty '+he(msg.args[1]), html);
+			gateway.whowasExpect312 = true;
+		}
 	],
 	'315': [	// RPL_ENDOFWHO
 		function(msg){
@@ -1070,6 +1083,10 @@ var cmdBinds = {
 			disp.endListbeI('b', msg.args[1]);
 		}			
 	],
+	'369': [	// RPL_ENDOFWHOWAS
+		function(msg) { // not displaying end of whowas
+		}
+	],
 	'371': [	// RPL_INFO
 	],
 	'372': [	// RPL_MOTD
@@ -1189,6 +1206,10 @@ var cmdBinds = {
 	'405': [	// ERR_TOOMANYCHANNELS
 	],
 	'406': [	// ERR_WASNOSUCHNICK
+		function(msg) {
+			$$.displayDialog('error', 'error', 'Błąd', '<p>Nie znaleziono poprzednich wizyt nicka: <b>'+msg.args[1]+'</b></p>');
+			gateway.statusWindow.appendMessage(messagePatterns.noSuchNickHistory, [$$.niceTime(msg.time), he(msg.args[1])]);
+		}
 	],
 	'407': [	// ERR_TOOMANYTARGETS
 	],

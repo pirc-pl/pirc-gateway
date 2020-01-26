@@ -65,12 +65,24 @@ var commands = {
 		'custom': [],
 		'callback': function(command, input) {
 			if(command[1]) {
-				gateway.send("WHOIS "+command[1]+" "+command[1]);
+				ircCommand.whois(command[1]);
 				if(command[1].toLowerCase() == guser.nick.toLowerCase()){
 					gateway.displayOwnWhois = true;
 				}
 			} else {
 				gateway.notEnoughParams("whois", "musisz podać nick osoby o której chcesz zdobyć informację.");
+			}
+		}
+	},
+	'whowas': {
+		'channels': false,
+		'nicks': true,
+		'custom': [],
+		'callback': function(command, input) {
+			if(command[1]) {
+				ircCommand.whowas(command[1]);
+			} else {
+				gateway.notEnoughParams("whowas", "musisz podać nick osoby o której chcesz zdobyć informację.");
 			}
 		}
 	},

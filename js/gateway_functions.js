@@ -74,6 +74,7 @@ var messagePatterns = {
 	'channelBacklogEnd': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Koniec zapisu.</span><br />',
 	'noSuchCommand': '<span class="time">%s</span> &nbsp; <span class="mode">⮿ <span class="modeinfo">%s</span>: nieznana komenda.</span><br />',
 	'noSuchNick': '<span class="time">%s</span> &nbsp; <span class="mode">⮿ <span class="modeinfo">%s</span>: nie ma takiego nicku ani kanału</span><br />',
+	'noSuchNickHistory': '<span class="time">%s</span> &nbsp; <span class="mode">⮿ <span class="modeinfo">%s</span>: brak historii wizyt nicka</span><br />',
 	'noSuchChannel': '<span class="time">%s</span> &nbsp; <span class="mode">⮿ <span class="modeinfo">%s</span>: nie ma takiego kanału</span><br />',
 	'notOnChannel': '<span class="time">%s</span> &nbsp; <span class="mode">⮿ <span class="modeinfo">%s</span>: nie jesteś na tym kanale</span><br />',
 	'alreadyOnChannel': '<span class="time">%s</span> &nbsp; <span class="mode">⮿ %s: <span class="modeinfo">%s</span> jest już na tym kanale</span><br />',

@@ -138,6 +138,9 @@ var ircCommand = {
 	'whois': function(nick){
 		ircCommand.perform('WHOIS', [nick, nick]);
 	},
+	'whowas': function(nick){
+		ircCommand.perform('WHOWAS', [nick]);
+	},
 	'who': function(dest){ // TODO dorobić zabezpieczenie przed dużą ilością żądań na raz
 		ircCommand.perform('WHO', [dest]);
 	},
