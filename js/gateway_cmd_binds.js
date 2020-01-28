@@ -543,6 +543,7 @@ var cmdBinds = {
 				guser.nick = msg.args[0];
 				$$.displayDialog('warning', 'warning', 'Ostrzeżenie', '<p>Twój bieżący nick to <b>'+guser.nick+'</b>.</p>');
 			}
+			ircCommand.umode('+g');
 			gateway.statusWindow.appendMessage(messagePatterns.motd, [$$.niceTime(msg.time), he(msg.text)]);
 			gateway.pingcnt = 0;
 			gateway.connectStatus = status001;
