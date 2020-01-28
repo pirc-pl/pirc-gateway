@@ -80,9 +80,13 @@ class Module extends ModuleT {
 			Template::assign('random_string', '?'.$timestamp);
 		}
 		Template::assign('add_js', $add_js);
-		Template::assign('itoken', base64_encode('PASS '.settings::$gateway['itoken']));
+		if(isset(settings::$gateway['itoken']){
+			Template::assign('itoken', base64_encode('PASS '.settings::$gateway['itoken']));
+		} else {
+			Template:assign('itoken', '');
+		}
 		Template::assign('server', settings::$gateway['server']);
-		
+
 		Template::display('gateway_ajax_header');
 		Template::display('ajax_'.$glayout);
 //		Template::assign('gateway_url', $gateway_url);
