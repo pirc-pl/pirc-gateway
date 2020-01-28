@@ -83,7 +83,7 @@ class Module extends ModuleT {
 		if(isset(settings::$gateway['itoken'])){
 			Template::assign('itoken', base64_encode('PASS '.settings::$gateway['itoken']));
 		} else {
-			Template:assign('itoken', '');
+			Template::assign('itoken', '');
 		}
 		Template::assign('server', settings::$gateway['server']);
 
