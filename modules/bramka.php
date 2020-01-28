@@ -80,7 +80,7 @@ class Module extends ModuleT {
 			Template::assign('random_string', '?'.$timestamp);
 		}
 		Template::assign('add_js', $add_js);
-		if(isset(settings::$gateway['itoken']){
+		if(isset(settings::$gateway['itoken'])){
 			Template::assign('itoken', base64_encode('PASS '.settings::$gateway['itoken']));
 		} else {
 			Template:assign('itoken', '');
