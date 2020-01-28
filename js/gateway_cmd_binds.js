@@ -493,6 +493,17 @@ var cmdBinds = {
 					message = messageProcessors[f](msg.sender.nick, guser.nick, message);
 				}
 
+				if(msg.sender.nick == guser.nick && msg.args[0].isInList(servicesNicks) && !gateway.find(qnick)){
+					if($("#noticeDisplay").val() == 0){ // okienko
+						var html = "<span class=\"notice\">[<b>"+he(guser.nick)+" → "+command[1] + "</b>]</span> " + $$.colorize(msg.text);
+						$$.displayDialog('notice', 'service', 'Komunikat od usługi sieciowej', html);
+						return;
+					} else { // status
+						gateway.statusWindow.appendMessage(messagePatterns.yourMsg, [$$.niceTime(), $$.nickColor(guser.nick), guser.nick + ' → ' + command[1], $$.colorize(msg.text)]);
+						return;
+					}
+				}
+				
 				query = gateway.findOrCreate(qnick);
 				query.appendMessage(messagePatterns.channelMsg, [$$.niceTime(msg.time), '', msg.sender.nick, message]);
 				if(msg.sender.nick != guser.nick && (gateway.active.toLowerCase() != qnick.toLowerCase() || !disp.focused)) {

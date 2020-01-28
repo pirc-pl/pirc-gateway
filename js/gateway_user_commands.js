@@ -330,19 +330,15 @@ var commands = {
 				if(reason) {
 					gateway.send("PRIVMSG "+command[1]+" :"+reason);
 					
-				//	var serviceNicks = [ 'nickserv', 'chanserv', 'hostserv', 'operserv', 'botserv' ];
-					
-				//	if(serviceNicks.indexOf(command[1].toLowerCase()) > -1){
-					if(command[1].isInList(servicesNicks)){
-						var displayAsQuery = Boolean(query);
-					
-						if(displayAsQuery || $("#noticeDisplay").val() == 1){ // query
+					if(activeCaps.indexOf('echo-message') <= 0 && command[1].isInList(servicesNicks)){
+						var displayInTab = false;
+						if(gateway.find(command[1])) displayInTab = true;
+						if(displayInTab || $("#noticeDisplay").val() == 1){ // query
 							var query = gateway.findOrCreate(command[1]);
 							query.appendMessage(messagePatterns.yourMsg, [$$.niceTime(), $$.nickColor(guser.nick), guser.nick, $$.colorize(reason)]);
 							query.appendMessage('%s', [$$.parseImages(reason)]);
 						} else if($("#noticeDisplay").val() == 0){ // okienko
 							var html = "<span class=\"notice\">[<b>"+he(guser.nick)+" → "+command[1] + "</b>]</span> " + $$.colorize(reason);
-//							$$.displayDialog('notice', command[1], 'Komunikat prywatny od '+command[1], html);
 							$$.displayDialog('notice', 'service', 'Komunikat od usługi sieciowej', html);
 						} else { // status
 							gateway.statusWindow.appendMessage(messagePatterns.yourMsg, [$$.niceTime(), $$.nickColor(guser.nick), guser.nick + ' → ' + command[1], $$.colorize(reason)]);

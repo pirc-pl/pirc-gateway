@@ -1974,6 +1974,17 @@ var gateway = {
 		}
 		return tab;
 	},
+	'find': function(name){
+		if(!name || name == ''){
+			return false;
+		}
+		if(name.charAt(0) == '#'){ //kanał
+			return gateway.findChannel(name);
+		} else { //query
+			return gateway.findQuery(name);
+		}
+		return false;
+	},
 	'smallListLoading': false,
 	'smallListData': [],
 	'toggleChanList': function() {
