@@ -1639,10 +1639,15 @@ var ctcpBinds = {
 				}
 				channel.appendMessage('%s', [html]);
 			} else {
-				query = gateway.findOrCreate(msg.sender.nick);
+				if(msg.sender.nick == guser.nick){
+					var qnick = msg.args[0];
+				} else {
+					var qnick = msg.sender.nick;
+				}
+				query = gateway.findOrCreate(qnick);
 				query.appendMessage(messagePatterns.channelAction, [$$.niceTime(msg.time), msg.sender.nick, $$.colorize(msg.ctcptext)]);
-				if(gateway.active.toLowerCase() != msg.sender.nick.toLowerCase()) {
-					gateway.findQuery(msg.sender.nick).markNew();
+				if(gateway.active.toLowerCase() != sender.toLowerCase()) {
+					gateway.findQuery(qnick).markNew();
 				}
 				query.appendMessage('%s', [html]);
 			}
