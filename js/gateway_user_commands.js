@@ -497,8 +497,10 @@ var commands = {
 					}
 					if(tabToSend){
 						gateway.send("PRIVMSG "+gateway.active+" :\001ACTION "+input.slice(1).substr(3)+"\001");
-						tabToSend.appendMessage(messagePatterns.yourAction, [$$.niceTime(), guser.nick, $$.colorize(input.slice(1).substr(3))]);
-						tabToSend.appendMessage('%s', [$$.parseImages(input.slice(1).substr(3))]);
+						if(activeCaps.indexOf('echo-message') <= 0){
+							tabToSend.appendMessage(messagePatterns.yourAction, [$$.niceTime(), guser.nick, $$.colorize(input.slice(1).substr(3))]);
+							tabToSend.appendMessage('%s', [$$.parseImages(input.slice(1).substr(3))]);
+						}
 					} else {
 						console.log('błąd /me !!!');
 					}
