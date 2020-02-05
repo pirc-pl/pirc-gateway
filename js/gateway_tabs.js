@@ -154,9 +154,11 @@ function NicklistUser(usernick, chan) {
 					'<img class="chavatar" alt="' + (this.isRegistered?'Zarejestrowany':'Niezarejestrowany') + '" src="'+disp.getAvatarIcon(this.nick, this.isRegistered)+'" title="' + (this.isRegistered?'Zarejestrowany':'Niezarejestrowany') + '" '+
 					'onerror="users.disableAutoAvatar(\'' + this.nick + '\')">'+
 				'</td><td valign="top">';
-	//	if(index > 0){
+		if(index > 0){
 			html += '<img class="chrank" alt="'+alt[index]+'" src="'+(index>0?icons[index]:'')+'" title="'+(index?chStatusInfo[index]:'')+'" />';
-	//	}
+		} else {
+			html += '<span class="chrank"></span>';
+		}
 		html += '</td>'+
 				'<td valign="top" style="text-align:left;width:100%;" class="'+((this.nick.toLowerCase()==guser.nick.toLowerCase())?'ownNick ':'')+'nickname">'+this.nick+'</td>'+
 			'</tr></table>'+
@@ -266,12 +268,6 @@ function NicklistUser(usernick, chan) {
 	}
 	this.setRegistered = function(val) {
 		this.isRegistered = val;
-	/*	var index = this.level;
-		if(this.level == 0 && this.isRegistered){
-			index = 6;
-		}
-		this.showTitle();
-		$('#'+this.id+' .chrank').attr('alt', alt[index]).attr('src', icons[index]).attr('title', chStatusInfo[index]);*/
 		var regText = val?'Zarejestrowany':'Niezarejestrowany';
 		$('#'+this.id+' .chavatar').attr('alt', regText).attr('src', disp.getAvatarIcon(this.nick, this.isRegistered)).attr('title', regText).on('error', function(){ users.disableAutoAvatar(this.nick); });
 	}
