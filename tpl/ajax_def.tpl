@@ -27,7 +27,7 @@
 			<table>
 				<tr>
 					<td class="optionsCheckBox"><input type="checkbox" id="noAvatars" onchange="disp.changeSettings(event)" /></td>
-					<td class="info">Nie pokazuj avatarów <a href="javascript:void(0)" onclick="disp.showAvatarSetting()">Ustaw własny avatar</a></td>
+					<td class="info">Nie pokazuj avatarów (stary wygląd) <a href="javascript:void(0)" onclick="disp.showAvatarSetting()">Ustaw własny avatar</a></td>
 				</tr>
 				<tr>
 					<td class="optionsCheckBox"><input type="checkbox" id="showPartQuit" onchange="disp.changeSettings(event)" /></td>
@@ -117,7 +117,8 @@
 			</div>
 			<div id="set-avatar">
 				Podaj adres URL: <input type="text" id="avatar-url" name="avatar-url"> <button type="button" value="" onClick="disp.checkAvatarUrl()">Sprawdź</button><br>
-				<button type="button" value="" id="submit-avatar" onClick="disp.submitAvatar()">Zatwierdź</button>
+				<button type="button" value="" id="submit-avatar" onClick="disp.submitAvatar()">Zatwierdź</button><br>
+				Opcja eksperymentalna &ndash; spodziewaj się zmian i ułatwień!
 			</div>
 		</div>
 		
