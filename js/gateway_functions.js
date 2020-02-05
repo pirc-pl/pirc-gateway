@@ -667,7 +667,7 @@ var disp = {
 		$('#current-letter-avatar').hide();
 		$('#current-avatar-image').attr('src', url);
 		$('#current-avatar-image').attr('alt', 'Podgląd');
-		$('#current-avatar-info').text('Podgląd');
+		$('#current-avatar-info').text('Podgląd powyżej. Jeśli widać obrazek, możesz go zatwierdzić.');
 		$('#submit-avatar').show();
 	},
 	'submitAvatar': function() {

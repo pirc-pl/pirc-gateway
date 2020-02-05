@@ -870,6 +870,7 @@ span.td_right {
 	width: 1.1em;
 	height: 1.1em;
 	display: block;
+	object-fit: contain;
 }
 
 .backlog {
@@ -1241,8 +1242,9 @@ span.data img {
 }
 
 .messageMeta img {
-    max-width: 50px;
-    max-height: 50px;
+	width: 50px;
+	height: 50px;
+	object-fit: contain;
 }
 
 .messageDiv {
@@ -1286,8 +1288,10 @@ span.data img {
 }
 
 #current-avatar-image {
-	width: 50px;
-	height: 50px;
+	width: 100px;
+	height: 100px;
+    object-fit: contain;
+
 }
 
 #current-letter-avatar {
