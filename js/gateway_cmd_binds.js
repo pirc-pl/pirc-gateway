@@ -521,6 +521,9 @@ var cmdBinds = {
 				message = '<span class="time msgRepeatBlock">'+$$.niceTime(msg.time)+' &nbsp;</span>' + message;
 				if(hlmatch) { //hajlajt
 					channel.appendMessage(messagePatterns.channelMsgHilight, ['sender'+md5(msg.sender.nick) + ' ' + messageClass, meta, $$.niceTime(msg.time), msg.sender.nick, message]);
+					if(messageClass.indexOf('msgRepeat') > -1){
+						messageDiv.find('span.nick').addClass('repeat-hilight');
+					}
 					if(gateway.active != msg.args[0].toLowerCase() || !disp.focused) {
 						channel.markNew();
 					}

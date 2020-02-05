@@ -563,12 +563,17 @@ var disp = {
 			$('#monospace_font').remove();
 		}
 		if ($('#noAvatars').is(':checked')) {
+			$('#avatars-style').remove();
 			if($('#no_avatars').length == 0){
 				var style = $('<style id="no_avatars">.msgRepeat { display: block; } .msgRepeatBlock { display: none; } .messageDiv { padding-bottom: unset; } .messageMeta { display: none; } .messageHeader { display: inline; } .messageHeader::after { content: " "; } .messageHeader .time { display: inline; } .evenMessage { background: none !important; } .oddMessage { background: none !important; }</style>');
 				$('html > head').append(style);
 			}
 		} else {
 			$('#no_avatars').remove();
+			if($('#avatars-style').length == 0){
+				var style = $('<style id="avatars-style">span.repeat-hilight, span.repeat-hilight span { color: #1F29D3 !important; font-weight: bold; }</style>');
+				$('html > head').append(style);
+			}
 		}
 		if ($('#showUserHostnames').is(':checked')) {
 			$('#userhost_hidden').remove();
