@@ -26,6 +26,10 @@
 		<div id="options-dialog" title="Ustawienia">
 			<table>
 				<tr>
+					<td class="optionsCheckBox"><input type="checkbox" id="noAvatars" onchange="disp.changeSettings(event)" /></td>
+					<td class="info">Nie pokazuj avatarów <a href="javascript:void(0)" onclick="disp.showAvatarSetting()">Ustaw własny avatar</a></td>
+				</tr>
+				<tr>
 					<td class="optionsCheckBox"><input type="checkbox" id="showPartQuit" onchange="disp.changeSettings(event)" /></td>
 					<td class="info">Nie pokazuj wiadomości PART/JOIN/QUIT (wejścia/wyjścia z kanałów)</td>
 				</tr>
@@ -101,6 +105,20 @@
 				</tr>
 				<tr><td colspan="2"><a href="javascript:ignore.showIgnoreManagement();">Zarządzaj ignorowanymi nickami</a></td></tr>
 			</table>
+		</div>
+		
+		<div id="avatar-dialog" title="Avatar">
+			<div id="current-avatar">
+				<div id="current-letter-avatar">
+					<span class="avatar letterAvatar" id="letterAvatarExample"><span role="presentation" id="letterAvatarExampleContent"></span></span>
+				</div>
+				<img id="current-avatar-image" src="/styles/img/noavatar.png" alt="Nie ustawiono awatara"><br>
+				<span id="current-avatar-info">Nie ustawiono awatara</span> <button type="button" value="" id="delete-avatar" onClick="disp.deleteAvatar()">Skasuj</button>
+			</div>
+			<div id="set-avatar">
+				Podaj adres URL: <input type="text" id="avatar-url" name="avatar-url"> <button type="button" value="" onClick="disp.checkAvatarUrl()">Sprawdź</button><br>
+				<button type="button" value="" id="submit-avatar" onClick="disp.submitAvatar()">Zatwierdź</button>
+			</div>
 		</div>
 		
 		<div id="about-dialog" title="Informacje">

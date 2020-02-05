@@ -83,6 +83,16 @@ var conn = {
 				}
 				$('#'+sname).val(localStorage.getItem(sname));
 			});
+			textSettings.forEach(function(sname){
+				if(localStorage.getItem(sname) == null){
+					return;
+				}
+				if(localStorage.getItem(sname)){
+					textSettingsValues[sname] = localStorage.getItem(sname);
+				} else {
+					textSettingsValues[sname] = false;
+				}
+			});
 			disp.setSize(localStorage.getItem('tsize'));
 			var ignoreList = localStorage.getItem('ignore');
 			if(ignoreList){

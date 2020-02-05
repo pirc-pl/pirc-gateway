@@ -866,9 +866,10 @@ span.td_right {
 	text-align: right;
 }
 
-.chrank {
+.chrank, .chavatar {
 	width: 1.1em;
 	height: 1.1em;
+	display: block;
 }
 
 .backlog {
@@ -1228,5 +1229,89 @@ span.data img {
     margin-top: -20px;
     position: relative;
     top: 10px;
+}
+
+/* avatar things */
+.messageMeta {
+    float: left;
+    margin-right: 1em;
+    min-width: 50px;
+    min-height: 50px;
+    position: relative;
+}
+
+.messageMeta img {
+    max-width: 50px;
+    max-height: 50px;
+}
+
+.messageDiv {
+    clear: both;
+    padding-bottom: .2em;
+}
+
+.msgRepeat {
+	display: none;
+}
+
+.letterAvatar {
+    box-shadow: inset 0 -2px 0 rgba(0,0,0,.3);
+    background-color: black;
+    display:  inline-block;
+    border-radius: 50%;
+    width: 42px;
+    height: 42px;
+    margin: 4px;
+    color: white;
+}
+
+.letterAvatar span {
+    font-size: 25px;
+    line-height: 20px;
+    margin: 11px -4px;
+    position: absolute;
+    display: block;
+    width:  100%;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.messageHeader .time {
+	display: none;
+}
+
+#avatar-dialog {
+	background: url("/styles/img/kolory.png") no-repeat scroll right top #D7E4F3;
+	display: none;
+}
+
+#current-avatar-image {
+	width: 50px;
+	height: 50px;
+}
+
+#current-letter-avatar {
+	float: left;
+	position: relative;
+}
+
+#submit-avatar {
+	display: none;
+}
+
+#delete-avatar {
+	display: none;
+}
+
+td.nickname {
+	padding-left: 3px;
+}
+
+.oddMessage {
+/*	background-image: linear-gradient(to right, rgba(127,127,127,0), rgba(127,127,127,0.1));*/
+}
+
+.evenMessage {
+	background-image: linear-gradient(to right, rgba(127,127,127,0.2), rgba(127,127,127,0.05));
 }
 

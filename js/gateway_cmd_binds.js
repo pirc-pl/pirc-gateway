@@ -1,6 +1,6 @@
 var activeCaps = [];
 var isupport = [];
-var supportedCaps = ['userhost-in-names', 'away-notify', 'multi-prefix', 'chghost', 'extended-join', 'account-notify', 'message-tags', 'server-time', 'echo-message'];
+var supportedCaps = ['userhost-in-names', 'away-notify', 'multi-prefix', 'chghost', 'extended-join', 'account-notify', 'message-tags', 'server-time', 'echo-message', 'draft/metadata'];
 
 var cmdBinds = {
 	'ACCOUNT': [
@@ -16,6 +16,12 @@ var cmdBinds = {
 						nicklistUser.setRegistered(true);
 					}
 				}
+			}
+			var user = users.getUser(msg.sender.nick);
+			if(msg.args[0]){
+				user.setAccount(false);
+			} else {
+				user.setAccount(msg.args[0]);
 			}
 		}
 	],
@@ -48,6 +54,7 @@ var cmdBinds = {
 				}
 			});
 		}
+		//TODO user status
 	],
 	'CAP': [
 		function(msg) {
@@ -73,6 +80,12 @@ var cmdBinds = {
 					if(activeCaps.indexOf('sasl') >= 0){
 						gateway.sasl = true;
 					}
+					if(activeCaps.indexOf('draft/metadata') >= 0){ // subscribing to the metadata
+						ircCommand.metadata('SUB', '*', ['avatar', 'status', 'bot', 'homepage', 'display-name', 'bot-url', 'color']);
+						if(textSettingsValues['avatar']){
+							disp.avatarChanged();
+						}
+					}
 					if(guser.nickservpass != '' && guser.nickservnick != '' && gateway.sasl){
 						ircCommand.performQuick('AUTHENTICATE', ['PLAIN']);
 						gateway.statusWindow.appendMessage(messagePatterns.SaslAuthenticate, [$$.niceTime(msg.time), 'Próba logowania za pomocą SASL...']);
@@ -90,6 +103,9 @@ var cmdBinds = {
 				nicklistUser.setIdent(msg.args[0]);
 				nicklistUser.setUserHost(msg.args[1]);
 			}
+			var user = users.getUser(msg.sender.nick);
+			user.setIdent(msg.args[0]);
+			user.setHost(msg.args[1]);
 		}
 	],
 	'ERROR' : [
@@ -177,6 +193,7 @@ var cmdBinds = {
 			if(msg.sender.nick != guser.nick) {
 				gateway.processJoin(msg);
 			}
+			var user = users.addUser(msg.sender.nick);
 			if(activeCaps.indexOf('extended-join') >= 0){
 				var channame = msg.args[0];
 			} else {
@@ -196,16 +213,20 @@ var cmdBinds = {
 				nicklistUser.setMode('halfop', false);
 				nicklistUser.setMode('voice', false);
 			}
+			user.setIdent(msg.sender.ident);
+			user.setHost(msg.sender.host);
 			nicklistUser.setIdent(msg.sender.ident);
 			nicklistUser.setUserHost(msg.sender.host);
 			if(activeCaps.indexOf('extended-join') >= 0){
 				if(msg.args[1] != '*'){
+					user.setAccount(msg.args[1]);
 					nicklistUser.setAccount(msg.args[1]);
 					if(msg.args[1] == msg.sender.nick){
 						nicklistUser.setRegistered(true);
 					}
 				}
 				nicklistUser.setRealname(msg.text);
+				user.setRealname(msg.text);
 			}
 		}
 	],
@@ -219,6 +240,17 @@ var cmdBinds = {
 					gateway.findChannel(msg.args[0]).appendMessage(messagePatterns.kickOwn, [$$.niceTime(msg.time), he(msg.sender.nick), msg.args[0], $$.colorize(msg.text)]);
 					gateway.findChannel(msg.args[0]).part();
 				}
+			}
+		}
+	],
+	'METADATA': [
+		function(msg) {
+			var target = msg.args[0];
+			var key = msg.args[1];
+			var value = msg.args[3];
+			if(target.charAt(0) == '#'){ // channel
+			} else {
+				users.getUser(target).setMetadata(key, value);
 			}
 		}
 	],
@@ -407,6 +439,7 @@ var cmdBinds = {
 	],
 	'PRIVMSG': [
 		function(msg) {
+			//TODO use account-tag
 			if (msg.text === false) {
 				msg.text = " ";
 			}
@@ -452,6 +485,7 @@ var cmdBinds = {
 			}
 			
 			var message = $$.colorize(msg.text);
+			var meta = gateway.getMeta(msg);
 			
 			if(msg.args[0].indexOf('#') == 0) { // wiadomość kanałowa
 				if(ignore.ignoring(msg.sender.nick, 'channel')){
@@ -462,25 +496,41 @@ var cmdBinds = {
 				
 				var pattern = "\\b"+escapeRegExp(guser.nick)+"\\b";
 				var re = new RegExp(pattern);
-				var match = re.test(message);
-				console.log("highlight pattern="+pattern+", returned="+match)
+				var hlmatch = re.test(message);
+				console.log("highlight pattern="+pattern+", returned="+hlmatch)
 
 				if(channel.hasMsgid(msg.tags.msgid)) return; //we already received this message and this is a history entry
 				
-				if(match) { //hajlajt
-						channel.appendMessage(messagePatterns.channelMsgHilight, [$$.niceTime(msg.time), msg.sender.nick, message]);
-						if(gateway.active != msg.args[0].toLowerCase() || !disp.focused) {
-							channel.markNew();
-						}
-				} else { //bez hajlajtu
-					for(f in messageProcessors){
-						message = messageProcessors[f](msg.sender.nick, msg.args[0], message);
+				for(f in messageProcessors){
+					message = messageProcessors[f](msg.sender.nick, msg.args[0], message);
+				}
+					
+				var messageDiv = $('#'+channel.id+'-window div.messageDiv:not(".msgRepeat"):last');
+				var messageClass = 'msgNormal';
+				if(messageDiv.hasClass('sender'+md5(msg.sender.nick))){
+					messageDiv.find('span.msgText').append('<span class="msgRepeatBlock"><br><span class="time">'+$$.niceTime(msg.time)+'</span> &nbsp; '+message+'</span>');
+					messageClass = 'msgRepeat';
+				} else {
+					channel.markingSwitch = !channel.markingSwitch;
+				}
+				if(channel.markingSwitch){
+					messageClass += ' oddMessage';
+				} else {
+					messageClass += ' evenMessage';
+				}
+				message = '<span class="time msgRepeatBlock">'+$$.niceTime(msg.time)+' &nbsp;</span>' + message;
+				if(hlmatch) { //hajlajt
+					channel.appendMessage(messagePatterns.channelMsgHilight, ['sender'+md5(msg.sender.nick) + ' ' + messageClass, meta, $$.niceTime(msg.time), msg.sender.nick, message]);
+					if(gateway.active != msg.args[0].toLowerCase() || !disp.focused) {
+						channel.markNew();
 					}
-					channel.appendMessage(messagePatterns.channelMsg, [$$.niceTime(msg.time), $$.nickColor(msg.sender.nick), msg.sender.nick, message]);
+				} else { //bez hajlajtu
+					channel.appendMessage((msg.sender.nick == guser.nick)?messagePatterns.yourMsg:messagePatterns.channelMsg, ['sender'+md5(msg.sender.nick) + ' ' + messageClass, meta, $$.niceTime(msg.time), $$.nickColor(msg.sender.nick), msg.sender.nick, message]);
 					if(gateway.active.toLowerCase() != msg.args[0].toLowerCase() || !disp.focused) {
 						channel.markBold();
 					}
 				}
+
 				channel.appendMsgid(msg.tags.msgid);
 				channel.appendMessage('%s', [html]);
 			} else if(!msg.sender.server/* && msg.sender.nick != guser.nick*/){ // wiadomość prywatna
@@ -499,13 +549,22 @@ var cmdBinds = {
 						$$.displayDialog('notice', 'service', 'Komunikat od usługi sieciowej', html);
 						return;
 					} else { // status
-						gateway.statusWindow.appendMessage(messagePatterns.yourMsg, [$$.niceTime(), $$.nickColor(guser.nick), guser.nick + ' → ' + command[1], $$.colorize(msg.text)]);
+						gateway.statusWindow.appendMessage(messagePatterns.yourMsg, ['', meta, $$.niceTime(), $$.nickColor(guser.nick), guser.nick + ' → ' + command[1], $$.colorize(msg.text)]);
 						return;
 					}
 				}
 				
 				query = gateway.findOrCreate(qnick);
-				query.appendMessage(messagePatterns.channelMsg, [$$.niceTime(msg.time), '', msg.sender.nick, message]);
+				
+				var messageDiv = $('#'+query.id+'-window div.messageDiv:not(".msgRepeat"):last');
+				var messageClass = 'msgNormal';
+				if(messageDiv.hasClass('sender'+md5(msg.sender.nick))){
+					messageDiv.find('span.msgText').append('<span class="msgRepeatBlock"><br><span class="time">'+$$.niceTime(msg.time)+'</span> &nbsp; '+message+'</span>');
+					messageClass = 'msgRepeat';
+					
+				}	
+							
+				query.appendMessage((msg.sender.nick == guser.nick)?messagePatterns.yourMsg:messagePatterns.channelMsg, ['sender'+md5(msg.sender.nick) + ' ' + messageClass, meta, $$.niceTime(msg.time), '', msg.sender.nick, message]);
 				if(msg.sender.nick != guser.nick && (gateway.active.toLowerCase() != qnick.toLowerCase() || !disp.focused)) {
 					query.markNew();
 				}
@@ -521,6 +580,7 @@ var cmdBinds = {
 					//gateway.channels[c].appendMessage(messagePatterns.nickChange, [$$.niceTime(msg.time), msg.sender.nick, msg.text]);
 				}
 			} else {
+				users.delUser(msg.sender.nick);
 				gateway.processQuit(msg);
 			}
 		}
@@ -554,7 +614,6 @@ var cmdBinds = {
 				guser.nick = msg.args[0];
 				$$.displayDialog('warning', 'warning', 'Ostrzeżenie', '<p>Twój bieżący nick to <b>'+guser.nick+'</b>.</p>');
 			}
-			ircCommand.umode('+g');
 			gateway.statusWindow.appendMessage(messagePatterns.motd, [$$.niceTime(msg.time), he(msg.text)]);
 			gateway.pingcnt = 0;
 			gateway.connectStatus = status001;
@@ -907,6 +966,21 @@ var cmdBinds = {
 	],
 	'352': [	// RPL_WHOREPLY
 		function(msg) {
+			var user = users.getUser(msg.args[5]);
+			user.setIdent(msg.args[2]);
+			user.setHost(msg.args[3]);
+			user.setRealname(msg.text.substr(msg.text.indexOf(' ') + 1));
+			// todo AWAY
+			if(msg.args[6].indexOf('*') > -1){
+				user.setIrcOp(true);
+			} else {
+				user.setIrcOp(false);
+			}
+			if(msg.args[6].indexOf('B') > -1){
+				user.setBot(true);
+			} else {
+				user.setBot(false);
+			}
 			for(var i=0; i<gateway.channels.length; i++){
 				var channel = gateway.channels[i];
 				var nickListItem = channel.nicklist.findNick(msg.args[5]);
@@ -943,7 +1017,7 @@ var cmdBinds = {
 			var channel = gateway.findChannel(msg.args[2]);
 			var names = msg.text.split(' ');
 			
-			var users = [];
+			var newUsers = [];
 			for(var i=0; i<names.length; i++){
 				var name = names[i];
 				var user = {
@@ -987,16 +1061,16 @@ var cmdBinds = {
 							break;
 					}
 				}
-				users.push(user);
+				newUsers.push(user);
 			}
 			
-			console.log(users);
+			console.log(newUsers);
 			
 			if(!channel || channel.hasNames){ // manual NAMES request
 				var html = '<table><tr><th></th><th>Nick</th><th>ident@host</th></tr>';
 				var names = msg.text.split(' ');
-				for(userId in users){
-					var user = users[userId];
+				for(userId in newUsers){
+					var user = newUsers[userId];
 					html += '<tr><td>';
 					for(var i=0; i<user.flags.length; i++) html += user.flags[i];
 					html += '</td><td><b>'+user.nick+'</b></td><td>';
@@ -1009,13 +1083,16 @@ var cmdBinds = {
 				$$.displayDialog('names', msg.args[2], 'Lista nicków dla '+msg.args[2], html);
 				return;
 			}
-			for(userId in users){
-				var user = users[userId];
+			for(userId in newUsers){
+				var user = newUsers[userId];
 				console.log(user);
 				channel.nicklist.addNick(user.nick);
 				var nickListItem = channel.nicklist.findNick(user.nick);
 				if(user.ident) nickListItem.setIdent(user.ident);
 				if(user.host) nickListItem.setUserHost(user.host);
+				var newUser = users.getUser(user.nick);
+				newUser.setIdent(user.ident);
+				newUser.setHost(user.host);
 				for(var i=0; i<user.modes.length; i++){
 					if(user.modes[i] in chStatusNames){
 						nickListItem.setMode(chStatusNames[user.modes[i]], true);
@@ -1031,6 +1108,23 @@ var cmdBinds = {
 			if(msg.args[1] != "101"){ //%tuhanfr,101
 				return;
 			}
+			var user = users.getUser(msg.args[4]);
+			if(msg.args[5].indexOf('*') > -1){
+				user.setIrcOp(true);
+			} else {
+				user.setIrcOp(false);
+			}
+			if(msg.args[5].indexOf('B') > -1){
+				user.setBot(true);
+			} else {
+				user.setBot(false);
+			}
+			if(msg.args[6] == "0"){
+				user.setAccount(false);
+			} else {
+				user.setAccount(msg.args[6]);
+			}
+			//TODO AWAY
 			for(var i=0; i<gateway.channels.length; i++){
 				var channel = gateway.channels[i];
 				var nickListItem = channel.nicklist.findNick(msg.args[4]);
@@ -1579,6 +1673,25 @@ var cmdBinds = {
 	],
 	'742': [	// ERR_MLOCKRESTRICTED
 	],
+	'761': [	// RPL_KEYVALUE
+		function(msg){ }
+	],
+	'762': [	// RPL_METADATAEND
+		function(msg){ }
+	],
+	'770': [	// RPL_METADATASUBOK
+		function(msg){ }
+	],
+	'774': [	//ERR_METADATASYNCLATER
+		function(msg){
+			if(msg.args[1]){
+				var time = parseInt(msg.args[1]) * 1000;
+			} else {
+				var time = 1000;
+			}
+			setTimeout(ircCommand.metadata('SYNC', msg.args[0]), time);
+		}
+	],
 	'900': [	// RPL_LOGGEDIN
 		function(msg) {
 			ircCommand.performQuick('CAP', ['END']);
@@ -1632,7 +1745,7 @@ var ctcpBinds = {
 						channel.markNew();
 					}
 				} else {
-					channel.appendMessage(messagePatterns.channelAction, [$$.niceTime(msg.time), msg.sender.nick, $$.colorize(msg.ctcptext)]);
+					channel.appendMessage((msg.sender.nick == guser.nick)?messagePatterns.yourAction:messagePatterns.channelAction, [$$.niceTime(msg.time), msg.sender.nick, $$.colorize(msg.ctcptext)]);
 					if(gateway.active.toLowerCase() != msg.args[0].toLowerCase() || !disp.focused) {
 						channel.markBold();
 					}
@@ -1645,7 +1758,7 @@ var ctcpBinds = {
 					var qnick = msg.sender.nick;
 				}
 				query = gateway.findOrCreate(qnick);
-				query.appendMessage(messagePatterns.channelAction, [$$.niceTime(msg.time), msg.sender.nick, $$.colorize(msg.ctcptext)]);
+				query.appendMessage((msg.sender.nick == guser.nick)?messagePatterns.yourAction:messagePatterns.channelAction, [$$.niceTime(msg.time), msg.sender.nick, $$.colorize(msg.ctcptext)]);
 				if(gateway.active.toLowerCase() != sender.toLowerCase()) {
 					gateway.findQuery(qnick).markNew();
 				}
@@ -1694,7 +1807,7 @@ var ctcpBinds = {
 			}
 			ircCommand.sendCtcpReply(msg.sender.nick, 'REFERER '+referer_string);
 		}
-	],
+	]/*,
 	'MCOL': [
 		function(msg){
 			var elements = msg.ctcptext.split(',');
@@ -1715,12 +1828,12 @@ var ctcpBinds = {
 				}
 			}
 		}
-	]
+	]*/
 };
-
+/*
 var mcolBinds = {
 };
-
+*/
 function cmdNotImplemented(msg){
 	var tab = gateway.statusWindow;
 	var text = '('+msg.command+') ';

@@ -146,6 +146,11 @@ var ircCommand = {
 	},
 	'whox': function(dest, args){
 		ircCommand.perform('WHO', [dest, '%'+args]);	
+	},
+	'metadata': function(cmd, target, args){
+		if(args == null) args = [];
+		var cmdArgs = [target, cmd].concat(args);
+		ircCommand.perform('METADATA', cmdArgs);
 	}
 };
 

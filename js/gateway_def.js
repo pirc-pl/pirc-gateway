@@ -280,6 +280,7 @@ var gateway = {
 		gateway.websock.onclose = undefined;
 		gateway.connectTimeoutID = false;
 		clearInterval(gateway.pingIntervalID);
+		users.clear();
 		gateway.pingIntervalID = false;
 		if(guser.nickservnick != ''){
 			irc.lastNick = guser.nick;
@@ -957,7 +958,7 @@ var gateway = {
 		for(f in messageProcessors){
 			message = messageProcessors[f](guser.nick, active.name, message);
 		}
-		if(activeCaps.indexOf('echo-message') <= 0) active.appendMessage(messagePatterns.yourMsg, [$$.niceTime(), $$.nickColor(guser.nick), guser.nick, message]);
+		if(activeCaps.indexOf('echo-message') <= 0) active.appendMessage(messagePatterns.yourMsg, [gateway.getMeta(guser.nick), $$.niceTime(), $$.nickColor(guser.nick), guser.nick, message]);
 	},
 	'parseUserMessage': function(input){
 		var active = gateway.getActive();
@@ -2096,6 +2097,33 @@ var gateway = {
 		console.log(e);
 		var items = (e.clipboardData || e.originalEvent.clipboardData).items;
 		console.log(items);
+	},
+	'getMeta': function(msg){
+		var avatar = gateway.getAvatarUrl(msg.sender.nick);
+		if(avatar) {
+			meta = '<img src="' + avatar + '" alt="'+msg.sender.nick+'" onerror="this.src=\'/styles/img/noavatar.png\';">';
+		} else {
+			meta = '<span class="avatar letterAvatar" style="background-color:'+$$.nickColor(msg.sender.nick, true)+';"><span role="presentation">'+msg.sender.nick.charAt(0)+'</span></span>';
+		}
+		return meta;
+	},
+	'getAvatarUrl': function(nick){
+		var user = users.getUser(nick);
+		var avatar = false;
+		if('avatar' in user.metadata){
+			avatar = user.metadata['avatar'].replace('{size}', '50');
+		}
+		if(!avatar && !user.disableAutoAvatar){
+			var expr = /^~?[su]id([0-9]+)$/;
+			var avmatch = expr.exec(user.ident);
+			if(avmatch){
+				var irccloudUrl = 'https://static.irccloud-cdn.com/avatar-redirect/s50/' + avmatch[1];
+			//	if(ImageExists(irccloudUrl)){
+					avatar = irccloudUrl;
+			//	}
+			}
+		}
+		return avatar;
 	}
 }
 

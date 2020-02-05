@@ -13,12 +13,14 @@ var chStatusInfo = [ 'Niezarejestrowany', 'Prawo głosu', 'Pół-operator', 'Ope
 
 var reqChannel = '';
 
-var booleanSettings = [ 'showPartQuit', 'showNickChanges', 'tabsListBottom', 'showUserHostnames', 'autoReconnect', 'displayLinkWarning', 'blackTheme', 'newMsgSound', 'autoDisconnect', 'coloredNicks', 'showMode', 'dispEmoji', 'sendEmoji', 'monoSpaceFont', 'automLogIn', 'setUmodeD', 'setUmodeR' ];
+var booleanSettings = [ 'showPartQuit', 'showNickChanges', 'tabsListBottom', 'showUserHostnames', 'autoReconnect', 'displayLinkWarning', 'blackTheme', 'newMsgSound', 'autoDisconnect', 'coloredNicks', 'showMode', 'dispEmoji', 'sendEmoji', 'monoSpaceFont', 'automLogIn', 'setUmodeD', 'setUmodeR', 'noAvatars' ];
 var comboSettings = [ 'noticeDisplay' ];
 var numberSettings = [ 'backlogCount' ];
 var numberSettingsMinMax = {
 	'backlogCount' : { 'min' : 0, 'max' : 500, 'deflt' : 15 }
 };
+var textSettings = [ 'avatar' ];
+var textSettingsValues = {};
 
 var banData = {
 	'nick' : '',
@@ -43,80 +45,80 @@ var settingProcessors = []; //function ()
 var addons = [];
 
 var messagePatterns = {
-	'nickChange': '<span class="time">%s</span> &nbsp; <span class="mode">✯ <span class="modeinfo">%s</span> zmienił nick na <span class="modeinfo">%s</span></span><br />',
-	'nickInUse': '<span class="time">%s</span> &nbsp; <span class="kick">✯ <span class="modeinfo">%s</span>: Nick jest już używany przez kogoś innego.</span><br />',
-	'badNick': '<span class="time">%s</span> &nbsp; <span class="kick">⮿ <span class="modeinfo">%s</span>: Nick nie jest dostępny.</span><br />',
-	'nickChangeOwn': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Jesteś teraz znany jako <span class="modeinfo">%s</span></span><br />',
-	'joinOwn': '<span class="time">%s</span> &nbsp; <span class="join">🢡 Dołączyłeś do kanału <span class="modeinfo">%s</span>.</span><br />',
-	'join': '<span class="time">%s</span> &nbsp; <span class="join">🢡 <b>%s</b> <i class="userhost">[%s@%s]</i> dołączył do <span class="modeinfo">%s</span>.</span><br />',
-	'part': '<span class="time">%s</span> &nbsp; <span class="part">🢠 <b>%s</b> <i class="userhost">[%s@%s]</i> opuścił <span class="modeinfo">%s</span> [%s]</span><br />',
-	'quit': '<span class="time">%s</span> &nbsp; <span class="part">🢠 <b>%s</b> <i class="userhost">[%s@%s]</i> opuścił IRC [%s]</span><br />',
-	'partOwn': '<span class="time">%s</span> &nbsp; <span class="part">🢠 Opuściłeś kanał <span class="modeinfo">%s</span>. <a href="#" onclick="gateway.send(\'JOIN %s\')">Dołącz ponownie</a></span><br />',
-	'channelMsg': '<span class="time">%s</span> &nbsp; <span class="nick">&lt;<span %s>%s</span>&gt;</span> %s<br />',
-	'yourMsg': '<span class="time">%s</span> &nbsp; <span class="yournick">&lt;<span %s>%s</span>&gt;</span> %s<br />',
-	'channelMsgHilight': '<span class="time">%s</span> &nbsp; <span class="hilight"><span class="nick">&lt;%s&gt;</span> %s</span><br />',
-	'channelAction': '<span class="time">%s</span> &nbsp; ❇ <span class="nick">%s</span> %s<br />',
-	'yourAction': '<span class="time">%s</span> &nbsp; ❇ <span class="yournick">%s</span> %s<br />',
-	'channelActionHilight': '<span class="time">%s</span> &nbsp; ❇ <span class="hilight"><span class="nick">%s</span> %s</span><br />',
-	'changeTopic': '<span class="time">%s</span> &nbsp; <span class="mode">✯ <span class="modeinfo">%s</span> zmienił temat na: %s</span><br />',
-	'deleteTopic': '<span class="time">%s</span> &nbsp; <span class="mode">✯ <span class="modeinfo">%s</span> usunął temat <span class="modeinfo">%s</span></span><br />',
-	'topic': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Temat kanału <span class="modeinfo">%s</span>: %s</span><br />',
-	'topicNotSet': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Temat <span class="modeinfo">%s</span> nie jest ustawiony</span><br />',
-	'topicTime': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Temat ustawiony przez <span class="modeinfo">%s</span> [%s]</span><br />',
-	'kick': '<span class="time">%s</span> &nbsp; <span class="kick">✀ <span class="modeinfo">%s</span> wyrzucił <span class="modeinfo">%s</span> z <span class="modeinfo">%s</span> [Powód: %s]</span><br />',
-	'kickOwn': '<span class="time">%s</span> &nbsp; <span class="kick">✀ <span class="modeinfo">%s</span> wyrzucił cię z <span class="modeinfo">%s</span> [Powód: %s]</span><br />',
-	'modeChange': '<span class="time">%s</span> &nbsp; <span class="mode">🔧 <span class="modeinfo">%s</span> %s na kanale <span class="modeinfo">%s</span></span><br />',
-	'mode': '<span class="time">%s</span> &nbsp; <span class="mode">🔧 Ustawienia kanału <span class="modeinfo">%s</span>: %s</span><br />',
-	'creationTime': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Kanał stworzony: %s</span><br />',
-	'startedQuery': '<span class="time">%s</span> &nbsp; <span class="join">🢡 Rozpoczęto rozmowę z <span class="modeinfo">%s</span>. <a onclick="ignore.askIgnore(\'%s\');">Ignoruj tego użytkownika</a> / <a onclick="disp.showQueryUmodes()">Blokowanie wiadomości prywatnych</a></span><br />',
-	'queryBacklog': '<span class="time">%s</span> &nbsp; <span class="join">✯ Zapis poprzedniej rozmowy z <span class="modeinfo">%s</span>:</span><br />',
-	'channelBacklog': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Zapis poprzedniej wizyty na <span class="modeinfo">%s</span>:</span><br />',
-	'channelBacklogEnd': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Koniec zapisu.</span><br />',
-	'noSuchCommand': '<span class="time">%s</span> &nbsp; <span class="mode">⮿ <span class="modeinfo">%s</span>: nieznana komenda.</span><br />',
-	'noSuchNick': '<span class="time">%s</span> &nbsp; <span class="mode">⮿ <span class="modeinfo">%s</span>: nie ma takiego nicku ani kanału</span><br />',
-	'noSuchNickHistory': '<span class="time">%s</span> &nbsp; <span class="mode">⮿ <span class="modeinfo">%s</span>: brak historii wizyt nicka</span><br />',
-	'noSuchChannel': '<span class="time">%s</span> &nbsp; <span class="mode">⮿ <span class="modeinfo">%s</span>: nie ma takiego kanału</span><br />',
-	'notOnChannel': '<span class="time">%s</span> &nbsp; <span class="mode">⮿ <span class="modeinfo">%s</span>: nie jesteś na tym kanale</span><br />',
-	'alreadyOnChannel': '<span class="time">%s</span> &nbsp; <span class="mode">⮿ %s: <span class="modeinfo">%s</span> jest już na tym kanale</span><br />',
-	'youQuit': '<span class="time">%s</span> &nbsp; <span class="part">✯ Wyszedłeś z IRC</span><br />',
-	'notConnected': '<span class="time">%s</span> &nbsp; <span class="mode">⮿ Nie jesteś połączony z IRC!</span><br />',
-	'notEnoughParameters': '<span class="time">%s</span> &nbsp; <span class="mode">⮿ <span class="modeinfo">%s</span>: Za mało argumentów.</span><br />',
-	'cannotSendToChan': '<span class="time">%s</span> &nbsp; <span class="kick">⮿ Nie można wysłać na <span class="modeinfo">%s</span>: %s. Wiadomość nie została dostarczona.</span><br />',
-	'cannotSendToUser': '<span class="time">%s</span> &nbsp; <span class="kick">⮿ Nie można pisać do <span class="modeinfo">%s</span>: %s. Wiadomość nie została dostarczona.</span><br />',
-	'cannotJoin': '<span class="time">%s</span> &nbsp; <span class="kick">⮿ Nie można dołączyć do kanału <span class="modeinfo">%s</span>: %s</span><br />',
-	'noPerms': '<span class="time">%s</span> &nbsp; <span class="kick">⮿ Brak uprawnień.</span><br />',
-	'notice': '<span class="time">%s</span> &nbsp; <span class="notice-nick"><b>-%s-</b></span><span class="userhost">(<span class="notice-nick">%s</span>@<span class="notice-nick">%s</span>)</span> <span class="notice">%s</span><br />',
-	'serverNotice': '<span class="time">%s</span> &nbsp; <span class="notice-nick">Wiadomość od serwera <b>%s</b>:</span> <span class="notice">%s</span><br />',
-	'yourNotice': '<span class="time">%s</span> &nbsp; <span class="notice"><b>-NOTICE/%s-</b> %s</span><br />',
-	'notEnoughParams': '<span class="time">%s</span> &nbsp; <span class="mode">⮿ <span class="modeinfo">%s</span>: za mało argumentów: %s</span><br />',
-	'motd': '<span class="time">%s</span> &nbsp; <span class="motd">✯ %s</span><br />',
-	'SaslAuthenticate': '<span class="time">%s</span> &nbsp; <span class="sinfo">🔧 %s</span><br />',
-	'ctcpRequest': '<span class="time">%s</span> &nbsp; <span class="mode">✯ <span class="modeinfo">%s</span> wysyła CTCP REQUEST: %s</span><br />',
-	'ctcpReply': '<span class="time">%s</span> &nbsp; <span class="notice">✯ <b>CTCP REPLY od %s:</b> %s</span><br />',
-	'chanListElement': '<span class="time">%s</span> &nbsp; <span class="notice">✯ <b><a href="#" onClick="gateway.send(\'JOIN %s\')">%s</a></b> (%s) - %s </span> <br />',
-	'chanListElementHidden': '<span class="time">%s</span> &nbsp; <span class="notice">✯ <b>(kanał ukryty)</b> (%s) - (temat ukryty) </span> <br />',
-	'error': '<span class="time">%s</span> &nbsp; <span class="mode"> ⮿ Rozłączono z serwerem: %s</span><br />',
-	'existingConnection': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Połączenie już istnieje, dołączam się do niego.</span><br />',
-	'away': '<span class="time">%s</span> &nbsp; <span class="mode">🍵 <span class="modeinfo">%s</span> otrzymał twoją wiadomość, ale jest teraz nieobecny: %s</span><br />',
-	'yourAwayEnabled': '<span class="time">%s</span> &nbsp; <span class="mode">🍵 Jesteś teraz oznaczony jako nieobecny</span><br />',
-	'yourAwayDisabled': '<span class="time">%s</span> &nbsp; <span class="mode">🍵 Nie jesteś już oznaczony jako nieobecny</span><br />',
-	'yourInvite': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Zaprosiłeś użytkownika <span class="modeinfo">%s</span> na kanał <span class="modeinfo">%s</span></span><br />',
-	'knocked': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Poprosiłeś o dostęp ("zapukałeś") na <span class="modeinfo">%s</span>, czekaj na zaproszenie od operatora. Pamiętaj, że w danej chwili żaden operator może nie być przy komputerze. W takiej sytuacji zaczekaj kilkadziesiąt minut i spróbuj jeszcze raz.</span><br />',
-	'listShown': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Lista kanałów będzie wyświetlona w zakładce statusu.</span><br />',
-	'channelIgnoreAdded': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Dodano <b>%s</b> do ignorowanych na kanałach.</span><br />',
-	'channelIgnoreRemoved': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Usunięto <b>%s</b> z ignorowanych na kanałach.</span><br />',
-	'queryIgnoreAdded': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Dodano <b>%s</b> do ignorowanych prywatnie.</span><br />',
-	'queryIgnoreRemoved': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Usunięto <b>%s</b> z ignorowanych prywatnie.</span><br />',
-	'ignoreListStart': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Lista ignorowanych:</span><br />',
-	'ignoreListEnd': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Koniec listy.</span><br />',
-	'ignoreListEmpty': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Lista ignorowanych jest pusta.</span><br />',
-	'ignoreListItem': '<span class="time">%s</span> &nbsp; <span class="mode">✯ Typ: <b>%s</b>, maska: <b>%s</b></span><br />',
-	'netsplit': '<span class="time">%s</span> &nbsp; <span class="part">🢠 <span class="netsplit">Netsplit</span>, wychodzą: %s</span><br />',
-	'netjoin': '<span class="time">%s</span> &nbsp; <span class="join">🢡 Po <span class="netjoin">netsplicie</span> wchodzą: %s</span><br />',
-	'displayedHost': '<span class="time">%s</span> &nbsp; <span class="sinfo">🔧 Twój host jest teraz widoczny jako %s</span><br />',
-	'invalidMode': '<span class="time">%s</span> &nbsp; <span class="kick">⮿ Nieprawidłowy tryb "%s"</span><br />',
-	'unimplemented': '<span class="time">%s</span> &nbsp; <span class="sinfo">✯ %s</span><br />',
-	'unimplementedError': '<span class="time">%s</span> &nbsp; <span class="kick">⮿ %s</span><br />'
+	'nickChange': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">✯ <span class="modeinfo">%s</span> zmienił nick na <span class="modeinfo">%s</span></span></div><!--newline-->',
+	'nickInUse': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="kick">✯ <span class="modeinfo">%s</span>: Nick jest już używany przez kogoś innego.</span></div><!--newline-->',
+	'badNick': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="kick">⮿ <span class="modeinfo">%s</span>: Nick nie jest dostępny.</span></div><!--newline-->',
+	'nickChangeOwn': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">✯ Jesteś teraz znany jako <span class="modeinfo">%s</span></span></div><!--newline-->',
+	'joinOwn': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="join">🢡 Dołączyłeś do kanału <span class="modeinfo">%s</span>.</span></div><!--newline-->',
+	'join': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="join">🢡 <b>%s</b> <i class="userhost">[%s@%s]</i> dołączył do <span class="modeinfo">%s</span>.</span></div><!--newline-->',
+	'part': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="part">🢠 <b>%s</b> <i class="userhost">[%s@%s]</i> opuścił <span class="modeinfo">%s</span> [%s]</span></div><!--newline-->',
+	'quit': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="part">🢠 <b>%s</b> <i class="userhost">[%s@%s]</i> opuścił IRC [%s]</span></div><!--newline-->',
+	'partOwn': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="part">🢠 Opuściłeś kanał <span class="modeinfo">%s</span>. <a href="#" onclick="gateway.send(\'JOIN %s\')">Dołącz ponownie</a></span></div><!--newline-->',
+	'channelMsg': '<div class="messageDiv %s"><div class="messageMeta">%s</div><div class="messageHeader"><span class="time">%s &nbsp;</span><span class="nick">&lt;<span %s>%s</span>&gt;</span></div><span class="msgText">%s</span></div><!--newline-->',
+	'yourMsg': '<div class="messageDiv %s"><div class="messageMeta">%s</div><div class="messageHeader"><span class="time">%s &nbsp;</span><span class="yournick">&lt;<span %s>%s</span>&gt;</span></div><span class="msgText">%s</span></div><!--newline-->',
+	'channelMsgHilight': '<div class="messageDiv %s"><div class="messageMeta">%s</div><div class="messageHeader"><span class="time">%s &nbsp;</span><span class="hilight"><span class="nick">&lt;%s&gt;</span></span></div><span class="msgText">%s</span></div><!--newline-->',
+	'channelAction': '<div class="messageDiv"><span class="time">%s</span> &nbsp; ❇ <span class="nick">%s</span> %s</div><!--newline-->',
+	'yourAction': '<div class="messageDiv"><span class="time">%s</span> &nbsp; ❇ <span class="yournick">%s</span> %s</div><!--newline-->',
+	'channelActionHilight': '<div class="messageDiv"><span class="time">%s</span> &nbsp; ❇ <span class="hilight"><span class="nick">%s</span> %s</span></div><!--newline-->',
+	'changeTopic': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">✯ <span class="modeinfo">%s</span> zmienił temat na: %s</span></div><!--newline-->',
+	'deleteTopic': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">✯ <span class="modeinfo">%s</span> usunął temat <span class="modeinfo">%s</span></span></div><!--newline-->',
+	'topic': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">✯ Temat kanału <span class="modeinfo">%s</span>: %s</span></div><!--newline-->',
+	'topicNotSet': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">✯ Temat <span class="modeinfo">%s</span> nie jest ustawiony</span></div><!--newline-->',
+	'topicTime': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">✯ Temat ustawiony przez <span class="modeinfo">%s</span> [%s]</span></div><!--newline-->',
+	'kick': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="kick">✀ <span class="modeinfo">%s</span> wyrzucił <span class="modeinfo">%s</span> z <span class="modeinfo">%s</span> [Powód: %s]</span></div><!--newline-->',
+	'kickOwn': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="kick">✀ <span class="modeinfo">%s</span> wyrzucił cię z <span class="modeinfo">%s</span> [Powód: %s]</span></div><!--newline-->',
+	'modeChange': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">🔧 <span class="modeinfo">%s</span> %s na kanale <span class="modeinfo">%s</span></span></div><!--newline-->',
+	'mode': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">🔧 Ustawienia kanału <span class="modeinfo">%s</span>: %s</span></div><!--newline-->',
+	'creationTime': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">✯ Kanał stworzony: %s</span></div><!--newline-->',
+	'startedQuery': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="join">🢡 Rozpoczęto rozmowę z <span class="modeinfo">%s</span>. <a onclick="ignore.askIgnore(\'%s\');">Ignoruj tego użytkownika</a> / <a onclick="disp.showQueryUmodes()">Blokowanie wiadomości prywatnych</a></span></div><!--newline-->',
+	'queryBacklog': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="join">✯ Zapis poprzedniej rozmowy z <span class="modeinfo">%s</span>:</span></div><!--newline-->',
+	'channelBacklog': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">✯ Zapis poprzedniej wizyty na <span class="modeinfo">%s</span>:</span></div><!--newline-->',
+	'channelBacklogEnd': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">✯ Koniec zapisu.</span></div><!--newline-->',
+	'noSuchCommand': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">⮿ <span class="modeinfo">%s</span>: nieznana komenda.</span></div><!--newline-->',
+	'noSuchNick': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">⮿ <span class="modeinfo">%s</span>: nie ma takiego nicku ani kanału</span></div><!--newline-->',
+	'noSuchNickHistory': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">⮿ <span class="modeinfo">%s</span>: brak historii wizyt nicka</span></div><!--newline-->',
+	'noSuchChannel': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">⮿ <span class="modeinfo">%s</span>: nie ma takiego kanału</span></div><!--newline-->',
+	'notOnChannel': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">⮿ <span class="modeinfo">%s</span>: nie jesteś na tym kanale</span></div><!--newline-->',
+	'alreadyOnChannel': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">⮿ %s: <span class="modeinfo">%s</span> jest już na tym kanale</span></div><!--newline-->',
+	'youQuit': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="part">✯ Wyszedłeś z IRC</span></div><!--newline-->',
+	'notConnected': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">⮿ Nie jesteś połączony z IRC!</span></div><!--newline-->',
+	'notEnoughParameters': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">⮿ <span class="modeinfo">%s</span>: Za mało argumentów.</span></div><!--newline-->',
+	'cannotSendToChan': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="kick">⮿ Nie można wysłać na <span class="modeinfo">%s</span>: %s. Wiadomość nie została dostarczona.</span></div><!--newline-->',
+	'cannotSendToUser': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="kick">⮿ Nie można pisać do <span class="modeinfo">%s</span>: %s. Wiadomość nie została dostarczona.</span></div><!--newline-->',
+	'cannotJoin': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="kick">⮿ Nie można dołączyć do kanału <span class="modeinfo">%s</span>: %s</span></div><!--newline-->',
+	'noPerms': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="kick">⮿ Brak uprawnień.</span></div><!--newline-->',
+	'notice': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="notice-nick"><b>-%s-</b></span><span class="userhost">(<span class="notice-nick">%s</span>@<span class="notice-nick">%s</span>)</span> <span class="notice">%s</span></div><!--newline-->',
+	'serverNotice': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="notice-nick">Wiadomość od serwera <b>%s</b>:</span> <span class="notice">%s</span></div><!--newline-->',
+	'yourNotice': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="notice"><b>-NOTICE/%s-</b> %s</span></div><!--newline-->',
+	'notEnoughParams': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">⮿ <span class="modeinfo">%s</span>: za mało argumentów: %s</span></div><!--newline-->',
+	'motd': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="motd">✯ %s</span></div><!--newline-->',
+	'SaslAuthenticate': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="sinfo">🔧 %s</span></div><!--newline-->',
+	'ctcpRequest': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">✯ <span class="modeinfo">%s</span> wysyła CTCP REQUEST: %s</span></div><!--newline-->',
+	'ctcpReply': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="notice">✯ <b>CTCP REPLY od %s:</b> %s</span></div><!--newline-->',
+	'chanListElement': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="notice">✯ <b><a href="#" onClick="gateway.send(\'JOIN %s\')">%s</a></b> (%s) - %s </span> </div><!--newline-->',
+	'chanListElementHidden': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="notice">✯ <b>(kanał ukryty)</b> (%s) - (temat ukryty) </span> </div><!--newline-->',
+	'error': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"> ⮿ Rozłączono z serwerem: %s</span></div><!--newline-->',
+	'existingConnection': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">✯ Połączenie już istnieje, dołączam się do niego.</span></div><!--newline-->',
+	'away': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">🍵 <span class="modeinfo">%s</span> otrzymał twoją wiadomość, ale jest teraz nieobecny: %s</span></div><!--newline-->',
+	'yourAwayEnabled': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">🍵 Jesteś teraz oznaczony jako nieobecny</span></div><!--newline-->',
+	'yourAwayDisabled': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">🍵 Nie jesteś już oznaczony jako nieobecny</span></div><!--newline-->',
+	'yourInvite': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">✯ Zaprosiłeś użytkownika <span class="modeinfo">%s</span> na kanał <span class="modeinfo">%s</span></span></div><!--newline-->',
+	'knocked': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">✯ Poprosiłeś o dostęp ("zapukałeś") na <span class="modeinfo">%s</span>, czekaj na zaproszenie od operatora. Pamiętaj, że w danej chwili żaden operator może nie być przy komputerze. W takiej sytuacji zaczekaj kilkadziesiąt minut i spróbuj jeszcze raz.</span></div><!--newline-->',
+	'listShown': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">✯ Lista kanałów będzie wyświetlona w zakładce statusu.</span></div><!--newline-->',
+	'channelIgnoreAdded': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">✯ Dodano <b>%s</b> do ignorowanych na kanałach.</span></div><!--newline-->',
+	'channelIgnoreRemoved': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">✯ Usunięto <b>%s</b> z ignorowanych na kanałach.</span></div><!--newline-->',
+	'queryIgnoreAdded': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">✯ Dodano <b>%s</b> do ignorowanych prywatnie.</span></div><!--newline-->',
+	'queryIgnoreRemoved': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">✯ Usunięto <b>%s</b> z ignorowanych prywatnie.</span></div><!--newline-->',
+	'ignoreListStart': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">✯ Lista ignorowanych:</span></div><!--newline-->',
+	'ignoreListEnd': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">✯ Koniec listy.</span></div><!--newline-->',
+	'ignoreListEmpty': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">✯ Lista ignorowanych jest pusta.</span></div><!--newline-->',
+	'ignoreListItem': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">✯ Typ: <b>%s</b>, maska: <b>%s</b></span></div><!--newline-->',
+	'netsplit': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="part">🢠 <span class="netsplit">Netsplit</span>, wychodzą: %s</span></div><!--newline-->',
+	'netjoin': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="join">🢡 Po <span class="netjoin">netsplicie</span> wchodzą: %s</span></div><!--newline-->',
+	'displayedHost': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="sinfo">🔧 Twój host jest teraz widoczny jako %s</span></div><!--newline-->',
+	'invalidMode': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="kick">⮿ Nieprawidłowy tryb "%s"</span></div><!--newline-->',
+	'unimplemented': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="sinfo">✯ %s</span></div><!--newline-->',
+	'unimplementedError': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="kick">⮿ %s</span></div><!--newline-->'
 };
 
 var modes = {
@@ -429,6 +431,12 @@ function lengthInUtf8Bytes(str) {
 	return str.length + (m ? m.length : 0);
 }
 
+function ImageExists(url) {
+	var img = new Image();
+	img.src = url;
+	return img.height != 0;
+}
+
 var disp = {
 	'size': 1,
 	'focused': true,
@@ -503,6 +511,15 @@ var disp = {
 				localStorage.setItem(sname, $('#'+sname).is(':checked'));
 			} catch(e){}
 		});
+		textSettings.forEach(function(sname){
+			try {
+				if(textSettingsValues[sname]){
+					localStorage.setItem(sname, textSettingsValues[sname]);
+				} else {
+					localStorage.removeItem(sname);
+				}
+			} catch(e){}
+		});
 		comboSettings.forEach(function(sname){
 			try {
 				localStorage.setItem(sname, $('#'+sname).val());
@@ -544,6 +561,14 @@ var disp = {
 			}
 		} else {
 			$('#monospace_font').remove();
+		}
+		if ($('#noAvatars').is(':checked')) {
+			if($('#no_avatars').length == 0){
+				var style = $('<style id="no_avatars">.msgRepeat { display: block; } .msgRepeatBlock { display: none; } .messageDiv { padding-bottom: unset; } .messageMeta { display: none; } .messageHeader { display: inline; } .messageHeader::after { content: " "; } .messageHeader .time { display: inline; } .evenMessage { background: none !important; } .oddMessage { background: none !important; }</style>');
+				$('html > head').append(style);
+			}
+		} else {
+			$('#no_avatars').remove();
 		}
 		if ($('#showUserHostnames').is(':checked')) {
 			$('#userhost_hidden').remove();
@@ -606,6 +631,71 @@ var disp = {
 	},
 	'showAbout': function() {
 		disp.displaySpecialDialog('about-dialog', 'OK');
+	},
+	'showAvatarSetting': function(){
+		if(!textSettingsValues['avatar']){
+			$('#letterAvatarExample').css('background-color',$$.nickColor(guser.nick, true));
+			$('#letterAvatarExampleContent').text(guser.nick.charAt(0));
+			$('#current-avatar-info').text('Nie ustawiono awatara');
+			$('#current-avatar-image').attr('src', '/styles/img/noavatar.png');
+			$('#current-avatar-image').attr('alt', 'Nie ustawiono awatara');
+			$('#current-letter-avatar').show();
+			$('#delete-avatar').hide();
+		} else {
+			$('#current-avatar-info').text('Bieżący awatar');
+			$('#current-avatar-image').attr('src', textSettingsValues['avatar']);
+			$('#current-avatar-image').attr('alt', 'Bieżący awatar');
+			$('#current-letter-avatar').hide();
+			$('#avatar-url').val(textSettingsValues['avatar']);
+			$('#delete-avatar').show();
+		}
+		$('#submit-avatar').hide();
+		disp.displaySpecialDialog('avatar-dialog', 'OK');
+	},
+	'checkAvatarUrl': function() {
+		var url = $('#avatar-url').val();
+		if(!url.startsWith('https://')){
+			$$.alert('Adres musi zaczynać się od "https://"!');
+			return;
+		}
+		$('#delete-avatar').hide();
+		$('#current-letter-avatar').hide();
+		$('#current-avatar-image').attr('src', url);
+		$('#current-avatar-image').attr('alt', 'Podgląd');
+		$('#current-avatar-info').text('Podgląd');
+		$('#submit-avatar').show();
+	},
+	'submitAvatar': function() {
+		var url = $('#avatar-url').val();
+		if(!url.startsWith('https://')){
+			$$.alert('Adres musi zaczynać się od "https://"!');
+			return;
+		}
+		textSettingsValues['avatar'] = url;
+		disp.showAvatarSetting();
+		disp.avatarChanged();
+	},
+	'deleteAvatar': function() {
+		if(!confirm('Czy usunąć avatar "' +textSettingsValues['avatar']+ '"?')){
+			return;
+		}
+		textSettingsValues['avatar'] = false;
+		disp.showAvatarSetting();
+		disp.avatarChanged();
+	},
+	'avatarChanged': function() {
+		disp.changeSettings();
+		if(textSettingsValues['avatar']){
+			ircCommand.metadata('SET', '*', ['avatar', textSettingsValues['avatar']]);
+		} else {
+			ircCommand.metadata('SET', '*', ['avatar']);
+		}
+	},
+	'getAvatarIcon': function(nick, isRegistered){
+		var avatar = gateway.getAvatarUrl(nick);
+		if(avatar) return avatar;
+		if(isRegistered) return icons[6];
+		return icons[0];
 	},
 	'showOptions': function() {
 		disp.displaySpecialDialog('options-dialog', 'OK');
@@ -978,14 +1068,15 @@ var $$ = {
 	'correctLink': function(link){
 		var append = '';
 		var text = link;
-		if(link.slice(-1) == '.') {
-			link = currLink.slice(0, -1);
+		var stripLink = $$.colorize(link, true);
+		if(stripLink.slice(-1) == '.') {
+			stripLink = stripLink.slice(0, -1);
 			append = '.';
 		}
-		if(link.startsWith('www.')){
-			link = 'http://' + link;
+		if(stripLink.startsWith('www.')){
+			stripLink = 'http://' + stripLink;
 		}
-		return {'link': link, 'append': append, 'text': text};
+		return {'link': stripLink, 'append': append, 'text': text};
 	},
 	'parseLinks': function(text){
 		var newText = '';

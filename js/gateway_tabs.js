@@ -145,13 +145,20 @@ function NicklistUser(usernick, chan) {
 
 	this.makeHTML = function() {
 		var index = this.level;
-		if(this.level == 0 && this.isRegistered){
+	/*	if(this.level == 0 && this.isRegistered){
 			index = 6;
-		}
-		return '<li id="'+this.id+'" class="'+md5(this.nick)+'">'+
+		}*/
+		var html = '<li id="'+this.id+'" class="'+md5(this.nick)+'">'+
 			'<table><tr onclick="gateway.toggleNickOpt(\''+this.id+'\')">'+
-				'<td valign="top"><img class="chrank" alt="'+alt[index]+'" src="'+icons[index]+'" title="'+chStatusInfo[index]+'" /></td>'+
-				'<td valign="top" style="text-align:left;width:100%;" class="'+((this.nick.toLowerCase()==guser.nick.toLowerCase())?'ownNick ':'')+'nickname">&nbsp;&nbsp;'+this.nick+'</td>'+
+				'<td valign="top">'+
+					'<img class="chavatar" alt="' + (this.isRegistered?'Zarejestrowany':'Niezarejestrowany') + '" src="'+disp.getAvatarIcon(this.nick, this.isRegistered)+'" title="' + (this.isRegistered?'Zarejestrowany':'Niezarejestrowany') + '" '+
+					'onerror="users.disableAutoAvatar(\'' + this.nick + '\')">'+
+				'</td><td valign="top">';
+	//	if(index > 0){
+			html += '<img class="chrank" alt="'+alt[index]+'" src="'+(index>0?icons[index]:'')+'" title="'+(index?chStatusInfo[index]:'')+'" />';
+	//	}
+		html += '</td>'+
+				'<td valign="top" style="text-align:left;width:100%;" class="'+((this.nick.toLowerCase()==guser.nick.toLowerCase())?'ownNick ':'')+'nickname">'+this.nick+'</td>'+
 			'</tr></table>'+
 			'<ul class="options" id="'+this.id+'-opt">'+
 				'<li onClick="gateway.openQuery(\''+this.nick+'\', \''+this.id+'\')" class="switchTab">Rozmowa Prywatna (QUERY)</li>'+
@@ -173,6 +180,7 @@ function NicklistUser(usernick, chan) {
 					'</ul>'+
 				'</li>'+
 			'</ul>';
+		return html;
 		//}
 	}
 	this.setMode = function(mode, setting) {
@@ -253,14 +261,19 @@ function NicklistUser(usernick, chan) {
 		this.isBot = val;
 		this.showTitle();
 	}
+	this.updateAvatar = function() {
+		this.setRegistered(this.isRegistered);
+	}
 	this.setRegistered = function(val) {
 		this.isRegistered = val;
-		var index = this.level;
+	/*	var index = this.level;
 		if(this.level == 0 && this.isRegistered){
 			index = 6;
 		}
 		this.showTitle();
-		$('#'+this.id+' .chrank').attr('alt', alt[index]).attr('src', icons[index]).attr('title', chStatusInfo[index]);
+		$('#'+this.id+' .chrank').attr('alt', alt[index]).attr('src', icons[index]).attr('title', chStatusInfo[index]);*/
+		var regText = val?'Zarejestrowany':'Niezarejestrowany';
+		$('#'+this.id+' .chavatar').attr('alt', regText).attr('src', disp.getAvatarIcon(this.nick, this.isRegistered)).attr('title', regText).on('error', function(){ users.disableAutoAvatar(this.nick); });
 	}
 	this.setAccount = function(acc) {
 		this.account = acc;
@@ -410,8 +423,7 @@ function Query(nick) {
 			} else {
 				qCookie = [];
 			}
-			messageData = messageData.replace('<br />', '<br>');
-			qNewData = messageData.split('<br>');
+			qNewData = messageData.split('<!--newline-->');
 			var end = qNewData.pop();
 			if(end != ''){
 				qNewData.push(end);
@@ -467,7 +479,7 @@ function Query(nick) {
 		var qCookie = localStorage.getItem('query'+md5(this.name));
 	
 		if(qCookie) {
-			qCookie = Base64.decode(qCookie).split('\377').join('<br>');
+			qCookie = Base64.decode(qCookie).split('\377').join('<!--newline-->');
 			$('#'+this.id+'-window').append('<div class="backlog"></div>');
 			$('#'+this.id+'-window .backlog').vprintf(messagePatterns.queryBacklog, [$$.niceTime(), he(this.name)]);
 			$('#'+this.id+'-window .backlog').append(qCookie);
@@ -491,6 +503,7 @@ function Channel(chan) {
 	this.newLines = false;
 	this.hasNames = false;
 	this.msgidHistory = [];
+	this.markingSwitch = false; // we use this to alternate the backgrounds of message blocks
 
 	this.part = function() {
 		this.left = true;
@@ -653,8 +666,7 @@ function Channel(chan) {
 			} else {
 				qCookie = [];
 			}
-			messageData = messageData.replace('<br />', '<br>');
-			qNewData = messageData.split('<br>');
+			qNewData = messageData.split('<!--newline-->');
 			var end = qNewData.pop();
 			if(end != ''){
 				qNewData.push(end);
@@ -726,10 +738,10 @@ function Channel(chan) {
 		var qCookie = localStorage.getItem('channel'+md5(this.name));
 	
 		if(qCookie) {
-			qCookie = Base64.decode(qCookie).split('\377').join('<br>');
+			qCookie = Base64.decode(qCookie).split('\377').join('<!--newline-->');
 			$('#'+this.id+'-window').append('<div class="backlog"></div>');
 			$('#'+this.id+'-window .backlog').vprintf(messagePatterns.channelBacklog, [$$.niceTime(), he(this.name)]);
-			$('#'+this.id+'-window .backlog').append(qCookie+'<br>');
+			$('#'+this.id+'-window .backlog').append(qCookie+'<!--newline-->');
 			$('#'+this.id+'-window .backlog').vprintf(messagePatterns.channelBacklogEnd, [$$.niceTime()]);
 		}
 	} catch(e) {}

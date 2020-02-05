@@ -1,39 +1,10 @@
-var mcolors = {
-};
 
 var mcolor = false;
 
-var mcolorJoinHandler = function(msg){
-	if(msg.sender.nick.toLowerCase() == guser.nick.toLowerCase() || !colorsAllowed(msg.text)){
-		return;
-	}
-	if(mcolor){
-		var color = mcolor;
-	} else {
-		return;
-	}
-	ircCommand.sendCtcpRequest(msg.sender.nick, 'MCOL TC '+color);
-}
 
-var mcolorChModeHandler = function(msg){
-	if(!colorsAllowed(msg.args[1])){
-		return;
-	}
-	if(mcolor){
-		var color = mcolor;
-	} else {
-		return;
-	}
-	ircCommand.sendCtcpRequest(msg.args[1], 'MCOL TC '+color);
-}
-
-var mcolorNickHandler = function(msg){
-	var index = md5(msg.sender.nick.toLowerCase());
-	var color = mcolors[index];
-	if(color){
-		delete mcolors[index];
-		mcolors[md5(msg.text.toLowerCase())] = color;
-	}
+var mcolorMetadataSet = function(msg){
+	if(!mcolor) return;
+	ircCommand.metadata('SET', '*', ['color', mcolor]);
 }
 
 var isCorrectColor = function(color){
@@ -43,46 +14,28 @@ var isCorrectColor = function(color){
 	return false;
 }
 
-var mcolorTCHandler = function(msg){
-	var nick = msg.sender.nick.toLowerCase();
-	var arg = msg.mcolarg;
-	if(arg == 'OFF'){
-		delete mcolors[md5(nick)];
-		return;
-	}
-	if(!isCorrectColor(arg)){
-		console.log(msg.sender.nick+' sent bad color code: '+arg);
-		return;
-	}
-	mcolors[md5(nick)] = arg;
-	console.log('Color set for '+msg.sender.nick+': '+arg);
-}
-
 var setMyColor = function(color){
 	if(!color){
 		if(!mcolor) return;
 		mcolor = false;
-		var scolor = 'OFF';
+		var scolor = false;
 		$('#nickColorPick').val('#000000');
 	} else {
 		if(color == mcolor){
-		//	$$.displayDialog('info', 'info', 'Info', '<p>Kod koloru '+he(color)+' taki jak poprzedni - nie zmieniono!</p>');
 			return;
 		}
 		if(isCorrectColor(color)){
 			mcolor = color;
-		//	$$.displayDialog('info', 'info', 'Info', '<p>Ustawiono kolor na <span style="color:'+mcolor+'">'+mcolor+'</span></p>');
 		} else {
 			$$.displayDialog('info', 'info', 'Info', '<p>Niepoprawny kod koloru '+he(color)+'</p>');
 			return;
 		}
 		var scolor = mcolor;
 	}
-	for(c in gateway.channels){
-		var chan = gateway.channels[c].name;
-		if(colorsAllowed(chan)){
-			ircCommand.sendCtcpRequest(chan, 'MCOL TC '+scolor);
-		}
+	if(scolor){
+		ircCommand.metadata('SET', '*', ['color', scolor]);
+	} else {
+		ircCommand.metadata('SET', '*', ['color']);
 	}
 	try {
 		if(mcolor){
@@ -113,7 +66,11 @@ var getColor = function(nick){
 	if(nick == guser.nick){
 		var color = mcolor;
 	} else {
-		var color = mcolors[md5(nick.toLowerCase())];
+		var user = users.getUser(nick);
+		if('color' in user.metadata){
+			return user.metadata['color'];
+		}
+		return false;
 	}
 	return color;
 }
@@ -153,10 +110,7 @@ var colorSettingsChange = function(){
 	}
 }
 
-insertBinding(cmdBinds, 'JOIN', mcolorJoinHandler);
-insertBinding(mcolBinds, 'TC', mcolorTCHandler);
-insertBinding(cmdBinds, '324', mcolorChModeHandler);
-insertBinding(cmdBinds, 'NICK', mcolorNickHandler);
+insertBinding(cmdBinds, '001', mcolorMetadataSet);
 messageProcessors.push(colorMessage);
 nickColorProcessors.push(colorNick);
 settingProcessors.push(colorSettingsChange);
