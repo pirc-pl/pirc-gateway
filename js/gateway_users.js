@@ -11,12 +11,36 @@ var users = {
 		this.metadata = {};
 		this.setIdent = function(ident){
 			this.ident = ident;
+			for(c in gateway.channels) {
+				var nicklistUser = gateway.channels[c].nicklist.findNick(this.nick);
+				if(nicklistUser)
+					nicklistUser.setIdent(ident);
+			}
 		};
 		this.setHost = function(host){
 			this.host = host;
+			for(c in gateway.channels) {
+				var nicklistUser = gateway.channels[c].nicklist.findNick(this.nick);
+				if(nicklistUser)
+					nicklistUser.setUserHost(host);
+			}
 		};
 		this.setAccount = function(account){
 			this.account = account;
+			for(c in gateway.channels) {
+				var nicklistUser = gateway.channels[c].nicklist.findNick(this.nick);
+				if(nicklistUser){
+					if(!account){
+						nicklistUser.setAccount(false);
+						nicklistUser.setRegistered(false);
+					} else {
+						nicklistUser.setAccount(account);
+						if(this.account == this.nick){
+							nicklistUser.setRegistered(true);
+						}
+					}
+				}
+			}
 		};
 		this.setNick = function(nick){
 			this.nick = nick;
@@ -45,6 +69,25 @@ var users = {
 		this.setBot = function(bot){
 			this.bot = bot;
 		};
+		this.setAway = function(text){
+			this.away = text;
+			gateway.channels.forEach(function(channel){
+				var nickListItem = channel.nicklist.findNick(this.nick);
+				if(nickListItem){
+					nickListItem.setAway(true);
+					nickListItem.setAwayReason(text);
+				}
+			}.bind(this));
+		};
+		this.notAway = function(){
+			this.away = false;
+			gateway.channels.forEach(function(channel){
+				var nickListItem = channel.nicklist.findNick(this.nick);
+				if(nickListItem){
+					nickListItem.setAway(false);
+				}
+			}.bind(this));
+		};
 	},
 	'list': {},
 	'addUser': function(nick){
@@ -72,6 +115,24 @@ var users = {
 			var nli = nicklist.findNick(user.nick);
 			if(nli)
 				nli.updateAvatar();					
+		}
+	},
+	'changeNick': function(oldNick, newNick){
+		var user = users.getUser(oldNick);
+		users.list[newNick] = user;
+		delete users.list[oldNick];
+		user.setNick(newNick);
+		if(oldNick == guser.nick) { // changing own nick
+			guser.changeNick(newNick);
+			document.title = he(newNick)+' @ PIRC.pl';
+		}
+		for(c in gateway.channels) {
+			if(gateway.channels[c].nicklist.findNick(oldNick)) {
+				gateway.channels[c].nicklist.changeNick(oldNick, newNick);
+			}
+		}
+		if(gateway.findQuery(oldNick)) {
+			gateway.findQuery(oldNick).changeNick(newNick);
 		}
 	}
 }

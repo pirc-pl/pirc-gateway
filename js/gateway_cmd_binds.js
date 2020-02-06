@@ -5,18 +5,6 @@ var supportedCaps = ['userhost-in-names', 'away-notify', 'multi-prefix', 'chghos
 var cmdBinds = {
 	'ACCOUNT': [
 		function(msg) {
-			for(c in gateway.channels) {
-				var nicklistUser = gateway.channels[c].nicklist.findNick(msg.sender.nick);
-				if(msg.args[0] == '*'){
-					nicklistUser.setAccount(false);
-					nicklistUser.setRegistered(false);
-				} else {
-					nicklistUser.setAccount(msg.args[0]);
-					if(msg.args[0] == msg.sender.nick){
-						nicklistUser.setRegistered(true);
-					}
-				}
-			}
 			var user = users.getUser(msg.sender.nick);
 			if(msg.args[0]){
 				user.setAccount(false);
@@ -38,23 +26,14 @@ var cmdBinds = {
 	],
 	'AWAY': [
 		function(msg) {
+			var user = users.getUser(msg.sender.nick);
+			if(!user) return;
 			if(msg.text == ''){
-				var away = false;
+				user.notAway();
 			} else {
-				var away = true;
-				var reason = msg.text;
+				user.setAway(msg.text);
 			}
-			gateway.channels.forEach(function(channel){
-				var nickListItem = channel.nicklist.findNick(msg.sender.nick);
-				if(nickListItem){
-					nickListItem.setAway(away);
-					if(away){
-						nickListItem.setAwayReason(reason);
-					}
-				}
-			});
 		}
-		//TODO user status
 	],
 	'CAP': [
 		function(msg) {
@@ -98,11 +77,6 @@ var cmdBinds = {
 	],
 	'CHGHOST': [
 		function(msg) {
-			for(c in gateway.channels) {
-				var nicklistUser = gateway.channels[c].nicklist.findNick(msg.sender.nick);
-				nicklistUser.setIdent(msg.args[0]);
-				nicklistUser.setUserHost(msg.args[1]);
-			}
 			var user = users.getUser(msg.sender.nick);
 			user.setIdent(msg.args[0]);
 			user.setHost(msg.args[1]);
@@ -215,17 +189,10 @@ var cmdBinds = {
 			}
 			user.setIdent(msg.sender.ident);
 			user.setHost(msg.sender.host);
-			nicklistUser.setIdent(msg.sender.ident);
-			nicklistUser.setUserHost(msg.sender.host);
 			if(activeCaps.indexOf('extended-join') >= 0){
 				if(msg.args[1] != '*'){
 					user.setAccount(msg.args[1]);
-					nicklistUser.setAccount(msg.args[1]);
-					if(msg.args[1] == msg.sender.nick){
-						nicklistUser.setRegistered(true);
-					}
 				}
-				nicklistUser.setRealname(msg.text);
 				user.setRealname(msg.text);
 			}
 		}
@@ -280,21 +247,10 @@ var cmdBinds = {
 	],
 	'NICK': [
 		function(msg) {
-			if(msg.sender.nick == guser.nick) {
-				guser.changeNick(msg.text);
-				document.title = he(msg.text)+' @ PIRC.pl';
-				for(c in gateway.channels) {
-					gateway.channels[c].nicklist.changeNick(msg.sender.nick, msg.text);
-				}
-			} else {
-				for(c in gateway.channels) {
-					if(gateway.channels[c].nicklist.findNick(msg.sender.nick)) {
-						gateway.channels[c].nicklist.changeNick(msg.sender.nick, msg.text);
-						if (!$('#showNickChanges').is(':checked')) gateway.channels[c].appendMessage(messagePatterns.nickChange, [$$.niceTime(msg.time), he(msg.sender.nick), he(msg.text)]);
-					}
-				}
-				if(gateway.findQuery(msg.sender.nick)) {
-					gateway.findQuery(msg.sender.nick).changeNick(msg.text);
+			users.changeNick(msg.sender.nick, msg.text);
+			for(c in gateway.channels) {
+				if(gateway.channels[c].nicklist.findNick(msg.sender.nick)) {
+					if (!$('#showNickChanges').is(':checked')) gateway.channels[c].appendMessage(messagePatterns.nickChange, [$$.niceTime(msg.time), he(msg.sender.nick), he(msg.text)]);
 				}
 			}
 		}
@@ -1090,12 +1046,10 @@ var cmdBinds = {
 				var user = newUsers[userId];
 				console.log(user);
 				channel.nicklist.addNick(user.nick);
-				var nickListItem = channel.nicklist.findNick(user.nick);
-				if(user.ident) nickListItem.setIdent(user.ident);
-				if(user.host) nickListItem.setUserHost(user.host);
 				var newUser = users.getUser(user.nick);
 				newUser.setIdent(user.ident);
 				newUser.setHost(user.host);
+				var nickListItem = channel.nicklist.findNick(user.nick);
 				for(var i=0; i<user.modes.length; i++){
 					if(user.modes[i] in chStatusNames){
 						nickListItem.setMode(chStatusNames[user.modes[i]], true);
@@ -1127,39 +1081,10 @@ var cmdBinds = {
 			} else {
 				user.setAccount(msg.args[6]);
 			}
-			//TODO AWAY
-			for(var i=0; i<gateway.channels.length; i++){
-				var channel = gateway.channels[i];
-				var nickListItem = channel.nicklist.findNick(msg.args[4]);
-				if(!nickListItem){
-					continue;
-				}
-				nickListItem.setIdent(msg.args[2]);
-				nickListItem.setUserHost(msg.args[3]);
-				nickListItem.setRealname(msg.text);
-				if(msg.args[5].charAt(0) == 'G'){
-					nickListItem.setAway(true);
-				} else {
-					nickListItem.setAway(false);
-				}
-				if(msg.args[5].indexOf('*') > -1){
-					nickListItem.setIrcOp();
-				}
-				if(msg.args[5].indexOf('B') > -1){
-					nickListItem.setBot(true);
-				} else {
-					nickListItem.setBot(false);
-				}
-				if(msg.args[5].indexOf('r') > -1){
-					nickListItem.setRegistered(true);
-				} else {
-					nickListItem.setRegistered(false);
-				}
-				if(msg.args[6] == "0"){
-					nickListItem.setAccount(false);
-				} else {
-					nickListItem.setAccount(msg.args[6]);
-				}
+			if(msg.args[5].charAt(0) == 'G'){
+				user.setAway(true);
+			} else {
+				user.notAway();
 			}
 		}
 	],
