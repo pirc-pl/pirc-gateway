@@ -6,7 +6,7 @@
 		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 		<link rel="stylesheet" href="/styles/jquery-ui.theme.css" />
 		<link rel="stylesheet" href="/styles/jquery-ui.structure.css" />
-		<link rel="stylesheet" href="/styles/gateway_def.css" />
+		<link rel="stylesheet" href="/styles/gateway_def.css{$random_string}" />
 		{$additionalcss}
 		<script type="text/javascript">
 			var guser = {
