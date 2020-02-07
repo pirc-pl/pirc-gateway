@@ -116,7 +116,7 @@
 				<span id="current-avatar-info">Nie ustawiono awatara</span> <button type="button" value="" id="delete-avatar" onClick="disp.deleteAvatar()">Skasuj</button>
 			</div>
 			<div id="set-avatar">
-				Podaj adres URL: <input type="text" id="avatar-url" name="avatar-url"> <button type="button" value="" onClick="disp.checkAvatarUrl()">Sprawdź</button><br>
+				Podaj adres URL: <input type="text" id="avatar-url" name="avatar-url" autocomplete="photo"> <button type="button" value="" onClick="disp.checkAvatarUrl()">Sprawdź</button><br>
 				<button type="button" value="" id="submit-avatar" onClick="disp.submitAvatar()">Zatwierdź</button><br>
 				URL powinien prowadzić bezpośrednio do obrazka (png, gif, jpeg).<br>
 				Opcja eksperymentalna &ndash; spodziewaj się zmian i ułatwień!
