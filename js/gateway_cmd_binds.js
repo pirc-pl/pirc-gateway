@@ -1735,33 +1735,9 @@ var ctcpBinds = {
 			}
 			ircCommand.sendCtcpReply(msg.sender.nick, 'REFERER '+referer_string);
 		}
-	]/*,
-	'MCOL': [
-		function(msg){
-			var elements = msg.ctcptext.split(',');
-			for(var i=0; i<elements.length; i++){
-				var element = elements[i];
-				if(element.indexOf(' ') > 0){
-					var command = element.substr(0, element.indexOf(' '));
-					var arg = element.substr(element.indexOf(' ')+1);
-				} else {
-					var command = element;
-					var arg = '';
-				}
-				msg.mcolarg = arg;
-				if(command in mcolBinds){
-					for(func in mcolBinds[command]){
-						mcolBinds[command][func](msg);
-					}
-				}
-			}
-		}
-	]*/
+	]
 };
-/*
-var mcolBinds = {
-};
-*/
+
 function cmdNotImplemented(msg){
 	var tab = gateway.statusWindow;
 	var text = '('+msg.command+') ';
