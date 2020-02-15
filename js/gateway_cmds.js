@@ -1,19 +1,43 @@
 var ircCommand = {
-	'perform': function(command, args, text){
-		ircCommand.send(command, args, text);
+	'perform': function(command, args, text, tags){
+		ircCommand.send(command, args, text, tags);
 	},
-	'performQuick': function(command, args, text){ // TODO zrobić
-		ircCommand.send(command, args, text);
+	'performQuick': function(command, args, text, tags){ // TODO zrobić
+		ircCommand.send(command, args, text, tags);
 	},
-	'performSlow': function(command, args, text){ // TODO zrobić
-		ircCommand.send(command, args, text);
+	'performSlow': function(command, args, text, tags){ // TODO zrobić
+		ircCommand.send(command, args, text, tags);
 	},
 	'flushCmdQueue': function(){ // TODO zrobić
 	},
-	'send': function(command, args, text){
-		var cmdString = command;
-		for(var i=0; i<args.length; i++){
-			cmdString += ' '+args[i];
+	'send': function(command, args, text, tags){ // TODO escape tags
+		var cmdString = '';
+		if(tags && activeCaps.indexOf('message-tags') >= 0){
+			console.log('sending tags');
+			cmdString += '@';
+			var first = true;
+			for(tagName in tags){
+				if(!first){
+					cmdString += ';';
+				}
+				first = false;
+				cmdString += tagName;
+				if(tags[tagName]){
+					cmdString += '=' + tags[tagName];
+				}
+			}
+			cmdString += ' ';
+		}
+		if(!command){
+			if(activeCaps.indexOf('message-tags') >= 0){
+				command = 'TAGMSG';
+			} else return;
+		}
+		cmdString += command;
+		if(args){
+			for(var i=0; i<args.length; i++){
+				cmdString += ' '+args[i];
+			}
 		}
 		if(text){
 			cmdString += ' :'+text;
@@ -151,6 +175,11 @@ var ircCommand = {
 		if(args == null) args = [];
 		var cmdArgs = [target, cmd].concat(args);
 		ircCommand.perform('METADATA', cmdArgs);
+	},
+	'sendTags': function(target, name, value){
+		var tags = {};
+		tags[name] = value;
+		ircCommand.perform(false, [target], false, tags); 
 	}
 };
 

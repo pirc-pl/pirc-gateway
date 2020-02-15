@@ -236,6 +236,8 @@ var gateway = {
 	'sasl': false,
 	'commandProcessing': false,
 	'whowasExpect312': false,
+	'lastKeypressWindow': false,
+	'keypressSuppress': false,
 	'chanPassword': function(chan) {
 		if($('#chpass').val() == ''){
 			$$.alert('Nie podałeś hasła!');
@@ -2093,10 +2095,35 @@ var gateway = {
 		$$.displayDialog('error', 'noaccess', 'Brak dostępu', html);
 		gateway.connectStatus = statusBanned;
 	},
-	'inputPaste': function(e){
+	'inputPaste': function(e){ // TODO
 		console.log(e);
 		var items = (e.clipboardData || e.originalEvent.clipboardData).items;
 		console.log(items);
+	},
+	'inputKeypress': function(e){
+		if(activeCaps.indexOf('message-tags') < 0) return;
+		console.log('keypress');
+		if(!gateway.getActive()) return;
+		if(gateway.lastKeypressWindow == gateway.getActive()){
+			if($('#input').val() == ''){
+				if(gateway.keypressSuppress){
+					clearTimeout(gateway.keypressSuppress);
+					gateway.keypressSuppress = false;
+				}
+				ircCommand.sendTags(gateway.getActive().name, '+draft/typing', 'done');
+				return;
+			} else {
+				if(gateway.keypressSuppress) return;
+			}
+		}
+		if(gateway.keypressSuppress){
+			clearTimeout(gateway.keypressSuppress);
+		}
+		gateway.keypressSuppress = setTimeout(function(){
+			gateway.keypressSuppress = false;
+		}, 6500);
+		gateway.lastKeypressWindow = gateway.getActive();
+		ircCommand.sendTags(gateway.getActive().name, '+draft/typing', 'active');
 	},
 	'getMeta': function(msg){
 		var avatar = gateway.getAvatarUrl(msg.sender.nick);

@@ -193,6 +193,7 @@ var conn = {
 			}
 		}, 100);
 		$('#input').on('paste', gateway.inputPaste);
+		$('#input').on('keyup', gateway.inputKeypress);
 	},
 	'aliveWaitTimeout': false,
 	'waitForAlive': false
