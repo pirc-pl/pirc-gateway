@@ -544,6 +544,10 @@ var cmdBinds = {
 			}
 		}
 	],
+	'TAGMSG': [
+		function(msg) { // it will be handled later
+		}
+	],
 	'TOPIC':  [
 		function(msg) {
 			if(gateway.findChannel(msg.args[0])) {
@@ -1741,11 +1745,12 @@ var ctcpBinds = {
 function cmdNotImplemented(msg){
 	var tab = gateway.statusWindow;
 	var text = '('+msg.command+') ';
-	var startIndex = 1;
+	var startIndex = 0;
 
-	if(msg.args[1].charAt(0) == '#' && gateway.findChannel(msg.args[1])){
-		tab = gateway.findChannel(msg.args[1]);
-		startIndex = 2;
+	if(msg.args[0].charAt(0) == '#' && gateway.findChannel(msg.args[0])){
+		tab = gateway.findChannel(msg.args[0]);
+		startIndex = 1;
+		text = '[' + msg.sender.nick + ']' + text;
 	}
 	
 	for(var i=startIndex; i<msg.args.length; i++){
