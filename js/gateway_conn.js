@@ -131,15 +131,14 @@ var conn = {
 			} else if(e.which == 40) { // strzalka w dol
 				e.preventDefault();
 				gateway.arrowPressed('down');
-			}
-		});
-		
-		$('#input').keyup(function(e) {
-			if(e.which == 9) { // TAB
+			} else if(e.which == 9) { // TAB
 				gateway.doComplete();
 				e.preventDefault();
 				return false;
 			} else {
+				gateway.inputKeypress();
+			}
+			if(e.which != 9) { // nie TAB
 				gateway.completion.repeat = 0;
 				gateway.completion.string = '';
 				gateway.completion.array = [];
@@ -193,7 +192,6 @@ var conn = {
 			}
 		}, 100);
 		$('#input').on('paste', gateway.inputPaste);
-		$('#input').on('keyup', gateway.inputKeypress);
 	},
 	'aliveWaitTimeout': false,
 	'waitForAlive': false
