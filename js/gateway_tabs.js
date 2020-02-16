@@ -265,7 +265,7 @@ function NicklistUser(usernick, chan) {
 		this.showTitle();
 	}
 	this.updateAvatar = function() {
-		this.setRegistered(this.isRegistered);
+		this.displayLoggedIn();
 	}
 	this.setRegistered = function(val) {
 		this.isRegistered = val;
@@ -338,6 +338,7 @@ function NicklistUser(usernick, chan) {
 		if(text != ''){
 			$('#'+this.id).attr('title', text);
 		}
+		this.displayLoggedIn();
 	}
 	this.level = 0;
 	this.nick = usernick;
