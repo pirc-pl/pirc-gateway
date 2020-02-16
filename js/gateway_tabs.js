@@ -163,6 +163,7 @@ function NicklistUser(usernick, chan) {
 				'<td valign="top" style="text-align:left;width:100%;" class="'+((this.nick.toLowerCase()==guser.nick.toLowerCase())?'ownNick ':'')+'nickname">'+this.nick+'</td>'+
 			'</tr></table>'+
 			'<ul class="options" id="'+this.id+'-opt">'+
+				'<li class="nicklistAvatar"></li>'+
 				'<li onClick="gateway.openQuery(\''+this.nick+'\', \''+this.id+'\')" class="switchTab">Rozmowa Prywatna (QUERY)</li>'+
 				((this.nick.toLowerCase() == guser.nick.toLowerCase())?'':'<li onClick="ignore.askIgnore(\''+this.nick+'\');">Ignoruj</li>')+
 				'<li><div style="width:100%;" onClick="gateway.toggleNickOptInfo(\''+this.id+'\')">Informacje</div>'+
@@ -288,6 +289,7 @@ function NicklistUser(usernick, chan) {
 			loggedIn = false;
 		}
 		$('#'+this.id+' .chavatar').attr('alt', regText).attr('src', disp.getAvatarIcon(this.nick, loggedIn)).attr('title', regText).on('error', function(){ users.disableAutoAvatar(this.nick); });
+		$('#'+this.id+'-opt .nicklistAvatar').html(gateway.getMeta(this.nick, 500));
 	}
 	this.showTitle = function() {
 		var text = '';

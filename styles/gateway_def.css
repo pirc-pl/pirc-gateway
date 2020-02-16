@@ -1319,3 +1319,21 @@ td.nickname {
 	background-image: linear-gradient(to right, rgba(127,127,127,0.2), rgba(127,127,127,0.05));
 }
 
+ul.options li.nicklistAvatar {
+    border: none;
+    background: inherit;
+    min-height: 0px;
+}
+
+ul.options li.nicklistAvatar img {
+	max-width: 100%;
+}
+
+.nicklistAvatar .letterAvatar span {
+    margin-left: 1px;
+}
+
+.nicklistAvatar .letterAvatar {
+    position: relative;
+}
+

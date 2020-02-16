@@ -441,7 +441,7 @@ var cmdBinds = {
 			}
 			
 			var message = $$.colorize(msg.text);
-			var meta = gateway.getMeta(msg);
+			var meta = gateway.getMeta(msg.sender.nick, 100);
 			
 			if(msg.args[0].indexOf('#') == 0) { // wiadomość kanałowa
 				if(ignore.ignoring(msg.sender.nick, 'channel')){

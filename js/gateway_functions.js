@@ -667,7 +667,7 @@ var disp = {
 		$('#current-letter-avatar').hide();
 		$('#current-avatar-image').attr('src', url);
 		$('#current-avatar-image').attr('alt', 'Podgląd');
-		$('#current-avatar-info').text('Podgląd powyżej. Jeśli widać obrazek, możesz go zatwierdzić.');
+		$('#current-avatar-info').text('Podgląd powyżej. Jeśli widać obrazek, możesz go zatwierdzić.g');
 		$('#submit-avatar').show();
 	},
 	'submitAvatar': function() {
@@ -697,7 +697,7 @@ var disp = {
 		}
 	},
 	'getAvatarIcon': function(nick, isRegistered){
-		var avatar = gateway.getAvatarUrl(nick);
+		var avatar = gateway.getAvatarUrl(nick, 50);
 		if(avatar) return avatar;
 		if(isRegistered) return icons[6];
 		return icons[0];

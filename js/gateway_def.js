@@ -2125,26 +2125,26 @@ var gateway = {
 		gateway.lastKeypressWindow = gateway.getActive();
 		ircCommand.sendTags(gateway.getActive().name, '+draft/typing', 'active');
 	},
-	'getMeta': function(msg){
-		var avatar = gateway.getAvatarUrl(msg.sender.nick);
+	'getMeta': function(nick, size){
+		var avatar = gateway.getAvatarUrl(nick, size);
 		if(avatar) {
-			meta = '<img src="' + avatar + '" alt="'+msg.sender.nick+'" onerror="this.src=\'/styles/img/noavatar.png\';">';
+			meta = '<img src="' + avatar + '" alt="'+nick+'" onerror="this.src=\'/styles/img/noavatar.png\';">';
 		} else {
-			meta = '<span class="avatar letterAvatar" style="background-color:'+$$.nickColor(msg.sender.nick, true)+';"><span role="presentation">'+msg.sender.nick.charAt(0)+'</span></span>';
+			meta = '<span class="avatar letterAvatar" style="background-color:'+$$.nickColor(nick, true)+';"><span role="presentation">'+nick.charAt(0)+'</span></span>';
 		}
 		return meta;
 	},
-	'getAvatarUrl': function(nick){
+	'getAvatarUrl': function(nick, size){
 		var user = users.getUser(nick);
 		var avatar = false;
 		if('avatar' in user.metadata){
-			avatar = user.metadata['avatar'].replace('{size}', '50');
+			avatar = user.metadata['avatar'].replace('{size}', size.toString());
 		}
 		if(!avatar && !user.disableAutoAvatar){
 			var expr = /^~?[su]id([0-9]+)$/;
 			var avmatch = expr.exec(user.ident);
 			if(avmatch){
-				var irccloudUrl = 'https://static.irccloud-cdn.com/avatar-redirect/s50/' + avmatch[1];
+				var irccloudUrl = 'https://static.irccloud-cdn.com/avatar-redirect/s' + size.toString() + '/' + avmatch[1];
 			//	if(ImageExists(irccloudUrl)){
 					avatar = irccloudUrl;
 			//	}
