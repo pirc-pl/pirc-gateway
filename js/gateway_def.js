@@ -2102,7 +2102,7 @@ var gateway = {
 	},
 	'inputKeypress': function(e){
 		if(activeCaps.indexOf('message-tags') < 0) return;
-		console.log('keypress');
+		if($('#input').val().length > 0 && $('#input').val().charAt(0) == '/') return; // typing a command
 		if(!gateway.getActive()) return;
 		if(gateway.lastKeypressWindow == gateway.getActive()){
 			if($('#input').val() == ''){
