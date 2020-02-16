@@ -2106,11 +2106,11 @@ var gateway = {
 		if(!gateway.getActive()) return;
 		if(gateway.lastKeypressWindow == gateway.getActive()){
 			if($('#input').val() == ''){
-				if(gateway.keypressSuppress){
+/*				if(gateway.keypressSuppress){
 					clearTimeout(gateway.keypressSuppress);
 					gateway.keypressSuppress = false;
 				}
-				ircCommand.sendTags(gateway.getActive().name, '+draft/typing', 'done');
+				ircCommand.sendTags(gateway.getActive().name, '+draft/typing', 'done');*/
 				return;
 			} else {
 				if(gateway.keypressSuppress) return;
