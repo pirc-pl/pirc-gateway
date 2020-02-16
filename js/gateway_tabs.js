@@ -268,12 +268,26 @@ function NicklistUser(usernick, chan) {
 	}
 	this.setRegistered = function(val) {
 		this.isRegistered = val;
-		var regText = val?'Zarejestrowany':'Niezarejestrowany';
-		$('#'+this.id+' .chavatar').attr('alt', regText).attr('src', disp.getAvatarIcon(this.nick, this.isRegistered)).attr('title', regText).on('error', function(){ users.disableAutoAvatar(this.nick); });
+		this.displayLoggedIn();
 	}
 	this.setAccount = function(acc) {
 		this.account = acc;
 		this.showTitle();
+		this.displayLoggedIn();
+	}
+	this.displayLoggedIn = function() {
+		var loggedIn = true;
+		if(this.account == this.nick){
+			var regText = 'Zarejestrowany';
+		} else if(this.account){
+			var regText = 'Zalogowany jako '+this.account;
+		} else if(this.isRegistered){
+			var regText = 'Zarejestrowany';
+		} else {
+			var regText = 'Niezarejestrowany';
+			loggedIn = false;
+		}
+		$('#'+this.id+' .chavatar').attr('alt', regText).attr('src', disp.getAvatarIcon(this.nick, loggedIn)).attr('title', regText).on('error', function(){ users.disableAutoAvatar(this.nick); });
 	}
 	this.showTitle = function() {
 		var text = '';

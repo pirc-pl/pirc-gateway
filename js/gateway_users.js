@@ -75,7 +75,11 @@ var users = {
 				var nickListItem = channel.nicklist.findNick(this.nick);
 				if(nickListItem){
 					nickListItem.setAway(true);
-					nickListItem.setAwayReason(text);
+					if(typeof text === "string"){
+						nickListItem.setAwayReason(text);
+					} else {
+						nickListItem.setAwayReason(false);
+					}
 				}
 			}.bind(this));
 		};
