@@ -7,7 +7,8 @@ var users = {
 		this.account = false;
 		this.ircOp = false;
 		this.bot = false;
-		this.disableAutoAvatar = false;
+		this.disableAvatar = false;
+		this.account = false;
 		this.metadata = {};
 		this.setIdent = function(ident){
 			this.ident = ident;
@@ -60,6 +61,7 @@ var users = {
 				if(key in this.metadata) delete this.metadata[key];
 			}
 			if(key == 'avatar'){
+				this.disableAvatar = false;
 				for(c in gateway.channels){
 					var nicklist = gateway.channels[c].nicklist;
 					var nli = nicklist.findNick(this.nick);
@@ -118,7 +120,7 @@ var users = {
 	'disableAutoAvatar': function(nick){
 		var user = this.list[nick];
 		if(!user) return;
-		user.disableAutoAvatar = true;
+		user.disableAvatar = true;
 		for(c in gateway.channels){
 			var nicklist = gateway.channels[c].nicklist;
 			var nli = nicklist.findNick(user.nick);

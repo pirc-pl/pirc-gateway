@@ -1337,3 +1337,7 @@ ul.options li.nicklistAvatar img {
     position: relative;
 }
 
+span.realNick {
+	font-size: .7em;
+}
+

@@ -2141,17 +2141,23 @@ var gateway = {
 		if(avatar) {
 			meta = '<img src="' + avatar + '" alt="'+nick+'" onerror="this.src=\'/styles/img/noavatar.png\';">';
 		} else {
-			meta = '<span class="avatar letterAvatar" style="background-color:'+$$.nickColor(nick, true)+';"><span role="presentation">'+nick.charAt(0)+'</span></span>';
+			if('display-name' in users.getUser(nick).metadata){
+				var dispNick = users.getUser(nick).metadata['display-name'];
+			} else {
+				var dispNick = nick;
+			}
+			meta = '<span class="avatar letterAvatar" style="background-color:'+$$.nickColor(nick, true)+';"><span role="presentation">'+dispNick.charAt(0)+'</span></span>';
 		}
 		return meta;
 	},
 	'getAvatarUrl': function(nick, size){
 		var user = users.getUser(nick);
+		if(user.disableAvatar) return false;
 		var avatar = false;
 		if('avatar' in user.metadata){
 			avatar = user.metadata['avatar'].replace('{size}', size.toString());
 		}
-		if(!avatar && !user.disableAutoAvatar){
+		if(!avatar){
 			var expr = /^~?[su]id([0-9]+)$/;
 			var avmatch = expr.exec(user.ident);
 			if(avmatch){

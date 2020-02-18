@@ -395,7 +395,6 @@ var cmdBinds = {
 	],
 	'PRIVMSG': [
 		function(msg) {
-			//TODO use account-tag
 			if (msg.text === false) {
 				msg.text = " ";
 			}
@@ -442,6 +441,28 @@ var cmdBinds = {
 			
 			var message = $$.colorize(msg.text);
 			var meta = gateway.getMeta(msg.sender.nick, 100);
+			var nick = msg.sender.nick;
+			var nickComments = '';
+			var user = users.getUser(msg.sender.nick);
+			if('display-name' in user.metadata){
+				nick = user.metadata['display-name'];
+				nickComments = ' <span class="realNick" title="Prawdziwy nick na IRC">(' + msg.sender.nick + ')</span>';
+			}
+			var nickInfo = 'Niezalogowany';
+			if('account' in msg.tags || user.account){
+				if('account' in msg.tags){
+					var account = msg.tags['account'];
+				} else if(user.account){
+					var account = user.account;
+				}
+				if(account === true){ // possible if the server does not send account name
+					nickInfo = 'Zalogowany';
+				} else {
+					nickInfo = 'Zalogowany jako ' + account;
+				}
+			}
+			
+			nick = '<span title="' + nickInfo + '">' + nick + '</span>';
 			
 			if(msg.args[0].indexOf('#') == 0) { // wiadomość kanałowa
 				if(ignore.ignoring(msg.sender.nick, 'channel')){
@@ -476,7 +497,7 @@ var cmdBinds = {
 				}
 				message = '<span class="time msgRepeatBlock">'+$$.niceTime(msg.time)+' &nbsp;</span>' + message;
 				if(hlmatch) { //hajlajt
-					channel.appendMessage(messagePatterns.channelMsgHilight, ['sender'+md5(msg.sender.nick) + ' ' + messageClass, meta, $$.niceTime(msg.time), msg.sender.nick, message]);
+					channel.appendMessage(messagePatterns.channelMsgHilight, ['sender'+md5(msg.sender.nick) + ' ' + messageClass, meta, $$.niceTime(msg.time), nick, nickComments, message]);
 					if(messageClass.indexOf('msgRepeat') > -1){
 						messageDiv.find('span.nick').addClass('repeat-hilight');
 					}
@@ -484,7 +505,7 @@ var cmdBinds = {
 						channel.markNew();
 					}
 				} else { //bez hajlajtu
-					channel.appendMessage((msg.sender.nick == guser.nick)?messagePatterns.yourMsg:messagePatterns.channelMsg, ['sender'+md5(msg.sender.nick) + ' ' + messageClass, meta, $$.niceTime(msg.time), $$.nickColor(msg.sender.nick), msg.sender.nick, message]);
+					channel.appendMessage((msg.sender.nick == guser.nick)?messagePatterns.yourMsg:messagePatterns.channelMsg, ['sender'+md5(msg.sender.nick) + ' ' + messageClass, meta, $$.niceTime(msg.time), $$.nickColor(msg.sender.nick), nick, nickComments, message]);
 					if(gateway.active.toLowerCase() != msg.args[0].toLowerCase() || !disp.focused) {
 						channel.markBold();
 					}
@@ -508,7 +529,7 @@ var cmdBinds = {
 						$$.displayDialog('notice', 'service', 'Komunikat od usługi sieciowej', html);
 						return;
 					} else { // status
-						gateway.statusWindow.appendMessage(messagePatterns.yourMsg, ['', meta, $$.niceTime(), $$.nickColor(guser.nick), guser.nick + ' → ' + command[1], $$.colorize(msg.text)]);
+						gateway.statusWindow.appendMessage(messagePatterns.yourMsg, ['', meta, $$.niceTime(), $$.nickColor(guser.nick), guser.nick + ' → ' + command[1], '', $$.colorize(msg.text)]);
 						return;
 					}
 				}
@@ -523,7 +544,7 @@ var cmdBinds = {
 					
 				}	
 							
-				query.appendMessage((msg.sender.nick == guser.nick)?messagePatterns.yourMsg:messagePatterns.channelMsg, ['sender'+md5(msg.sender.nick) + ' ' + messageClass, meta, $$.niceTime(msg.time), '', msg.sender.nick, message]);
+				query.appendMessage((msg.sender.nick == guser.nick)?messagePatterns.yourMsg:messagePatterns.channelMsg, ['sender'+md5(msg.sender.nick) + ' ' + messageClass, meta, $$.niceTime(msg.time), '', nick, nickComments, message]);
 				if(msg.sender.nick != guser.nick && (gateway.active.toLowerCase() != qnick.toLowerCase() || !disp.focused)) {
 					query.markNew();
 				}
