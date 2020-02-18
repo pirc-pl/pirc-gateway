@@ -207,11 +207,22 @@ var irc = {
 		} else {
 			ircmsg.args.push(ircmsg.text); // handling text as a last argument as required by the protocol
 		}
-		
+
+// add u@h
+		if(ircmsg.sender.user){
+			if(ircmsg.sender.ident) users.getUser(ircmsg.sender.nick).setIdent(ircmsg.sender.ident);
+			if(ircmsg.sender.host) users.getUser(ircmsg.sender.nick).setHost(ircmsg.sender.host);
+		}
+
+// process known tags
 		if('time' in ircmsg.tags){
 			ircmsg.time = parseISOString(ircmsg.tags['time']);
 		}
-	
+
+		if('account' in ircmsg.tags){
+			users.getUser(ircmsg.sender.nick).setAccount(ircmsg.tags['account']);
+		}
+
 		console.log(ircmsg);
 
 		return ircmsg;
