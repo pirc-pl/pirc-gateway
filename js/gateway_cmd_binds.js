@@ -1,6 +1,6 @@
 var activeCaps = [];
 var isupport = [];
-var supportedCaps = ['userhost-in-names', 'away-notify', 'multi-prefix', 'chghost', 'extended-join', 'account-notify', 'message-tags', 'server-time', 'echo-message', 'draft/metadata'];
+var supportedCaps = ['userhost-in-names', 'away-notify', 'multi-prefix', 'chghost', 'extended-join', 'account-notify', 'message-tags', 'server-time', 'echo-message', 'draft/metadata', 'draft/setname', 'setname'];
 
 var cmdBinds = {
 	'ACCOUNT': [
@@ -544,6 +544,11 @@ var cmdBinds = {
 			}
 		}
 	],
+	'SETNAME': [
+		function(msg) {
+			users.getUser(msg.sender.nick).setRealname(msg.text);
+		}
+	],
 	'TAGMSG': [
 		function(msg) { // it will be handled later
 		}
@@ -933,7 +938,6 @@ var cmdBinds = {
 			user.setIdent(msg.args[2]);
 			user.setHost(msg.args[3]);
 			user.setRealname(msg.text.substr(msg.text.indexOf(' ') + 1));
-			// todo AWAY
 			if(msg.args[6].indexOf('*') > -1){
 				user.setIrcOp(true);
 			} else {
@@ -944,33 +948,25 @@ var cmdBinds = {
 			} else {
 				user.setBot(false);
 			}
-			for(var i=0; i<gateway.channels.length; i++){
-				var channel = gateway.channels[i];
-				var nickListItem = channel.nicklist.findNick(msg.args[5]);
-				if(!nickListItem){
-					continue;
-				}
-				nickListItem.setIdent(msg.args[2]);
-				nickListItem.setUserHost(msg.args[3]);
-				nickListItem.setRealname(msg.text.substr(msg.text.indexOf(' ') + 1));
-				if(msg.args[6].charAt(0) == 'G'){
-					nickListItem.setAway(true);
-				} else {
-					nickListItem.setAway(false);
-				}
-				if(msg.args[6].indexOf('*') > -1){
-					nickListItem.setIrcOp();
-				}
-				if(msg.args[6].indexOf('B') > -1){
-					nickListItem.setBot(true);
-				} else {
-					nickListItem.setBot(false);
-				}
-				if(msg.args[6].indexOf('r') > -1){
-					nickListItem.setRegistered(true);
-				} else {
-					nickListItem.setRegistered(false);
-				}
+			if(msg.args[6].charAt(0) == 'G'){
+				user.setAway(true);
+			} else {
+				user.notAway();
+			}
+			if(msg.args[6].indexOf('*') > -1){
+				user.setIrcOp(true);
+			} else {
+				user.setIrcOp(false);
+			}
+			if(msg.args[6].indexOf('B') > -1){
+				user.setBot(true);
+			} else {
+				user.setBot(false);
+			}
+			if(msg.args[6].indexOf('r') > -1){
+				user.setRegistered(true);
+			} else {
+				user.setRegistered(false);
 			}
 		}
 	],
@@ -1070,6 +1066,8 @@ var cmdBinds = {
 				return;
 			}
 			var user = users.getUser(msg.args[4]);
+			user.setIdent(msg.args[2]);
+			user.setHost(msg.args[3]);
 			if(msg.args[5].indexOf('*') > -1){
 				user.setIrcOp(true);
 			} else {
@@ -1080,16 +1078,17 @@ var cmdBinds = {
 			} else {
 				user.setBot(false);
 			}
-			if(msg.args[6] == "0"){
-				user.setAccount(false);
-			} else {
-				user.setAccount(msg.args[6]);
-			}
 			if(msg.args[5].charAt(0) == 'G'){
 				user.setAway(true);
 			} else {
 				user.notAway();
 			}
+			if(msg.args[6] == "0"){
+				user.setAccount(false);
+			} else {
+				user.setAccount(msg.args[6]);
+			}
+			user.setRealname(msg.args[7]);
 		}
 	],
 	'361': [	// RPL_KILLDONE

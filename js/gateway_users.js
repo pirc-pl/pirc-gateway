@@ -47,6 +47,11 @@ var users = {
 		};
 		this.setRealname = function(realname){
 			this.realname = realname;
+			for(c in gateway.channels) {
+				var nicklistUser = gateway.channels[c].nicklist.findNick(this.nick);
+				if(nicklistUser)
+					nicklistUser.setRealname(realname);
+			}
 		};
 		this.setMetadata = function(key, value){
 			if(value){
@@ -95,7 +100,7 @@ var users = {
 	},
 	'list': {},
 	'addUser': function(nick){
-		if(nick in users.list) return users.list[nick];;
+		if(nick in users.list) return users.list[nick];
 		users.list[nick] = new users.user(nick);
 		return users.list[nick];
 	},
