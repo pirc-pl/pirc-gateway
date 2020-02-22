@@ -108,19 +108,6 @@
 		</div>
 		
 		<div id="avatar-dialog" title="Avatar">
-			<div id="current-avatar">
-				<div id="current-letter-avatar">
-					<span class="avatar letterAvatar" id="letterAvatarExample"><span role="presentation" id="letterAvatarExampleContent"></span></span>
-				</div>
-				<img id="current-avatar-image" src="/styles/img/noavatar.png" alt="Nie ustawiono awatara"><br>
-				<span id="current-avatar-info">Nie ustawiono awatara</span> <button type="button" value="" id="delete-avatar" onClick="disp.deleteAvatar()">Skasuj</button>
-			</div>
-			<div id="set-avatar">
-				Podaj adres URL: <input type="text" id="avatar-url" name="avatar-url" autocomplete="photo"> <button type="button" value="" onClick="disp.checkAvatarUrl()">Sprawdź</button><br>
-				<button type="button" value="" id="submit-avatar" onClick="disp.submitAvatar()">Zatwierdź</button><br>
-				URL powinien prowadzić bezpośrednio do obrazka (png, gif, jpeg).<br>
-				Opcja eksperymentalna &ndash; spodziewaj się zmian i ułatwień!
-			</div>
 		</div>
 		
 		<div id="about-dialog" title="Informacje">

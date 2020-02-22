@@ -42,9 +42,9 @@ var cmdBinds = {
 					var caps = supportedCaps.slice(0); //copy the array
 					var availableCaps = msg.text.split(' ');
 					
-					if(guser.nickservpass != '' && guser.nickservnick != ''){
+					//if(guser.nickservpass != '' && guser.nickservnick != ''){
 						caps.push('sasl');
-					}
+					//}
 					var useCaps = '';
 					caps.forEach(function(cap){
 						if(availableCaps.indexOf(cap) >= 0){
@@ -1648,17 +1648,24 @@ var cmdBinds = {
 		function(msg) {
 			ircCommand.performQuick('CAP', ['END']);
 			gateway.statusWindow.appendMessage(messagePatterns.SaslAuthenticate, [$$.niceTime(msg.time), 'SASL: zalogowano jako '+he(msg.args[2])]);
+			guser.account = msg.args[2];
 		}
 	],
 	'903': [	// RPL_SASLSUCCESS
 		function(msg) {
 			gateway.statusWindow.appendMessage(messagePatterns.SaslAuthenticate, [$$.niceTime(msg.time), 'SASL: logowanie udane.']);
+			gateway.retrySasl = false;
 		}
 	],
 	'904': [	// ERR_SASLFAIL
 		function(msg) {
 			ircCommand.performQuick('CAP', ['END']);
 			gateway.statusWindow.appendMessage(messagePatterns.SaslAuthenticate, [$$.niceTime(msg.time), 'SASL: logowanie nieudane!']);
+			if(gateway.retrySasl){
+				var html = 'Podane hasło do nicka <b>'+guser.nickservnick+'</b> jest błędne. Możesz spróbować ponownie lub zmienić nicka.<br>'+services.badNickString;
+				$$.displayDialog('error', 'nickserv', 'Błąd', html);
+				services.displayBadNickCounter();
+			}
 //			gateway.sasl = false;
 		}
 	],

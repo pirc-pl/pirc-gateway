@@ -638,23 +638,77 @@ var disp = {
 		disp.displaySpecialDialog('about-dialog', 'OK');
 	},
 	'showAvatarSetting': function(){
-		if(!textSettingsValues['avatar']){
-			$('#letterAvatarExample').css('background-color',$$.nickColor(guser.nick, true));
-			$('#letterAvatarExampleContent').text(guser.nick.charAt(0));
-			$('#current-avatar-info').text('Nie ustawiono awatara');
-			$('#current-avatar-image').attr('src', '/styles/img/noavatar.png');
-			$('#current-avatar-image').attr('alt', 'Nie ustawiono awatara');
-			$('#current-letter-avatar').show();
-			$('#delete-avatar').hide();
+		if(!guser.umodes.r || window.FormData === undefined){
+			var html =
+				'<div id="current-avatar">' +
+					'<div id="current-letter-avatar">' +
+						'<span class="avatar letterAvatar" id="letterAvatarExample"><span role="presentation" id="letterAvatarExampleContent"></span></span>' +
+					'</div>' +
+					'<img id="current-avatar-image" src="/styles/img/noavatar.png" alt="Nie ustawiono awatara"><br>' +
+					'<span id="current-avatar-info">Nie ustawiono awatara</span> <button type="button" value="" id="delete-avatar" onClick="disp.deleteAvatar()">Skasuj</button>' +
+				'</div>' +
+				'<div id="set-avatar">' +
+					'Podaj adres URL: <input type="text" id="avatar-url" name="avatar-url" autocomplete="photo"> <button type="button" value="" onClick="disp.checkAvatarUrl()">Sprawdź</button><br>' +
+					'<button type="button" value="" id="submit-avatar" onClick="disp.submitAvatar()">Zatwierdź</button><br>' +
+					'URL powinien prowadzić bezpośrednio do obrazka (png, gif, jpeg).<br>';
+				if(window.FormData === undefined){
+					html += 'Twoja przeglądarka jest zbyt stara, aby obsłużyć wygodniejsze ustawianie awatarów.';
+				} else {
+					html += 'Zarejestruj nicka i potwierdź adres e-mail, aby uzyskać dostęp do wygodniejszego ustawiania awatarów.';
+				}
+				html += '</div>';
+			$('#avatar-dialog').html(html);
+			if(!textSettingsValues['avatar']){
+				$('#letterAvatarExample').css('background-color',$$.nickColor(guser.nick, true));
+				$('#letterAvatarExampleContent').text(guser.nick.charAt(0));
+				$('#current-avatar-info').text('Nie ustawiono awatara');
+				$('#current-avatar-image').attr('src', '/styles/img/noavatar.png');
+				$('#current-avatar-image').attr('alt', 'Nie ustawiono awatara');
+				$('#current-letter-avatar').show();
+				$('#delete-avatar').hide();
+			} else {
+				$('#current-avatar-info').text('Bieżący awatar');
+				$('#current-avatar-image').attr('src', textSettingsValues['avatar'].replace('{size}', '100'));
+				$('#current-avatar-image').attr('alt', 'Bieżący awatar');
+				$('#current-letter-avatar').hide();
+				$('#avatar-url').val(textSettingsValues['avatar']);
+				$('#delete-avatar').show();
+			}
+			$('#submit-avatar').hide();
 		} else {
-			$('#current-avatar-info').text('Bieżący awatar');
-			$('#current-avatar-image').attr('src', textSettingsValues['avatar']);
-			$('#current-avatar-image').attr('alt', 'Bieżący awatar');
-			$('#current-letter-avatar').hide();
-			$('#avatar-url').val(textSettingsValues['avatar']);
-			$('#delete-avatar').show();
+			services.getApiKey();
+			var html =
+				'<div id="current-avatar">' +
+					'<div id="current-letter-avatar">' +
+						'<span class="avatar letterAvatar" id="letterAvatarExample"><span role="presentation" id="letterAvatarExampleContent"></span></span>' +
+					'</div>' +
+					'<img id="current-avatar-image" src="/styles/img/noavatar.png" alt="Nie ustawiono awatara"><br>' +
+					'<span id="current-avatar-info">Nie ustawiono awatara</span> <button type="button" value="" id="delete-avatar" onClick="disp.deleteAvatar()">Skasuj</button>' +
+				'</div>' +
+				'<div id="set-avatar">' +
+					'Wybierz obrazek: <input type="file" name="avatarFileToUpload" id="avatarFileToUpload"><br>' +
+					'<button type="submit" value="" id="submit-avatar" name="submit" onClick="disp.submitAvatar()">Zatwierdź</button><br>' +
+					'Klikając "Zatwierdź" wyrażasz zgodę na przechowywanie podanych danych na serwerach PIRC.' +
+				'</div>';
+			$('#avatar-dialog').html(html);
+			if(!textSettingsValues['avatar']){
+				$('#letterAvatarExample').css('background-color',$$.nickColor(guser.nick, true));
+				$('#letterAvatarExampleContent').text(guser.nick.charAt(0));
+				$('#current-avatar-info').text('Nie ustawiono awatara');
+				$('#current-avatar-image').attr('src', '/styles/img/noavatar.png');
+				$('#current-avatar-image').attr('alt', 'Nie ustawiono awatara');
+				$('#current-letter-avatar').show();
+				$('#delete-avatar').hide();
+			} else {
+				$('#current-avatar-info').text('Bieżący awatar');
+				$('#current-avatar-image').attr('src', textSettingsValues['avatar']);
+				$('#current-avatar-image').attr('alt', 'Bieżący awatar');
+				$('#current-letter-avatar').hide();
+				$('#avatar-url').val(textSettingsValues['avatar']);
+				$('#delete-avatar').show();
+			}
+			$('#submit-avatar').show();
 		}
-		$('#submit-avatar').hide();
 		disp.displaySpecialDialog('avatar-dialog', 'OK');
 	},
 	'checkAvatarUrl': function() {
@@ -671,22 +725,86 @@ var disp = {
 		$('#submit-avatar').show();
 	},
 	'submitAvatar': function() {
-		var url = $('#avatar-url').val();
-		if(!url.startsWith('https://')){
-			$$.alert('Adres musi zaczynać się od "https://"!');
-			return;
+		if(!guser.umodes.r){
+			var url = $('#avatar-url').val();
+			if(!url.startsWith('https://')){
+				$$.alert('Adres musi zaczynać się od "https://"!');
+				return;
+			}
+			textSettingsValues['avatar'] = url;
+			disp.showAvatarSetting();
+			disp.avatarChanged();
+		} else {
+			var fd = new FormData();
+			var file = $('#avatarFileToUpload')[0].files[0];
+			if(!file){
+				$$.alert('Nie wybrano pliku!');
+				return;
+			}
+			fd.append('fileToUpload', file);
+			fd.append('account', guser.account);
+			fd.append('apikey', services.apiKey);
+			fd.append('image-type', 'avatar');
+			$('#set-avatar').append('<br>Trwa przetwarzanie, czekaj...');
+			$.ajax({
+				url: 'https://users.pirc.pl/image-upload/image-upload.php',
+				dataType: 'json',
+				method: 'post',
+				processData: false,
+				contentType: false,
+				data: fd,
+				success: function(data){
+					console.log(data);
+					if(data['result'] == 'ok'){
+						textSettingsValues['avatar'] = data['url'];
+						disp.showAvatarSetting();
+						disp.avatarChanged();
+					} else {
+						$$.alert('Błąd wysyłania awatara. Odpowiedź serwera: ' + data['result']);
+					}
+				},
+				error: function(){
+					$$.alert('Nie udało się przesłać obrazka. Spróbuj ponownie później.');
+				}
+			});
 		}
-		textSettingsValues['avatar'] = url;
-		disp.showAvatarSetting();
-		disp.avatarChanged();
 	},
 	'deleteAvatar': function() {
-		if(!confirm('Czy usunąć avatar "' +textSettingsValues['avatar']+ '"?')){
-			return;
+		if(!guser.umodes.r){
+			if(!confirm('Czy usunąć awatar "' +textSettingsValues['avatar']+ '"?')){
+				return;
+			}
+			textSettingsValues['avatar'] = false;
+			disp.showAvatarSetting();
+			disp.avatarChanged();
+		} else {
+			if(!confirm('Czy usuniąć bieżący awatar?')){
+				return;
+			}
+			$.ajax({
+				url: 'https://users.pirc.pl/image-upload/image-delete.php',
+				dataType: 'json',
+				method: 'post',
+				data: {
+					'account': guser.account,
+					'apikey': services.apiKey,
+					'image-type': 'avatar'
+				},
+				success: function(data){
+					console.log(data);
+					if(data['result'] == 'ok'){
+						textSettingsValues['avatar'] = false;
+						disp.showAvatarSetting();
+						disp.avatarChanged();
+					} else {
+						$$.alert('Błąd kasowania awatara. Odpowiedź serwera: ' + data['result']);
+					}
+				},
+				error: function(){
+					$$.alert('Nie udało się skasować awatara. Spróbuj ponownie później.');
+				}
+			});
 		}
-		textSettingsValues['avatar'] = false;
-		disp.showAvatarSetting();
-		disp.avatarChanged();
 	},
 	'avatarChanged': function() {
 		disp.changeSettings();

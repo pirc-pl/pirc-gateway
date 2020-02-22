@@ -4,6 +4,7 @@ var services = {
 	'nickStore': '',
 	'showTimeToChange': false,
 	'ignoreNextAccessDenial': false,
+	'apiKey': false,
 	'badNickString': '<div class="table">'+
 		'<form class="tr" onsubmit="services.logIn();$$.closeDialog(\'error\', \'nickserv\')" action="javascript:void(0);">'+
 			'<span class="td_right">Twoje hasło:</span>'+
@@ -112,6 +113,12 @@ var services = {
 		if(msg.text.match(/^Nick został usunięty z sieci\.$/i) || msg.text.match(/^Serwisy właśnie zwolniły.*nicka.*\.$/i)){
 			gateway.send('NICK '+guser.nickservnick);
 			gateway.connectStatus = statusGhostAndNickSent;
+			return true;
+		}
+		var expr = /^APIKEY=(.*)$/i;
+		var match = expr.exec(msg.text);
+		if(match){
+			services.apiKey = match[1];
 			return true;
 		}
 		var time = false;
@@ -423,6 +430,9 @@ var services = {
 		gateway.send('NS REGISTER '+password+' '+email);
 		gateway.send('NS SET KILL QUICK');
 		return true;
+	},
+	'getApiKey': function(){
+		gateway.send('NS APIKEY');
 	},
 	/*'setCloak': function(){
 		var html = '<p>To polecenie ustawi vHosta o treści <b>cloak:'+guser.nick+'</b>. Jeśli masz już vHosta, zostanie on usunięty.</p>';

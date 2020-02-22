@@ -68,6 +68,10 @@ var users = {
 					if(nli)
 						nli.updateAvatar();					
 				}
+				if(value && this.nick == guser.nick){ // this is our own avatar
+					textSettingsValues['avatar'] = value;
+					disp.avatarChanged();
+				}
 			}
 		};
 		this.setIrcOp = function(ircOp){

@@ -44,6 +44,7 @@ var irc = {
 			'server': false,
 			'user': false
 		};
+		this.time = new Date();
 	},
 	'oldData': '',
 	'parseMessage': function(msg){
@@ -249,6 +250,7 @@ var gateway = {
 	'whowasExpect312': false,
 	'lastKeypressWindow': false,
 	'keypressSuppress': false,
+	'retrySasl': false,
 	'chanPassword': function(chan) {
 		if($('#chpass').val() == ''){
 			$$.alert('Nie podałeś hasła!');
@@ -445,7 +447,14 @@ var gateway = {
 					ircCommand.NickServ('RECOVER', [guser.nickservnick, guser.nickservpass]);
 				} else {
 					gateway.connectStatus = statusIdentified;
-					ircCommand.NickServ('IDENTIFY', guser.nickservpass);
+					if(!gateway.sasl){
+						ircCommand.NickServ('IDENTIFY', guser.nickservpass);
+					} else {
+						gateway.retrySasl = true;
+						ircCommand.performQuick('AUTHENTICATE', ['PLAIN']);
+						var date = new Date();
+						gateway.statusWindow.appendMessage(messagePatterns.SaslAuthenticate, [$$.niceTime(date), 'Próba logowania za pomocą SASL...']);
+					}					
 				}
 			}
 			if(gateway.connectStatus == statusGhostAndNickSent && guser.nick == guser.nickservnick){ //ghost się udał
@@ -586,6 +595,7 @@ var gateway = {
 				}
 			}
 		} catch(e) {}
+		guser.account = guser.nick;
 		gateway.initSys();
 		gateway.connect(false);
 
