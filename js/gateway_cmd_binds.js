@@ -1647,7 +1647,7 @@ var cmdBinds = {
 	'900': [	// RPL_LOGGEDIN
 		function(msg) {
 			ircCommand.performQuick('CAP', ['END']);
-			gateway.statusWindow.appendMessage(messagePatterns.SaslAuthenticate, [$$.niceTime(msg.time), 'SASL: zalogowano jako '+he(msg.args[2])]);
+			gateway.statusWindow.appendMessage(messagePatterns.SaslAuthenticate, [$$.niceTime(msg.time), 'Zalogowano jako '+he(msg.args[2])]);
 			guser.account = msg.args[2];
 		}
 	],
