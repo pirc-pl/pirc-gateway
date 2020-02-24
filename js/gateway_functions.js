@@ -721,7 +721,7 @@ var disp = {
 		$('#current-letter-avatar').hide();
 		$('#current-avatar-image').attr('src', url);
 		$('#current-avatar-image').attr('alt', 'Podgląd');
-		$('#current-avatar-info').text('Podgląd powyżej. Jeśli widać obrazek, możesz go zatwierdzić.g');
+		$('#current-avatar-info').text('Podgląd powyżej. Jeśli widać obrazek, możesz go zatwierdzić.');
 		$('#submit-avatar').show();
 	},
 	'submitAvatar': function() {
@@ -764,7 +764,7 @@ var disp = {
 					}
 				},
 				error: function(){
-					$$.alert('Nie udało się przesłać obrazka. Spróbuj ponownie później.');
+					$$.alert('Nie udało się przesłać obrazka. Upewnij się, że plik nie jest zbyt duży, i spróbuj ponownie później.');
 				}
 			});
 		}
