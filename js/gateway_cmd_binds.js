@@ -247,12 +247,12 @@ var cmdBinds = {
 	],
 	'NICK': [
 		function(msg) {
-			users.changeNick(msg.sender.nick, msg.text);
-			for(c in gateway.channels) {
+			if (!$('#showNickChanges').is(':checked')) for(c in gateway.channels) {
 				if(gateway.channels[c].nicklist.findNick(msg.sender.nick)) {
-					if (!$('#showNickChanges').is(':checked')) gateway.channels[c].appendMessage(messagePatterns.nickChange, [$$.niceTime(msg.time), he(msg.sender.nick), he(msg.text)]);
+					gateway.channels[c].appendMessage(messagePatterns.nickChange, [$$.niceTime(msg.time), he(msg.sender.nick), he(msg.text)]);
 				}
 			}
+			users.changeNick(msg.sender.nick, msg.text);
 		}
 	],
 	'NOTICE': [
