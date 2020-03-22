@@ -1015,6 +1015,18 @@ var $$ = {
 					formatWaiting = true;
 					break;
 
+				case String.fromCharCode(4): // hex color
+					var end = i+7;
+					i++;
+					var code = '#';
+					for(; i<end; ++i){
+						code += message.charAt(i);
+					}
+					i--;
+					console.log(code);
+					currFront = code;
+					formatWaiting = true;
+					break;
 
 				case String.fromCharCode(15): // wyczyszczenie
 					currFront = pageFront;
@@ -1143,7 +1155,92 @@ var $$ = {
 				case 12: return '#5F6BFF';
 				case 13: return '#FF83F2';
 				case 14: return '#B5B5B5';
-				default: return '#E0E0E0';
+				case 15: return '#E0E0E0';
+				// extended codes
+				case 16: return '#470000';
+				case 17: return '#472100';
+				case 18: return '#474700';
+				case 19: return '#324700';
+				case 20: return '#004700';
+				case 21: return '#00472c';
+				case 22: return '#004747';
+				case 23: return '#002747';
+				case 24: return '#000047';
+				case 25: return '#2e0047';
+				case 26: return '#470047';
+				case 27: return '#47002a';
+				case 28: return '#740000';
+				case 29: return '#743a00';
+				case 30: return '#747400';
+				case 31: return '#517400';
+				case 32: return '#007400';
+				case 33: return '#007449';
+				case 34: return '#007474';
+				case 35: return '#004074';
+				case 36: return '#000074';
+				case 37: return '#4b0074';
+				case 38: return '#740074';
+				case 39: return '#740045';
+				case 40: return '#b50000';
+				case 41: return '#b56300';
+				case 42: return '#b5b500';
+				case 43: return '#7db500';
+				case 44: return '#00b500';
+				case 45: return '#00b571';
+				case 46: return '#00b5b5';
+				case 47: return '#0063b5';
+				case 48: return '#0000b5';
+				case 49: return '#7500b5';
+				case 50: return '#b500b5';
+				case 51: return '#b5006b';
+				case 52: return '#ff0000';
+				case 53: return '#ff8c00';
+				case 54: return '#ffff00';
+				case 55: return '#b2ff00';
+				case 56: return '#00ff00';
+				case 57: return '#00ffa0';
+				case 58: return '#00ffff';
+				case 59: return '#008cff';
+				case 60: return '#0000ff';
+				case 61: return '#a500ff';
+				case 62: return '#ff00ff';
+				case 63: return '#ff0098';
+				case 64: return '#ff5959';
+				case 65: return '#ffb459';
+				case 66: return '#ffff71';
+				case 67: return '#cfff60';
+				case 68: return '#6fff6f';
+				case 69: return '#65ffc9';
+				case 70: return '#6dffff';
+				case 71: return '#59b4ff';
+				case 72: return '#5959ff';
+				case 73: return '#c459ff';
+				case 74: return '#ff66ff';
+				case 75: return '#ff59bc';
+				case 76: return '#ff9c9c';
+				case 77: return '#ffd39c';
+				case 78: return '#ffff9c';
+				case 79: return '#e2ff9c';
+				case 80: return '#9cff9c';
+				case 81: return '#9cffdb';
+				case 82: return '#9cffff';
+				case 83: return '#9cd3ff';
+				case 84: return '#9c9cff';
+				case 85: return '#dc9cff';
+				case 86: return '#ff9cff';
+				case 87: return '#ff94d3';
+				case 88: return '#000000';
+				case 89: return '#131313';
+				case 90: return '#282828';
+				case 91: return '#363636';
+				case 92: return '#4d4d4d';
+				case 93: return '#656565';
+				case 94: return '#818181';
+				case 95: return '#9f9f9f';
+				case 96: return '#bcbcbc';
+				case 97: return '#e2e2e2';
+				case 98: return '#ffffff';
+				default: return '#666666';
 			}
 		//}
 	},
