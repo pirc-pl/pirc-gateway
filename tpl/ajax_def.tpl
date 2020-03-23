@@ -222,36 +222,19 @@
 		</div>
 		
 		<div id="color-dialog" title="Formatowanie tekstu">
-			<h3>Wstaw kod koloru</h3>
-			<table>
-				<tr>
-					<td><button type="button" class="colorButton" value="" style="background-color: white;" onClick="gateway.insertColor(0)" /></td>
-					<td><button type="button" class="colorButton" value="" style="background-color: black;" onClick="gateway.insertColor(1)" /></td>
-					<td><button type="button" class="colorButton" value="" style="background-color: #1B54FF;" onClick="gateway.insertColor(2)" /></td>
-					<td><button type="button" class="colorButton" value="" style="background-color: #4BC128;" onClick="gateway.insertColor(3)" /></td>
-					<td><button type="button" class="colorButton" value="" style="background-color: #F15254;" onClick="gateway.insertColor(4)" /></td>
-					<td><button type="button" class="colorButton" value="" style="background-color: #9B4244;" onClick="gateway.insertColor(5)" /></td>
-					<td><button type="button" class="colorButton" value="" style="background-color: #D749D6;" onClick="gateway.insertColor(6)" /></td>
-					<td><button type="button" class="colorButton" value="" style="background-color: #AEB32F;" onClick="gateway.insertColor(7)" /></td>
-				</tr>
-				<tr>
-					<td><button type="button" class="colorButton" value="" style="background-color: #E7EF3B;" onClick="gateway.insertColor(8)" /></td>
-					<td><button type="button" class="colorButton" value="" style="background-color: #59FF54;" onClick="gateway.insertColor(9)" /></td>
-					<td><button type="button" class="colorButton" value="" style="background-color: #00DFD6;" onClick="gateway.insertColor(10)" /></td>
-					<td><button type="button" class="colorButton" value="" style="background-color: #60FFF8;" onClick="gateway.insertColor(11)" /></td>
-					<td><button type="button" class="colorButton" value="" style="background-color: #5F6BFF;" onClick="gateway.insertColor(12)" /></td>
-					<td><button type="button" class="colorButton" value="" style="background-color: #FF83F2;" onClick="gateway.insertColor(13)" /></td>
-					<td><button type="button" class="colorButton" value="" style="background-color: #B5B5B5;" onClick="gateway.insertColor(14)" /></td>
-					<td><button type="button" class="colorButton" value="" style="background-color: #E0E0E0;" onClick="gateway.insertColor(15)" /></td>
-				</tr>
-			</table>
-			<h3>Wstaw kod specjalny</h3>
-			<button type="button" class="textFormat" onClick="gateway.insertCode(3)">Wyłącz kolor</button>
-			<button type="button" class="textFormat" onClick="gateway.insertCode(2)">Pogrubienie</button>
-			<button type="button" class="textFormat" onClick="gateway.insertCode(22)">Odwróć kolory</button>
-			<button type="button" class="textFormat" onClick="gateway.insertCode(29)">Pochylenie</button>
-			<button type="button" class="textFormat" onClick="gateway.insertCode(31)">Podkreślenie</button>
-   			<button type="button" class="textFormat" onClick="gateway.insertCode(15)">Czyść wygląd</button>
+			<div id="formatting-button" onclick="gateway.toggleFormatting()">⮛ Wstaw kody formatowania ⮛</span>
+			<div id="formatting">
+				<h3>Wstaw kod koloru</h3>
+				<table id="color-array">
+				</table>
+				<h3>Wstaw kod specjalny</h3>
+				<button type="button" class="textFormat" onClick="gateway.insertCode(3)">Wyłącz kolor</button>
+				<button type="button" class="textFormat" onClick="gateway.insertCode(2)">Pogrubienie</button>
+				<button type="button" class="textFormat" onClick="gateway.insertCode(22)">Odwróć kolory</button>
+				<button type="button" class="textFormat" onClick="gateway.insertCode(29)">Pochylenie</button>
+				<button type="button" class="textFormat" onClick="gateway.insertCode(31)">Podkreślenie</button>
+	   			<button type="button" class="textFormat" onClick="gateway.insertCode(15)">Czyść wygląd</button>
+	   		</div>
    		</div>
 		
 		<div id="symbol-dialog" title="Symbole">

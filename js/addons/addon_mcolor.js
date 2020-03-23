@@ -146,6 +146,8 @@ var mcolorInit = function(){
 			mcolor = ls;
 		}
 	} catch(e){}
+	$('#formatting-button').show();
+	$('#formatting').hide();
 	$('#color-dialog h3').append('<span class="mcolor"> (tymczasowo)</span>');
 	var html = '<div class="mcolor"><h3>Ustaw kolor swojego tekstu (na stałe)</h3><p>Wybierz kolor: <input type="color" id="nickColorPick"></p>' +
 		'<p><button id="clearNickColor">Skasuj kolor</button></p></div>' +

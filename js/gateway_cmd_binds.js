@@ -485,7 +485,7 @@ var cmdBinds = {
 				var messageDiv = $('#'+channel.id+'-window div.messageDiv:not(".msgRepeat"):last');
 				var messageClass = 'msgNormal';
 				if(messageDiv.hasClass('sender'+md5(msg.sender.nick))){
-					messageDiv.find('span.msgText').append('<span class="msgRepeatBlock"><br><span class="time">'+$$.niceTime(msg.time)+'</span> &nbsp; '+message+'</span>');
+					messageDiv.find('span.msgText').append('<span class="msgRepeatBlock"><br><span class="time">'+$$.niceTime(msg.time)+'</span> &nbsp;'+message+'</span>');
 					messageClass = 'msgRepeat';
 				} else {
 					channel.markingSwitch = !channel.markingSwitch;
@@ -495,7 +495,7 @@ var cmdBinds = {
 				} else {
 					messageClass += ' evenMessage';
 				}
-				message = '<span class="time msgRepeatBlock">'+$$.niceTime(msg.time)+' &nbsp;</span>' + message;
+				message = '<span class="time msgRepeatBlock">'+$$.niceTime(msg.time)+'</span> &nbsp;' + message;
 				if(hlmatch) { //hajlajt
 					channel.appendMessage(messagePatterns.channelMsgHilight, ['sender'+md5(msg.sender.nick) + ' ' + messageClass, meta, $$.niceTime(msg.time), nick, nickComments, message]);
 					if(messageClass.indexOf('msgRepeat') > -1){

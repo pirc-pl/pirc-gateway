@@ -358,8 +358,7 @@ var settings = {
 
 var loaded = false;
 
-
-var readyFunctions = [ conn.gatewayInit ];
+var readyFunctions = [ conn.gatewayInit, fillColorSelector ];
 
 var readyFunc = function(){
 	if(loaded) return;
@@ -383,6 +382,20 @@ var readyFunc = function(){
 }
 
 $('document').ready(function(){setTimeout(readyFunc, 100);});
+
+function fillColorSelector(){
+	var html = '<tr>';
+	for(var i=0; i<=98; i++){
+		if(i%16 == 0){
+			html += '</tr><tr>';
+		}
+		html += '<td><button type="button" class="colorButton" value="" style="background-color: ' + $$.getColor(i) + ';" onClick="gateway.insertColor(' + i + ')" /></td>';
+	}
+	if(i%8 != 0){
+		html += '</tr>';
+	}
+	$('#color-array').html(html);
+}
 
 function onBlur() {
 	disp.focused = false;
@@ -842,7 +855,7 @@ var disp = {
 			'<p class="' + channel.id + '-operActions" style="display:none;">' +
 				'<b>Zmodyfikuj temat kanału:</b><textarea name="topicEdit" id="topicEdit">'+$$.colorsToTags(channel.topic)+'</textarea>' +
 				'<button onclick="gateway.changeTopic(\''+channel.name+'\');">Zmień temat</button><br>' +
-				'Do tematu możesz skopiować kody koloru wstawione w pole wiadomości.' +
+				'Do tematu możesz skopiować kody formatowania wstawione w pole wiadomości.' +
 			'</p>';
 		$$.displayDialog('confirm', 'topic', 'Temat kanału '+channel.name, html);
 	},

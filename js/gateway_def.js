@@ -759,17 +759,17 @@ var gateway = {
 		input.val(oldText + text);
 	}, 
 	'insertColor': function(color) {
-		gateway.insert('[!color]' + (color<10?'0':'') + color.toString());
+		gateway.insert(String.fromCharCode(3) + (color<10?'0':'') + color.toString());
 	},
 	'insertCode': function(code) {
 		var text = false;
 		switch(code){
-			case 2: text = '[!bold]'; break;
-			case 3: text = '[!color]'; break;
-			case 15: text = '[!reset]'; break;
-			case 22: text = '[!invert]'; break;
-			case 29: text = '[!italic]'; break;
-			case 31: text = '[!uline]'; break;
+			case 2: text = String.fromCharCode(2); break;
+			case 3: text = String.fromCharCode(3); break;
+			case 15: text = String.fromCharCode(15); break;
+			case 22: text = String.fromCharCode(22); break;
+			case 29: text = String.fromCharCode(29); break;
+			case 31: text = String.fromCharCode(31); break;
 		}
 		if(text) gateway.insert(text);
 	},
@@ -2038,6 +2038,15 @@ var gateway = {
 				gateway.smallListLoading = true;
 				ircCommand.listChannels('>9');
 			}
+		}
+	},
+	'toggleFormatting': function() {
+		if($('#formatting').is(':visible')){
+			$('#formatting').hide();
+			$('#formatting-button').text('⮛ Wstaw kody formatowania ⮛');
+		} else {
+			$('#formatting').show();
+			$('#formatting-button').text('⮙ Schowaj formatowanie ⮙');
 		}
 	},
 	'refreshChanList': function() {
