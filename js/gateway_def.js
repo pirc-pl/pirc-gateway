@@ -681,7 +681,7 @@ var gateway = {
 			return false;
 		}
 		var newTopic = $('#topicEdit').val().replace(/\n/g, ' ');
-		ircCommand.channelTopic(channel, $$.tagsToColors(newTopic));
+		ircCommand.channelTopic(channel, newTopic);
 		$$.closeDialog('confirm', 'topic');
 		return true;
 	},
@@ -1022,7 +1022,6 @@ var gateway = {
 		if(!input){
 			input = '';
 		}
-		input = $$.tagsToColors(input);
 		if($('#sendEmoji').is(':checked')){
 			input = $$.textToEmoji(input);
 		}

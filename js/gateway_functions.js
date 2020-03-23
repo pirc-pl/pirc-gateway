@@ -853,7 +853,7 @@ var disp = {
 		}
 		var html = topic +
 			'<p class="' + channel.id + '-operActions" style="display:none;">' +
-				'<b>Zmodyfikuj temat kanału:</b><textarea name="topicEdit" id="topicEdit">'+$$.colorsToTags(channel.topic)+'</textarea>' +
+				'<b>Zmodyfikuj temat kanału:</b><textarea name="topicEdit" id="topicEdit">'+channel.topic+'</textarea>' +
 				'<button onclick="gateway.changeTopic(\''+channel.name+'\');">Zmień temat</button><br>' +
 				'Do tematu możesz skopiować kody formatowania wstawione w pole wiadomości.' +
 			'</p>';
@@ -1111,24 +1111,6 @@ var $$ = {
 			newText += '</span><wbr>';
 		}
 		return newText;
-	},
-	'colorsToTags': function(input){
-		input = input.replace(/\003/g, '[!color]');
-		input = input.replace(/\002/g, '[!bold]');
-		input = input.replace(/\026/g, '[!invert]');
-		input = input.replace(/\017/g, '[!reset]');
-		input = input.replace(/\035/g, '[!italic]');
-		input = input.replace(/\037/g, '[!uline]');
-		return input;
-	},
-	'tagsToColors': function(input){
-		input = input.replace(/\[!color\]/g, String.fromCharCode(3));
-		input = input.replace(/\[!bold\]/g, String.fromCharCode(2));
-		input = input.replace(/\[!invert\]/g, String.fromCharCode(22));
-		input = input.replace(/\[!reset\]/g, String.fromCharCode(15));
-		input = input.replace(/\[!italic\]/g, String.fromCharCode(29));
-		input = input.replace(/\[!uline\]/g, String.fromCharCode(31));
-		return input;
 	},
 	'getColor': function(numeric, what) {
 		var num = parseInt(numeric);
