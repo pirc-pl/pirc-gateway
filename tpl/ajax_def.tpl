@@ -222,7 +222,7 @@
 		</div>
 		
 		<div id="color-dialog" title="Formatowanie tekstu">
-			<div id="formatting-button" onclick="gateway.toggleFormatting()">⮛ Wstaw kody formatowania ⮛</span>
+			<div id="formatting-button" onclick="gateway.toggleFormatting()">⮛ Wstaw kody formatowania ⮛</div>
 			<div id="formatting">
 				<h3>Wstaw kod koloru</h3>
 				<table id="color-array">
