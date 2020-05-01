@@ -454,8 +454,19 @@ function parseISOString(s) {
 
 function lengthInUtf8Bytes(str) {
 	// Matches only the 10.. bytes that are non-initial characters in a multi-byte sequence.
-	var m = encodeURIComponent(str).match(/%[89ABab]/g);
-	return str.length + (m ? m.length : 0);
+	var add = 0;
+	var success = false;
+	do {
+		try {
+			var m = encodeURIComponent(str).match(/%[89ABab]/g);
+			success = true;
+		} catch(e){ // in case the last character is invalid
+			str = str.slice(0, -1);
+			add++;
+		}
+	} while(!success);
+	
+	return str.length + (m ? m.length : 0) + add;
 }
 
 function ImageExists(url) {
