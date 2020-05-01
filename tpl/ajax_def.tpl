@@ -239,26 +239,20 @@
 		
 		<div id="symbol-dialog" title="Symbole">
 			<h3>Emotikony</h3>
-			<a onclick="gateway.insert('☺')">☺</a> 
-			<a onclick="gateway.insert('😀')">😀</a> <a onclick="gateway.insert('😁')">😁</a> <a onclick="gateway.insert('😂')">😂</a> <a onclick="gateway.insert('😃')">😃</a> <a onclick="gateway.insert('😄')">😄</a> <a onclick="gateway.insert('😅')">😅</a>
-			<a onclick="gateway.insert('😅')">😅</a> <a onclick="gateway.insert('😇')">😇</a> <a onclick="gateway.insert('😈')">😈</a> <a onclick="gateway.insert('😉')">😉</a> <a onclick="gateway.insert('😊')">😊</a> <a onclick="gateway.insert('😋')">😋</a>
-			<a onclick="gateway.insert('😌')">😌</a> <a onclick="gateway.insert('😍')">😍</a> <a onclick="gateway.insert('😎')">😎</a> <a onclick="gateway.insert('😏')">😏</a> <a onclick="gateway.insert('😐')">😐</a> <a onclick="gateway.insert('😑')">😑</a>
-			<a onclick="gateway.insert('😒')">😒</a> <a onclick="gateway.insert('😓')">😓</a> <a onclick="gateway.insert('😔')">😔</a> <a onclick="gateway.insert('😕')">😕</a> <a onclick="gateway.insert('😖')">😖</a> <a onclick="gateway.insert('😗')">😗</a>
-			<a onclick="gateway.insert('😘')">😘</a> <a onclick="gateway.insert('😙')">😙</a> <a onclick="gateway.insert('😚')">😚</a> <a onclick="gateway.insert('😛')">😛</a> <a onclick="gateway.insert('😜')">😜</a> <a onclick="gateway.insert('😝')">😝</a>
-			<a onclick="gateway.insert('😞')">😞</a> <a onclick="gateway.insert('😟')">😟</a> <a onclick="gateway.insert('😠')">😠</a> <a onclick="gateway.insert('😡')">😡</a> <a onclick="gateway.insert('😢')">😢</a> <a onclick="gateway.insert('😣')">😣</a>
-			<a onclick="gateway.insert('😤')">😤</a> <a onclick="gateway.insert('😥')">😥</a> <a onclick="gateway.insert('😦')">😦</a> <a onclick="gateway.insert('😧')">😧</a> <a onclick="gateway.insert('😨')">😨</a> <a onclick="gateway.insert('😩')">😩</a>
-			<a onclick="gateway.insert('😪')">😪</a> <a onclick="gateway.insert('😫')">😫</a> <a onclick="gateway.insert('😬')">😬</a> <a onclick="gateway.insert('😭')">😭</a> <a onclick="gateway.insert('😮')">😮</a> <a onclick="gateway.insert('😯')">😯</a>
-			<a onclick="gateway.insert('😰')">😰</a> <a onclick="gateway.insert('😱')">😱</a> <a onclick="gateway.insert('😲')">😲</a> <a onclick="gateway.insert('😳')">😳 </a> <a onclick="gateway.insert('😴')">😴</a> <a onclick="gateway.insert('😵')">😵</a>
-			<a onclick="gateway.insert('😶')">😶</a> <a onclick="gateway.insert('😷')">😷</a> <a onclick="gateway.insert('😸')">😸</a> <a onclick="gateway.insert('😹')">😹</a> <a onclick="gateway.insert('😽')">😽</a> <a onclick="gateway.insert('😿')">😿</a>
-			<a onclick="gateway.insert('😘')">😘</a> <a onclick="gateway.insert('😙')">😙</a> <a onclick="gateway.insert('😚')">😚</a> <a onclick="gateway.insert('😛')">😛</a> <a onclick="gateway.insert('😜')">😜</a> <a onclick="gateway.insert('😝')">😝</a>
-			<a onclick="gateway.insert('🙁')">🙁</a> <a onclick="gateway.insert('🙂')">🙂</a> <a onclick="gateway.insert('🙃')">🙃</a> <a onclick="gateway.insert('💀')">💀</a>
+			<div id="emoticon-symbols"></div>
+			<div class="dfooter"><a href="javascript:void(0)" onclick="disp.showAllEmoticons()">Pokaż wszystkie dostępne</a> (to może potrwać)</div>
 			<h3>Symbole inżynierskie</h3>
-			<a onclick="gateway.insert('µ')">µ</a> <a onclick="gateway.insert('Ω')">Ω</a> <a onclick="gateway.insert('φ')">φ</a> <a onclick="gateway.insert('Δ')">Δ</a> <a onclick="gateway.insert('Θ')">Θ</a> <a onclick="gateway.insert('Λ')">Λ</a>
-			<a onclick="gateway.insert('Σ')">Σ</a> <a onclick="gateway.insert('Φ')">Φ</a> <a onclick="gateway.insert('Ψ')">Ψ</a> <a onclick="gateway.insert('α')">α</a>
-			<a onclick="gateway.insert('β')">β</a> <a onclick="gateway.insert('χ')">χ</a> <a onclick="gateway.insert('τ')">τ</a> <a onclick="gateway.insert('δ')">δ</a> <a onclick="gateway.insert('ε')">ε</a> <a onclick="gateway.insert('η')">η</a>
-			<a onclick="gateway.insert('ψ')">ψ</a> <a onclick="gateway.insert('θ')">θ</a> <a onclick="gateway.insert('λ')">λ</a> <a onclick="gateway.insert('ξ')">ξ</a> <a onclick="gateway.insert('ρ')">ρ</a> <a onclick="gateway.insert('σ')">σ</a>
-			<a onclick="gateway.insert('√')">√</a> <a onclick="gateway.insert('∞')">∞</a> <a onclick="gateway.insert('∫')">∫</a> <a onclick="gateway.insert('≈')">≈</a> <a onclick="gateway.insert('≠')">≠</a> <a onclick="gateway.insert('±')">±</a>
-			<a onclick="gateway.insert('ω')">ω</a> <a onclick="gateway.insert('κ')">κ</a> <a onclick="gateway.insert('π')">π</a> <a onclick="gateway.insert('§')">§</a> <a onclick="gateway.insert('Γ')">Γ</a> <a onclick="gateway.insert('∑')">∑</a>
+			<div id="engineer-symbols">
+				<a class="charSelect" onclick="gateway.insert('µ')">µ</a> <a class="charSelect" onclick="gateway.insert('Ω')">Ω</a> <a class="charSelect" onclick="gateway.insert('φ')">φ</a> <a class="charSelect" onclick="gateway.insert('Δ')">Δ</a>
+				<a class="charSelect" onclick="gateway.insert('Θ')">Θ</a> <a class="charSelect" onclick="gateway.insert('Λ')">Λ</a> <a class="charSelect" onclick="gateway.insert('Σ')">Σ</a> <a class="charSelect" onclick="gateway.insert('Φ')">Φ</a>
+				<a class="charSelect" onclick="gateway.insert('Ψ')">Ψ</a> <a class="charSelect" onclick="gateway.insert('α')">α</a> <a class="charSelect" onclick="gateway.insert('β')">β</a> <a class="charSelect" onclick="gateway.insert('χ')">χ</a>
+				<a class="charSelect" onclick="gateway.insert('τ')">τ</a> <a class="charSelect" onclick="gateway.insert('δ')">δ</a> <a class="charSelect" onclick="gateway.insert('ε')">ε</a> <a class="charSelect" onclick="gateway.insert('η')">η</a>
+				<a class="charSelect" onclick="gateway.insert('ψ')">ψ</a> <a class="charSelect" onclick="gateway.insert('θ')">θ</a> <a class="charSelect" onclick="gateway.insert('λ')">λ</a> <a class="charSelect" onclick="gateway.insert('ξ')">ξ</a>
+				<a class="charSelect" onclick="gateway.insert('ρ')">ρ</a> <a class="charSelect" onclick="gateway.insert('σ')">σ</a> <a class="charSelect" onclick="gateway.insert('√')">√</a> <a class="charSelect" onclick="gateway.insert('∞')">∞</a>
+				<a class="charSelect" onclick="gateway.insert('∫')">∫</a> <a class="charSelect" onclick="gateway.insert('≈')">≈</a> <a class="charSelect" onclick="gateway.insert('≠')">≠</a> <a class="charSelect" onclick="gateway.insert('±')">±</a>
+				<a class="charSelect" onclick="gateway.insert('ω')">ω</a> <a class="charSelect" onclick="gateway.insert('κ')">κ</a> <a class="charSelect" onclick="gateway.insert('π')">π</a> <a class="charSelect" onclick="gateway.insert('§')">§</a>
+				<a class="charSelect" onclick="gateway.insert('Γ')">Γ</a> <a class="charSelect" onclick="gateway.insert('∑')">∑</a>
+			</div>
 		</div>
 		<div id="size-dialog" title="Wybierz wielkość tekstu">
 			<a onclick="javascript:disp.setSize(0.6)" style="font-size:0.6em">A</a>

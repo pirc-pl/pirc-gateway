@@ -237,7 +237,6 @@ var emoji = {
 	'-_-':	'😑',
 	';(':	'😢',
 	';)':	'😉'
-	
 };	
 
 function ChannelModes() {
@@ -358,7 +357,7 @@ var settings = {
 
 var loaded = false;
 
-var readyFunctions = [ conn.gatewayInit, fillColorSelector ];
+var readyFunctions = [ conn.gatewayInit, fillEmoticonSelector, fillColorSelector ];
 
 var readyFunc = function(){
 	if(loaded) return;
@@ -395,6 +394,21 @@ function fillColorSelector(){
 		html += '</tr>';
 	}
 	$('#color-array').html(html);
+}
+
+function fillEmoticonSelector(){
+	var emojiSelectable = [
+		'☺', '😀', '😁', '😂', '😃', '😄', '😅', '😅', '😇', '😈', '😉', '😊', '😋', '😌', '😍', '😎', '😏', '😐', '😑', '😒',
+		'😓', '😔', '😕', '😖', '😗', '😘', '😙', '😚', '😛', '😜', '😝', '😞', '😟', '😠', '😡', '😢', '😣', '😤', '😥', '😦',
+		'😧', '😨', '😩', '😪', '😫', '😬', '😭', '😮', '😯', '😰', '😱', '😲', '😳', '😴', '😵', '😶', '😷', '😸', '😹', '😽',
+		'😿', '😘', '😙', '😚', '😛', '😜', '😝', '🙁', '🙂', '🙃', '💀'
+	];
+	var html = '';
+	for(var i=0; i<emojiSelectable.length; i++){
+		var c = emojiSelectable[i];
+		html += '<a class="charSelect" onclick="gateway.insert(\'' + c + '\')">' + emoji.addTags(c) + '</a> ';
+	}
+	$('#emoticon-symbols').html(html);
 }
 
 function onBlur() {
@@ -910,6 +924,16 @@ var disp = {
 			case 'I': listName = 'zaproszeń'; break;
 		}
 		return listName;
+	},
+	'showAllEmoticons': function(){
+		$$.closeDialog('emoticons', 'allEmoticons');
+		var html = '<div class="emojiSelector">';
+		var data = emoji.getAll();
+		for(var i=0; i<data.length; i++){
+			html += '<a class="charSelect" onclick="gateway.insert(\'' + data[i].text + '\')"><g-emoji fallback-src="/styles/emoji/' + data[i].code + '.png">' + data[i].text + '</g-emoji></a> ';
+		}
+		html += '</div>';
+		$$.displayDialog('emoticons', 'allEmoticons', 'Wszystkie emotikony', html);
 	}
 };
 
@@ -982,6 +1006,9 @@ var $$ = {
 		if(!strip){
 			message = he(message); 
 			message = $$.parseLinks(message);
+			if($('#dispEmoji').is(':checked')){
+				message = emoji.addTags(message);
+			}
 		}
 		var length	= message.length;
 		
@@ -1379,7 +1406,7 @@ var $$ = {
 				if(sender.toLowerCase() == guser.nick.toLowerCase() && !gateway.displayOwnWhois){
 					return;
 				}
-			case 'warning': case 'error': case 'confirm': case 'connect': case 'admin': case 'services': case 'ignore': case 'list': case 'alert': // nie wyświetlamy czasu
+			case 'warning': case 'error': case 'confirm': case 'connect': case 'admin': case 'services': case 'ignore': case 'list': case 'alert': case 'emoticons': // nie wyświetlamy czasu
 				var html = message;
 				break;
 			default:

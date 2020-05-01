@@ -9,13 +9,6 @@ a:active {
   outline: none;
 }
 
-@font-face {
-	font-family: 'Symbola';
-	src: url('/styles/Symbola.woff?2') format('woff');
-	font-weight: normal;
-	font-style: normal;
-}
-
 body {
 	font-family: verdana,arial,tahoma,Symbola,sans-serif;
 	font-size: 1em;
@@ -447,15 +440,21 @@ span.yournickname {
 }
 
 #symbol-dialog {
-	background: url("/styles/img/emotikony.png") no-repeat scroll right top #D7E4F3;
 	display: none;
+}
+
+#symbol-dialog, .emoticons-dialog {
+	background: url("/styles/img/emotikony.png") no-repeat scroll right top #D7E4F3 !important;
+}
+
+#symbol-dialog .dfooter {
+	clear: left;
 }
 
 #size-dialog {
 	background: #D7E4F3;
 	display: none;
 }
-
 
 #size-dialog p, .whois-dialog p, #color-dialog p, #symbol-dialog p {
 	background: none repeat scroll 0 0 rgba(255, 255, 255, 0.2);
@@ -747,7 +746,7 @@ input.symbols {
 	padding: 4px !important;
 }
 
-#symbol-dialog a, #size-dialog a {
+a.charSelect, #size-dialog a {
 	display: block;
 	float: left;
 	margin: 3px;
@@ -768,10 +767,9 @@ input.symbols {
 	clear: left;
 }
 
-#symbol-dialog a:hover, #size-dialog a:hover  {
+a.charSelect:hover, #size-dialog a:hover {
 	background-color: #d7e4f3;
 }
-
 
 .image_link {
 	cursor: pointer;
@@ -975,7 +973,7 @@ ul.channelOperActions, ul.channelOptions, #nickOptions {
 }
 
 .dialog {
-	max-height: 50em !important;
+	max-height: 80vh !important;
 }
 
 .ui-widget-header {

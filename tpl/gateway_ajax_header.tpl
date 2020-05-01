@@ -39,5 +39,7 @@
 		<script type="text/javascript" src="/js/gateway_cmds.js{$random_string}"></script>
 		<script type="text/javascript" src="/js/gateway_def.js{$random_string}"></script>
 		<script type="text/javascript" src="/js/gateway_users.js{$random_string}"></script>
+		<script type="text/javascript" src="/js/emoji.js"></script>
+		<script type="text/javascript" src="/js/g-emoji-element.js"></script>
 		{$add_js}
 	</head>
