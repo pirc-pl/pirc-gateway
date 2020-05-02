@@ -92,10 +92,14 @@ var emoji = {
 			var text = '';
 			for(var j=0; j<codes.length; j++){
 				var fullCode = parseInt(codes[j], 16);
-				fullCode -= 0x10000;
-				var s1 = 0xd800 | (fullCode >> 10);
-				var s2 = 0xdc00 | (fullCode & 0x3ff);
-				text += String.fromCharCode(s1, s2);
+				if((fullCode > 0xd7ff && fullCode < 0xe000) || fullCode > 0xffff){ // two word
+					fullCode -= 0x10000;
+					var s1 = 0xd800 | (fullCode >> 10);
+					var s2 = 0xdc00 | (fullCode & 0x3ff);
+					text += String.fromCharCode(s1, s2);
+				} else { // single word
+					text += String.fromCharCode(fullCode);
+				}
 			}
 			output.push({ 'code': name, 'text': text });
 		}
