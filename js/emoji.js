@@ -50,7 +50,7 @@ var emoji = {
 			var currI = i;
 			var foundEmoji = false;
 			var foundText = '';
-			var first = true;
+			var hasJoiner = false;
 			var codeString = codes[i].toString(16);
 			do {
 				var e = emoji.findCode(codeString);
@@ -58,11 +58,24 @@ var emoji = {
 					foundEmoji = e;
 					foundPath = codeString;
 					foundText += chars[i];
-					if(i+1 >= codes.length) break;
-					codeString += '-' + codes[i+1].toString(16);
-					if(!first) i++;
+					if(i+1 >= codes.length){
+						break;
+					}
+					var newCode = codes[i+1];
+					if(!hasJoiner && newCode != 0x200d && (newCode < 0x1f3fb || newCode > 0x1f3ff)){
+						break; // no modifier and no continuation
+					}
+					hasJoiner = false;
+					if(newCode != 0x200d){ // joiners are not included in the array
+						codeString += '-' + newCode.toString(16);
+					} else {
+						hasJoiner = true;
+					}
+					if(newCode > 0x1f3fb && newCode < 0x1f3ff){ // a modifier
+						hasJoiner = true;
+					}
+					i++;
 				}
-				first = false;
 			} while(e);
 			if(foundEmoji == 'this'){
 				output += '<g-emoji fallback-src="/styles/emoji/' + foundPath + '.png">' + foundText + '</g-emoji>';
@@ -92,6 +105,9 @@ var emoji = {
 			var text = '';
 			for(var j=0; j<codes.length; j++){
 				var fullCode = parseInt(codes[j], 16);
+				if(text != '' && (fullCode < 0x1f3fb || fullCode > 0x1f3ff)){ // if current char is not a modifier...
+					text += String.fromCharCode(0x200D); // insert zero width joiner
+				}
 				if((fullCode > 0xd7ff && fullCode < 0xe000) || fullCode > 0xffff){ // two word
 					fullCode -= 0x10000;
 					var s1 = 0xd800 | (fullCode >> 10);
