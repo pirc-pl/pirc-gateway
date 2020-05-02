@@ -20,8 +20,9 @@ This software contains components from other open source projects, for example:
 - [Symbola font](https://fontlibrary.org/en/font/symbola) (modified)
 - [Tango icons](https://commons.wikimedia.org/wiki/Tango_icons) (modified)
 - [famfamfam flags](http://www.famfamfam.com/lab/icons/flags/)
+- [g-emoji-element](https://github.com/github/g-emoji-element) (modified)
+- [emoji asset](https://github.com/rodrigopolo/emoji-assets/tree/master/Microsoft/40)
 
 Published on [GitHub](https://github.com/k4bek4be/pirc-gateway/) by k4be.
 
-Feel free to use the software in the way that suits your needs, as long as you keep original contents of this file unchanged, and you
-notify the PIRC team (via #help on irc.pirc.pl) about all public installations of it.
+Feel free to use the software in the way that suits your needs, as long as you keep original contents of this file unchanged, and you notify the PIRC team (via #help on irc.pirc.pl) about all public installations of it.
