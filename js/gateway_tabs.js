@@ -452,7 +452,7 @@ function Query(nick) {
 
 	this.changeNick = function(newnick) {
 		var oldName = this.name.toLowerCase();
-		$('#'+this.id+'-window').vprintf(messagePatterns.nickChange, [$$.niceTime(), he(this.name), he(newnick)]);
+		$('#'+this.id+'-window').vprintf(language.messagePatterns.nickChange, [$$.niceTime(), he(this.name), he(newnick)]);
 		$('#'+this.id+'-topic').html('<h1>'+he(newnick)+'</h1><h2></h2>');
 		$("#"+this.id+'-tab').html('<a href="javascript:void(0);" class="switchTab" onclick="gateway.switchTab(\''+newnick+'\')">'+he(newnick)+'</a><a href="javascript:void(0);" onclick="gateway.removeQuery(\''+newnick+'\')"><div class="close"></div></a>');
 		this.name = newnick;
@@ -497,12 +497,12 @@ function Query(nick) {
 		if(qCookie) {
 			qCookie = Base64.decode(qCookie).split('\377').join('<!--newline-->');
 			$('#'+this.id+'-window').append('<div class="backlog"></div>');
-			$('#'+this.id+'-window .backlog').vprintf(messagePatterns.queryBacklog, [$$.niceTime(), he(this.name)]);
+			$('#'+this.id+'-window .backlog').vprintf(language.messagePatterns.queryBacklog, [$$.niceTime(), he(this.name)]);
 			$('#'+this.id+'-window .backlog').append(qCookie);
 		}
 	} catch(e) {}
 	
-	$('#'+this.id+'-window').vprintf(messagePatterns.startedQuery, [$$.niceTime(), he(this.name), this.name]);
+	$('#'+this.id+'-window').vprintf(language.messagePatterns.startedQuery, [$$.niceTime(), he(this.name), this.name]);
 }
 
 function Channel(chan) {
@@ -639,7 +639,7 @@ function Channel(chan) {
 		if(!this.left) {
 			this.part();
 			gateway.send("PART "+this.name+" :Opuścił kanał");
-			gateway.statusWindow.appendMessage(messagePatterns.partOwn, [$$.niceTime(), this.name, bsEscape(this.name)]);
+			gateway.statusWindow.appendMessage(language.messagePatterns.partOwn, [$$.niceTime(), this.name, bsEscape(this.name)]);
 		}
 		this.nicklist.remove();
 		$('#'+this.id+'-tab').remove();
@@ -652,7 +652,7 @@ function Channel(chan) {
 	}
 	this.rejoin = function() {
 		this.left = false;
-		$('#'+this.id+'-window').vprintf(messagePatterns.joinOwn, [$$.niceTime(), this.name]);
+		$('#'+this.id+'-window').vprintf(language.messagePatterns.joinOwn, [$$.niceTime(), this.name]);
 		if(this.name == gateway.active) {
 			this.restoreScroll();
 		}
@@ -757,9 +757,9 @@ function Channel(chan) {
 		if(qCookie) {
 			qCookie = Base64.decode(qCookie).split('\377').join('<!--newline-->');
 			$('#'+this.id+'-window').append('<div class="backlog"></div>');
-			$('#'+this.id+'-window .backlog').vprintf(messagePatterns.channelBacklog, [$$.niceTime(), he(this.name)]);
+			$('#'+this.id+'-window .backlog').vprintf(language.messagePatterns.channelBacklog, [$$.niceTime(), he(this.name)]);
 			$('#'+this.id+'-window .backlog').append(qCookie+'<!--newline-->');
-			$('#'+this.id+'-window .backlog').vprintf(messagePatterns.channelBacklogEnd, [$$.niceTime()]);
+			$('#'+this.id+'-window .backlog').vprintf(language.messagePatterns.channelBacklogEnd, [$$.niceTime()]);
 		}
 	} catch(e) {}
 }

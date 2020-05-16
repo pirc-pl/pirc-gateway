@@ -175,7 +175,7 @@ var services = {
 	'nickInfo': function(nick){
 		var nscommand = 'INFO '+nick+' ALL';
 		var query = gateway.findOrCreate('NickServ', true);
-		query.appendMessage(messagePatterns.yourMsg, [$$.niceTime(), $$.nickColor(guser.nick), guser.nick, nscommand]);
+		query.appendMessage(language.messagePatterns.yourMsg, [$$.niceTime(), $$.nickColor(guser.nick), guser.nick, nscommand]);
 		gateway.send('PRIVMSG NickServ :'+nscommand);
 	},
 	'perform': function(service, msg, onlyRegistered){

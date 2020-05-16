@@ -9,7 +9,7 @@ var icons = [
 	'/styles/img/user-registered.png'
 ];
 var alt = [	'', '+', '%', '@', '&', '~', '' ];
-var chStatusInfo = [ 'Niezarejestrowany', 'Prawo głosu', 'Pół-operator', 'Operator', 'Admin', 'Właściciel', 'Zarejestrowany' ];
+var chStatusInfo = language.chStatusInfo;
 
 var reqChannel = '';
 
@@ -44,83 +44,6 @@ var nickColorProcessors = []; //function (nick)
 var settingProcessors = []; //function ()
 var addons = [];
 
-var messagePatterns = {
-	'nickChange': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">✯ <span class="modeinfo">%s</span> zmienił nick na <span class="modeinfo">%s</span></span></div><!--newline-->',
-	'nickInUse': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="kick">✯ <span class="modeinfo">%s</span>: Nick jest już używany przez kogoś innego.</span></div><!--newline-->',
-	'badNick': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="kick">⮿ <span class="modeinfo">%s</span>: Nick nie jest dostępny.</span></div><!--newline-->',
-	'nickChangeOwn': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">✯ Jesteś teraz znany jako <span class="modeinfo">%s</span></span></div><!--newline-->',
-	'joinOwn': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="join">🢡 Dołączyłeś do kanału <span class="modeinfo">%s</span>.</span></div><!--newline-->',
-	'join': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="join">🢡 <b>%s</b> <i class="userhost">[%s@%s]</i> dołączył do <span class="modeinfo">%s</span>.</span></div><!--newline-->',
-	'part': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="part">🢠 <b>%s</b> <i class="userhost">[%s@%s]</i> opuścił <span class="modeinfo">%s</span> [%s]</span></div><!--newline-->',
-	'quit': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="part">🢠 <b>%s</b> <i class="userhost">[%s@%s]</i> opuścił IRC [%s]</span></div><!--newline-->',
-	'partOwn': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="part">🢠 Opuściłeś kanał <span class="modeinfo">%s</span>. <a href="#" onclick="gateway.send(\'JOIN %s\')">Dołącz ponownie</a></span></div><!--newline-->',
-	'channelMsg': '<div class="messageDiv %s" data-msgid="%s"><div class="messageMeta">%s</div><div class="messageHeader"><span class="time">%s &nbsp;</span><span class="nick">&lt;<span %s>%s</span>&gt;%s</span></div><span class="msgText">%s</span></div><!--newline-->',
-	'yourMsg': '<div class="messageDiv %s" data-msgid="%s"><div class="messageMeta">%s</div><div class="messageHeader"><span class="time">%s &nbsp;</span><span class="yournick">&lt;<span %s>%s</span>&gt;%s</span></div><span class="msgText">%s</span></div><!--newline-->',
-	'channelMsgHilight': '<div class="messageDiv %s" data-msgid="%s"><div class="messageMeta">%s</div><div class="messageHeader"><span class="time">%s &nbsp;</span><span class="hilight"><span class="nick">&lt;%s&gt;%s</span></span></div><span class="msgText">%s</span></div><!--newline-->',
-	'channelAction': '<div class="messageDiv" data-msgid="%s"><span class="time">%s</span> &nbsp; ❇ <span class="nick">%s</span> %s</div><!--newline-->',
-	'yourAction': '<div class="messageDiv" data-msgid="%s"><span class="time">%s</span> &nbsp; ❇ <span class="yournick">%s</span> %s</div><!--newline-->',
-	'channelActionHilight': '<div class="messageDiv" data-msgid="%s"><span class="time">%s</span> &nbsp; ❇ <span class="hilight"><span class="nick">%s</span> %s</span></div><!--newline-->',
-	'changeTopic': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">✯ <span class="modeinfo">%s</span> zmienił temat na: %s</span></div><!--newline-->',
-	'deleteTopic': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">✯ <span class="modeinfo">%s</span> usunął temat <span class="modeinfo">%s</span></span></div><!--newline-->',
-	'topic': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">✯ Temat kanału <span class="modeinfo">%s</span>: %s</span></div><!--newline-->',
-	'topicNotSet': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">✯ Temat <span class="modeinfo">%s</span> nie jest ustawiony</span></div><!--newline-->',
-	'topicTime': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">✯ Temat ustawiony przez <span class="modeinfo">%s</span> [%s]</span></div><!--newline-->',
-	'kick': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="kick">✀ <span class="modeinfo">%s</span> wyrzucił <span class="modeinfo">%s</span> z <span class="modeinfo">%s</span> [Powód: %s]</span></div><!--newline-->',
-	'kickOwn': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="kick">✀ <span class="modeinfo">%s</span> wyrzucił cię z <span class="modeinfo">%s</span> [Powód: %s]</span></div><!--newline-->',
-	'modeChange': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">🔧 <span class="modeinfo">%s</span> %s na kanale <span class="modeinfo">%s</span></span></div><!--newline-->',
-	'mode': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">🔧 Ustawienia kanału <span class="modeinfo">%s</span>: %s</span></div><!--newline-->',
-	'creationTime': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">✯ Kanał stworzony: %s</span></div><!--newline-->',
-	'startedQuery': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="join">🢡 Rozpoczęto rozmowę z <span class="modeinfo">%s</span>. <a onclick="ignore.askIgnore(\'%s\');">Ignoruj tego użytkownika</a> / <a onclick="disp.showQueryUmodes()">Blokowanie wiadomości prywatnych</a></span></div><!--newline-->',
-	'queryBacklog': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="join">✯ Zapis poprzedniej rozmowy z <span class="modeinfo">%s</span>:</span></div><!--newline-->',
-	'channelBacklog': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">✯ Zapis poprzedniej wizyty na <span class="modeinfo">%s</span>:</span></div><!--newline-->',
-	'channelBacklogEnd': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">✯ Koniec zapisu.</span></div><!--newline-->',
-	'noSuchCommand': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">⮿ <span class="modeinfo">%s</span>: nieznana komenda.</span></div><!--newline-->',
-	'noSuchNick': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">⮿ <span class="modeinfo">%s</span>: nie ma takiego nicku ani kanału</span></div><!--newline-->',
-	'noSuchNickHistory': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">⮿ <span class="modeinfo">%s</span>: brak historii wizyt nicka</span></div><!--newline-->',
-	'noSuchChannel': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">⮿ <span class="modeinfo">%s</span>: nie ma takiego kanału</span></div><!--newline-->',
-	'notOnChannel': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">⮿ <span class="modeinfo">%s</span>: nie jesteś na tym kanale</span></div><!--newline-->',
-	'alreadyOnChannel': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">⮿ %s: <span class="modeinfo">%s</span> jest już na tym kanale</span></div><!--newline-->',
-	'youQuit': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="part">✯ Wyszedłeś z IRC</span></div><!--newline-->',
-	'notConnected': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">⮿ Nie jesteś połączony z IRC!</span></div><!--newline-->',
-	'notEnoughParameters': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">⮿ <span class="modeinfo">%s</span>: Za mało argumentów.</span></div><!--newline-->',
-	'cannotSendToChan': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="kick">⮿ Nie można wysłać na <span class="modeinfo">%s</span>: %s. Wiadomość nie została dostarczona.</span></div><!--newline-->',
-	'cannotSendToUser': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="kick">⮿ Nie można pisać do <span class="modeinfo">%s</span>: %s. Wiadomość nie została dostarczona.</span></div><!--newline-->',
-	'cannotJoin': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="kick">⮿ Nie można dołączyć do kanału <span class="modeinfo">%s</span>: %s</span></div><!--newline-->',
-	'noPerms': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="kick">⮿ Brak uprawnień.</span></div><!--newline-->',
-	'notice': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="notice-nick"><b>-%s-</b></span><span class="userhost">(<span class="notice-nick">%s</span>@<span class="notice-nick">%s</span>)</span> <span class="notice">%s</span></div><!--newline-->',
-	'serverNotice': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="notice-nick">Wiadomość od serwera <b>%s</b>:</span> <span class="notice">%s</span></div><!--newline-->',
-	'yourNotice': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="notice"><b>-NOTICE/%s-</b> %s</span></div><!--newline-->',
-	'notEnoughParams': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">⮿ <span class="modeinfo">%s</span>: za mało argumentów: %s</span></div><!--newline-->',
-	'motd': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="motd">✯ %s</span></div><!--newline-->',
-	'SaslAuthenticate': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="sinfo">🔧 %s</span></div><!--newline-->',
-	'ctcpRequest': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">✯ <span class="modeinfo">%s</span> wysyła CTCP REQUEST: %s</span></div><!--newline-->',
-	'ctcpReply': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="notice">✯ <b>CTCP REPLY od %s:</b> %s</span></div><!--newline-->',
-	'chanListElement': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="notice">✯ <b><a href="#" onClick="gateway.send(\'JOIN %s\')">%s</a></b> (%s) - %s </span> </div><!--newline-->',
-	'chanListElementHidden': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="notice">✯ <b>(kanał ukryty)</b> (%s) - (temat ukryty) </span> </div><!--newline-->',
-	'error': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"> ⮿ Rozłączono z serwerem: %s</span></div><!--newline-->',
-	'existingConnection': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">✯ Połączenie już istnieje, dołączam się do niego.</span></div><!--newline-->',
-	'away': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">🍵 <span class="modeinfo">%s</span> otrzymał twoją wiadomość, ale jest teraz nieobecny: %s</span></div><!--newline-->',
-	'yourAwayEnabled': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">🍵 Jesteś teraz oznaczony jako nieobecny</span></div><!--newline-->',
-	'yourAwayDisabled': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">🍵 Nie jesteś już oznaczony jako nieobecny</span></div><!--newline-->',
-	'yourInvite': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">✯ Zaprosiłeś użytkownika <span class="modeinfo">%s</span> na kanał <span class="modeinfo">%s</span></span></div><!--newline-->',
-	'knocked': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">✯ Poprosiłeś o dostęp ("zapukałeś") na <span class="modeinfo">%s</span>, czekaj na zaproszenie od operatora. Pamiętaj, że w danej chwili żaden operator może nie być przy komputerze. W takiej sytuacji zaczekaj kilkadziesiąt minut i spróbuj jeszcze raz.</span></div><!--newline-->',
-	'listShown': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">✯ Lista kanałów będzie wyświetlona w zakładce statusu.</span></div><!--newline-->',
-	'channelIgnoreAdded': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">✯ Dodano <b>%s</b> do ignorowanych na kanałach.</span></div><!--newline-->',
-	'channelIgnoreRemoved': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">✯ Usunięto <b>%s</b> z ignorowanych na kanałach.</span></div><!--newline-->',
-	'queryIgnoreAdded': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">✯ Dodano <b>%s</b> do ignorowanych prywatnie.</span></div><!--newline-->',
-	'queryIgnoreRemoved': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">✯ Usunięto <b>%s</b> z ignorowanych prywatnie.</span></div><!--newline-->',
-	'ignoreListStart': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">✯ Lista ignorowanych:</span></div><!--newline-->',
-	'ignoreListEnd': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">✯ Koniec listy.</span></div><!--newline-->',
-	'ignoreListEmpty': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">✯ Lista ignorowanych jest pusta.</span></div><!--newline-->',
-	'ignoreListItem': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">✯ Typ: <b>%s</b>, maska: <b>%s</b></span></div><!--newline-->',
-	'netsplit': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="part">🢠 <span class="netsplit">Netsplit</span>, wychodzą: %s</span></div><!--newline-->',
-	'netjoin': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="join">🢡 Po <span class="netjoin">netsplicie</span> wchodzą: %s</span></div><!--newline-->',
-	'displayedHost': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="sinfo">🔧 Twój host jest teraz widoczny jako %s</span></div><!--newline-->',
-	'invalidMode': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="kick">⮿ Nieprawidłowy tryb "%s"</span></div><!--newline-->',
-	'unimplemented': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="sinfo">✯ %s</span></div><!--newline-->',
-	'unimplementedError': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="kick">⮿ %s</span></div><!--newline-->'
-};
-
 var modes = {
 	/* default modes from rfc1459, we're overwriting it with ISUPPORT data later */
 	'single': ['p', 's', 'i', 't', 'n', 'm'],
@@ -129,22 +52,8 @@ var modes = {
 	'list': ['b'],
 	'user': ['o', 'v'],
 	/* unrealircd mode comments */
-	'changeableSingle': [
-		['m', 'Kanał moderowany'],
-		['i', 'Tylko na zaproszenie'],
-		['s', 'Kanał ukryty'],
-		['R', 'Tylko dla zarejestrowanych nicków'],
-		['N', 'Zakaz zmiany nicków'],
-		['Q', 'Zakaz kopania'],
-		['M', 'Do mówienia wymagany zarejestrowany nick lub co najmniej +v'],
-		['t', 'Tylko operator może zmieniać temat'],
-		['n', 'Nie można wysyłać wiadomości nie będąc na kanale'],
-		['D', 'Użytkownicy będą widoczni na liście tylko wtedy, gdy coś napiszą']
-	],
-	'changeableArg': [
-		['k', 'Hasło do kanału'],
-		['l', 'Maksymalna ilość użytkowników']
-	],
+	'changeableSingle': language.modes.changeableSingle,
+	'changeableArg': language.modes.changeableArg,
 	/* again defaults from rfc1459 */
 	'prefixes': {
 		'o': '@',
@@ -156,58 +65,13 @@ var modes = {
 	}
 };
 
-var chModeInfo = {
-	'q': 'status właściciela',
-	'a': 'status admina',
-	'o': 'status operatora',
-	'h': 'status pół-operatora',
-	'v': 'prawo głosu',
-	'k': 'hasło:',
-	'b': 'bana na',
-	'e': 'wyjątek bana na',
-	'I': 'stałe zaproszenie na',
-	'f': 'zabezpieczenie przed floodem:',
-	'p': 'tryb prywatny',
-	's': 'tryb ukryty',
-	'm': ['moderację', 'kanał moderowany'],
-	'n': 'brak wiadomości z zewnątrz',
-	't': ['ochronę tematu', 'chroniony temat'],
-	'i': 'wejście tylko na zaproszenie',
-	'r': ['rejestrację', 'zarejestrowany'],
-	'R': 'wejście tylko dla zarejestrowanych',
-	'c': ['blokadę kolorów', 'blokada kolorów'],
-	'O': 'tryb O',
-	'Q': ['blokadę kopania', 'zablokowane kopanie'],
-	'K': ['blokadę pukania', 'zablokowane pukanie'],
-	'V': ['blokadę zaproszeń', 'zablokowane zaproszenia'],
-	'C': ['blokadę CTCP', 'zablokowane CTCP'],
-	'z': 'wejście tylko dla połączeń szyfrowanych',
-	'N': ['blokadę zmian nicków', 'zablokowana zmiana nicków'],
-	'S': 'usuwanie kolorów',
-	'M': ['moderację niezarejestrowanych', 'niezarejestrowani są moderowani'],
-	'T': ['blokadę NOTICE', 'zablokowane NOTICE'],
-	'G': 'tryb G',
-	'D': 'tryb D: użytkownicy będą widoczni na liście tylko wtedy, gdy coś napiszą',
-	'd': 'tryb d',
-	'L-add': 'przekierowanie na kanał',
-	'L-remove': 'przekierowanie na inny kanał',
-	'l-add': 'limit użytkowników na',
-	'l-remove': 'limit użytkowników',
-	'H-add': 'pamięć historii kanału',
-	'H-remove': 'pamięć historii kanału'
-};
+var chModeInfo = language.modes.chModeInfo;
 
-var chStatusNames = {
-	'q': 'owner',
-	'a': 'admin',
-	'o': 'op',
-	'h': 'halfop',
-	'v': 'voice'
-};
+var chStatusNames = language.modes.chStatusNames;
 
 var servicesNicks = ['NickServ', 'ChanServ', 'HostServ', 'OperServ', 'Global', 'BotServ'];
 
-var newMessage = 'Nowa wiadomość';
+var newMessage = language.newMessage;
 
 var emoji = {
 	':D':	'😃',
@@ -361,11 +225,11 @@ var readyFunctions = [ conn.gatewayInit, fillEmoticonSelector, fillColorSelector
 
 var readyFunc = function(){
 	if(loaded) return;
-	$('.not-connected-text > h3').html('Ładowanie');
-	$('.not-connected-text > p').html('Poczekaj chwilę, trwa ładowanie...');
+	$('.not-connected-text > h3').html(language.loading);
+	$('.not-connected-text > p').html(language.loadingWait);
 	if($.browser.msie && parseInt($.browser.version, 10) < 9) {
-		$('.not-connected-text > h3').html('Przestarzała przeglądarka');
-		$('.not-connected-text > p').html('Twoja przeglądarka jest przestarzała i nie jest obsługiwana. Należy zaktualizować przeglądarkę Internet Explorer do wersji 9 lub wyższej albo użyć innej przeglądarki (Firefox, Opera, Chrome, Safari) w którejś z nowszych wersji.<br />Jeżeli posiadasz przeglądarkę Internet Explorer w wersji 9 lub wyższej i widzisz ten komunikat wyłącz tzw "widok zgodności" dla tej strony.');
+		$('.not-connected-text > h3').html(language.outdatedBrowser);
+		$('.not-connected-text > p').html(language.outdatedBrowserInfo);
 		gateway = 0;
 		guser = 0;
 		cmd_binds = 0;
@@ -442,8 +306,8 @@ if (/*@cc_on!@*/false) { // check for Internet Explorer
 }
 
 function browserTooOld(){
-	$('.not-connected-text > h3').html('Przestarzała przeglądarka');
-	$('.not-connected-text > p').html('Twoja przeglądarka jest przestarzała i nie jest obsługiwana. Należy zainstalować aktualną wersję Internet Explorer, Mozilla Firefox, Chrome, Safari bądź innej wspieranej przeglądarki.');
+	$('.not-connected-text > h3').html(language.outdatedBrowser);
+	$('.not-connected-text > p').html(language.outdatedBrowserInfo);
 	return;
 }
 
@@ -682,32 +546,32 @@ var disp = {
 					'<div id="current-letter-avatar">' +
 						'<span class="avatar letterAvatar" id="letterAvatarExample"><span role="presentation" id="letterAvatarExampleContent"></span></span>' +
 					'</div>' +
-					'<img id="current-avatar-image" src="/styles/img/noavatar.png" alt="Nie ustawiono awatara"><br>' +
-					'<span id="current-avatar-info">Nie ustawiono awatara</span> <button type="button" value="" id="delete-avatar" onClick="disp.deleteAvatar()">Skasuj</button>' +
+					'<img id="current-avatar-image" src="/styles/img/noavatar.png" alt="' + language.noAvatarSet + '"><br>' +
+					'<span id="current-avatar-info">' + language.noAvatarSet + '</span> <button type="button" value="" id="delete-avatar" onClick="disp.deleteAvatar()">' + language.remove + '</button>' +
 				'</div>' +
 				'<div id="set-avatar">' +
-					'Podaj adres URL: <input type="text" id="avatar-url" name="avatar-url" autocomplete="photo"> <button type="button" value="" onClick="disp.checkAvatarUrl()">Sprawdź</button><br>' +
-					'<button type="button" value="" id="submit-avatar" onClick="disp.submitAvatar()">Zatwierdź</button><br>' +
-					'URL powinien prowadzić bezpośrednio do obrazka (png, gif, jpeg).<br>';
+					'Podaj adres URL: <input type="text" id="avatar-url" name="avatar-url" autocomplete="photo"> <button type="button" value="" onClick="disp.checkAvatarUrl()">' + language.check +  '</button><br>' +
+					'<button type="button" value="" id="submit-avatar" onClick="disp.submitAvatar()">' + language.applySetting + '</button><br>' +
+					language.avatarFileInfo + '<br>';
 				if(window.FormData === undefined){
-					html += 'Twoja przeglądarka jest zbyt stara, aby obsłużyć wygodniejsze ustawianie awatarów.';
+					html += language.browserTooOldForAvatars;
 				} else {
-					html += 'Zarejestruj nicka i potwierdź adres e-mail, aby uzyskać dostęp do wygodniejszego ustawiania awatarów.';
+					html += language.registerNickForAvatars;
 				}
 				html += '</div>';
 			$('#avatar-dialog').html(html);
 			if(!textSettingsValues['avatar']){
 				$('#letterAvatarExample').css('background-color',$$.nickColor(guser.nick, true));
 				$('#letterAvatarExampleContent').text(guser.nick.charAt(0));
-				$('#current-avatar-info').text('Nie ustawiono awatara');
+				$('#current-avatar-info').text(language.noAvatarSet);
 				$('#current-avatar-image').attr('src', '/styles/img/noavatar.png');
-				$('#current-avatar-image').attr('alt', 'Nie ustawiono awatara');
+				$('#current-avatar-image').attr('alt', language.noAvatarSet);
 				$('#current-letter-avatar').show();
 				$('#delete-avatar').hide();
 			} else {
-				$('#current-avatar-info').text('Bieżący awatar');
+				$('#current-avatar-info').text(language.currentAvatar);
 				$('#current-avatar-image').attr('src', textSettingsValues['avatar'].replace('{size}', '100'));
-				$('#current-avatar-image').attr('alt', 'Bieżący awatar');
+				$('#current-avatar-image').attr('alt', language.currentAvatar);
 				$('#current-letter-avatar').hide();
 				$('#avatar-url').val(textSettingsValues['avatar']);
 				$('#delete-avatar').show();
@@ -720,27 +584,27 @@ var disp = {
 					'<div id="current-letter-avatar">' +
 						'<span class="avatar letterAvatar" id="letterAvatarExample"><span role="presentation" id="letterAvatarExampleContent"></span></span>' +
 					'</div>' +
-					'<img id="current-avatar-image" src="/styles/img/noavatar.png" alt="Nie ustawiono awatara"><br>' +
-					'<span id="current-avatar-info">Nie ustawiono awatara</span> <button type="button" value="" id="delete-avatar" onClick="disp.deleteAvatar()">Skasuj</button>' +
+					'<img id="current-avatar-image" src="/styles/img/noavatar.png" alt="' + language.avatarNotSet + '"><br>' +
+					'<span id="current-avatar-info">' + language.avatarNotSet + '</span> <button type="button" value="" id="delete-avatar" onClick="disp.deleteAvatar()">' + language.remove + '</button>' +
 				'</div>' +
 				'<div id="set-avatar">' +
 					'Wybierz obrazek: <input type="file" name="avatarFileToUpload" id="avatarFileToUpload"><br>' +
-					'<button type="submit" value="" id="submit-avatar" name="submit" onClick="disp.submitAvatar()">Zatwierdź</button><br>' +
-					'Klikając "Zatwierdź" wyrażasz zgodę na przechowywanie podanych danych na serwerach PIRC.' +
+					'<button type="submit" value="" id="submit-avatar" name="submit" onClick="disp.submitAvatar()">' + language.applySetting + '</button><br>' +
+					language.youAcceptToStoreTheData + mainSettings.networkName + '.' +
 				'</div>';
 			$('#avatar-dialog').html(html);
 			if(!textSettingsValues['avatar']){
 				$('#letterAvatarExample').css('background-color',$$.nickColor(guser.nick, true));
 				$('#letterAvatarExampleContent').text(guser.nick.charAt(0));
-				$('#current-avatar-info').text('Nie ustawiono awatara');
+				$('#current-avatar-info').text(language.avatarNotSet);
 				$('#current-avatar-image').attr('src', '/styles/img/noavatar.png');
-				$('#current-avatar-image').attr('alt', 'Nie ustawiono awatara');
+				$('#current-avatar-image').attr('alt', language.avatarNotSet);
 				$('#current-letter-avatar').show();
 				$('#delete-avatar').hide();
 			} else {
-				$('#current-avatar-info').text('Bieżący awatar');
+				$('#current-avatar-info').text(language.currentAvatar);
 				$('#current-avatar-image').attr('src', textSettingsValues['avatar']);
-				$('#current-avatar-image').attr('alt', 'Bieżący awatar');
+				$('#current-avatar-image').attr('alt', language.currentAvatar);
 				$('#current-letter-avatar').hide();
 				$('#avatar-url').val(textSettingsValues['avatar']);
 				$('#delete-avatar').show();
@@ -752,21 +616,21 @@ var disp = {
 	'checkAvatarUrl': function() {
 		var url = $('#avatar-url').val();
 		if(!url.startsWith('https://')){
-			$$.alert('Adres musi zaczynać się od "https://"!');
+			$$.alert(language.addressMustStartWithHttps);
 			return;
 		}
 		$('#delete-avatar').hide();
 		$('#current-letter-avatar').hide();
 		$('#current-avatar-image').attr('src', url);
-		$('#current-avatar-image').attr('alt', 'Podgląd');
-		$('#current-avatar-info').text('Podgląd powyżej. Jeśli widać obrazek, możesz go zatwierdzić.');
+		$('#current-avatar-image').attr('alt', language.preview);
+		$('#current-avatar-info').text(language.acceptPreview);
 		$('#submit-avatar').show();
 	},
 	'submitAvatar': function() {
 		if(!guser.umodes.r){
 			var url = $('#avatar-url').val();
 			if(!url.startsWith('https://')){
-				$$.alert('Adres musi zaczynać się od "https://"!');
+				$$.alert(language.addressMustStartWithHttps);
 				return;
 			}
 			textSettingsValues['avatar'] = url;
@@ -776,16 +640,16 @@ var disp = {
 			var fd = new FormData();
 			var file = $('#avatarFileToUpload')[0].files[0];
 			if(!file){
-				$$.alert('Nie wybrano pliku!');
+				$$.alert(language.noFileSelected);
 				return;
 			}
 			fd.append('fileToUpload', file);
 			fd.append('account', guser.account);
 			fd.append('apikey', services.apiKey);
 			fd.append('image-type', 'avatar');
-			$('#set-avatar').append('<br>Trwa przetwarzanie, czekaj...');
+			$('#set-avatar').append('<br>' + language.processing);
 			$.ajax({
-				url: 'https://users.pirc.pl/image-upload/image-upload.php',
+				url: mainSettings.avatarUploadUrl,
 				dataType: 'json',
 				method: 'post',
 				processData: false,
@@ -798,29 +662,29 @@ var disp = {
 						disp.showAvatarSetting();
 						disp.avatarChanged();
 					} else {
-						$$.alert('Błąd wysyłania awatara. Odpowiedź serwera: ' + data['result']);
+						$$.alert(language.failedToSendImageWithResponse + data['result']);
 					}
 				},
 				error: function(){
-					$$.alert('Nie udało się przesłać obrazka. Upewnij się, że plik nie jest zbyt duży, i spróbuj ponownie później.');
+					$$.alert(language.failedToSendImage);
 				}
 			});
 		}
 	},
 	'deleteAvatar': function() {
 		if(!guser.umodes.r){
-			if(!confirm('Czy usunąć awatar "' +textSettingsValues['avatar']+ '"?')){
+			if(!confirm(language.areYouSureToDeleteAvatar + '"' +textSettingsValues['avatar']+ '"?')){
 				return;
 			}
 			textSettingsValues['avatar'] = false;
 			disp.showAvatarSetting();
 			disp.avatarChanged();
 		} else {
-			if(!confirm('Czy usuniąć bieżący awatar?')){
+			if(!confirm(language.deleteAvatarQ)){
 				return;
 			}
 			$.ajax({
-				url: 'https://users.pirc.pl/image-upload/image-delete.php',
+				url: mainSettings.avatarDeleteUrl,
 				dataType: 'json',
 				method: 'post',
 				data: {
@@ -835,11 +699,11 @@ var disp = {
 						disp.showAvatarSetting();
 						disp.avatarChanged();
 					} else {
-						$$.alert('Błąd kasowania awatara. Odpowiedź serwera: ' + data['result']);
+						$$.alert(language.failedToDeleteImageWithResponse + data['result']);
 					}
 				},
 				error: function(){
-					$$.alert('Nie udało się skasować awatara. Spróbuj ponownie później.');
+					$$.alert(language.failedToDeleteImage);
 				}
 			});
 		}
@@ -874,13 +738,13 @@ var disp = {
 		}
 		var topic = $('#'+channel.id+'-topic > h2').html();
 		if(topic == ''){
-			topic = 'Nie ustawiono tematu.';
+			topic = language.topicIsNotSet;
 		}
 		var html = topic +
 			'<p class="' + channel.id + '-operActions" style="display:none;">' +
-				'<b>Zmodyfikuj temat kanału:</b><textarea name="topicEdit" id="topicEdit">'+channel.topic+'</textarea>' +
-				'<button onclick="gateway.changeTopic(\''+channel.name+'\');">Zmień temat</button><br>' +
-				'Do tematu możesz skopiować kody formatowania wstawione w pole wiadomości.' +
+				'<b>' + language.changeChannelTopic + '</b><textarea name="topicEdit" id="topicEdit">'+channel.topic+'</textarea>' +
+				'<button onclick="gateway.changeTopic(\''+channel.name+'\');">' + language.changeTopicSubmit + '</button><br>' +
+				language.youCanCopyCodesToTopic +
 			'</p>';
 		$$.displayDialog('confirm', 'topic', 'Temat kanału '+channel.name, html);
 	},
@@ -895,12 +759,12 @@ var disp = {
 		var chanId = gateway.findChannel(args[1]).id;
 		var listName = disp.getNamebeI(mode);
 		if($$.getDialogSelector('list', 'list-'+mode+'-'+args[1]).length == 0){
-			var html = '<div class="beIListContents"><table><tr><th>Maska</th><th>Założony przez</th><th>Data</th>';
+			var html = '<div class="beIListContents"><table><tr><th>' + language.mask + '</th><th>' + language.setBy + '</th><th>' + language.date + '</th>';
 			if(mode == 'b'){
-				html += '<th>Dotyczy</th>';
+				html += '<th>' + language.appliesTo + '</th>';
 			}
 			html += '</tr></table></div>';
-			$$.displayDialog('list', 'list-'+mode+'-'+args[1], 'Lista '+listName+' na kanale '+he(args[1]), html);
+			$$.displayDialog('list', 'list-'+mode+'-'+args[1], language.listOf+listName+language.onChannel+he(args[1]), html);
 		}
 		var html = '<tr><td>'+he(args[2])+'</td><td>'+he(args[3])+'</td><td>'+$$.parseTime(args[4])+'</td>';
 			if(mode == 'b'){
@@ -924,15 +788,15 @@ var disp = {
 	},
 	'endListbeI': function(mode, chan){
 		if($$.getDialogSelector('list', 'list-'+mode+'-'+chan).length == 0){
-			$$.displayDialog('list', 'list-'+mode+'-'+chan, 'Lista '+disp.getNamebeI(mode)+' na kanale '+he(chan), 'Lista jest pusta.');
+			$$.displayDialog('list', 'list-'+mode+'-'+chan, language.listOf+disp.getNamebeI(mode)+language.onChannel+he(chan), language.listIsEmpty);
 		}
 	},
 	'getNamebeI': function(mode){
 		var listName = mode;
 		switch(mode){
-			case 'b': listName = 'banów'; break;
-			case 'e': listName = 'wyjątków'; break;
-			case 'I': listName = 'zaproszeń'; break;
+			case 'b': listName = language.ofBans; break;
+			case 'e': listName = language.ofExcepts; break;
+			case 'I': listName = language.ofInvites; break;
 		}
 		return listName;
 	},
@@ -944,7 +808,7 @@ var disp = {
 			html += '<a class="charSelect" onclick="gateway.insert(\'' + data[i].text + '\')"><g-emoji fallback-src="/styles/emoji/' + data[i].code + '.png">' + data[i].text + '</g-emoji></a> ';
 		}
 		html += '</div>';
-		$$.displayDialog('emoticons', 'allEmoticons', 'Wszystkie emotikony', html);
+		$$.displayDialog('emoticons', 'allEmoticons', language.allEmoticons, html);
 	}
 };
 
@@ -959,8 +823,8 @@ var $$ = {
 			return $.vsprintf("%s, %s %s, %02s:%02s:%02s", [ $$.dateWeek[nd.getDay()], nd.getDate(), $$.dateMonth[nd.getMonth()], nd.getHours(), nd.getMinutes(), nd.getSeconds() ] );
 		}
 	},
-	'dateWeek': [ 'Niedziela', 'Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota' ],
-	'dateMonth': [ 'sty', 'lut', 'mar', 'kwi', 'maj', 'cze', 'lip', 'sie', 'wrz', 'paź', 'lis', 'gru' ],
+	'dateWeek': language.weekdays,
+	'dateMonth': language.months,
 	'nickColor': function(nick, codeOnly) {
 		if (!$('#coloredNicks').is(':checked')){
 			return '';
@@ -1285,7 +1149,7 @@ var $$ = {
 				var rand = Math.floor(Math.random() * 10000).toString();
 				var imgurl = encodeURI(arg);
 				html += '<a onclick="disp.toggleImageView(\''+rand+'\', \''+decodeURIComponent(imgurl)+'\')"'+
-					' class="image_link"><span id="show-'+rand+'" style="display:inline;">Pokaż</span><span id="hide-'+rand+'" style="display:none;">Ukryj</span> obrazek</a>'+
+					' class="image_link"><span id="show-'+rand+'" style="display:inline;">' + language.show + '</span><span id="hide-'+rand+'" style="display:none;">' + language.hide + '</span>' + language.aPicture + '</a>'+
 					'<div style="display:none;" id="img-'+rand+'"><img id="imgc-'+rand+'" style="max-width:100%;" /></div>';
 			});
 		}
@@ -1300,7 +1164,7 @@ var $$ = {
 					var rand = Math.floor(Math.random() * 10000).toString();
 					var imgurl = encodeURI(rmatch[1]);
 					html += '<a onclick="disp.toggleVideoView(\''+rand+'\', \''+imgurl+'\')"'+
-						' class="image_link"><span id="show-'+rand+'" style="display:inline;">Pokaż</span><span id="hide-'+rand+'" style="display:none;">Ukryj</span> film</a>'+
+						' class="image_link"><span id="show-'+rand+'" style="display:inline;">' + language.show + '</span><span id="hide-'+rand+'" style="display:none;">' + language.hide + '</span>' + language.aVideo + '</a>'+
 						'<div style="display:none;" id="img-'+rand+'"><iframe width="560" height="315" id="vid-'+rand+'" frameborder="0" allowfullscreen></iframe></div>';
 				}
 			});
@@ -1337,8 +1201,8 @@ var $$ = {
 		var confirm= '';
 		var confirmChan = '';
 		if ($('#displayLinkWarning').is(':checked')) {
-			confirm = " onclick=\"return confirm('Link może być niebezpieczny, czy na pewno chcesz go otworzyć?')\"";
-			confirmChan = " onclick=\"return confirm('Czy chcesz dołączyć do wybranego kanału?')\"";
+			confirm = " onclick=\"return confirm('" + language.linkCanBeUnsafe + "')\"";
+			confirmChan = " onclick=\"return confirm('" + language.confirmJoin + "')\"";
 		}
 		var stateText = 0;
 		var stateChannel = 1;
@@ -1398,12 +1262,12 @@ var $$ = {
 	},
 	'displayReconnect': function(){
 		var button = [ {
-			text: 'Połącz ponownie',
+			text: language.reconnect,
 			click: function(){
 				gateway.reconnect();
 			}
 		} ];
-		$$.displayDialog('connect', 'reconnect', 'Utracono połączenie.', 'Utracono połączenie z siecią.', button);
+		$$.displayDialog('connect', 'reconnect', language.disconnected, language.lostNetworkConnection, button);
 	},
 	'getDialogSelector': function(type, sender) {
 		return $('#'+type+'Dialog-'+md5(sender.toLowerCase()));
@@ -1498,7 +1362,7 @@ var $$ = {
 		if($$.getDialogSelector('alert', 'alert').length > 0){
 			text = '<br>' + text;
 		}
-		$$.displayDialog('alert', 'alert', 'Komunikat', text, button);
+		$$.displayDialog('alert', 'alert', language.msgNotice, text, button);
 	},
 	'wildcardToRegex': function(regex){
 		regex = regex.replace(/[-[\]{}()+,.\\^$|#\s]/g, "\\$&");

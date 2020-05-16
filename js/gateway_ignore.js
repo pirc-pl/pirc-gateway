@@ -104,9 +104,9 @@ var ignore = {
 					ignoreData.full[type].push(mask);
 				}
 				if(type == 'channel'){
-					var pattern = messagePatterns.channelIgnoreAdded;
+					var pattern = language.messagePatterns.channelIgnoreAdded;
 				} else {
-					var pattern = messagePatterns.queryIgnoreAdded;
+					var pattern = language.messagePatterns.queryIgnoreAdded;
 				}
 			} else {
 				if(!ignore.ignoring(mask, type, true)){
@@ -121,9 +121,9 @@ var ignore = {
 			//	} catch (e) {
 			//	}
 				if(type == 'channel'){
-					var pattern = messagePatterns.channelIgnoreRemoved;
+					var pattern = language.messagePatterns.channelIgnoreRemoved;
 				} else {
-					var pattern = messagePatterns.queryIgnoreRemoved;
+					var pattern = language.messagePatterns.queryIgnoreRemoved;
 				}
 			}
 			gateway.statusWindow.appendMessage(pattern, [$$.niceTime(), he(mask)]);
