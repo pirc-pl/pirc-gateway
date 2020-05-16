@@ -1132,27 +1132,27 @@ var gateway = {
 		}
 	},
 	'showStatus': function(channel, nick) {
-		var html = '<p>Daj użytkownikowi <strong>'+he(nick)+'</strong> bieżące uprawnienia na kanale <strong>'+he(channel)+'</strong>:</p>' +
+		var html = '<p>' + language.giveForNick + '<strong>'+he(nick)+'</strong>' + language.temporaryPrivilegesOnChan + '<strong>'+he(channel)+'</strong>:</p>' +
 			'<select id="admopts-add-'+md5(channel)+'">' +
-				'<option value="-">Wybierz opcję</option>'+
-				'<option value="+v">VOICE (Uprawnienie do głosu)</option>'+
-				'<option value="+h">HALFOP (Pół-operator kanału)</option>'+
-				'<option value="+o">OP (Operator kanału)</option>'+
-				'<option value="+a">PROTECT/SOP (Administrator, ochrona przed kopnięciem)</option>'+
-				'<option value="+q">FOUNDER (Właściciel kanału)</option>'+
+				'<option value="-">' + language.selectOption + '</option>'+
+				'<option value="+v">' + language.voicePrivilege + '</option>'+
+				'<option value="+h">' + language.halfopPrivilege + '</option>'+
+				'<option value="+o">' + language.opPrivilege + '</option>'+
+				'<option value="+a">' + language.sopPrivilege + '</option>'+
+				'<option value="+q">' + language.founderPrivilege + '</option>'+
 			'</select>' +
-			'<p>Daj użytkownikowi <strong>'+he(nick)+'</strong> uprawnienia w ChanServ (na stałe) na kanale <strong>'+he(channel)+'</strong><br>(musisz posiadać odpowiedni dostęp do serwisów):</p>' +
+			'<p>' + language.giveForNick + '<strong>'+he(nick)+'</strong>' + language.chanservPrivilegesOnChan + '<strong>'+he(channel)+'</strong><br>' + language.youNeedServicePrivileges + ':</p>' +
 			'<select id="admopts-addsvs-'+md5(channel)+'">' +
-				'<option value="-">Wybierz opcję</option>'+
-				'<option value="VOP">VOP: VOICE (Uprawnienie do głosu)</option>'+
-				'<option value="HOP">HOP: HALFOP (Pół-operator kanału)</option>'+
-				'<option value="AOP">AOP: OP (Operator kanału)</option>'+
-				'<option value="SOP">SOP: PROTECT/SOP (Administrator, ochrona przed kopnięciem)</option>'+
-				'<option value="QOP">QOP: FOUNDER (Właściciel kanału)</option>'+
+				'<option value="-">' + language.selectOption + '</option>'+
+				'<option value="VOP">VOP: ' + language.voicePrivilege + '</option>'+
+				'<option value="HOP">HOP: ' + language.halfopPrivilege + '</option>'+
+				'<option value="AOP">AOP: ' + language.opPrivilege + '</option>'+
+				'<option value="SOP">SOP: ' + language.sopPrivilege + '</option>'+
+				'<option value="QOP">QOP: ' + language.founderPrivilege + '</option>'+
 			'</select>';
 		var button = [
 			{
-				text: 'Anuluj',
+				text: language.cancel,
 				click: function(){
 					$(this).dialog('close');
 				}
@@ -1163,7 +1163,7 @@ var gateway = {
 					var mode = $('#admopts-add-'+md5(channel)).val();
 					var svsmode = $('#admopts-addsvs-'+md5(channel)).val();
 					if(mode == '-' && svsmode == '-'){
-						$$.alert('Wybierz jedną z opcji!');
+						$$.alert(language.selectAvalilableOption);
 						return;
 					}
 					if(mode != '-') ircCommand.mode(channel, mode+' '+nick);
@@ -1172,26 +1172,26 @@ var gateway = {
 				}
 			}
 		];
-		$$.displayDialog('admin', channel, 'Zarządzanie '+he(channel), html, button);
+		$$.displayDialog('admin', channel, language.administrationOf+he(channel), html, button);
 	},
 	'showStatusAnti': function(channel, nick) {
-		var html = '<p>Odbierz użytkownikowi <strong>'+he(nick)+'</strong> bieżące uprawnienia na kanale <strong>'+he(channel)+'</strong>:</p>' +
+		var html = '<p>' + language.removeFromNick + '<strong>'+he(nick)+'</strong>' + language.temporaryPrivilegesOnChan + '<strong>'+he(channel)+'</strong>:</p>' +
 			'<select id="admopts-del-'+md5(channel)+'">' +
-				'<option value="-">Wybierz opcję</option>'+
-				'<option value="-v">VOICE (Uprawnienie do głosu)</option>'+
-				'<option value="-h">HALFOP (Pół-operator kanału)</option>'+
-				'<option value="-o">OP (Operator kanału)</option>'+
-				'<option value="-a">PROTECT (Ochrona przed kopnięciem)</option>'+
-				'<option value="-q">FOUNDER (Właściciel kanału)</option>'+
+				'<option value="-">' + language.selectOption + '</option>'+
+				'<option value="-v">' + language.voicePrivilege + '</option>'+
+				'<option value="-h">' + language.voicePrivilege + '</option>'+
+				'<option value="-o">' + language.opPrivilege + '</option>'+
+				'<option value="-a">' + language.sopPrivilege + '</option>'+
+				'<option value="-q">' + language.founderPrivilege + '</option>'+
 			'</select>' +
-			'<p>Usuń całkowicie użytkownika <strong>'+he(nick)+'</strong> z listy uprawnień w ChanServ (na stałe) na kanale <strong>'+he(channel)+'</strong><br>(musisz posiadać odpowiedni dostęp do serwisów):</p>' +
+			'<p>' + language.completelyRemoveNick + '<strong>'+he(nick)+'</strong>' + language.fromChanservPrivilegesOnChan + '<strong>'+he(channel)+'</strong><br>' + language.youNeedServicePrivileges + ':</p>' +
 			'<select id="admopts-delsvs-'+md5(channel)+'">' +
-				'<option value="-">Nie, nie usuwaj</option>'+
-				'<option value="+">Tak, usuń</option>'+
+				'<option value="-">' + language.dontRemove + '</option>'+
+				'<option value="+">' + language.yesRemove + '</option>'+
 			'</select>';
 		var button = [
 			{
-				text: 'Anuluj',
+				text: language.cancel,
 				click: function(){
 					$(this).dialog('close');
 				}
@@ -1202,7 +1202,7 @@ var gateway = {
 					var mode = $('#admopts-del-'+md5(channel)).val();
 					var svsmode = $('#admopts-delsvs-'+md5(channel)).val();
 					if(mode == '-' && svsmode == '-'){
-						$$.alert('Wybierz jedną z opcji!');
+						$$.alert(language.selectAvailableOption);
 						return;
 					}
 					if(mode != '-') ircCommand.mode(channel, mode +' '+nick);
@@ -1211,14 +1211,14 @@ var gateway = {
 				}
 			}
 		];
-		$$.displayDialog('admin', channel, 'Zarządzanie '+he(channel), html, button);
+		$$.displayDialog('admin', channel, language.administrationOf+he(channel), html, button);
 	},
 	'showChannelModes': function(channel) {
 		var channame = channel.substring(1);
 		var ch = md5(channame);
 		
-		var html = "<p>Zmień tryby kanału "+he(channel)+":</p>" +
-			"<table><tr><th></th><th>Litera</th><th>Opis</th></tr>";
+		var html = '<p>'+language.changeChannelModesOf+he(channel)+":</p>" +
+			'<table><tr><th></th><th>' + language.character + '</th><th>' + language.description + '</th></tr>';
 		//generate HTML table with all supported and settable chanmodes
 		modes.changeableSingle.forEach(function(mode){
 			if(modes['single'].indexOf(mode[0]) >= 0) html += '<tr><td><input type="checkbox" id="'+ch+'_mode_'+mode[0]+'"></td><td>'+mode[0]+'</td><td>'+mode[1]+'</td></tr>';
@@ -1229,14 +1229,14 @@ var gateway = {
 		html += '</table>';
 
 		var button = [ {
-			text: 'Zatwierdź',
+			text: language.applySetting,
 			click: function(){
 				gateway.changeChannelModes(channel);
 				$(this).dialog('close');
 			}
 		} ];
 
-		$$.displayDialog('admin', channel, 'Zarządzanie '+he(channel), html, button);
+		$$.displayDialog('admin', channel, language.administrationOf+he(channel), html, button);
 			
 		var chanModes = gateway.findChannel(channel).modes;
 		if(!chanModes){
@@ -1316,26 +1316,26 @@ var gateway = {
 	'showInvitePrompt': function(channel) {
 		var html = '<p>Nick: <input id="inviteNick" type="text"></p>';
 		var button = [ {
-			text: 'Anuluj',
+			text: language.cancel,
 			click: function(){
 				$(this).dialog('close');
 			}
 		}, {
-			text: 'Zaproś',
+			text: language.inviteSomeone,
 			click: function(){
 				var nick = $('#inviteNick').val();
 				if(!nick || nick == ''){
-					$$.alert('Musisz podać nicka!');
+					$$.alert(language.mustGiveNick);
 					return;
 				}
 				ircCommand.channelInvite(channel, nick);
 				$(this).dialog('close');
 			}
 		} ];
-		$$.displayDialog('admin', 'invite-'+channel, 'Zaproś użytkownika na '+he(channel), html, button);
+		$$.displayDialog('admin', 'invite-'+channel, language.inviteUserTo+he(channel), html, button);
 	},
 	'knocking': function(channel, nick, reason) {
-		var html = '<b>'+nick+'</b> prosi o dostęp na <b>'+he(channel)+'</b> ('+$$.colorize(reason)+')';
+		var html = '<b>'+nick+'</b>' + language.requestsInvitationTo + '<b>'+he(channel)+'</b> ('+$$.colorize(reason)+')';
 		var button = [ {
 			text: 'Zaproś',
 			click: function(){
@@ -1343,18 +1343,18 @@ var gateway = {
 				$(this).dialog('close');
 			}
 		} ];
-		$$.displayDialog('knock', nick, 'Prośba o dostęp', html, button);
+		$$.displayDialog('knock', nick, language.requestForInvitation, html, button);
 	},
 	'showKick' : function(channel, nick) {
-		var html = "<p>Wyrzuć użytkownika "+he(nick)+" z kanału "+he(channel)+". Możesz podać powód dla KICKa, który zostanie wyświetlony dla wszystkich użytkowników kanału.</p>" +
+		var html = '<p>'+language.kickUser+he(nick)+language.fromChannel+he(channel)+'. ' + language.giveKickReason + '</p>' +
 			"<input type='text' id='kickinput' maxlength='307' />";
 		var button = [ {
-			text: 'Anuluj',
+			text: language.cancel,
 			click: function(){
 				$(this).dialog('close');
 			}
 		}, {
-			text: 'Wyrzuć',
+			text: language.doKick,
 			click: function(){
 				var reason = $('#kickinput').val();
 				ircCommand.channelKick(channel, nick, reason);
@@ -1572,27 +1572,27 @@ var gateway = {
 		}
 	},
 	'showPermError': function(text) {
-		var html = 'Brak uprawnień' +
-			'<br>Nie masz wystarczających uprawnień aby wykonać żądaną akcję.<br>'+text;
-		$$.displayDialog('error', 'error', 'Błąd', html);
+		var html = language.noAccess +
+			'<br>' + language.notEnoughPrivileges + '<br>'+text;
+		$$.displayDialog('error', 'error', language.error, html);
 	},
 	'clickQuit': function() {
 		var html = '<form id="quit-form" onsubmit="gateway.quit();" action="javascript:void(0);">'+
-			'Wiadomość pożegnalna: <input type="text" id="quit-msg" value="Użytkownik rozłączył się" />';
+			language.quitMessage + '<input type="text" id="quit-msg" value="' + language.defaultQuitMessage + '" />';
 			'</form>';
 		var button = [ {
-			text: 'Rozłącz',
+			text: language.disconnect,
 			click: function(){
 				$('#quit-form').submit();
 				$(this).dialog('close');
 			}
 		}, {
-			text: 'Anuluj',
+			text: language.cancel,
 			click: function(){
 				$(this).dialog('close');
 			}
 		} ];
-		$$.displayDialog('confirm', 'quit', 'Wyjście z IRC', html, button);
+		$$.displayDialog('confirm', 'quit', language.ircQuit, html, button);
 		$('#quit-msg').focus();
 		$('#quit-msg').select();
 	},
@@ -1689,12 +1689,12 @@ var gateway = {
 					if(dispType == 1){
 						dir = '';
 					} else {
-						dir = 'ustawił ';
+						dir = language.hasSet;
 					}
 					break;
 				case '-':
 					if(dispType == 1) continue;
-					dir = 'zdjął ';
+					dir = language.hasRemoved;
 					log += "Change -\n";
 					plus = false;
 					break;
@@ -1737,14 +1737,14 @@ var gateway = {
 						case 'user':
 							log += "Mode 'user' "+plus+' '+cchar+' '+args[nextarg]+"\n";
 							if(chan.nicklist.findNick(args[nextarg])) {
-								if(cchar in chStatusNames){
-									mode = chStatusNames[cchar];
+								if(cchar in language.modes.chStatusNames){
+									mode = language.modes.chStatusNames[cchar];
 								} else {
 									mode = cchar;
 								}
 								
 								chan.nicklist.findNick(args[nextarg]).setMode(mode, plus);					
-								infoText = infoText.apList((plus?'dał ':'odebrał ')+getModeInfo(cchar, dispType)+(plus?' dla':'')+' <span class="modevictim">'+args[nextarg]+'</span>');
+								infoText = infoText.apList((plus?language.gave:language.taken)+getModeInfo(cchar, dispType)+(plus?language.forUser:'')+' <span class="modevictim">'+args[nextarg]+'</span>');
 							}
 							nextarg++;
 							break;
@@ -1817,19 +1817,19 @@ var gateway = {
 			conn.waitForAlive = false;
 			
 			var chan = guser.channels[0];
-			var html = 'Masz już otwartą bramkę w innej karcie przeglądarki i jesteś połączony jako <strong>'+he(evt.newValue)+'</strong>! Nie można otworzyć drugiej bramki.';
+			var html = language.alreadyConnectedAs + '<strong>'+he(evt.newValue)+'</strong>! ' + language.cantOpenMultipleInstances;
 			$('#not_connected_wrapper').fadeOut(400);
 			
 			try {
 				localStorage.removeItem(evt.key);
 				if(chan && chan != '#'){
-					html += '<br>Przejdź do tamtej karty, aby wejść na <strong>'+chan+'</strong>.';
+					html += '<br>' + language.goToTabToJoin + '<strong>'+chan+'</strong>.';
 					localStorage.setItem('reqChannelJoin', guser.channels[0]);
 				}
 			} catch(e) {}
 
 
-			$$.displayDialog('connect', '0', 'Już połączony!', html);
+			$$.displayDialog('connect', '0', language.alreadyConnected, html);
 		}
 		if(gateway.connectStatus == statusConnected){
 			try {
@@ -1845,20 +1845,20 @@ var gateway = {
 							return;
 						}
 					}
-					var html = 'Inna karta chce dołączyć do kanału <strong>'+chan+'</strong>.';
+					var html = language.otherTabWantsToJoin + '<strong>'+chan+'</strong>.';
 					var button = [ {
-						text: 'Anuluj',
+						text: language.cancel,
 						click: function(){
 							$(this).dialog('close');
 						}
 					}, {
-						text: 'Dołącz',
+						text: language.join,
 						click: function(){
 							ircCommand.channelJoin(chan);
 							$(this).dialog('close');
 						}
 					} ];
-					$$.displayDialog('confirm', 'join', 'Potwierdź', html, button);
+					$$.displayDialog('confirm', 'join', language.confirm, html, button);
 				}
 			} catch(e) {}
 		}
@@ -2024,7 +2024,7 @@ var gateway = {
 			
 			
 			
-			$('#chlist-button').text('⮙ lista kanałów ⮙');
+			$('#chlist-button').text('⮙ ' + language.channelList + ' ⮙');
 		} else {
 			$('#chlist-body').css('display', 'block');
 			$('#chlist').css('height', 'initial').css('top', '64.5%');
@@ -2032,7 +2032,7 @@ var gateway = {
 			$("#nicklist").animate({
 				"bottom":	"36%"
 			}, 400);
-			$('#chlist-button').text('⮛ schowaj listę ⮛');
+			$('#chlist-button').text('⮛ ' + language.hideList + ' ⮛');
 			if(!$('#chlist-body > table').length){
 				gateway.smallListLoading = true;
 				ircCommand.listChannels('>9');
@@ -2042,16 +2042,16 @@ var gateway = {
 	'toggleFormatting': function() {
 		if($('#formatting').is(':visible')){
 			$('#formatting').hide();
-			$('#formatting-button').text('⮛ Wstaw kody formatowania ⮛');
+			$('#formatting-button').text('⮛ ' + language.insertFormatCodes + ' ⮛');
 		} else {
 			$('#formatting').show();
-			$('#formatting-button').text('⮙ Schowaj formatowanie ⮙');
+			$('#formatting-button').text('⮙ ' + language.hideFormatting + ' ⮙');
 		}
 	},
 	'refreshChanList': function() {
 		gateway.smallListLoading = true;
 		ircCommand.listChannels('>9');
-		$('#chlist-body').html('Poczekaj, trwa ładowanie...');
+		$('#chlist-body').html(language.loadingWait);
 	},
 	'parseUmodes': function(modes) {
 		var plus = false;
@@ -2067,7 +2067,7 @@ var gateway = {
 	},
 	'enterPressed': function(){
 		if(gateway.connectStatus == statusDisconnected || gateway.connectStatus == statusError){
-			$$.alert('Nie możesz teraz wykonać komendy ani wysłać wiadomości, ponieważ nie masz połączenia z IRC.');
+			$$.alert(language.cantSendNoConnection);
 			return;
 		}
 		if(gateway.commandHistory.length == 0 || gateway.commandHistory[gateway.commandHistory.length-1] != $('#input').val()) {
@@ -2114,14 +2114,10 @@ var gateway = {
 		}
 	},
 	'displayGlobalBanInfo': function(text){
-		var html = '<p>Serwer nie zezwolił na to połączenie. Prawdopodobnie Twój adres IP został zbanowany.</p><p>Jeśli masz pewność, że nie zrobiłeś(aś) nic złego (sprawdź <a href="https://pirc.pl/teksty/zasady/" target="_blank">regulamin</a>), spróbuj następujących kroków:'+
-			'<ul>'+
-			'<li>Wyłącz usługi typu VPN, Proxy, TOR. Użytkownicy tych usług tak często dokonują nadużyć, że PIRC nie zezwala im na dostęp.</li>'+
-			'<li>Zresetuj swój router. Być może Twój dostawca internetu przypadkowo przypisał Tobie adres, za pomocą którego ktoś inny zrobił kiedyś coś złego.</li>'+
-			'<li>Skontaktuj się z administracją PIRC pod adresem e-mail abuse'+String.fromCharCode(64)+'pirc.pl</li>'+
-			'</ul><br><p>Komunikat od serwera:<br>'+he(text)+'</p>';
+		var html = language.connectionNotAllowedHtml +
+			'</ul><br><p>' + language.serverMessageIs + '<br>'+he(text)+'</p>';
 		$$.closeDialog('connect', '1');
-		$$.displayDialog('error', 'noaccess', 'Brak dostępu', html);
+		$$.displayDialog('error', 'noaccess', language.noAccessToNetwork, html);
 		gateway.connectStatus = statusBanned;
 	},
 	'inputPaste': function(e){ // TODO
@@ -2152,7 +2148,7 @@ var gateway = {
 			gateway.keypressSuppress = false;
 		}, 6500);
 		gateway.lastKeypressWindow = gateway.getActive();
-		ircCommand.sendTags(gateway.getActive().name, '+draft/typing', 'active');
+		ircCommand.sendTags(gateway.getActive().name, '+draft/typing', 'active'); //TODO out of draft
 	},
 	'getMeta': function(nick, size){
 		var avatar = gateway.getAvatarUrl(nick, size);

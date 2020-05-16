@@ -274,7 +274,7 @@ var cmdBinds = {
 					gateway.statusWindow.appendMessage(language.messagePatterns.ctcpReply, [$$.niceTime(msg.time), he(msg.sender.nick), $$.colorize(acttext)]);
 				}
 				if(ctcp.toLowerCase() == 'version'){
-					$$.displayDialog('whois', msg.sender.nick, langugage.userInformation + he(msg.sender.nick), language.userSoftware + '<b>'+msg.sender.nick+'</b>:<br>'+he(text));
+					$$.displayDialog('whois', msg.sender.nick, language.userInformation + he(msg.sender.nick), language.userSoftware + '<b>'+msg.sender.nick+'</b>:<br>'+he(text));
 				}
 			} else { // nie-ctcp
 				if(msg.args[0].indexOf('#') == 0) { //kanał

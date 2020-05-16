@@ -7,21 +7,21 @@ var services = {
 	'apiKey': false,
 	'badNickString': '<div class="table">'+
 		'<form class="tr" onsubmit="services.logIn();$$.closeDialog(\'error\', \'nickserv\')" action="javascript:void(0);">'+
-			'<span class="td_right">Twoje hasło:</span>'+
+			'<span class="td_right">' + language.yourPassword + '</span>'+
 			'<span class="td"><input type="password" id="nspass" /></span>'+
-			'<span class="td"><input type="submit" value="Zaloguj" /></span>'+
-			'<span class="td"><input type="checkbox" id="saveNewPassword" checked="checked" />  Zapisz to hasło</span>'+
+			'<span class="td"><input type="submit" value="' + language.logIn + '" /></span>'+
+			'<span class="td"><input type="checkbox" id="saveNewPassword" checked="checked" />  ' + language.saveThisPassword + '</span>'+
 		'</form>'+
 		'<form class="tr" onsubmit="services.changeNick();$$.closeDialog(\'error\', \'nickserv\')" action="javascript:void(0);">'+
-			'<span class="td_right">Nowy nick:</span>'+
+			'<span class="td_right">' + language.newNick + '</span>'+
 			'<span class="td"><input type="text" id="nnick" /></span>'+
-			'<span class="td"><input type="submit" value="Zmień nick" /></span>'+
+			'<span class="td"><input type="submit" value="' + language.changeNick + '" /></span>'+
 		'</form>'+
 	'</div>',
 	'displayBadNickCounter': function(){
 		if(services.badNickCounter == false) return;
-		var html = '<br>Masz <span id="nickserv_timer">określony czas</span> na zmianę nicka, potem zostanie zmieniony siłą. Bez obaw: gdy wpiszesz poprawne hasło, to odzyskasz swojego nicka.';
-		$$.displayDialog('error', 'nickserv', 'Błąd', html);
+		var html = '<br>' + language.youHaveLimitedTimeToLogInHtml;
+		$$.displayDialog('error', 'nickserv', language.error, html);
 		if(services.badNickInterval){
 			clearInterval(services.badNickInterval);
 		}
@@ -30,18 +30,18 @@ var services = {
 				clearInterval(services.badNickInterval);
 				services.badNickInterval = false;
 			}
-			var text = services.badNickCounter.toString() + ' sekund';
+			var text = services.badNickCounter.toString() + ' ' + language.second;
 			if(services.badNickCounter == 1){
-				text += 'ę';
+				text += language.second1;
 			} else if((services.badNickCounter < 10 || services.badNickCounter > 20) && services.badNickCounter%10 > 1 && services.badNickCounter%10 < 5){
-				text += 'y';
+				text += language.second2;
 			}
 			$('#nickserv_timer').text(text);
 			services.badNickCounter--;
 		}, 1000);
 	},
 	'chanservMessage': function(msg){
-		var expr = /^Zbanowano maskę .(.*). \(dla .(.*).\)$/i;
+		var expr = language.maskBannedExpr;
 		var match = expr.exec(msg.text);
 		if(match){
 			try {
@@ -52,25 +52,25 @@ var services = {
 		return false;
 	},
 	'nickservMessage': function(msg){
-		if (msg.text.match(/^Hasło przyjęte - jesteś zidentyfikowany\(a\)\.$/i)){
+		if (msg.text.match(language.youreIdentifiedMask)){
 			services.badNickCounter = false;
 			services.showTimeToChange = false;
 			$$.closeDialog('error', 'nickserv');
 			return false;
 		}
-		if(msg.text.match(/^Nick [^ ]+ nie jest zarejestrowany\.$/i) && guser.nickservpass != ''){
+		if(msg.text.match(language.nickNotRegisteredMask) && guser.nickservpass != ''){
 			guser.nickservpass = '';
 			guser.nickservnick = '';
 			return false;
 		}
-		if (msg.text.match(/^Nieprawidłowe hasło\.$/i)) { // złe hasło nickserv
+		if (msg.text.match(language.invalidPasswordMask)) { // złe hasło nickserv
 			services.nickStore = guser.nickservnick;
-			var html = 'Podane hasło do nicka <b>'+guser.nickservnick+'</b> jest błędne. Możesz spróbować ponownie lub zmienić nicka.<br>'+services.badNickString;
-			$$.displayDialog('error', 'nickserv', 'Błąd', html);
+			var html = language.givenPasswordForNick + '<b>'+guser.nickservnick+'</b>' + language.isInvalidChangeNick + '<br>'+services.badNickString;
+			$$.displayDialog('error', 'nickserv', language.error, html);
 			services.displayBadNickCounter();
 			return true;
 		}
-		if(msg.text.match(/^Ten nick jest zarejestrowany i chroniony\.( Jeśli należy do Ciebie,)?$/i)){
+		if(msg.text.match(language.registeredProtectedNickMask)){
 			if(gateway.connectStatus == statusGhostAndNickSent){
 				gateway.send('PRIVMSG NickServ :IDENTIFY '+guser.nickservpass);
 				gateway.connectStatus = statusIdentified;
@@ -80,28 +80,27 @@ var services = {
 			if($$.getDialogSelector('error', 'nickserv').length < 1){
 				services.showTimeToChange = true;
 				services.nickStore = guser.nick;
-				var html = 'Wybrany nick <b>'+guser.nick+'</b> jest zarejestrowany. Musisz go zmienić lub podać hasło.<br>'+services.badNickString;
-				$$.displayDialog('error', 'nickserv', 'Błąd', html);
+				var html = language.selectedNick + '<b>'+guser.nick+'</b>' + language.isRegisteredChangeNick + '<br>'+services.badNickString;
+				$$.displayDialog('error', 'nickserv', language.error, html);
 			}
 			return true;
 		}
-		if(msg.text.match(/^Zidentyfikuj się pisząc: /i)
-			|| msg.text.match(/^jeśli nick należy do Ciebie, w przeciwnym razie zmień go\.$/i)
-			|| msg.text.match(/^Nick .* nie jest zajęty przez serwisy\.$/i)
-			|| msg.text.match(/^Nick .* nie jest aktualnie używany\.$/i)
-
-			|| msg.text.match(/^wpisz .\/msg NickServ IDENTIFY .hasło..\. W przeciwnym wypadku$/i)
-			|| msg.text.match(/^wybierz proszę inny nick.$/i)){
+		if(msg.text.match(language.identifyMask)
+			|| msg.text.match(language.nickBelongingToYouMask)
+			|| msg.text.match(language.notUsedByServicesMask)
+			|| msg.text.match(language.notCurrentlyUsedMask)
+			|| msg.text.match(language.loginPromptMask)
+			|| msg.text.match(language.selectOtherNickMask)){
 				return true;
 		}
-		if(msg.text.match(/^Odmowa dostępu\.$/i)){
+		if(msg.text.match(language.accessDeniedMask)){
 			if(gateway.connectStatus == statusGhostSent){
 				gateway.connectStatus = statusIdentified;
 				services.nickStore = guser.nickservnick;
 				guser.nickservnick = '';
 				guser.nickservpass = '';
-				var html = 'Podane hasło do zajętego nicka <b>'+guser.nickservnick+'</b> jest błędne. Możesz spróbować ponownie odzyskać nicka, podając poprawne hasło, lub go zmienić.<br>'+services.badNickString;
-				$$.displayDialog('error', 'nickserv', 'Błąd', html);
+				var html = language.passwordForUsedNick + '<b>'+guser.nickservnick+'</b>' + language.isInvalidRetryOrChangeNick + '<br>'+services.badNickString;
+				$$.displayDialog('error', 'nickserv', language.error, html);
 				services.ignoreNextAccessDenial = true;
 				return true;
 			} else if(services.ignoreNextAccessDenial){
@@ -110,7 +109,7 @@ var services = {
 			}
 			return false;
 		}
-		if(msg.text.match(/^Nick został usunięty z sieci\.$/i) || msg.text.match(/^Serwisy właśnie zwolniły.*nicka.*\.$/i)){
+		if(msg.text.match(language.nickRemovedFromNetworkMask) || msg.text.match(language.servicesReleasedNickMak)){
 			gateway.send('NICK '+guser.nickservnick);
 			gateway.connectStatus = statusGhostAndNickSent;
 			return true;
@@ -122,18 +121,18 @@ var services = {
 			return true;
 		}
 		var time = false;
-		var expr = /^Masz (.*) na zmianę nicka, potem zostanie zmieniony siłą\.$/i;
+		var expr = language.youHaveTimeToChangeNickMask;
 		var match = expr.exec(msg.text);
 		if(!match){
-			var expr = /^Jeśli go nie zmienisz w ciągu (.*), zostanie zmieniony siłą\.$/i;
+			var expr = language.ifYouDontChangeMask;
 			match = expr.exec(msg.text);
 		}
 		if(match){
-			if(match[1] == 'jedną minutę' || match[1] == '60 sekund(y)' || match[1] == '1 minuta(y)' || match[1] == '1 minuta'){
-				$('#nickserv_timer').text('60 sekund');
+			if(match[1] == language.oneMinute || match[1] == language.n60seconds || match[1] == language.n1minute || match[1] == language.n1minute2){
+				$('#nickserv_timer').text(language.n60seconds2);
 				services.badNickCounter = 59;
-			} else if(match[1] == '20 sekund' || match[1] == '20 sekund(y)') {
-				$('#nickserv_timer').text('20 sekund');
+			} else if(match[1] == language.n20seconds || match[1] == language.n20seconds2) {
+				$('#nickserv_timer').text(language.n20seconds);
 				services.badNickCounter = 19;
 			} else {
 				$('#nickserv_timer').text(match[1]);
@@ -147,7 +146,7 @@ var services = {
 	},
 	'logIn': function(){
 		if($('#nspass').val() == ''){
-			$$.alert('Nie podałeś hasła!');
+			$$.alert(language.passwordNotGiven);
 			return false;
 		}
 		guser.nickservnick = services.nickStore;
@@ -165,7 +164,7 @@ var services = {
 	},
 	'changeNick': function(){
 		if($('#nnick').val() == ''){
-			$$.alert('Nie podałeś nicka!');
+			$$.alert(language.mustGiveNick);
 			return false;
 		}
 		gateway.send('NICK '+$('#nnick').val());
@@ -186,17 +185,17 @@ var services = {
 	},
 	'showChanServCmds': function(chan) {
 		if(!services.requireRegisteredNick()) return;
-		html = 'Uwaga: użycie każdej z funkcji wymaga odpowiednich uprawnień.<br>' +
+		html = language.eachFunctionNeedsPermissions + '<br>' +
 			'<table>'+
-			'<tr><td><button onclick="services.clickChanServ(\'ban\', \''+bsEscape(chan)+'\');">BAN</button></td><td>Nick/maska: <input type="text" id="cs-ban-'+md5(chan)+'"></td><td>Powód: <input type="text" id="cs-banreason-'+md5(chan)+'"></td><td>Banuj użytkownika</td></tr>'+
-			'<tr><td><button onclick="services.clickChanServ(\'kick\', \''+bsEscape(chan)+'\');">KICK</button></td><td>Nick/maska: <input type="text" id="cs-kick-'+md5(chan)+'"></td><td>Powód: <input type="text" id="cs-kickreason-'+md5(chan)+'"></td><td>Kop użytkownika</td></tr>'+
-			'<tr><td><button onclick="services.clickChanServ(\'register\', \''+bsEscape(chan)+'\');">REGISTER</button></td><td>Opis kanału: <input type="text" id="cs-register-'+md5(chan)+'"></td><td></td><td>Zarejestruj kanał</td></tr>'+
-			'<tr><td><button onclick="services.clickChanServ(\'status\', \''+bsEscape(chan)+'\');">STATUS</button></td><td>Nick: <input type="text" id="cs-status-'+md5(chan)+'"></td><td></td><td>Sprawdź status użytkownika w ChanServ</td></tr>'+
-			'<tr><td><button onclick="services.clickChanServ(\'access list\', \''+bsEscape(chan)+'\');">ACCESS LIST</button></td><td></td><td></td><td>Wyświetl listę dostępową</td></tr>'+
-			'<tr><td><button onclick="services.clickChanServ(\'access del\', \''+bsEscape(chan)+'\');">ACCESS DEL</button></td><td>Nick: <input type="text" id="cs-acc-del-'+md5(chan)+'"></td><td></td><td>Usuń użytkownika z listy dostępowej</td></tr>'+
+			'<tr><td><button onclick="services.clickChanServ(\'ban\', \''+bsEscape(chan)+'\');">BAN</button></td><td>' + language.nickOrMask + ': <input type="text" id="cs-ban-'+md5(chan)+'"></td><td>' + language.reason + ': <input type="text" id="cs-banreason-'+md5(chan)+'"></td><td>' + language.banUser + '</td></tr>'+
+			'<tr><td><button onclick="services.clickChanServ(\'kick\', \''+bsEscape(chan)+'\');">KICK</button></td><td>' + language.nickOrMask + ': <input type="text" id="cs-kick-'+md5(chan)+'"></td><td>' + language.reason + ': <input type="text" id="cs-kickreason-'+md5(chan)+'"></td><td>' + language.kickUser + '</td></tr>'+
+			'<tr><td><button onclick="services.clickChanServ(\'register\', \''+bsEscape(chan)+'\');">REGISTER</button></td><td>' + language.channelDescription + ': <input type="text" id="cs-register-'+md5(chan)+'"></td><td></td><td>' + language.registerChannel + '</td></tr>'+
+			'<tr><td><button onclick="services.clickChanServ(\'status\', \''+bsEscape(chan)+'\');">STATUS</button></td><td>' + language.nickname + ': <input type="text" id="cs-status-'+md5(chan)+'"></td><td></td><td>' + language.checkUserChanservStatus + '</td></tr>'+
+			'<tr><td><button onclick="services.clickChanServ(\'access list\', \''+bsEscape(chan)+'\');">ACCESS LIST</button></td><td></td><td></td><td>' + language.displayAccessList + '</td></tr>'+
+			'<tr><td><button onclick="services.clickChanServ(\'access del\', \''+bsEscape(chan)+'\');">ACCESS DEL</button></td><td>' + language.nickname + ': <input type="text" id="cs-acc-del-'+md5(chan)+'"></td><td></td><td>' + language.deleteUserFromAccessList + '</td></tr>'+
 		'</table>';
-		$$.displayDialog('admin', 'cs-'+chan, 'Polecenia ChanServ na '+he(chan), html);
-		$$.alert('Funkcja w przygotowaniu - niektóre opcje mogą nie działać, a lista może być niepełna!');
+		$$.displayDialog('admin', 'cs-'+chan, language.chanservCommandsOn+he(chan), html);
+		$$.alert(language.workInProgress);
 	},
 	'clickChanServ': function(cmd, chan){
 		var opts = {
@@ -245,16 +244,16 @@ var services = {
 	},
 	'showBotServCmds': function(chan){
 		if(!services.requireRegisteredNick()) return;
-		html = 'Uwaga: użycie każdej z funkcji wymaga odpowiednich uprawnień.<br>' +
+		html = language.eachFunctionNeedsPermissions + '<br>' +
 			'<table>'+
-			'<tr><td><button onclick="services.clickBotServ(\'botlist\', \'\');">BOTLIST</button></td><td></td><td></td><td>Pokaż listę botów</td></tr>'+
-			'<tr><td><button onclick="services.clickBotServ(\'assign\', \''+bsEscape(chan)+'\');">ASSIGN</button></td><td>Nick (wybrany z BOTLIST): <input type="text" id="bs-assign-'+md5(chan)+'"></td><td></td><td>Przypisz bota do kanału</td></tr>'+
-			'<tr><td><button onclick="services.clickBotServ(\'unassign\', \''+bsEscape(chan)+'\');">UNASSIGN</button></td><td></td><td></td><td>Usuń bota z kanału</td></tr>'+
-			'<tr><td><button onclick="services.clickBotServ(\'act\', \''+bsEscape(chan)+'\');">ACT</button></td><td>Wiadomość: <input type="text" id="bs-act-'+md5(chan)+'"></td><td></td><td>Wyślij wiadomość na kanał (/me wiadomość)</td></tr>'+
-			'<tr><td><button onclick="services.clickBotServ(\'say\', \''+bsEscape(chan)+'\');">SAY</button></td><td>Wiadomość: <input type="text" id="bs-say-'+md5(chan)+'"></td><td></td><td>Wyślij wiadomość na kanał</td></tr>'+
+			'<tr><td><button onclick="services.clickBotServ(\'botlist\', \'\');">BOTLIST</button></td><td></td><td></td><td>' + language.showBotList + '</td></tr>'+
+			'<tr><td><button onclick="services.clickBotServ(\'assign\', \''+bsEscape(chan)+'\');">ASSIGN</button></td><td>' + language.nickChosenFromBotList + ': <input type="text" id="bs-assign-'+md5(chan)+'"></td><td></td><td>' + language.assignBotToChan + '</td></tr>'+
+			'<tr><td><button onclick="services.clickBotServ(\'unassign\', \''+bsEscape(chan)+'\');">UNASSIGN</button></td><td></td><td></td><td>' + language.removeBotFromChan + '</td></tr>'+
+			'<tr><td><button onclick="services.clickBotServ(\'act\', \''+bsEscape(chan)+'\');">ACT</button></td><td>' + language.message + ': <input type="text" id="bs-act-'+md5(chan)+'"></td><td></td><td>' + language.sendActionToChan + '</td></tr>'+
+			'<tr><td><button onclick="services.clickBotServ(\'say\', \''+bsEscape(chan)+'\');">SAY</button></td><td>' + language.message + ': <input type="text" id="bs-say-'+md5(chan)+'"></td><td></td><td>' + language.sendMessageToChan + '</td></tr>'+
 		'</table>';
-		$$.displayDialog('admin', 'bs-'+chan, 'Polecenia BotServ na '+he(chan), html);
-		$$.alert('Funkcja w przygotowaniu - niektóre opcje mogą nie działać, a lista może być niepełna!');
+		$$.displayDialog('admin', 'bs-'+chan, language.botservCommandsOn+he(chan), html);
+		$$.alert(language.workInProgress);
 	},
 	'clickBotServ': function(cmd, chan){
 		var opts = {
@@ -300,7 +299,7 @@ var services = {
 				var arg = $('#'+service+'-'+opts.arg[i]+'-'+md5(chan)).val();
 				if(!arg || arg == ''){
 					if(opts.argreq[i]){
-						$$.alert('Wymagany argument dla polecenia <b>'+cmd+'</b>!');
+						$$.alert(language.argumentRequiredForCmd + '<b>'+cmd+'</b>!');
 						return false;
 					}
 				}
@@ -309,6 +308,7 @@ var services = {
 		}
 		return cmdString;
 	},
+	// TRANSLATION STOPPED HERE
 	'showCSBan': function(channel, nick) {
 		var html = '<p>Zbanuj i wyrzuć użytkownika '+he(nick)+' z kanału '+he(channel)+
 				'. Możesz podać powód dla KICKa, który zostanie wyświetlony dla wszystkich użytkowników kanału.<br>Aby skorzystać z tej funkcji, musisz posiadać odpowiednie uprawnienia w ChanServ.</p>' +

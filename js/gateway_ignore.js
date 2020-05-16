@@ -55,22 +55,22 @@ var ignore = {
 			$$.closeDialog('ignore', 'ignorelist');
 		}
 		if(data.length == 0){
-			var html = 'Lista jest pusta.';
+			var html = language.listIsEmpty;
 		} else {
-			var html = '<div class="beIListContents"><table><tr><th>Dotyczy</th><th>Maska</th></tr></table></div>';
+			var html = '<div class="beIListContents"><table><tr><th>' + language.appliesTo + '</th><th>Maska</th></tr></table></div>';
 		}
-		$$.displayDialog('ignore', 'ignorelist', 'Lista ignorowanych użytkowników', html);
+		$$.displayDialog('ignore', 'ignorelist', language.listOfIgnoredUsers, html);
 		for(var i=0; i<data.length; i++){
 			var ignoreT = data[i][0];
 			if(ignoreT == 'channel'){
-				var ignoreType = 'kanał';
+				var ignoreType = language.channel;
 			} else {
-				var ignoreType = 'rozmowa prywatna';
+				var ignoreType = language.privateDiscussion;
 			}
 			var ignoreMask = data[i][1];
 			
 			var html = '<tr><td>'+ignoreType+'</td><td>'+he(ignoreMask)+'</td>' +
-				'<td><button id="unignore_'+ignoreT+'_'+md5(ignoreMask)+'">Usuń</button>' +
+				'<td><button id="unignore_'+ignoreT+'_'+md5(ignoreMask)+'">' + language.remove + '</button>' +
 				'</td></tr>';
 			$('table', $$.getDialogSelector('ignore', 'ignorelist')).append(html);
 			$('#unignore_'+ignoreT+'_'+md5(ignoreMask)).click({type: ignoreT, mask: ignoreMask}, function(e){
@@ -78,10 +78,10 @@ var ignore = {
 				ignore.showIgnoreManagement();
 			});
 		}
-		var html = '<hr style="margin-top:5px;margin-bottom:5px;"><strong>Dodaj wpis do listy</strong><br>'+
+		var html = '<hr style="margin-top:5px;margin-bottom:5px;"><strong>' + language.addListEntry + '</strong><br>'+
 			'<p><input type="text" id="new_ignore_mask"></p>' +
-			'<p><input type="checkbox" id="new_ignore_query"> Wiadomości prywatne<br><input type="checkbox" id="new_ignore_channel"> Wiadomości na kanale</p>' +
-			'<p><input type="button" value="Dodaj" onclick="ignore.ignoreClickInput();"></p>';
+			'<p><input type="checkbox" id="new_ignore_query"> ' + language.privateMessages + '<br><input type="checkbox" id="new_ignore_channel"> ' + language.channelMessages + '</p>' +
+			'<p><input type="button" value="' + language.add + '" onclick="ignore.ignoreClickInput();"></p>';
 		$$.getDialogSelector('ignore', 'ignorelist').append(html);
 	},
 	'unIgnore': function(type, mask){
@@ -130,7 +130,7 @@ var ignore = {
 			gateway.statusWindow.markBold();
 			localStorage.setItem('ignore', JSON.stringify(ignoreData));
 		} catch(e){
-			$$.displayDialog('error', 'ignore', 'Błąd', 'Operacja nieudana.');
+			$$.displayDialog('error', 'ignore', language.error, language.operationFailed);
 		}
 	},
 	'ignoreClickInput': function() {
@@ -138,19 +138,19 @@ var ignore = {
 		var query = $('#new_ignore_query').prop('checked');
 		var mask = $('#new_ignore_mask').val();
 		if(mask.length == 0){
-			$$.alert('Nie wpisano maski!');
+			$$.alert(language.noMaskGiven);
 			return;
 		}
 		if(mask.indexOf(' ') > -1){
-			$$.alert('Maska nie może zawierać spacji!');
+			$$.alert(language.maskCantContainSpaces);
 			return;
 		}
 		if(!channel && !query){
-			$$.alert('Nie zaznaczono ani kanału ani query!');
+			$$.alert(language.neitherChannelNorQuerySelected);
 			return;
 		}
 		if(channel && mask == '*'){
-			$$.alert('Nie możesz ignorować wszystkich nicków na kanałach!');
+			$$.alert(language.cantIgnoreAllInChannels);
 			return;
 		}
 		if(channel){
@@ -167,7 +167,7 @@ var ignore = {
 	},
 	'askIgnore': function(nick) {
 		if(nick.isInList(servicesNicks)){
-			$$.displayDialog('error', 'ignore', 'Błąd', 'Nie możesz ignorować usługi sieciowej!', 'OK');
+			$$.displayDialog('error', 'ignore', language.error, language.cantIgnoreNetworkService, 'OK');
 			return;
 		}
 		var chanExplIgnored = ignore.ignoring(nick, 'channel', true);
@@ -179,28 +179,28 @@ var ignore = {
 			}
 		}
 		var html =
-			'<p><input type="checkbox" id="'+nick+'_ignore_query"> Ignoruj wiadomości prywatne</p>' +
-			'<p><input type="checkbox" id="'+nick+'_ignore_channel"> Ignoruj wiadomości na kanałach</p>';
+			'<p><input type="checkbox" id="'+nick+'_ignore_query"> ' + language.ignorePMs + '</p>' +
+			'<p><input type="checkbox" id="'+nick+'_ignore_channel"> ' + language.ignoreChanMsgs + '</p>';
 		if(ignoredByWildcard){
-			html += '<p>Ten użytkownik jest ignorowany za pomocą reguł ogólnych.</p>';
+			html += '<p>' + language.isIgnoredByWildcards + '</p>';
 		}
-		html += '<p><a href="javascript:ignore.showIgnoreManagement();">Zarządzaj ignorowanymi nickami</a></p>';
+		html += '<p><a href="javascript:ignore.showIgnoreManagement();">' + language.manageIgnored + '</a></p>';
 		var button = [
 			{
-				text: 'Anuluj',
+				text: language.cancel,
 				click: function(){
 					$(this).dialog('close');
 				}
 			},
 			{
-				text: 'Zastosuj',
+				text: language.applySetting,
 				click: function(){
 					ignore.ignoreClick(nick);
 					$(this).dialog('close');
 				}
 			}
 		];
-		$$.displayDialog('ignore', 'ignore', 'Ignoruj użytkownika '+nick, html, button);
+		$$.displayDialog('ignore', 'ignore', language.ignoreUserNick+nick, html, button);
 		if(chanExplIgnored){
 			$('#'+nick+'_ignore_channel').prop('checked', true);
 		}

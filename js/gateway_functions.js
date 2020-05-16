@@ -51,7 +51,6 @@ var modes = {
 	'argAdd': ['l'],
 	'list': ['b'],
 	'user': ['o', 'v'],
-	/* unrealircd mode comments */
 	'changeableSingle': language.modes.changeableSingle,
 	'changeableArg': language.modes.changeableArg,
 	/* again defaults from rfc1459 */
@@ -64,10 +63,6 @@ var modes = {
 		'+': 'v'
 	}
 };
-
-var chModeInfo = language.modes.chModeInfo;
-
-var chStatusNames = language.modes.chStatusNames;
 
 var servicesNicks = ['NickServ', 'ChanServ', 'HostServ', 'OperServ', 'Global', 'BotServ'];
 
@@ -118,8 +113,8 @@ function getModeInfo(letter, type){
 	if(!type){
 		type = 0;
 	}
-	if(!(letter in chModeInfo)) return 'tryb '+letter; //nieznany tryb
-	var data = chModeInfo[letter];
+	if(!(letter in language.modes.chModeInfo)) return 'tryb '+letter; //nieznany tryb
+	var data = language.modes.chModeInfo[letter];
 	if(data.constructor === Array){
 		return data[type];
 	} else {
@@ -818,13 +813,11 @@ var $$ = {
 		var nd = new Date();
 		nd.setTime(timestamp*1000);
 		if((new Date()).getFullYear() != nd.getFullYear()){
-			return $.vsprintf("%s, %s %s %s, %02s:%02s:%02s", [ $$.dateWeek[nd.getDay()], nd.getDate(), $$.dateMonth[nd.getMonth()], nd.getFullYear(), nd.getHours(), nd.getMinutes(), nd.getSeconds() ] );
+			return $.vsprintf("%s, %s %s %s, %02s:%02s:%02s", [ language.dateWeek[nd.getDay()], nd.getDate(), language.dateMonth[nd.getMonth()], nd.getFullYear(), nd.getHours(), nd.getMinutes(), nd.getSeconds() ] );
 		} else {
-			return $.vsprintf("%s, %s %s, %02s:%02s:%02s", [ $$.dateWeek[nd.getDay()], nd.getDate(), $$.dateMonth[nd.getMonth()], nd.getHours(), nd.getMinutes(), nd.getSeconds() ] );
+			return $.vsprintf("%s, %s %s, %02s:%02s:%02s", [ language.dateWeek[nd.getDay()], nd.getDate(), language.dateMonth[nd.getMonth()], nd.getHours(), nd.getMinutes(), nd.getSeconds() ] );
 		}
 	},
-	'dateWeek': language.weekdays,
-	'dateMonth': language.months,
 	'nickColor': function(nick, codeOnly) {
 		if (!$('#coloredNicks').is(':checked')){
 			return '';
