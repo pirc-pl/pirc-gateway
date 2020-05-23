@@ -216,7 +216,7 @@ var settings = {
 
 var loaded = false;
 
-var readyFunctions = [ conn.gatewayInit, fillEmoticonSelector, fillColorSelector ];
+var readyFunctions = [ conn.gatewayInit, fillEmoticonSelector, fillColorSelector, fillLanguage ];
 
 var readyFunc = function(){
 	if(loaded) return;

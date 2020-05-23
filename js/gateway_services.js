@@ -41,7 +41,7 @@ var services = {
 		}, 1000);
 	},
 	'chanservMessage': function(msg){
-		var expr = language.maskBannedExpr;
+		var expr = language.maskBannedMask;
 		var match = expr.exec(msg.text);
 		if(match){
 			try {
@@ -308,24 +308,22 @@ var services = {
 		}
 		return cmdString;
 	},
-	// TRANSLATION STOPPED HERE
 	'showCSBan': function(channel, nick) {
-		var html = '<p>Zbanuj i wyrzuć użytkownika '+he(nick)+' z kanału '+he(channel)+
-				'. Możesz podać powód dla KICKa, który zostanie wyświetlony dla wszystkich użytkowników kanału.<br>Aby skorzystać z tej funkcji, musisz posiadać odpowiednie uprawnienia w ChanServ.</p>' +
+		var html = '<p>'+language.banAndKickUserFrom +he(nick)+language.fromChannel+he(channel)+'. '+ language.kickDescription +'</p>' +
 			'<input type="text" id="kbinput" maxlength="307" /><br>' +
 			'<select id="kbtime">' + 
-				'<option value=" ">Nie zdejmuj bana automatycznie</option>' +
-				'<option value="+1d">Zdejmij bana automatycznie po 1 dniu</option>' +
-				'<option value="+1h">Zdejmij po godzinie</option>' +
-				'<option value="+30d">Zdejmij po miesiącu</option>' +
+				'<option value=" ">' + language.noAutoUnban + '</option>' +
+				'<option value="+1d">' + language.unban1Day + '</option>' +
+				'<option value="+1h">' + language.unban1Hour + '</option>' +
+				'<option value="+30d">' + language.unban1Month + '</option>' +
 			'</select>';
 		var button = [ {
-			text: 'Anuluj',
+			text: language.cancel,
 			click: function(){
 				$(this).dialog('close');
 			}
 		}, {
-			text: 'Zbanuj',
+			text: language.doBan,
 			click: function(){
 				services.processCSBan(channel, nick);
 				$(this).dialog('close');
@@ -344,87 +342,87 @@ var services = {
 	},
 	'requireRegisteredNick': function() {
 		if(!guser.umodes.r){
-			$$.alert('Musisz mieć zarejestrowanego nicka aby użyć tej opcji!');
+			$$.alert(language.youNeedRegisteredNickToUseThis);
 			return false;
 		}
 		return true;
 	},
 	'changeMyNick': function() {
-		var html = 'Nowy nick: <input type="text" value="'+guser.nick+'" id="nickChangeInput">';
+		var html = language.newNick + ' <input type="text" value="'+guser.nick+'" id="nickChangeInput">';
 		var button = [ {
-			text: 'Anuluj',
+			text: language.cancel,
 			click: function(){
 				$(this).dialog('close');
 			}
 		}, {
-			text: 'Zmień',
+			text: language.change,
 			click: function(){
 				if(services.doChangeNick()){
 					$(this).dialog('close');
 				}
 			}
 		} ];
-		$$.displayDialog('services', 'nickserv', 'Zmiana nicka', html, button);
+		$$.displayDialog('services', 'nickserv', language.nickChange, html, button);
 	},
 	'doChangeNick': function() {
 		var newNick = $('#nickChangeInput').val();
 		if(newNick == ''){
-			$$.alert('Nie wpisano nicka!');
+			$$.alert(language.noNickGiven);
 			return false;
 		}
 		if(newNick.indexOf(' ') > -1){
-			$$.alert('Nick nie może zawierać spacji!');
+			$$.alert(language.nickCantContainSpaces);
 			return false;
 		}
 		gateway.send('NICK '+newNick);
 		return true;
 	},
 	'registerMyNick': function() {
-		var html = '<table><tr><td style="text-align: right; padding-right: 10px;">Hasło:</td><td><input type="password" id="nickRegisterPass"></td></tr>'+
-			'<tr><td style="text-align: right; padding-right: 10px;">Powtórz hasło:</td><td><input type="password" id="nickRegisterPassConf"></td></tr>'+
-			'<tr><td style="text-align: right; padding-right: 10px;">E-mail:</td><td><input type="text" id="nickRegisterMail"></td></tr>'+
-			'</table><p>Adres e-mail jest potrzebny, aby w przyszłości odzyskać hasło.</p>';
+		var html = '<table><tr><td style="text-align: right; padding-right: 10px;">' + language.password + '</td><td><input type="password" id="nickRegisterPass"></td></tr>'+
+			'<tr><td style="text-align: right; padding-right: 10px;">' + language.repeatPassword + '</td><td><input type="password" id="nickRegisterPassConf"></td></tr>'+
+			'<tr><td style="text-align: right; padding-right: 10px;">' + language.email + '</td><td><input type="text" id="nickRegisterMail"></td></tr>'+
+			'</table><p>' + language.emailNeeded + '</p>';
 		var button = [ {
-			text: 'Anuluj',
+			text: language.cancel,
 			click: function(){
 				$(this).dialog('close');
 			}
 		}, {
-			text: 'Zarejestruj',
+			text: language.register,
 			click: function(){
 				if(services.doRegisterNick()){
 					$(this).dialog('close');
 				}
 			}
 		} ];
-		$$.displayDialog('services', 'nickserv', 'Rejestracja nicka '+guser.nick, html, button);
+		$$.displayDialog('services', 'nickserv', language.registrationOfNick+guser.nick, html, button);
 	},
 	'doRegisterNick': function() {
 		var password = $('#nickRegisterPass').val();
 		var email = $('#nickRegisterMail').val();
 		if(password == ''){
-			$$.alert('Nie wpisano hasła!');
+			$$.alert(language.passwordNotGiven);
 			return false;
 		}
 		if(password.indexOf(' ') > -1){
-			$$.alert('Hasło nie może zawierać spacji!');
+			$$.alert(language.spaceInPassword);
 			return false;
 		}
 		if(password != $('#nickRegisterPassConf').val()){
-			$$.alert('Podane hasła nie są zgodne!');
+			$$.alert(language.passwordsNotMatching);
 			return false;
 		}
 		if(email == ''){
-			$$.alert('Nie wpisano adresu e-mail!');
+			$$.alert(language.mailNotGiven);
 			return false;
 		}
 		if(email.indexOf(' ') > -1 || email.indexOf('@') < 0 || email.indexOf('.') < 0){
-			$$.alert('Podany e-mail jest błędny!');
+			$$.alert(language.badEmail);
 			return false;
 		}
 		var timeDiff = 120 - Math.round(((+new Date)/1000) - gateway.connectTime);
 		if(timeDiff > 0){
-			$$.alert('Musisz zaczekać jeszcze '+timeDiff+' sekund(y), zanim będzie możliwa rejestracja nicka.');
+			$$.alert(language.youHaveToWaitAnother + timeDiff + language.secondsToRegisterNick);
 			return false;
 		}
 		gateway.send('NS REGISTER '+password+' '+email);
@@ -451,22 +449,22 @@ var services = {
 		$$.displayDialog('services', 'hostserv', 'Ustawianie automatycznego vhosta', html, button);
 	},*/
 	'setVhost': function(){
-		var html = '<p>To polecenie wyśle prośbę do administratorów o ustawienie Tobie podanego vhosta.</p>'+
-			'<p>Nowy vHost: <input type="text" id="newVhost"></p>'+
-			'<p>vHost może zawierać tylko litery i cyfry, i musi mieć w środku co najmniej jedną kropkę.</p>';
+		var html = '<p>' + language.thisCommandWillRequestVhost + '</p>'+
+			'<p>' + language.newVhost + '<input type="text" id="newVhost"></p>'+
+			'<p>' + language.lettersDigitsDot + '</p>';
 		var button = [ {
-			text: 'Anuluj',
+			text: language.cancel,
 			click: function(){
 				$(this).dialog('close');
 			}
 		}, {
-			text: 'Wykonaj',
+			text: language.proceed,
 			click: function(){
 				gateway.send('HS REQUEST '+$('#newVhost').val());
 				$(this).dialog('close');
 			}
 		} ];
-		$$.displayDialog('services', 'hostserv', 'Ustawianie automatycznego vhosta', html, button);
+		$$.displayDialog('services', 'hostserv', language.settingOfVhost, html, button);
 	}
 };
 

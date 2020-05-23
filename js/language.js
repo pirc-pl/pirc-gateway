@@ -172,7 +172,7 @@ var lang = {
 		'SSLRequired': 'Kanał wymaga połączenia z włączonym SSL.',
 		'noPermsForAction': 'Nie masz wystarczających uprawnień aby wykonać żądaną akcję',
 		'hasSecureConnection': 'Używa bezpiecznego połączenia',
-		'weAreloggedInAs': 'Zalogowano jako ',
+		'weAreLoggedInAs': 'Zalogowano jako ',
 		'SASLLoginSuccess': 'SASL: logowanie udane.',
 		'SASLLoginFail': 'SASL: logowanie nieudane!',
 		'suppliedNickPassword': 'Podane hasło do nicka ',
@@ -253,7 +253,7 @@ var lang = {
 		'loading': 'Ładowanie',
 		'loadingWait': 'Poczekaj, trwa ładowanie...',
 		'outdatedBrowser': 'Przestarzała przeglądarka',
-		'outdatedBrowserInfo': 'Twoja przeglądarka jest przestarzała i nie jest obsługiwana. Należy zaktualizować przeglądarkę Internet Explorer do wersji 9 lub wyższej albo użyć innej przeglądarki (Firefox, Opera, Chrome, Safari) w którejś z nowszych wersji.<br />Jeżeli posiadasz przeglądarkę Internet Explorer w wersji 9 lub wyższej i widzisz ten komunikat wyłącz tzw "widok zgodności" dla tej strony.',
+		'': 'Twoja przeglądarka jest przestarzała i nie jest obsługiwana. Należy zaktualizować przeglądarkę Internet Explorer do wersji 9 lub wyższej albo użyć innej przeglądarki (Firefox, Opera, Chrome, Safari) w którejś z nowszych wersji.<br />Jeżeli posiadasz przeglądarkę Internet Explorer w wersji 9 lub wyższej i widzisz ten komunikat wyłącz tzw "widok zgodności" dla tej strony.',
 		'noAvatarSet': 'Nie ustawiono awatara',
 		'remove': 'Skasuj',
 		'check': 'Sprawdź',
@@ -319,7 +319,7 @@ var lang = {
 		'information': 'Informacja',
 		'youCanDisableAutoconnect': 'Możesz wyłączyć automatyczne łączenie, na przykład w celu zmiany danych, klikając na ikonę ustawień w prawym górnym rogu, i odznaczając pole "Automatyczne łączenie".',
 		'areYouSureToChangeTopicOf': 'Czy zmienić temat dla ',
-		'intCantBeUndone': 'Nie można tego cofnąć.',
+		'itCantBeUndone': 'Nie można tego cofnąć.',
 		'clickForWholeTopic': 'Kliknij aby zobaczyć cały temat',
 		'textTooLongForSingleLine': 'Wpisany tekst nie zmieści się w jednej linijce. Czy na pewno chcesz go wysłać?',
 		'textStartsWithSpaceAndSlash': 'Wpisany tekst zaczyna się od znaku "/", ale poprzedzonego spacją. Aby uniknąć pomyłki, wybierz, co chcesz zrobić.',
@@ -413,7 +413,7 @@ var lang = {
 		'second': 'sekund',
 		'second1': 'ę',
 		'second2': 'y',
-		'maskBanned': /^Zbanowano maskę .(.*). \(dla .(.*).\)$/i,
+		'maskBannedMask': /^Zbanowano maskę .(.*). \(dla .(.*).\)$/i,
 		'youreIdentifiedMask': /^Hasło przyjęte - jesteś zidentyfikowany\(a\)\.$/i,
 		'nickNotRegisteredMask': /^Nick [^ ]+ nie jest zarejestrowany\.$/i,
 		'invalidPasswordMask': /^Nieprawidłowe hasło\.$/i,
@@ -463,8 +463,177 @@ var lang = {
 		'sendMessageToChan': 'Wyślij wiadomość na kanał',
 		'botservCommandsOn': 'Polecenia BotServ na ',
 		'argumentRequiredForCmd': 'Wymagany argument dla polecenia ',
-		
+		'banAndKickUserFrom': 'Zbanuj i wyrzuć użytkownika ',
+		'kickDescription': 'Możesz podać powód dla KICKa, który zostanie wyświetlony dla wszystkich użytkowników kanału.<br>Aby skorzystać z tej funkcji, musisz posiadać odpowiednie uprawnienia w ChanServ.',
+		'noAutoUnban': 'Nie zdejmuj bana automatycznie',
+		'unban1Day': 'Zdejmij bana automatycznie po 1 dniu',
+		'unban1Hour': 'Zdejmij po godzinie',
+		'unban1Month': 'Zdejmij po miesiącu',
+		'doBan': 'Zbanuj',
+		'youNeedRegisteredNickToUseThis': 'Musisz mieć zarejestrowanego nicka aby użyć tej opcji!',
+		'change': 'Zmień',
+		'nickChange': 'Zmiana nicka',
+		'noNickGiven': 'Nie wpisano nicka!',
+		'nickCantContainSpaces': 'Nick nie może zawierać spacji!',
+		'password': 'Hasło:',
+		'repeatPassword': 'Powtórz hasło:',
+		'email': 'E-mail:',
+		'emailNeeded': 'Adres e-mail jest potrzebny do potwierdzenia rejestracji, oraz aby w przyszłości odzyskać hasło.',
+		'register': 'Zarejestruj',
+		'registrationOfNick': 'Rejestracja nicka ',
+		'passwordsNotMatching': 'Podane hasła nie są zgodne!',
+		'mailNotGiven': 'Nie wpisano adresu e-mail!',
+		'badEmail': 'Podany e-mail jest błędny!',
+		'youHaveToWaitAnother': 'Musisz zaczekać jeszcze ',
+		'secondsToRegisterNick': ' sekund(y), zanim będzie możliwa rejestracja nicka.',
+		'thisCommandWillRequestVhost': 'To polecenie wyśle prośbę do administratorów o ustawienie Tobie podanego vhosta.',
+		'newVhost': 'Nowy vHost: ',
+		'lettersDigitsDot': 'vHost może zawierać tylko litery i cyfry, i musi mieć w środku co najmniej jedną kropkę.',
+		'proceed': 'Wykonaj',
+		'settingOfVhost': 'Ustawianie vhosta',
+		'user': 'użytkownik',
+		'multipleUsers': 'ów',
+		'chanOp': 'op',
+		'browserTooOldQuit': 'Za stara przeglądarka!',
+		'registered': 'Zarejestrowany',
+		'unRegistered': 'Niezarejestrowany',
+		'query': 'Rozmowa prywatna',
+		'informations': 'Informacje',
+		'softwareVersion': 'Wersja oprogramowania',
+		'channelAdministration': 'Administracja',
+		'kickFromChannel': 'Wyrzuć z kanału',
+		'banUsingChanserv': 'Banuj (ChanServ)',
+		'givePrivileges': 'Daj uprawnienia',
+		'takePrivileges': 'Odbierz uprawnienia',
+		'loggedInAs': 'Zalogowany jako ',
+		'userIsAway': 'Ten użytkownik jest nieobecny',
+		'reason': 'powód',
+		'userIsIrcop': 'Ten użytkownik jest IRCOperatorem',
+		'userIsBot': 'Ten użytkownik jest botem',
+		'nickIsRegistered': 'Ten nick jest zarejestrowany',
+		'userIsLoggedIntoAccount': 'Ten użytkownik jest zalogowany do konta ',
+		'closeQuery': 'Zamknij rozmowę prywatną',
+		'leftChannel': 'Opuścił kanał',
+		'leaveChannel': 'Wyjdź z kanału',
+		'channelOptions': 'Opcje kanału',
+		'autoJoinThisChannel': 'Automatycznie wchodź na ten kanał',
+		'enable': 'Włącz',
+		'disable': 'Wyłącz',
+		'clearMessageWindow': 'Wyczyść okno rozmowy',
+		'refreshNickList': 'Odśwież listę nicków',
+		'administrativeActions': 'Akcje administracyjne',
+		'banList': 'Lista banów (b)',
+		'exceptListHint': 'Znajdujący się na liście nie są obejmowani przez bany',
+		'exceptList': 'Lista wyjątków b (e)',
+		'invexListHint': 'Znajdujący się na liście nie potrzebują zaproszenia, gdy jest ustawiony tryb +i',
+		'invexList': 'Lista wyjątków i (I)',
+		'channelModes': 'Tryby kanału',
+		'inviteToChannel': 'Zaproś na kanał',
+		'chanservCommands': 'Polecenia ChanServ',
+		'botservCommands': 'Polecenia BotServ',
+		'dontWantPrivateMessages': 'Nie chcę otrzymywać wiadomości prywatnych:',
+		'dontWantAnyMessages': 'żadnych (tryb +D)',
+		'dontWantFromUnregistered': 'od niezarejestrowanych użytkowników (tryb +R)',
+		'dontShowAvatars': 'Nie pokazuj avatarów (stary wygląd)',
+		'setOwnAvatar': 'Ustaw własny avatar',
+		'dontShowJoinsQuits': 'Nie pokazuj wiadomości PART/JOIN/QUIT (wejścia/wyjścia z kanałów)',
+		'dontShowNickChanges': 'Nie pokazuj informacji o zmianach nicków',
+		'dontShowModes': 'Nie pokazuj wiadomości MODE (zmian trybów)',
+		'tabListOnBottom': 'Listę zakładek pokazuj na dole strony',
+		'showHostnames': 'Pokazuj nazwy hosta użytkowników',
+		'autoReconnect': 'Automatycznie łącz ponownie po rozłączeniu',
+		'unsafeLinkWarnings': 'Pokazuj ostrzeżenia o niebezpiecznych linkach',
+		'darkTheme': 'Ciemny motyw bramki (eksperymentalny)',
+		'colorNicks': 'Koloruj nicki w oknie rozmowy',
+		'newMsgSound': 'Informuj dźwiękiem o nowej wiadomości',
+		'showEmoji': 'Wyświetlaj emoji w miejsce emotikon tekstowych (na przykład "🙂" w miejsce ":)")',
+		'sendEmoji': 'Wysyłaj powyższe emoji na IRC',
+		'monospaceFont': 'Wyświetlaj treść rozmowy fontem o stałej szerokości',
+		'autoDisconnect': 'Automatycznie rozłączaj przy zamykaniu strony',
+		'autoConnect': 'Automatyczne łączenie (bez podawania nicka i hasła)',
+		'backlogCount':  'Ilość linii w historii rozmów z poprzedniej wizyty',
+		'popupWindow': 'Wyskakujące okienko',
+		'statusTab': 'Zakładka statusu',
+		'manageIgnored': 'Zarządzaj ignorowanymi nickami',
+		'allRightsReserved': 'Wszelkie prawa zastrzeżone',
+		'statusTabName': 'Status',
+		'extendChannelList': '⮙ lista kanałów ⮙',
+		'nickOptions': 'Opcje nicka',
+		'registerNick': 'Zarejestruj nicka',
+		'privateMessagesBlocking': 'Blokowanie wiadomości prywatnych',
+		'requestAVhost': 'Poproś o vhosta',
+		'showChannelsWithAccess': 'Pokaż kanały, na których masz stałe uprawnienia',
+		'showAutojoinChannels': 'Pokaż kanały, na które automatycznie wchodzisz',
+		'insertFormatCodes': '⮛ Wstaw kody formatowania ⮛',
+		'insertColorCode': 'Wstaw kod koloru',
+		'insertSpecialCode': 'Wstaw kod specjalny',
+		'turnOffColor': 'Wyłącz kolor',
+		'boldText': 'Pogrubienie',
+		'reverseColors': 'Odwróć kolory',
+		'italicText': 'Pochylenie',
+		'underscoreText': 'Podkreślenie',
+		'clearFormats': 'Czyść wygląd',
+		'emoticons': 'Emotikony',
+		'showAllAvailable': 'Pokaż wszystkie dostępne',
+		'thisCanTakeTime': '(to może potrwać)',
+		'engineeringSymbols': 'Symbole inżynierskie',
+		'version': 'Wersja',
+		'statusWindow': 'Okno statusu'
 	}
 };
 
 window.language = lang.pl;
+
+function fillLanguage(){ // fills static HTML with translations
+	$('.language-version').html(language.version);
+	$('.language-statusWindow').html(language.statusWindow);
+	$('.language-underscoreText').html(language.underscoreText);
+	$('.language-clearFormats').html(language.clearFormats);
+	$('.language-emoticons').html(language.emoticons);
+	$('.language-showAllAvailable').html(language.showAllAvailable);
+	$('.language-thisCanTakeTime').html(language.thisCanTakeTime);
+	$('.language-engineeringSymbols').html(language.engineeringSymbols);
+	$('.language-dontWantPrivateMessages').html(language.dontWantPrivateMessages);
+	$('.language-dontWantAnyMessages').html(language.dontWantAnyMessages);
+	$('.language-dontWantFromUnregistered').html(language.dontWantFromUnregistered);
+	$('.language-dontShowAvatars').html(language.dontShowAvatars);
+	$('.language-setOwnAvatar').html(language.setOwnAvatar);
+	$('.language-dontShowJoinsQuits').html(language.dontShowJoinsQuits);
+	$('.language-dontShowNickChanges').html(language.dontShowNickChanges);
+	$('.language-dontShowModes').html(language.dontShowModes);
+	$('.language-tabListOnBottom').html(language.tabListOnBottom);
+	$('.language-showHostnames').html(language.showHostnames);
+	$('.language-autoReconnect').html(language.autoReconnect);
+	$('.language-unsafeLinkWarnings').html(language.unsafeLinkWarnings);
+	$('.language-darkTheme').html(language.darkTheme);
+	$('.language-colorNicks').html(language.colorNicks);
+	$('.language-newMsgSound').html(language.newMsgSound);
+	$('.language-showEmoji').html(language.showEmoji);
+	$('.language-sendEmoji').html(language.sendEmoji);
+	$('.language-monospaceFont').html(language.monospaceFont);
+	$('.language-autoDisconnect').html(language.autoDisconnect);
+	$('.language-autoConnect').html(language.autoConnect);
+	$('.language-backlogCount').html(language.backlogCount);
+	$('.language-popupWindow').html(language.popupWindow);
+	$('.language-query').html(language.query);
+	$('.language-statusTab').html(language.statusTab);
+	$('.language-manageIgnored').html(language.manageIgnored);
+	$('.language-allRightsReserved').html(language.allRightsReserved);
+	$('.language-statusTabName').html(language.statusTabName);
+	$('.language-loadingWait').html(language.loadingWait);
+	$('.language-extendChannelList').html(language.extendChannelList);
+	$('.language-nickOptions').html(language.nickOptions);
+	$('.language-registerNick').html(language.registerNick);
+	$('.language-changeNick').html(language.changeNick);
+	$('.language-privateMessagesBlocking').html(language.privateMessagesBlocking);
+	$('.language-requestAVhost').html(language.requestAVhost);
+	$('.language-showChannelsWithAccess').html(language.showChannelsWithAccess);
+	$('.language-showAutojoinChannels').html(language.showAutojoinChannels);
+	$('.language-insertFormatCodes').html(language.insertFormatCodes);
+	$('.language-insertColorCode').html(language.insertColorCode);
+	$('.language-insertSpecialCode').html(language.insertSpecialCode);
+	$('.language-turnOffColor').html(language.turnOffColor);
+	$('.language-boldText').html(language.boldText);
+	$('.language-reverseColors').html(language.reverseColors);
+	$('.language-italicText').html(language.italicText);
+};

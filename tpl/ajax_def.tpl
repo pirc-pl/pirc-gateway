@@ -4,22 +4,22 @@
 			<img src="/styles/img/gbg.png" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" />
 			<div id="not_connected_div">
 				<div class="not-connected-text">
-					<h3>Ładowanie</h3>
-					<p>Aby korzystać z bramki należy włączyć obsługę JavaScript.</p>
+					<h3>Ładowanie / Loading</h3>
+					<p>Aby korzystać z bramki należy włączyć obsługę JavaScript. / You must enable JavaScript to use the client.</p>
 				</div>
 			</div>
 		</div>	
 		
 		<div id="query-umodes-dialog" title="Blokowanie wiadomości prywatnych">
-			Nie chcę otrzymywać wiadomości prywatnych:
+			<span class="language-dontWantPrivateMessages"></span>
 			<table>
 				<tr>
 					<td class="optionsCheckBox"><input type="checkbox" id="setUmodeD" onchange="disp.changeSettings(event)" /></td>
-					<td class="info">żadnych (tryb +D)</td>
+					<td class="info" class="language-dontWantAnyMessages"></td>
 				</tr>
 				<tr>
 					<td class="optionsCheckBox"><input type="checkbox" id="setUmodeR" onchange="disp.changeSettings(event)" /></td>
-					<td class="info">od niezarejestrowanych użytkowników (tryb +R)</td>
+					<td class="info" class="language-dontWantFromUnregistered"></td>
 				</tr>
 			</table>
 		</div>
@@ -27,83 +27,83 @@
 			<table>
 				<tr>
 					<td class="optionsCheckBox"><input type="checkbox" id="noAvatars" onchange="disp.changeSettings(event)" /></td>
-					<td class="info">Nie pokazuj avatarów (stary wygląd) <a href="javascript:void(0)" onclick="disp.showAvatarSetting()">Ustaw własny avatar</a></td>
+					<td class="info"><span class="language-dontShowAvatars"></span> <a href="javascript:void(0)" onclick="disp.showAvatarSetting()" class="language-setOwnAvatar"></a></td>
 				</tr>
 				<tr>
 					<td class="optionsCheckBox"><input type="checkbox" id="showPartQuit" onchange="disp.changeSettings(event)" /></td>
-					<td class="info">Nie pokazuj wiadomości PART/JOIN/QUIT (wejścia/wyjścia z kanałów)</td>
+					<td class="info language-dontShowJoinsQuits"></td>
 				</tr>
 				<tr>
 					<td class="optionsCheckBox"><input type="checkbox" id="showNickChanges" onchange="disp.changeSettings(event)" /></td>
-					<td class="info">Nie pokazuj informacji o zmianach nicków</td>
+					<td class="info language-dontShowNickChanges"></td>
 				</tr>
 				<tr>
 					<td class="optionsCheckBox"><input type="checkbox" id="showMode" onchange="disp.changeSettings(event)" /></td>
-					<td class="info">Nie pokazuj wiadomości MODE (zmian trybów)</td>
+					<td class="info language-dontShowModes"></td>
 				</tr>
 				<tr>
-					<td class="optionsCheckBox"><input type="checkbox" id="tabsListBottom" onchange="disp.changeSettings(event)" /></td>
-					<td class="info">Listę zakładek pokazuj na dole strony</td>
+					<td class="optionsCheckBox"><input type="checkbox" id="tabsListBottom" onchange="disp.changeSettings(event)" /> </td>
+					<td class="info language-tabListOnBottom"></td>
 				</tr>
 				<tr title="Pokazuje informację user@host przy dołączaniu i opuszczaniu kanałów przez użytkowników">
 					<td class="optionsCheckBox"><input type="checkbox" id="showUserHostnames" onchange="disp.changeSettings(event)" /></td>
-					<td class="info">Pokazuj nazwy hosta użytkowników</td>
+					<td class="info language-showHostnames"></td>
 				</tr>
 				<tr>
 					<td class="optionsCheckBox"><input type="checkbox" id="autoReconnect" onchange="disp.changeSettings(event)" checked="checked" /></td>
-					<td class="info">Automatycznie łącz ponownie po rozłączeniu</td>
+					<td class="info language-autoReconnect"></td>
 				</tr>
 				<tr title="Ustawienie nie wpływa na linki, które są już wyświetlone">
 					<td class="optionsCheckBox"><input type="checkbox" id="displayLinkWarning" onchange="disp.changeSettings(event)" checked="checked" /></td>
-					<td class="info">Pokazuj ostrzeżenia o niebezpiecznych linkach</td>
+					<td class="info language-unsafeLinkWarnings"></td>
 				</tr>
 				<tr>
 					<td class="optionsCheckBox"><input type="checkbox" id="blackTheme" onchange="disp.changeSettings(event)" /></td>
-					<td class="info">Ciemny motyw bramki (eksperymentalny)</td>
+					<td class="info language-darkTheme"></td>
 				</tr>
 				<tr>
 					<td class="optionsCheckBox"><input type="checkbox" id="coloredNicks" onchange="disp.changeSettings(event)" checked="checked" /></td>
-					<td class="info">Koloruj nicki w oknie rozmowy</td>
+					<td class="info language-colorNicks"></td>
 				</tr>
 				<tr>
 					<td class="optionsCheckBox"><input type="checkbox" id="newMsgSound" onchange="disp.changeSettings(event)" /></td>
-					<td class="info">Informuj dźwiękiem o nowej wiadomości</td>
+					<td class="info language-newMsgSound"></td>
 				</tr>
 				<tr>
 					<td class="optionsCheckBox"><input type="checkbox" id="dispEmoji" onchange="disp.changeSettings(event)" checked="checked" /></td>
-					<td class="info">Wyświetlaj emoji w miejsce emotikon tekstowych (na przykład "🙂" w miejsce ":)")</td>
+					<td class="info language-showEmoji"></td>
 				</tr>
 				<tr>
 					<td class="optionsCheckBox"><input type="checkbox" id="sendEmoji" onchange="disp.changeSettings(event)" /></td>
-					<td class="info">Wysyłaj powyższe emoji na IRC</td>
+					<td class="info language-sendEmoji"></td>
 				</tr>
 				<tr>
 					<td class="optionsCheckBox"><input type="checkbox" id="monoSpaceFont" onchange="disp.changeSettings(event)" /></td>
-					<td class="info">Wyświetlaj treść rozmowy fontem o stałej szerokości</td>
+					<td class="info language-monospaceFont"></td>
 				</tr>
 				<tr>
 					<td class="optionsCheckBox"><input type="checkbox" id="autoDisconnect" onchange="disp.changeSettings(event)" checked="checked" /></td>
-					<td class="info">Automatycznie rozłączaj przy zamykaniu strony</td>
+					<td class="info language-autoDisconnect"></td>
 				</tr>
 				<tr style="display:none;">
 					<td class="optionsCheckBox"><input type="checkbox" id="automLogIn" onchange="disp.changeSettings(event)" /></td>
-					<td class="info">Automatyczne łączenie (bez podawania nicka i hasła)</td>
+					<td class="info language-autoConnect"></td>
 				</tr>
 				<tr>
 					<td><input type="text" id="backlogCount" onchange="disp.changeSettings(event)" /></td>
-					<td class="info">Ilość linii w historii rozmów z poprzedniej wizyty</td>
+					<td class="info language-backlogCount"></td>
 				</tr>
 				<tr title="Gdy rozmowa prywatna jest już otwarta, to, niezależnie od tego ustawienia, tam pojawią się wszystkie NOTICE">
 					<td colspan="2">
 						Sposób wyświetlania wiadomości NOTICE &nbsp;
 						<select id="noticeDisplay" onchange="disp.changeSettings(event)">
-							<option value="0">Wyskakujące okienko</option>
-							<option value="1">Rozmowa prywatna</option>
-							<option value="2">Zakładka statusu</option>
+							<option value="0" class="language-popupWindow"></option>
+							<option value="1" class="language-query"></option>
+							<option value="2" class="language-statusTab"></option>
 						</select>
 					</td>
 				</tr>
-				<tr><td colspan="2"><a href="javascript:ignore.showIgnoreManagement();">Zarządzaj ignorowanymi nickami</a></td></tr>
+				<tr><td colspan="2"><a href="javascript:ignore.showIgnoreManagement();" class="language-manageIgnored"></a></td></tr>
 			</table>
 		</div>
 		
@@ -112,9 +112,8 @@
 		
 		<div id="about-dialog" title="Informacje">
 				<h3>Bramka WWW PIRC.PL</h3>
-				<p>Wersja: <script type="text/javascript">document.write(gatewayVersion);</script></p>
-				<p>Pokaż <a href="http://pirc.pl/teksty/bramka_ajax" target="blank">ostatnie zmiany</a></p>
-				<p>&copy; 2010-2016 <a href="http://pirc.pl">PIRC.PL</a>. Wszelkie prawa zastrzeżone</p>
+				<p><span class="language-version"></span>: <script type="text/javascript">document.write(gatewayVersion);</script></p>
+				<p>&copy; 2010-2020 <a href="http://pirc.pl">PIRC.PL</a>. <span class="language-allRightsReserved"></span></p>
 		</div>
 
 		<div id="top_menu">
@@ -123,7 +122,7 @@
 			</div>
 			<div id="tab-wrapper">
 				<ul class="tabs" id="tabs">
-					<li id="--status-tab"><a href="javascript:void(0);" onclick="gateway.switchTab('--status')" class="switchTab">Status</a><a href="#"></a></li>
+					<li id="--status-tab"><a href="javascript:void(0);" onclick="gateway.switchTab('--status')" class="switchTab language-statusTabName"></a><a href="#"></a></li>
 				</ul>
 			</div>
 			<div id="rightarrow">
@@ -141,7 +140,7 @@
 		<div id="wrapper">
 			<div id="info">
 				<span id="--status-topic">
-					<h1>Status</h1>
+					<h1 class="language-statusTabName"></h1>
 					<h2>------</h2>
 				</span>
 			</div>
@@ -154,7 +153,7 @@
 			</div>
 			<div id="chstats">
 				<div class="chstatswrapper">
-					<span class="chstats-text" id="--status-chstats">Okno statusu</span>
+					<span class="chstats-text language-statusWindow" id="--status-chstats"></span>
 				</div>
 			</div>
 			<div id="nicklist-closed">
@@ -173,28 +172,21 @@
 			</div>
 			<div id="chlist">
 				<div class="chlistwrapper">
-					<div id="chlist-body">
-						Poczekaj, trwa ładowanie...
-					</div>
-					<div id="chlist-button" onclick="gateway.toggleChanList()">⮙ lista kanałów ⮙</div>
+					<div id="chlist-body" class="language-loadingWait"></div>
+					<div id="chlist-button" onclick="gateway.toggleChanList()" class="language-extendChannelList"></div>
 				</div>
 			</div>
 			<div id="nickopts">
 				<div id="nickopts-wrapper">
-					<div class="nickoptsButton" onclick="gateway.toggleNickOpts()">Opcje nicka</div>
+					<div class="nickoptsButton language-nickOptions" onclick="gateway.toggleNickOpts()"></div>
 					<ul id="nickOptions">
-						<li id="nickRegister" onclick="services.registerMyNick()">Zarejestruj nicka</li>
-						<li onclick="services.changeMyNick()">Zmień nicka</li>
-						<li onclick="disp.showQueryUmodes()">Blokowanie wiadomości prywatnych</li>
+						<li id="nickRegister" onclick="services.registerMyNick()" class="language-registerNick"></li>
+						<li onclick="services.changeMyNick()" class="language-changeNick"></li>
+						<li onclick="disp.showQueryUmodes()" class="language-privateMessagesBlocking"></li>
 						<!--<li class="nickRegistered" onclick="services.setCloak()">Ustaw automatycznego vhosta</li>-->
-						<li class="nickRegistered" onclick="services.setVhost()">Poproś o vhosta</li>
-						<li class="nickRegistered" onclick="services.perform('ns', 'alist', true)">Pokaż kanały, na których masz stałe uprawnienia</li>
-						<li class="nickRegistered" onclick="services.perform('ns', 'ajoin list', true)">Pokaż kanały, na które automatycznie wchodzisz</li>
-						<!--<li onclick="gateway.send(\'MODE '+bsEscape(this.name)+' I\')" title="Znajdujący się na liście nie potrzebują zaproszenia, gdy jest ustawiony tryb +i">Lista wyjątków i (I)</li>
-						<li onclick="gateway.showChannelModes(\''+bsEscape(this.name)+'\')">Tryby kanału</li>
-						<li onclick="gateway.showInvitePrompt(\''+bsEscape(this.name)+'\')">Zaproś na kanał</li>
-						<li onclick="services.showChanServCmds(\''+bsEscape(this.name)+'\')">Polecenia ChanServ</li>
-						<li onclick="services.showBotServCmds(\''+bsEscape(this.name)+'\')">Polecenia BotServ</li>-->
+						<li class="nickRegistered language-requestAVhost" onclick="services.setVhost()"></li>
+						<li class="nickRegistered language-showChannelsWithAccess" onclick="services.perform('ns', 'alist', true)"></li>
+						<li class="nickRegistered language-showAutojoinChannels" onclick="services.perform('ns', 'ajoin list', true)"></li>
 					</ul>
 				</div>
 			</div>
@@ -222,26 +214,26 @@
 		</div>
 		
 		<div id="color-dialog" title="Formatowanie tekstu">
-			<div id="formatting-button" onclick="gateway.toggleFormatting()">⮛ Wstaw kody formatowania ⮛</div>
+			<div id="formatting-button" onclick="gateway.toggleFormatting()" class="language-insertFormatCodes"></div>
 			<div id="formatting">
-				<h3>Wstaw kod koloru</h3>
+				<h3 class="language-insertColorCode"></h3>
 				<table id="color-array">
 				</table>
-				<h3>Wstaw kod specjalny</h3>
-				<button type="button" class="textFormat" onClick="gateway.insertCode(3)">Wyłącz kolor</button>
-				<button type="button" class="textFormat" onClick="gateway.insertCode(2)">Pogrubienie</button>
-				<button type="button" class="textFormat" onClick="gateway.insertCode(22)">Odwróć kolory</button>
-				<button type="button" class="textFormat" onClick="gateway.insertCode(29)">Pochylenie</button>
-				<button type="button" class="textFormat" onClick="gateway.insertCode(31)">Podkreślenie</button>
-	   			<button type="button" class="textFormat" onClick="gateway.insertCode(15)">Czyść wygląd</button>
+				<h3 class="language-insertSpecialCode"></h3>
+				<button type="button" class="textFormat language-turnOffColor" onClick="gateway.insertCode(3)"></button>
+				<button type="button" class="textFormat language-boldText" onClick="gateway.insertCode(2)"></button>
+				<button type="button" class="textFormat language-reverseColors" onClick="gateway.insertCode(22)"></button>
+				<button type="button" class="textFormat language-italicText" onClick="gateway.insertCode(29)"></button>
+				<button type="button" class="textFormat language-underscoreText" onClick="gateway.insertCode(31)"></button>
+	   			<button type="button" class="textFormat language-clearFormats" onClick="gateway.insertCode(15)"></button>
 	   		</div>
    		</div>
 		
 		<div id="symbol-dialog" title="Symbole">
-			<h3>Emotikony</h3>
+			<h3 class="language-emoticons"></h3>
 			<div id="emoticon-symbols"></div>
-			<div class="dfooter"><a href="javascript:void(0)" onclick="disp.showAllEmoticons()">Pokaż wszystkie dostępne</a> (to może potrwać)</div>
-			<h3>Symbole inżynierskie</h3>
+			<div class="dfooter"><a href="javascript:void(0)" onclick="disp.showAllEmoticons()" class="language-showAllAvailable"></a> <span class="language-thisCanTakeTime"></span></div>
+			<h3 class="language-engineeringSymbols"></h3>
 			<div id="engineer-symbols">
 				<a class="charSelect" onclick="gateway.insert('µ')">µ</a> <a class="charSelect" onclick="gateway.insert('Ω')">Ω</a> <a class="charSelect" onclick="gateway.insert('φ')">φ</a> <a class="charSelect" onclick="gateway.insert('Δ')">Δ</a>
 				<a class="charSelect" onclick="gateway.insert('Θ')">Θ</a> <a class="charSelect" onclick="gateway.insert('Λ')">Λ</a> <a class="charSelect" onclick="gateway.insert('Σ')">Σ</a> <a class="charSelect" onclick="gateway.insert('Φ')">Φ</a>
@@ -264,10 +256,6 @@
 			<a onclick="javascript:disp.setSize(1.8)" style="font-size:1.8em">A</a> 
 		 	<a onclick="javascript:disp.setSize(2.0)" style="font-size:2.0em">A</a>
 		</div>
-		<!--<div id="chanlist-dialog" title="Lista kanałów sieci PIRC">
-			<a href="http://pirc.pl/statystyki/kanaly" target="_blank">Skrócona lista kanałów</a><br>
-			<a href="http://pirc.pl/statystyki/kanaly/full" target="_blank">Pełna lista kanałów</a>
-		</div>-->
 		<div id="sound"></div>
 	</body>
 </html>
