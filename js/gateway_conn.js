@@ -3,7 +3,7 @@ var conn = {
 	'my_pass': '',
 	'my_reqChannel' : '',
 	'connectTimeout': function(){
-			$('.not-connected-text > p').html('Łączenie z serwerem trwa zbyt długo, serwer bramki nie działa lub twoja przeglądarka nie funkcjonuje prawidłowo.<br />Spróbuj ponownie później lub spróbuj '+oldGatewayHtml);
+			$('.not-connected-text > p').html(language.connectingForTooLong + oldGatewayHtml);
 	},
 	'dispConnectDialog': function(){
 		reqChannel = guser.channels[0];
@@ -35,22 +35,22 @@ var conn = {
 			}
 		}
 		if(!auto_initialized){
-			var nconn_html = '<h3>' + he(guser.channels[0]) + ' @ PIRC.pl</h3><form onsubmit="if(gateway.initialize()){$$.closeDialog(\'connect\', \'0\');}" action="javascript:void(0);"><table>';
-			nconn_html += '<tr><td style="text-align: right; padding-right: 10px;">Kanał:</td><td><input type="text" id="nschan" value="'+he(reqChannel)+'" /></td></tr>';
-			nconn_html += '<tr><td style="text-align: right; padding-right: 10px;">Nick:</td><td><input type="text" id="nsnick" value="'+conn.my_nick+'" /></td></tr>';
-			nconn_html += '<tr><td style="text-align: right; padding-right: 10px;">Hasło (jeżeli zarejestrowany):</td><td><input type="password" id="nspass" value="'+conn.my_pass+'" /></td></tr>';
-			nconn_html += '<tr><td></td><td style="text-align: left;"><input type="checkbox" id="save_password" /> Zapisz hasło</td></tr>';
-			nconn_html += '<tr><td></td><td style="text-align: left;"><input type="checkbox" id="enableautomLogIn" onchange="if($(\'#enableautomLogIn\').is(\':checked\')) $(\'#save_password\').prop(\'checked\', true);" /> Zapisz wszystkie dane i nie wyświetlaj ponownie tego okna</td></tr>';
+			var nconn_html = '<h3>' + he(guser.channels[0]) + ' @ ' + mainSettings.networkName + '</h3><form onsubmit="if(gateway.initialize()){$$.closeDialog(\'connect\', \'0\');}" action="javascript:void(0);"><table>';
+			nconn_html += '<tr><td style="text-align: right; padding-right: 10px;">' + language.channel + ':</td><td><input type="text" id="nschan" value="'+he(reqChannel)+'" /></td></tr>';
+			nconn_html += '<tr><td style="text-align: right; padding-right: 10px;">' + language.nickname + ':</td><td><input type="text" id="nsnick" value="'+conn.my_nick+'" /></td></tr>';
+			nconn_html += '<tr><td style="text-align: right; padding-right: 10px;">' + language.passwordIfRegistered + ':</td><td><input type="password" id="nspass" value="'+conn.my_pass+'" /></td></tr>';
+			nconn_html += '<tr><td></td><td style="text-align: left;"><input type="checkbox" id="save_password" /> ' + language.savePassword + '</td></tr>';
+			nconn_html += '<tr><td></td><td style="text-align: left;"><input type="checkbox" id="enableautomLogIn" onchange="if($(\'#enableautomLogIn\').is(\':checked\')) $(\'#save_password\').prop(\'checked\', true);" /> ' + language.saveAllAndDontShowAgain + '</td></tr>';
 			nconn_html += '</table><input type="submit" style="display:none"></form>';
 			var button = [ {
-				text: 'Połącz z IRC',
+				text: language.connectToIRC,
 				click: function(){
 					if(gateway.initialize()){
 						$(this).dialog('close');
 					}
 				}
 			} ];
-			$$.displayDialog('connect', '0', 'Logowanie', nconn_html, button);
+			$$.displayDialog('connect', '0', language.logon, nconn_html, button);
 			if(conn.my_nick == ''){
 				$('#nsnick').focus();
 			} else {
@@ -153,27 +153,27 @@ var conn = {
 		dnick = he(guser.nick);
 		if(guser.nick == '1') {
 			dnick = ''
-			$(document).attr('title', 'Nieznany @ PIRC.pl');
+			$(document).attr('title', language.unknown + ' @ ' + mainSettings.networkName);
 		}
 		$(window).on('beforeunload', function() {
 			if (gateway.connectStatus != statusDisconnected) {
 				if ($('#autoDisconnect').is(':checked')) {
-					gateway.send('QUIT :Użytkownik zamknął stronę');
+					gateway.send('QUIT :'+language.userClosedPage);
 					gateway.userQuit = true;
 					gateway.connectStatus = statusDisconnected;
 				} else {
 					gateway.clickQuit();
-					return 'Jesteś nadal połączony z IRCem. Kliknij "Zostań na stronie" a następnie "Rozłącz" w okienku poniżej aby się rozłączyć przed wyjściem.';
+					return language.youreStillConnected;
 				}
 			}
 		});
 		
 		if(!navigator.cookieEnabled){
-			$('.not-connected-text > p').html('Twoja przeglądarka ma wyłączoną obsługę ciasteczek. Niektóre funkcje bramki mogą działać nieprawidłowo.<br /><input type="button" onclick="conn.dispConnectDialog();" value="Kontynuuj" />');
+			$('.not-connected-text > p').html(language.cookiesDisabledHtml);
 			return;
 		}
 		if(window.WebSocket == null){
-			$('.not-connected-text > p').html('Twoja przeglądarka nie obsługuje WebSocket. Nie można uruchomić bramki.<br />Spróbuj '+oldGatewayHtml);
+			$('.not-connected-text > p').html(language.websocketDisabledHtml + oldGatewayHtml);
 			return;
 		}
 		

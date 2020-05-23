@@ -724,7 +724,7 @@ var disp = {
 		disp.displaySpecialDialog('query-umodes-dialog', 'OK');
 	},
 	'showSizes': function() {
-		disp.displaySpecialDialog('size-dialog', 'Zamknij');
+		disp.displaySpecialDialog('size-dialog', language.close);
 	},
 	'topicClick': function() {
 		var channel = gateway.findChannel(gateway.active);

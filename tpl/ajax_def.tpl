@@ -95,7 +95,7 @@
 				</tr>
 				<tr title="Gdy rozmowa prywatna jest już otwarta, to, niezależnie od tego ustawienia, tam pojawią się wszystkie NOTICE">
 					<td colspan="2">
-						Sposób wyświetlania wiadomości NOTICE &nbsp;
+						<span class="language-noticeDisplay"></span> &nbsp;
 						<select id="noticeDisplay" onchange="disp.changeSettings(event)">
 							<option value="0" class="language-popupWindow"></option>
 							<option value="1" class="language-query"></option>

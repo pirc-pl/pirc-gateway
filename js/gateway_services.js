@@ -309,7 +309,7 @@ var services = {
 		return cmdString;
 	},
 	'showCSBan': function(channel, nick) {
-		var html = '<p>'+language.banAndKickUserFrom +he(nick)+language.fromChannel+he(channel)+'. '+ language.kickDescription +'</p>' +
+		var html = '<p>'+language.banAndKickUserFrom +he(nick)+language.fromChannel+he(channel)+'. '+ language.giveKickReason +'</p>' +
 			'<input type="text" id="kbinput" maxlength="307" /><br>' +
 			'<select id="kbtime">' + 
 				'<option value=" ">' + language.noAutoUnban + '</option>' +
