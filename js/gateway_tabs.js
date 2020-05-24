@@ -165,7 +165,7 @@ function NicklistUser(usernick, chan) {
 			'<ul class="options" id="'+this.id+'-opt">'+
 				'<li class="nicklistAvatar"></li>'+
 				'<li onClick="gateway.openQuery(\''+this.nick+'\', \''+this.id+'\')" class="switchTab">' + language.query + '</li>'+
-				((this.nick.toLowerCase() == guser.nick.toLowerCase())?'':'<li onClick="ignore.askIgnore(\''+this.nick+'\');">Ignoruj</li>')+
+				((this.nick.toLowerCase() == guser.nick.toLowerCase())?'':'<li onClick="ignore.askIgnore(\''+this.nick+'\');">' + language.ignoreThis + '</li>')+
 				'<li><div style="width:100%;" onClick="gateway.toggleNickOptInfo(\''+this.id+'\')">' + language.informations + '</div>'+
 					'<ul class="suboptions" id="'+this.id+'-opt-info'+'">'+
 						'<li onClick="' + ((this.nick.toLowerCase() == guser.nick.toLowerCase())?'gateway.displayOwnWhois = true; ':'') + 'gateway.send(\'WHOIS '+$$.sescape(this.nick)+' '+$$.sescape(this.nick)+'\');gateway.toggleNickOpt(\''+this.id+'\');">WHOIS</li>'+
@@ -772,6 +772,7 @@ function Status() {
 	this.scrollPos = 0;
 	this.scrollSaved = false;
 	this.newLines = false;
+	this.modes = {}; // to avoid exceptions
 
 	this.toggleClass = function() {
 		if(this.ClassAdded) {

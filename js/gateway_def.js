@@ -1011,7 +1011,7 @@ var gateway = {
 					}
 				} ];
 				var html = language.textTooLongForSingleLine + '<br><br><strong>'+$$.sescape(input)+'</strong>';
-				$$.displayDialog('confirm', 'command', 'Potwierdź', html, button);
+				$$.displayDialog('confirm', 'command', language.confirm, html, button);
 			} else {
 				gateway.sendSingleMessage(input, active);
 				if(activeCaps.indexOf('echo-message') <= 0) active.appendMessage('%s', [$$.parseImages(input)]);
@@ -1680,6 +1680,7 @@ var gateway = {
 		var modechar = '';
 		var infoText = '';
 		var dir = '';
+		gateway.statusWindow.modes = {};
 		for (var i=0; i<args[0].length; i++) {
 			var cchar = args[0][i];
 			switch(cchar){
@@ -1713,7 +1714,7 @@ var gateway = {
 					switch(mtype){
 						case 'both': case 'list':
 							log += "Mode 'both' "+plus+' '+cchar+' '+args[nextarg]+"\n";
-							infoText = infoText.apList(dir+getModeInfo(cchar, dispType)+' '+args[nextarg]);
+							infoText = infoText.apList(dir+getModeInfo(cchar, dispType)+(args[nextarg]?(' '+args[nextarg]):''));
 							if(mtype != 'list'){
 								if(plus){
 									chan.modes[cchar] = args[nextarg];
@@ -1727,7 +1728,7 @@ var gateway = {
 							log += "Mode 'add' "+plus+' '+cchar+' '+args[nextarg]+"\n";
 							if(plus){
 								chan.modes[cchar] = args[nextarg];
-								infoText = infoText.apList(dir+getModeInfo(cchar+'-add', dispType)+' '+args[nextarg]);
+								infoText = infoText.apList(dir+getModeInfo(cchar+'-add', dispType)+(args[nextarg]?(' '+args[nextarg]):''));
 								nextarg++;
 							} else {
 								infoText = infoText.apList(dir+getModeInfo(cchar+'-remove', dispType));
@@ -2042,7 +2043,7 @@ var gateway = {
 	'toggleFormatting': function() {
 		if($('#formatting').is(':visible')){
 			$('#formatting').hide();
-			$('#formatting-button').text('⮛ ' + language.insertFormatCodes + ' ⮛');
+			$('#formatting-button').text(language.insertFormatCodes);
 		} else {
 			$('#formatting').show();
 			$('#formatting-button').text('⮙ ' + language.hideFormatting + ' ⮙');
@@ -2064,6 +2065,18 @@ var gateway = {
 				default: guser.setUmode(c, plus); break;
 			}
 		}
+	},
+	'getUmodeString': function(){
+		var modeString = '+';
+		for(m in guser.umodes){
+			if(guser.umodes[m] == true){
+				modeString += m;
+			}
+		}
+		if(modeString.length == 1){
+			modeString = language.none;
+		}
+		return modeString;
 	},
 	'enterPressed': function(){
 		if(gateway.connectStatus == statusDisconnected || gateway.connectStatus == statusError){

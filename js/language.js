@@ -36,6 +36,7 @@ var lang = {
 			'kickOwn': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="kick">✀ <span class="modeinfo">%s</span> wyrzucił cię z <span class="modeinfo">%s</span> [Powód: %s]</span></div><!--newline-->',
 			'modeChange': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">🔧 <span class="modeinfo">%s</span> %s na kanale <span class="modeinfo">%s</span></span></div><!--newline-->',
 			'mode': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">🔧 Ustawienia kanału <span class="modeinfo">%s</span>: %s</span></div><!--newline-->',
+			'umode': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">🔧 Ustawienia nicka <span class="modeinfo">%s</span>: %s</span></div><!--newline-->',
 			'creationTime': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">✯ Kanał stworzony: %s</span></div><!--newline-->',
 			'startedQuery': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="join">🢡 Rozpoczęto rozmowę z <span class="modeinfo">%s</span>. <a onclick="ignore.askIgnore(\'%s\');">Ignoruj tego użytkownika</a> / <a onclick="disp.showQueryUmodes()">Blokowanie wiadomości prywatnych</a></span></div><!--newline-->',
 			'queryBacklog': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="join">✯ Zapis poprzedniej rozmowy z <span class="modeinfo">%s</span>:</span></div><!--newline-->',
@@ -387,8 +388,8 @@ var lang = {
 		'noAccessToNetwork': 'Brak dostępu',
 		'listIsEmpty': 'Lista jest pusta.',
 		'listOfIgnoredUsers': 'Lista ignorowanych użytkowników',
-		'channel': 'kanał',
-		'privateDiscussion': 'rozmowa prywatna',
+		'channelSmall': 'kanał',
+		'privateDiscussionSmall': 'rozmowa prywatna',
 		'addListEntry': 'Dodaj wpis do listy',
 		'privateMessages': 'Wiadomości prywatne',
 		'channelMessages': 'Wiadomości na kanale',
@@ -589,7 +590,42 @@ var lang = {
 		'youreStillConnected': 'Jesteś nadal połączony z IRCem. Kliknij "Zostań na stronie" a następnie "Rozłącz" w okienku poniżej aby się rozłączyć przed wyjściem.',
 		'cookiesDisabledHtml': 'Twoja przeglądarka ma wyłączoną obsługę ciasteczek. Niektóre funkcje bramki mogą działać nieprawidłowo.<br /><input type="button" onclick="conn.dispConnectDialog();" value="Kontynuuj" />',
 		'websocketDisabledHtml': 'Twoja przeglądarka nie obsługuje WebSocket. Nie można uruchomić bramki.<br>Spróbuj ',
-		'close': 'Zamknij'
+		'close': 'Zamknij',
+		'none': 'brak',
+		'disconnectOnRequest': 'Rozłączono z IRC na życzenie.',
+		'youHaveToGiveNewNick': 'musisz podać na co chcesz zmienić swój obecny nick.',
+		'youHaveToGiveQueryNick': 'musisz podać nick osoby o której chcesz zdobyć informację.',
+		'youHaveToGivePMNick': 'musisz podać nick osoby z którą chcesz rozpocząć prywatną rozmowę',
+		'youHaveToGiveChanFirstArg': 'musisz podać kanał jako pierwszy argument.',
+		'youHaveToGiveChannelToJoin': 'musisz podać kanał, do którego chcesz dołączyć.',
+		'youHaveToGiveInviteNickChannel': 'musisz podać nicka użytkownika, i nazwę kanału, na który chcesz go zaprosić.',
+		'youHaveToGiveKnockChan': 'musisz podać kanał, do którego chcesz zapukać.',
+		'youHaveToGiveMsgText': 'musisz podać treść wiadomości, którą chcesz wysłać.',
+		'youHaveToGiveMsgNickText': 'musisz podać nick osoby do której chcesz napisać i tekst który chcesz jej wysłać.',
+		'youHaveToGivePartChan': 'musisz podać kanał z którego chcesz wyjść jako pierwszy argument.',
+		'youHaveToGiveKickChan': 'musisz podać kanał z którego chcesz wykopać tę osobę jako pierwszy argument.',
+		'youHaveToGiveKickNick': 'musisz podać nick osoby którą chcesz wykopać jako pierwszy argument.',
+		'youHaveToBeOnChan': 'musisz być na jakimś kanale aby użyć tej komendy.',
+		'youHaveToGiveChannelToTakeGivePerms': 'musisz podać kanał, na ktorym chcesz dać/odebrać uprawnienia tej osobie.',
+		'youHaveToGiveChannelAndNickToTakeGivePerms': 'musisz podać kanał na którym chcesz dać/odebrać uprawnienia, i nick osoby, której chcesz je dać.',
+		'youHaveToGiveChanOrNick': 'musisz podać nick/kanał jako pierwszy argument',
+		'privateMsgBlocking': 'Blokowanie wiadomości prywatnych',
+		'settings': 'Ustawienia',
+		'showUserHostTitle': 'Pokazuje informację user@host przy dołączaniu i opuszczaniu kanałów przez użytkowników',
+		'linkInfoTitle': 'Ustawienie nie wpływa na linki, które są już wyświetlone',
+		'noticeDisplayTitle': 'Gdy rozmowa prywatna jest już otwarta, to, niezależnie od tego ustawienia, tam pojawią się wszystkie NOTICE',
+		'avatar': 'Avatar',
+		'changeSizeTitle': 'Zmień rozmiar tekstu',
+		'gatewayInfoTitle': 'Informacje o bramce',
+		'disconnectWithIrc': 'Rozłącz z IRC',
+		'tabTitle': 'Uzupełnij nick lub polecenie [Tab]',
+		'emoticonsSymbolsTitle': 'Emotikony i symbole',
+		'colorsFormattingTitle': 'Kolory i formatowanie',
+		'enterTitle': 'Wyślij [Enter]',
+		'textFormattingTitle': 'Formatowanie tekstu',
+		'symbolsTitle': 'Symbole',
+		'selectTextSizeTitle': 'Wybierz wielkość tekstu',
+		'ignoreThis': 'Ignoruj'
 	},
 	'en': {
 		'messagePatterns': {
@@ -617,6 +653,7 @@ var lang = {
 			'kickOwn': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="kick">✀ <span class="modeinfo">%s</span> kicked you from <span class="modeinfo">%s</span> [Reason: %s]</span></div><!--newline-->',
 			'modeChange': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">🔧 <span class="modeinfo">%s</span> %s on channel <span class="modeinfo">%s</span></span></div><!--newline-->',
 			'mode': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">🔧 Settings of channel <span class="modeinfo">%s</span>: %s</span></div><!--newline-->',
+			'umode': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">🔧 Settings for user <span class="modeinfo">%s</span>: %s</span></div><!--newline-->',
 			'creationTime': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode">✯ Channel created: %s</span></div><!--newline-->',
 			'startedQuery': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="join">🢡 Started talking with <span class="modeinfo">%s</span>. <a onclick="ignore.askIgnore(\'%s\');">Ignore this user</a> / <a onclick="disp.showQueryUmodes()">Private message blocking settings</a></span></div><!--newline-->',
 			'queryBacklog': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="join">✯ Record of previous query with <span class="modeinfo">%s</span>:</span></div><!--newline-->',
@@ -1171,13 +1208,64 @@ var lang = {
 		'youreStillConnected': 'You are still connected to IRC. Click "Stay on page" and then "Disconnect" in the window below to disconnect before leaving.',
 		'cookiesDisabledHtml': 'Your browser has cookies disabled. Some functionality may not work properly.<br><input type="button" onclick="conn.dispConnectDialog();" value="Continue">',
 		'websocketDisabledHtml': 'Your browser does not support WebSocket. Can\'t run the application.<br>Try ',
-		'close': 'Close'
+		'close': 'Close',
+		'none': 'none',
+		'youHaveToGiveNewNick': 'you have to provide a nick to change to.',
+		'youHaveToGiveQueryNick': 'you have to provide a nick to get info about.',
+		'youHaveToGivePMNick': 'you have to provide a nick to start talking with.',
+		'youHaveToGiveChanFirstArg': 'you have to provide a channel name as first argument.',
+		'youHaveToGiveChannelToJoin': 'you have to provide a channel name to join.',
+		'youHaveToGiveInviteNickChannel': 'you have to provide user nickname and a channel name to invite the user to.',
+		'youHaveToGiveKnockChan': 'you have to provide a channel name to knock to.',
+		'youHaveToGiveMsgText': 'you have to provide some text to send.',
+		'youHaveToGiveMsgNickText': 'you have to provide the destination nick and the some text to send.',
+		'youHaveToGivePartChan': 'you have to provide a channel name to part as the first argument.',
+		'youHaveToGiveKickChan': 'you have to provide a channel to kick this user from as the first argument.',
+		'youHaveToGiveKickNick': 'you have to provide a nick to kick as the first argument.',
+		'youHaveToBeOnChan': 'you have to be on a channel to use this command.',
+		'youHaveToGiveChannelToTakeGivePerms': 'you have to provide a channel name to give/take permissions on.',
+		'youHaveToGiveChannelAndNickToTakeGivePerms': 'you have to provide a channel name and a nickname to give or take permissions from.',
+		'youHaveToGiveChanOrNick': 'you have to provide a nick or channel as the first argument.',
+		'privateMsgBlocking': 'Private message blocking',
+		'settings': 'Settings',
+		'showUserHostTitle': 'Shows user@host information in channel parts and joins',
+		'linkInfoTitle': 'This does not apply to already displayed links',
+		'noticeDisplayTitle': 'If the query window is already open, all notices will go there in any case',
+		'avatar': 'Avatar',
+		'changeSizeTitle': 'Change text size',
+		'gatewayInfoTitle': 'Web client information',
+		'disconnectWithIrc': 'Disconnect from IRC',
+		'tabTitle': 'Auto-complete nick or command [Tab]',
+		'emoticonsSymbolsTitle': 'Emoticons and symbols',
+		'colorsFormattingTitle': 'Colours and formatting',
+		'enterTitle': 'Send [Enter]',
+		'textFormattingTitle': 'Text formatting',
+		'symbolsTitle': 'Symbols',
+		'selectTextSizeTitle': 'Select text size',
+		'ignoreThis': 'Ignore'
 	}
 };
 
 window.language = lang.en;
 
 function fillLanguage(){ // fills static HTML with translations
+	$('.language-privateMsgBlockingTitle').attr('title', language.privateMsgBlocking);
+	$('.language-settingsTitle').attr('title', language.settings);
+	$('.language-showUserHostTitle').attr('title', language.showUserHostTitle);
+	$('.language-linkInfoTitle').attr('title', language.linkInfoTitle);
+	$('.language-noticeDisplayTitle').attr('title', language.noticeDisplayTitle);
+	$('.language-avatarTitle').attr('title', language.avatar);
+	$('.language-informationsTitle').attr('title', language.informations);
+	$('.language-changeSizeTitle').attr('title', language.changeSizeTitle);
+	$('.language-gatewayInfoTitle').attr('title', language.gatewayInfoTitle);
+	$('.language-disconnectWithIrcTitle').attr('title', language.disconnectWithIrc);
+	$('.language-tabTitle').attr('title', language.tabTitle);
+	$('.language-emoticonsSymbolsTitle').attr('title', language.emoticonsSymbolsTitle);
+	$('.language-colorsFormattingTitle').attr('title', language.colorsFormattingTitle);
+	$('.language-enterTitle').attr('title', language.enterTitle);
+	$('.language-textFormattingTitle').attr('title', language.textFormattingTitle);
+	$('.language-symbolsTitle').attr('title', language.symbolsTitle);
+	$('.language-selectTextSizeTitle').attr('title', language.selectTextSizeTitle);
 	$('.language-noticeDisplay').html(language.noticeDisplay);
 	$('.language-version').html(language.version);
 	$('.language-statusWindow').html(language.statusWindow);

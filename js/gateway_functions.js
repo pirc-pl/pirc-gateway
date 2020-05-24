@@ -813,9 +813,9 @@ var $$ = {
 		var nd = new Date();
 		nd.setTime(timestamp*1000);
 		if((new Date()).getFullYear() != nd.getFullYear()){
-			return $.vsprintf("%s, %s %s %s, %02s:%02s:%02s", [ language.dateWeek[nd.getDay()], nd.getDate(), language.dateMonth[nd.getMonth()], nd.getFullYear(), nd.getHours(), nd.getMinutes(), nd.getSeconds() ] );
+			return $.vsprintf("%s, %s %s %s, %02s:%02s:%02s", [ language.weekdays[nd.getDay()], nd.getDate(), language.months[nd.getMonth()], nd.getFullYear(), nd.getHours(), nd.getMinutes(), nd.getSeconds() ] );
 		} else {
-			return $.vsprintf("%s, %s %s, %02s:%02s:%02s", [ language.dateWeek[nd.getDay()], nd.getDate(), language.dateMonth[nd.getMonth()], nd.getHours(), nd.getMinutes(), nd.getSeconds() ] );
+			return $.vsprintf("%s, %s %s, %02s:%02s:%02s", [ language.weekdays[nd.getDay()], nd.getDate(), language.months[nd.getMonth()], nd.getHours(), nd.getMinutes(), nd.getSeconds() ] );
 		}
 	},
 	'nickColor': function(nick, codeOnly) {

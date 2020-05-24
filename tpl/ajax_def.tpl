@@ -10,7 +10,7 @@
 			</div>
 		</div>	
 		
-		<div id="query-umodes-dialog" title="Blokowanie wiadomości prywatnych">
+		<div id="query-umodes-dialog" class="language-privateMsgBlockingTitle">
 			<span class="language-dontWantPrivateMessages"></span>
 			<table>
 				<tr>
@@ -23,7 +23,7 @@
 				</tr>
 			</table>
 		</div>
-		<div id="options-dialog" title="Ustawienia">
+		<div id="options-dialog" class="language-settingsTitle">
 			<table>
 				<tr>
 					<td class="optionsCheckBox"><input type="checkbox" id="noAvatars" onchange="disp.changeSettings(event)" /></td>
@@ -45,7 +45,7 @@
 					<td class="optionsCheckBox"><input type="checkbox" id="tabsListBottom" onchange="disp.changeSettings(event)" /> </td>
 					<td class="info language-tabListOnBottom"></td>
 				</tr>
-				<tr title="Pokazuje informację user@host przy dołączaniu i opuszczaniu kanałów przez użytkowników">
+				<tr class="language-showUserHostTitle">
 					<td class="optionsCheckBox"><input type="checkbox" id="showUserHostnames" onchange="disp.changeSettings(event)" /></td>
 					<td class="info language-showHostnames"></td>
 				</tr>
@@ -53,7 +53,7 @@
 					<td class="optionsCheckBox"><input type="checkbox" id="autoReconnect" onchange="disp.changeSettings(event)" checked="checked" /></td>
 					<td class="info language-autoReconnect"></td>
 				</tr>
-				<tr title="Ustawienie nie wpływa na linki, które są już wyświetlone">
+				<tr class="language-linkInfoTitle">
 					<td class="optionsCheckBox"><input type="checkbox" id="displayLinkWarning" onchange="disp.changeSettings(event)" checked="checked" /></td>
 					<td class="info language-unsafeLinkWarnings"></td>
 				</tr>
@@ -93,7 +93,7 @@
 					<td><input type="text" id="backlogCount" onchange="disp.changeSettings(event)" /></td>
 					<td class="info language-backlogCount"></td>
 				</tr>
-				<tr title="Gdy rozmowa prywatna jest już otwarta, to, niezależnie od tego ustawienia, tam pojawią się wszystkie NOTICE">
+				<tr class="language-noticeDisplayTitle">
 					<td colspan="2">
 						<span class="language-noticeDisplay"></span> &nbsp;
 						<select id="noticeDisplay" onchange="disp.changeSettings(event)">
@@ -107,10 +107,10 @@
 			</table>
 		</div>
 		
-		<div id="avatar-dialog" title="Avatar">
+		<div id="avatar-dialog" class="language-avatarTitle">
 		</div>
 		
-		<div id="about-dialog" title="Informacje">
+		<div id="about-dialog" class="langugage-informationsTitle">
 				<h3>Bramka WWW PIRC.PL</h3>
 				<p><span class="language-version"></span>: <script type="text/javascript">document.write(gatewayVersion);</script></p>
 				<p>&copy; 2010-2020 <a href="http://pirc.pl">PIRC.PL</a>. <span class="language-allRightsReserved"></span></p>
@@ -131,10 +131,10 @@
 		</div>
 		
 		<div id="options-box">
-			<a id="button-tsize" href="javascript:void(0);" onclick="disp.showSizes();" title="Zmień rozmiar tekstu"></a>
-			<a id="button-options" href="javascript:void(0);" onClick="disp.showOptions();" title="Ustawienia"></a> 
-			<a id="button-about" href="javascript:void(0);" onClick="disp.showAbout();" title="Informacje o bramce"></a>
-			<a id="button-quit" href="javascript:void(0);" onClick="gateway.clickQuit();" title="Rozłącz z IRC"></a> 
+			<a id="button-tsize" href="javascript:void(0);" onclick="disp.showSizes();" class="language-changeSizeTitle"></a>
+			<a id="button-options" href="javascript:void(0);" onClick="disp.showOptions();" class="language-settingsTitle"></a> 
+			<a id="button-about" href="javascript:void(0);" onClick="disp.showAbout();" class="language-gatewayInfoTitle"></a>
+			<a id="button-quit" href="javascript:void(0);" onClick="gateway.clickQuit();" class="language-disconnectWithIrcTitle"></a> 
 		</div>
 
 		<div id="wrapper">
@@ -196,11 +196,11 @@
 			<div id="input-wrapper">
 				<table class="nostyle"><tr>
 					<!--<td style="width: 150px; text-align: right;"><span id="usernick" class="yournickname">{$nick}</span></td>-->
-					<td style="width: 10px;"><input type="image" src="/styles/img/plus.png" value="" class="completion" onClick="gateway.doComplete();$('#input').focus()" title="Uzupełnij nick lub polecenie [Tab]" /></td>
+					<td style="width: 10px;"><input type="image" src="/styles/img/plus.png" value="" class="completion language-tabTitle" onClick="gateway.doComplete();$('#input').focus()"></td>
 					<td style="padding-right: 10px; padding-left: 5px;"> <input id="input" type="text" name="input" class="input" /></td>
-					<td style="width: 10px;"><input type="image" src="/styles/img/smiley_mu.png" class="symbols" onClick="disp.symbolWindowShow()" title="Emotikony i symbole" /></td>
-					<td style="width: 10px;"><input type="image" src="/styles/img/kolorki.png" value="" class="insertColor" onClick="disp.colorWindowShow()" title="Kolory i formatowanie" /></td>
-					<td style="width: 10px;"><input type="submit" value="&#11166;" class="submit" OnClick="gateway.enterPressed()" title="Wyślij [Enter]" /></td>
+					<td style="width: 10px;"><input type="image" src="/styles/img/smiley_mu.png" class="symbols language-emoticonsSymbolsTitle" onClick="disp.symbolWindowShow()"></td>
+					<td style="width: 10px;"><input type="image" src="/styles/img/kolorki.png" value="" class="insertColor language-colorsFormattingTitle" onClick="disp.colorWindowShow()"></td>
+					<td style="width: 10px;"><input type="submit" value="&#11166;" class="submit language-enterTitle" OnClick="gateway.enterPressed()"></td>
 				</tr></table>
 			</div>
 		</div>
@@ -213,7 +213,7 @@
 			</div>
 		</div>
 		
-		<div id="color-dialog" title="Formatowanie tekstu">
+		<div id="color-dialog" class="language-textFormattingTitle">
 			<div id="formatting-button" onclick="gateway.toggleFormatting()" class="language-insertFormatCodes"></div>
 			<div id="formatting">
 				<h3 class="language-insertColorCode"></h3>
@@ -229,7 +229,7 @@
 	   		</div>
    		</div>
 		
-		<div id="symbol-dialog" title="Symbole">
+		<div id="symbol-dialog" class="language-symbolsTitle">
 			<h3 class="language-emoticons"></h3>
 			<div id="emoticon-symbols"></div>
 			<div class="dfooter"><a href="javascript:void(0)" onclick="disp.showAllEmoticons()" class="language-showAllAvailable"></a> <span class="language-thisCanTakeTime"></span></div>
@@ -246,7 +246,7 @@
 				<a class="charSelect" onclick="gateway.insert('Γ')">Γ</a> <a class="charSelect" onclick="gateway.insert('∑')">∑</a>
 			</div>
 		</div>
-		<div id="size-dialog" title="Wybierz wielkość tekstu">
+		<div id="size-dialog" class="language-selectTextSizeTitle">
 			<a onclick="javascript:disp.setSize(0.6)" style="font-size:0.6em">A</a>
 			<a onclick="javascript:disp.setSize(0.8)" style="font-size:0.8em">A</a> 
 			<a onclick="javascript:disp.setSize(1.0)" style="font-size:1.0em">A</a>

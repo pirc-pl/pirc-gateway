@@ -8,12 +8,12 @@ var commands = {
 			gateway.userQuit = true;
 			gateway.connectStatus = statusDisconnected;
 			var button = [ {
-				text: 'Połącz ponownie',
+				text: language.reconnect,
 				click: function(){
 					gateway.reconnect();
 				}
 			} ];
-			$$.displayDialog('connect', 'reconnect', 'Rozłączono', '<p>Rozłączono z IRC na życzenie.<p>', button);
+			$$.displayDialog('connect', 'reconnect', language.disconnected, '<p>' + language.disconnectOnRequest + '<p>', button);
 			if (input.slice(1).substr(command[0].length+1) != "") {
 				gateway.send("QUIT :" + input.slice(1).substr(command[0].length+1));
 			} else {
@@ -55,7 +55,7 @@ var commands = {
 			if(command[1]) {
 				gateway.send("NICK "+command[1]);
 			} else {
-				gateway.notEnoughParams("nick", "musisz podać na co chcesz zmienić swój obecny nick.");
+				gateway.notEnoughParams("nick", language.youHaveToGiveNewNick);
 			}
 		}
 	},
@@ -70,7 +70,7 @@ var commands = {
 					gateway.displayOwnWhois = true;
 				}
 			} else {
-				gateway.notEnoughParams("whois", "musisz podać nick osoby o której chcesz zdobyć informację.");
+				gateway.notEnoughParams("whois", language.youHaveToGiveQueryNick);
 			}
 		}
 	},
@@ -82,7 +82,7 @@ var commands = {
 			if(command[1]) {
 				ircCommand.whowas(command[1]);
 			} else {
-				gateway.notEnoughParams("whowas", "musisz podać nick osoby o której chcesz zdobyć informację.");
+				gateway.notEnoughParams("whowas", language.youHaveToGiveQueryNick);
 			}
 		}
 	},
@@ -97,7 +97,7 @@ var commands = {
 			if (command[1] != "") {
 				gateway.findOrCreate(command[1]);
 			} else {
-				gateway.notEnoughParams("query", "musisz podać nick osoby z którą chcesz rozpocząć prywatną rozmowę");
+				gateway.notEnoughParams("query", language.youHaveToGivePMNick);
 			}
 		}
 	},
@@ -106,15 +106,6 @@ var commands = {
 		'nicks': false,
 		'custom': [],
 		'callback': function(command, input) {
-			/*if (command[1]) {
-				if (command[1] != "-YES") {
-					gateway.notEnoughParams("list", "wpisywanie /list nie jest dobrym pomysłem, jako że możesz pobrać bardzo dużą ilość danych. Jeśli chcesz jednak to zrobić, dopisz -YES do polecenia.");
-				} else {
-					gateway.send("LIST"+input.substr(10));
-				}
-			} else {
-				gateway.notEnoughParams("list", "wpisywanie /list nie jest dobrym pomysłem, jako że możesz pobrać bardzo dużą ilość danych. Jeśli chcesz jednak to zrobić, dopisz -YES do polecenia.");
-			}*/
 			if(!command[1] || command[1] == '-YES'){
 				gateway.send('LIST');
 			} else {
@@ -213,14 +204,14 @@ var commands = {
 							gateway.send("TOPIC "+gateway.active);
 						}
 					} else {
-						gateway.notEnoughParams("topic", "musisz podać kanał jako pierwszy argument.");
+						gateway.notEnoughParams("topic", language.youHaveToGiveChanFirstArg);
 					}
 				}
 			} else {
 				if (gateway.getActive()) {
 					gateway.send("TOPIC "+gateway.active);
 				} else {
-					gateway.notEnoughParams("topic", "musisz podać kanał jako pierwszy argument.");
+					gateway.notEnoughParams("topic", language.youHaveToGiveChanFirstArg);
 				}
 			}
 		}
@@ -243,7 +234,7 @@ var commands = {
 					gateway.switchTab(command[1].toLowerCase());
 				}
 			} else {
-				gateway.notEnoughParams("join", "musisz podać kanał do którego chcesz dołączyć.");
+				gateway.notEnoughParams("join", language.youHaveToGiveChannelToJoin);
 			}
 		}
 	},
@@ -253,7 +244,7 @@ var commands = {
 		'custom': [],
 		'callback': function(command, input) {
 			if(!command[1] || (!command[2] && !gateway.findChannel(gateway.active))){
-				gateway.notEnoughParams("invite", "musisz podać nicka użytkownika, i nazwę kanału, na który chcesz go zaprosić.");
+				gateway.notEnoughParams("invite", language.youHaveToGiveInviteNickChannel);
 				return;
 			}
 			if(!command[2]){
@@ -271,7 +262,7 @@ var commands = {
 			if (command[1] != "") {
 				gateway.send("KNOCK "+command[1]);
 			} else {
-				gateway.notEnoughParams("knock", "musisz podać kanał do którego chcesz zapukać.");
+				gateway.notEnoughParams("knock", language.youHaveToGiveKnockChan);
 			}
 		}
 	},
@@ -302,13 +293,13 @@ var commands = {
 						query.appendMessage(language.messagePatterns.yourNotice, [$$.niceTime(), command[1], reason]);
 					} else if($("#noticeDisplay").val() == 0) { // notice jako okienko
 						var html = "<span class=\"notice\">[<b>"+he(guser.nick)+" → "+command[1] + "</b>]</span> " + $$.colorize(reason);
-						$$.displayDialog('notice', command[1], 'Komunikat prywatny od '+command[1], html);
+						$$.displayDialog('notice', command[1], language.privateNoticeFrom+' '+command[1], html);
 					}
 				} else {
-					gateway.notEnoughParams("notice", "musisz podać treść wiadomości którą chcesz wysłać.");
+					gateway.notEnoughParams("notice", language.youHaveToGiveMsgText);
 				}
 			} else {
-				gateway.notEnoughParams("notice", "musisz podać nick osoby do której chcesz napisać i tekst który chcesz jej wysłać.");
+				gateway.notEnoughParams("notice", language.youHaveToGiveMsgNickText);
 			}
 		}
 	},
@@ -339,7 +330,7 @@ var commands = {
 							query.appendMessage('%s', [$$.parseImages(reason)]);
 						} else if($("#noticeDisplay").val() == 0){ // okienko
 							var html = "<span class=\"notice\">[<b>"+he(guser.nick)+" → "+command[1] + "</b>]</span> " + $$.colorize(reason);
-							$$.displayDialog('notice', 'service', 'Komunikat od usługi sieciowej', html);
+							$$.displayDialog('notice', 'service', language.networkServiceMessage, html);
 						} else { // status
 							gateway.statusWindow.appendMessage(language.messagePatterns.yourMsg, [$$.niceTime(), $$.nickColor(guser.nick), guser.nick + ' → ' + command[1], $$.colorize(reason)]);
 						}
@@ -347,10 +338,10 @@ var commands = {
 					
 					
 				} else {
-					gateway.notEnoughParams("msg", "musisz podać treść wiadomości którą chcesz wysłać.");
+					gateway.notEnoughParams("msg", language.youHaveToGiveMsgText);
 				}
 			} else {
-				gateway.notEnoughParams("msg", "musisz podać nick osoby do której chcesz napisać i tekst który chcesz jej wysłać.");
+				gateway.notEnoughParams("msg", language.youHaveToGiveMsgNickText);
 			}
 		}
 	},
@@ -398,14 +389,14 @@ var commands = {
 						}
 						gateway.removeChannel(gateway.active.toLowerCase())
 					} else {
-						gateway.notEnoughParams("part", "musisz podać kanał z którego chcesz wyjść jako pierwszy argument.");
+						gateway.notEnoughParams("part", language.youHaveToGivePartChan);
 					}
 				}
 			} else {
 				if (gateway.getActive()) {
 					gateway.send("PART "+gateway.active);
 				} else {
-					gateway.notEnoughParams("part", "musisz podać kanał z którego chcesz wyjść jako pierwszy argument.");
+					gateway.notEnoughParams("part", language.youHaveToGivePartChan);
 				}
 			}
 		}
@@ -418,7 +409,7 @@ var commands = {
 			if (command[1]) {
 				if (command[1].indexOf('#') == 0) {
 					if(!command[2]) {
-						gateway.notEnoughParams("kick", "musisz podać kanał z którego chcesz wykopać tę osobę jako pierwszy argument.");
+						gateway.notEnoughParams("kick", language.youHaveToGiveKickChan);
 					} else {
 						var reason = '';
 						if(command[3]) {
@@ -452,11 +443,11 @@ var commands = {
 							gateway.send("KICK "+gateway.active+" "+command[1]);
 						}
 					} else {
-						gateway.notEnoughParams("kick", "musisz podać kanał z którego chcesz wykopać tę osobę jako pierwszy argument.");
+						gateway.notEnoughParams("kick", language.youHaveToGiveKickChan);
 					}
 				}
 			} else {
-				gateway.notEnoughParams("kick", "musisz podać nick osoby którą chcesz wykopać jako pierwszy argument.");
+				gateway.notEnoughParams("kick", language.youHaveToGiveKickNick);
 			}
 		}
 	},
@@ -467,7 +458,7 @@ var commands = {
 		'callback': function(command, input){
 			if (command[1]) {
 				if (command[1].indexOf('#') != 0) {
-					gateway.notEnoughParams("names", "musisz podać kanał jako pierwszy argument.");
+					gateway.notEnoughParams("names", language.youHaveToGiveChanFirstArg);
 				} else {
 					ircCommand.channelNames(command[1]);
 				}
@@ -475,7 +466,7 @@ var commands = {
 				if (gateway.getActive()) {
 					ircCommand.channelNames(gateway.active);
 				} else {
-					gateway.notEnoughParams("names", "musisz podać kanał jako pierwszy argument.");
+					gateway.notEnoughParams("names", language.youHaveToGiveChanFirstArg);
 				}
 			}
 		}
@@ -501,10 +492,10 @@ var commands = {
 						console.log('błąd /me !!!');
 					}
 				} else {
-					gateway.notEnoughParams("me", "musisz być na jakimś kanale aby użyć tej komendy.");
+					gateway.notEnoughParams("me", language.youHaveToBeOnChan);
 				}
 			} else {
-				gateway.notEnoughParams("me", "musisz podać tekst do wysłania.");
+				gateway.notEnoughParams("me", language.youHaveToGiveMsgText);
 			}
 		}
 	},
@@ -522,9 +513,9 @@ var commands = {
 					gateway.statusWindow.appendMessage(language.messagePatterns.ignoreListStart, [$$.niceTime()]);
 					for(var i=0; i<data.length; i++){
 						if(data[i][0] == 'channel'){
-							var ignoreType = 'kanał';
+							var ignoreType = language.channelSmall;
 						} else {
-							var ignoreType = 'rozmowa prywatna';
+							var ignoreType = language.privateDiscussionSmall;
 						}
 						var ignoreMask = data[i][1];
 						gateway.statusWindow.appendMessage(language.messagePatterns.ignoreListItem, [$$.niceTime(), ignoreType, ignoreMask]);
@@ -553,11 +544,11 @@ var commands = {
 					if(gateway.getActive()) {
 						gateway.send("MODE "+gateway.active+" -a "+command[1]);
 					} else {
-						gateway.notEnoughParams("deprotect", "musisz podać kanal na ktorym chcesz odebrać uprawnienia tej osobie.");
+						gateway.notEnoughParams("deprotect", language.youHaveToGiveChannelToTakeGivePerms);
 					}
 				}
 			} else {
-				gateway.notEnoughParams("deprotect", "musisz podać kanał na którym chcesz odebrać uprawnienia i nick osoby której chcesz je dać.");
+				gateway.notEnoughParams("deprotect", language.youHaveToGiveChannelAndNickToTakeGivePerms);
 			}
 		}
 	},	
@@ -575,11 +566,11 @@ var commands = {
 					if(gateway.getActive()) {
 						gateway.send("MODE "+gateway.active+" +a "+command[1]);
 					} else {
-						gateway.notEnoughParams("protect", "musisz podać kanal na ktorym chcesz odebrać uprawnienia tej osobie.");
+						gateway.notEnoughParams("protect", language.youHaveToGiveChannelToTakeGivePerms);
 					}
 				}
 			} else {
-				gateway.notEnoughParams("protect", "musisz podać kanał na którym chcesz odebrać uprawnienia i nick osoby której chcesz je dać.");
+				gateway.notEnoughParams("protect", language.youHaveToGiveChannelAndNickToTakeGivePerms);
 			}
 		}
 	},	
@@ -597,11 +588,11 @@ var commands = {
 					if(gateway.getActive()) {
 						gateway.send("MODE "+gateway.active+" +o "+command[1]);
 					} else {
-						gateway.notEnoughParams("op", "musisz podać kanal na ktorym chcesz odebrać uprawnienia tej osobie.");
+						gateway.notEnoughParams("op", language.youHaveToGiveChannelToTakeGivePerms);
 					}
 				}
 			} else {
-				gateway.notEnoughParams("op", "musisz podać kanał na którym chcesz odebrać uprawnienia i nick osoby której chcesz je dać.");
+				gateway.notEnoughParams("op", language.youHaveToGiveChannelAndNickToTakeGivePerms);
 			}
 		}
 	},	
@@ -619,11 +610,11 @@ var commands = {
 					if(gateway.getActive()) {
 						gateway.send("MODE "+gateway.active+" -o "+command[1]);
 					} else {
-						gateway.notEnoughParams("deop", "musisz podać kanal na ktorym chcesz odebrać uprawnienia tej osobie.");
+						gateway.notEnoughParams("deop", language.youHaveToGiveChannelToTakeGivePerms);
 					}
 				}
 			} else {
-				gateway.notEnoughParams("deop", "musisz podać kanał na którym chcesz odebrać uprawnienia i nick osoby której chcesz je dać.");
+				gateway.notEnoughParams("deop", language.youHaveToGiveChannelAndNickToTakeGivePerms);
 			}
 		}
 	},	
@@ -641,11 +632,11 @@ var commands = {
 					if(gateway.getActive()) {
 						gateway.send("MODE "+gateway.active+" +v "+command[1]);
 					} else {
-						gateway.notEnoughParams("voice", "musisz podać kanal na ktorym chcesz odebrać uprawnienia tej osobie.");
+						gateway.notEnoughParams("voice", language.youHaveToGiveChannelToTakeGivePerms);
 					}
 				}
 			} else {
-				gateway.notEnoughParams("voice", "musisz podać kanał na którym chcesz odebrać uprawnienia i nick osoby której chcesz je dać.");
+				gateway.notEnoughParams("voice", language.youHaveToGiveChannelAndNickToTakeGivePerms);
 			}
 		}
 	},
@@ -663,11 +654,11 @@ var commands = {
 					if(gateway.getActive()) {
 						gateway.send("MODE "+gateway.active+" -v "+command[1]);
 					} else {
-						gateway.notEnoughParams("devoice", "musisz podać kanal na ktorym chcesz odebrać uprawnienia tej osobie.");
+						gateway.notEnoughParams("devoice", language.youHaveToGiveChannelToTakeGivePerms);
 					}
 				}
 			} else {
-				gateway.notEnoughParams("devoice", "musisz podać kanał na którym chcesz odebrać uprawnienia i nick osoby której chcesz je dać.");
+				gateway.notEnoughParams("devoice", language.youHaveToGiveChannelAndNickToTakeGivePerms);
 			}
 		}
 	},	
@@ -683,11 +674,11 @@ var commands = {
 					if (gateway.findChannel(gateway.active)) {
 						 gateway.send("MODE " + gateway.active + " " + input.slice(1).substr(command[0].length+1));
 					} else {
-						gateway.notEnoughParams("mode", "musisz podać nick/kanał jako pierwszy argument");
+						gateway.notEnoughParams("mode", language.youHaveToGiveChanOrNick);
 					}
 				}
 			} else {
-				gateway.notEnoughParams("mode", "musisz podać nick/kanał jako pierwszy argument");
+				gateway.notEnoughParams("mode", language.youHaveToGiveChanOrNick);
 			}
 		}
 	},

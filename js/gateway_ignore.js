@@ -63,9 +63,9 @@ var ignore = {
 		for(var i=0; i<data.length; i++){
 			var ignoreT = data[i][0];
 			if(ignoreT == 'channel'){
-				var ignoreType = language.channel;
+				var ignoreType = language.channelSmall;
 			} else {
-				var ignoreType = language.privateDiscussion;
+				var ignoreType = language.privateDiscussionSmall;
 			}
 			var ignoreMask = data[i][1];
 			

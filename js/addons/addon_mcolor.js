@@ -1,6 +1,26 @@
+lang.pl['invalidColorCode'] = 'Niepoprawny kod koloru';
+lang.pl['youMustGiveColorCode'] = 'musisz podać kod koloru html';
+lang.pl['changeTemporary'] = ' (tymczasowo)';
+lang.pl['setColorPermanently'] = 'Ustaw kolor swojego tekstu (na stałe)';
+lang.pl['selectAColor'] = 'Wybierz kolor: ';
+lang.pl['deleteColor'] = 'Skasuj kolor';
+lang.pl['exampleText'] = 'przykładowy tekst';
+lang.pl['darkBgPreview'] = 'Podgląd na ciemnym tle';
+lang.pl['lightBgPreview'] = 'Podgląd na jasnym tle';
+lang.pl['enableMessageColoring'] = 'Włącz kolorowanie wiadomości';
+
+lang.en['invalidColorCode'] = 'Invalid color code';
+lang.en['youMustGiveColorCode'] = 'You have to provide a HTML color code';
+lang.en['changeTemporary'] = ' (temporary)';
+lang.en['setColorPermanently'] = 'Set colour of your text (permanently)';
+lang.en['selectAColor'] = 'Select a colour: ';
+lang.en['deleteColor'] = 'Delete colour';
+lang.en['exampleText'] = 'example text';
+lang.en['darkBgPreview'] = 'Dark background preview';
+lang.en['lightBgPreview'] = 'Light background preview';
+lang.en['enableMessageColoring'] = 'Enable message colouring';
 
 var mcolor = false;
-
 
 var mcolorMetadataSet = function(msg){
 	if(!mcolor) return;
@@ -27,7 +47,7 @@ var setMyColor = function(color){
 		if(isCorrectColor(color)){
 			mcolor = color;
 		} else {
-			$$.displayDialog('info', 'info', 'Info', '<p>Niepoprawny kod koloru '+he(color)+'</p>');
+			$$.displayDialog('info', 'info', 'Info', '<p>' + language.invalidColorCode + ' '+he(color)+'</p>');
 			return;
 		}
 		var scolor = mcolor;
@@ -122,7 +142,7 @@ commands['mycolor'] = {
 		if(command[1]) {
 			setMyColor(command[1]);
 		} else {
-			gateway.notEnoughParams("mycolor", "musisz podać kod koloru html");
+			gateway.notEnoughParams("mycolor", language.youMustGiveColorCode);
 		}
 	}
 };
@@ -148,14 +168,14 @@ var mcolorInit = function(){
 	} catch(e){}
 	$('#formatting-button').show();
 	$('#formatting').hide();
-	$('#color-dialog h3').append('<span class="mcolor"> (tymczasowo)</span>');
-	var html = '<div class="mcolor"><h3>Ustaw kolor swojego tekstu (na stałe)</h3><p>Wybierz kolor: <input type="color" id="nickColorPick"></p>' +
-		'<p><button id="clearNickColor">Skasuj kolor</button></p></div>' +
-		'<div> Podgląd na jasnym tle:<div id="lightBgPreview" style="background-color: #ffffff; padding: 5px;">przykładowy tekst</div></div>' +
-		'<div> Podgląd na ciemnym tle:<div id="darkBgPreview" style="background-color: #000000; padding: 5px;">przykładowy tekst</div></div>';
+	$('#color-dialog h3').append('<span class="mcolor">' + language.changeTemporary + '</span>');
+	var html = '<div class="mcolor"><h3>' + language.setColorPermanently + '</h3><p>' + language.selectAColor + '<input type="color" id="nickColorPick"></p>' +
+		'<p><button id="clearNickColor">' + language.deleteColor + '</button></p></div>' +
+		'<div> ' + language.lightBgPreview + ':<div id="lightBgPreview" style="background-color: #ffffff; padding: 5px;">' + language.exampleText + '</div></div>' +
+		'<div> ' + language.darkBgPreview + ':<div id="darkBgPreview" style="background-color: #000000; padding: 5px;">' + language.exampleText + '</div></div>';
 	$('#color-dialog').append(html);
 	colorExampleApply();
-	html = '<tr><td  class="optionsCheckBox"><input type="checkbox" id="mcolorEnable" onchange="disp.changeSettings(event)" checked="checked" /></td><td class="info">Włącz kolorowanie wiadomości</td></tr>';
+	html = '<tr><td  class="optionsCheckBox"><input type="checkbox" id="mcolorEnable" onchange="disp.changeSettings(event)" checked="checked" /></td><td class="info">' + language.enableMessageColoring + '</td></tr>';
 	$('#options-dialog table').prepend(html);
 	booleanSettings.push('mcolorEnable');
 	$('#nickColorPick').change(function(){

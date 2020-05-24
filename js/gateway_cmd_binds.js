@@ -225,6 +225,7 @@ var cmdBinds = {
 			var chanName = msg.args[0];
 			if(chanName == guser.nick){
 				gateway.parseUmodes(msg.text);
+				gateway.statusWindow.appendMessage(language.messagePatterns.umode, [$$.niceTime(msg.time), guser.nick, gateway.getUmodeString()]);
 			} else if(gateway.findChannel(chanName)) {
 				var modestr = '';
 				for (i in msg.args) {
@@ -636,6 +637,7 @@ var cmdBinds = {
 		function(msg) {
 			guser.clearUmodes();
 			gateway.parseUmodes(msg.args[1]);
+			gateway.statusWindow.appendMessage(language.messagePatterns.umode, [$$.niceTime(msg.time), guser.nick, gateway.getUmodeString()]);
 			gateway.pingcnt = 0;
 		}
 	],
@@ -859,18 +861,21 @@ var cmdBinds = {
 	],
 	'324': [	// RPL_CHANNELMODEIS
 		function(msg) {
-			if(gateway.findChannel(msg.args[1])) {
-				var chan = msg.args[1];
-				var mody = JSON.parse(JSON.stringify(msg.args));
-				mody.splice(0,2);
-				var chanO = gateway.findChannel(chan);
-				var info = gateway.parseChannelMode(mody, chanO, 1);
-				if(info == ''){
-					info = 'brak';
-				}
-				if (!$('#showMode').is(':checked')) {
-					chanO.appendMessage(language.messagePatterns.mode, [$$.niceTime(msg.time), chan, info]);
-				}
+			var chan = msg.args[1];
+			var mody = JSON.parse(JSON.stringify(msg.args));
+			mody.splice(0,2);
+			var chanO = gateway.findChannel(chan);
+			if(!chanO){
+				chanO = gateway.statusWindow;
+			} else {
+				var chanFound = true;
+			}
+			var info = gateway.parseChannelMode(mody, chanO, 1);
+			if(info == ''){
+				info = language.none;
+			}
+			if (!$('#showMode').is(':checked') || !chanFound) {
+				chanO.appendMessage(language.messagePatterns.mode, [$$.niceTime(msg.time), chan, info]);
 			}
 		}
 	],
@@ -886,21 +891,26 @@ var cmdBinds = {
 	],
 	'330': [	// RPL_WHOISLOGGEDIN
 		function(msg) {
-			$$.displayDialog('whois', msg.args[1], false, "<p class='whois'><span class='info'>" + language.accoutName + ":</span><span class='data'>" + msg.args[2] + "</span></p>");
+			$$.displayDialog('whois', msg.args[1], false, "<p class='whois'><span class='info'>" + language.accountName + ":</span><span class='data'>" + msg.args[2] + "</span></p>");
 		}
 	],
 	'331': [	// RPL_NOTOPIC
 	],
 	'332': [	// RPL_TOPIC 
 		function(msg) {
-			if(gateway.findChannel(msg.args[1])) {
-				if(msg.text) {
-					gateway.findChannel(msg.args[1]).setTopic(msg.text);
-					gateway.findChannel(msg.args[1]).appendMessage(language.messagePatterns.topic, [$$.niceTime(msg.time), msg.args[1], $$.colorize(msg.text)]);
-				} else {
-					gateway.findChannel(msg.args[1]).setTopic('');
-					gateway.findChannel(msg.args[1]).appendMessage(language.messagePatterns.topicNotSet, [$$.niceTime(msg.time), msg.args[1]]);
-				}
+			var chan = gateway.findChannel(msg.args[1]);
+			if(chan){
+				var chanFound = true;
+			} else {
+				chan = gateway.statusWindow;
+				var chanFound = false;
+			}
+			if(msg.text) {
+				if(chanFound) chan.setTopic(msg.text);
+				chan.appendMessage(language.messagePatterns.topic, [$$.niceTime(msg.time), msg.args[1], $$.colorize(msg.text)]);
+			} else {
+				if(chanFound) chan.setTopic('');
+				chan.appendMessage(language.messagePatterns.topicNotSet, [$$.niceTime(msg.time), msg.args[1]]);
 			}
 		}
 	],
@@ -1077,8 +1087,8 @@ var cmdBinds = {
 				newUser.setHost(user.host);
 				var nickListItem = channel.nicklist.findNick(user.nick);
 				for(var i=0; i<user.modes.length; i++){
-					if(user.modes[i] in chStatusNames){
-						nickListItem.setMode(chStatusNames[user.modes[i]], true);
+					if(user.modes[i] in language.modes.chStatusNames){
+						nickListItem.setMode(language.modes.chStatusNames[user.modes[i]], true);
 					} else {
 						nickListItem.setMode(user.modes[i], true); // unlisted mode char
 					}
