@@ -1096,7 +1096,7 @@ span.chstats-text:before {
     display: block;
     padding-top: .2em;
     position: absolute;
-    bottom: .3em;
+    bottom: .1em;
     width: inherit;
     cursor: pointer;
 }

@@ -55,7 +55,21 @@ var cmdBinds = {
 					ircCommand.performQuick('CAP', ['REQ'], useCaps);
 					break;
 				case 'ACK':
-					activeCaps = msg.text.split(' ');
+					newCaps = msg.text.split(' ');
+					for(var i=0; i<newCaps.length; i++){
+						var add = true;
+						var cap = newCaps[i];
+						if(cap.charAt(0) == '-'){
+							add = false;
+							cap = cap.substr(1);
+						}
+						if(activeCaps.indexOf(cap) < 0 && add){ // add capability
+							activeCaps.push(cap);
+						}
+						if(activeCaps.indexOf(cap) >= 0 && !add){ // remove capability
+							activeCaps.splice(activeCaps.indexOf(cap), 1);
+						}
+					}
 					if(activeCaps.indexOf('sasl') >= 0){
 						gateway.sasl = true;
 					}
@@ -449,7 +463,6 @@ var cmdBinds = {
 			} else {
 				var msgid = '';
 			}
-			console.log(msgid);
 			if('display-name' in user.metadata){
 				nick = user.metadata['display-name'];
 				nickComments = ' <span class="realNick" title="' + language.realNickname + '">(' + msg.sender.nick + ')</span>';
@@ -469,7 +482,7 @@ var cmdBinds = {
 			}
 			
 			nick = '<span title="' + nickInfo + '">' + nick + '</span>';
-			
+
 			if(msg.args[0].indexOf('#') == 0) { // wiadomość kanałowa
 				if(ignore.ignoring(msg.sender.nick, 'channel')){
 					console.log('Ignoring message on '+msg.args[0]+' by '+msg.sender.nick);
@@ -531,7 +544,7 @@ var cmdBinds = {
 
 				if(msg.sender.nick == guser.nick && msg.args[0].isInList(servicesNicks) && !gateway.find(qnick)){
 					if($("#noticeDisplay").val() == 0){ // okienko
-						var html = "<span class=\"notice\">[<b>"+he(guser.nick)+" → "+command[1] + "</b>]</span> " + $$.colorize(msg.text);
+						var html = "<span class=\"notice\">[<b>"+he(guser.nick)+" → "+msg.args[0] + "</b>]</span> " + $$.colorize(msg.text);
 						$$.displayDialog('notice', 'service', language.networkServiceMessage, html);
 						return;
 					} else { // status
@@ -818,6 +831,8 @@ var cmdBinds = {
 		}
 	],
 	'321': [	// RPL_LISTSTART
+		function(msg) {
+		}
 	],
 	'322': [	// RPL_LIST
 		function(msg) {

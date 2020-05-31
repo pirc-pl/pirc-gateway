@@ -981,7 +981,7 @@ var gateway = {
 		for(f in messageProcessors){
 			message = messageProcessors[f](guser.nick, active.name, message);
 		}
-		if(activeCaps.indexOf('echo-message') <= 0) active.appendMessage(language.messagePatterns.yourMsg, [gateway.getMeta(guser.nick), $$.niceTime(), $$.nickColor(guser.nick), guser.nick, message]);
+		if(activeCaps.indexOf('echo-message') < 0) active.appendMessage(language.messagePatterns.yourMsg, ['', 'null', gateway.getMeta(guser.nick), $$.niceTime(), $$.nickColor(guser.nick), guser.nick, message]); // FIXME incorrect message appearance with disabled echo-message
 	},
 	'parseUserMessage': function(input){
 		var active = gateway.getActive();
@@ -1001,7 +1001,7 @@ var gateway = {
 							textToSend = textToSend.substring(420);*/
 							gateway.sendSingleMessage(sendNow, active);
 						} while (textToSend != "");
-						if(activeCaps.indexOf('echo-message') <= 0) active.appendMessage('%s', [$$.parseImages(input)]);
+						if(activeCaps.indexOf('echo-message') < 0) active.appendMessage('%s', [$$.parseImages(input)]);
 						$(this).dialog('close');
 					}
 				}, {
@@ -1014,7 +1014,7 @@ var gateway = {
 				$$.displayDialog('confirm', 'command', language.confirm, html, button);
 			} else {
 				gateway.sendSingleMessage(input, active);
-				if(activeCaps.indexOf('echo-message') <= 0) active.appendMessage('%s', [$$.parseImages(input)]);
+				if(activeCaps.indexOf('echo-message') < 0) active.appendMessage('%s', [$$.parseImages(input)]);
 			}
 		}
 	},
@@ -2161,7 +2161,7 @@ var gateway = {
 			gateway.keypressSuppress = false;
 		}, 6500);
 		gateway.lastKeypressWindow = gateway.getActive();
-		ircCommand.sendTags(gateway.getActive().name, '+draft/typing', 'active'); //TODO out of draft
+		ircCommand.sendTags(gateway.getActive().name, ['+draft/typing', '+typing'], ['active', 'active']);
 	},
 	'getMeta': function(nick, size){
 		var avatar = gateway.getAvatarUrl(nick, size);

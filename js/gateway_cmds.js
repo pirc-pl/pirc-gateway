@@ -136,17 +136,17 @@ var ircCommand = {
 		if(args.constructor !== Array){
 			var args = [args];
 		}
-		var commandString = '';
+		var commandString = command;
 		for(var i=0; i<args.length; i++){
 			commandString += ' '+args[i];
 		}
-		ircCommand.performQuick(service, [command, commandString]);
+		ircCommand.sendMessage(service, commandString, false, false);
 	},
 	'NickServ': function(command, args){
-		ircCommand.serviceCommand('NS', command, args);
+		ircCommand.serviceCommand('NickServ', command, args);
 	},
 	'ChanServ': function(command, args){
-		ircCommand.serviceCommand('CS', command, args);
+		ircCommand.serviceCommand('ChanServ', command, args);
 	},
 	'mode': function(dest, args){
 		ircCommand.performQuick('MODE', [dest, args]);
@@ -177,8 +177,16 @@ var ircCommand = {
 		ircCommand.perform('METADATA', cmdArgs);
 	},
 	'sendTags': function(target, name, value){
+		if(gateway.websock.readyState !== gateway.websock.OPEN) return;
 		var tags = {};
-		tags[name] = value;
+		if(Array.isArray(name)){
+			for(var i=0; i<name.length; i++){
+				tags[name[i]] = value[i];
+			}
+		} else {
+			tags[name] = value;
+		}
+		console.log(name, value, tags);
 		ircCommand.perform(false, [target], false, tags); 
 	}
 };

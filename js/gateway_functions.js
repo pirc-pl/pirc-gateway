@@ -741,7 +741,8 @@ var disp = {
 				'<button onclick="gateway.changeTopic(\''+channel.name+'\');">' + language.changeTopicSubmit + '</button><br>' +
 				language.youCanCopyCodesToTopic +
 			'</p>';
-		$$.displayDialog('confirm', 'topic', 'Temat kanału '+channel.name, html);
+		$$.closeDialog('confirm', 'topic');
+		$$.displayDialog('confirm', 'topic', language.topicOfChannel + channel.name, html);
 	},
 	'playSound': function() {
 		if ( ! $('#newMsgSound').is(':checked')) {
@@ -773,7 +774,7 @@ var disp = {
 				html += '</td>';
 			}
 			html += '<td class="'+chanId+'-operActions button" style="display:none">' +
-			'<button id="un'+mode+'-'+chanId+'-'+md5(args[2])+'">Usuń</button>' +
+			'<button id="un'+mode+'-'+chanId+'-'+md5(args[2])+'">' + language.remove + '</button>' +
 			'</td></tr>';
 		$('table', $$.getDialogSelector('list', 'list-'+mode+'-'+args[1])).append(html);
 		$('#un'+mode+'-'+chanId+'-'+md5(args[2])).click(function(){

@@ -723,8 +723,8 @@ function Channel(chan) {
 		'<span class="chstats-button" onclick="gateway.toggleChannelOpts(\''+bsEscape(this.name)+'\')">' +language.channelOptions+ '</span>'+
 		'<div id="'+this.id+'-channelOptions" class="channelAdmin"><ul class="channelOptions">' +
 			'<div class="nickRegistered"><span>' + language.autoJoinThisChannel + '</span>'+
-				'<li onclick="services.perform(\'ns\', \'AJOIN ADD '+bsEscape(this.name)+'\', true)">' + language.enable + '</li>' +
-				'<li onclick="services.perform(\'ns\', \'AJOIN DEL '+bsEscape(this.name)+'\', true)">' + language.disable + '</li>' +
+				'<li onclick="services.perform(\'NickServ\', \'AJOIN\', [\'ADD\', \''+bsEscape(this.name)+'\'], true)">' + language.enable + '</li>' +
+				'<li onclick="services.perform(\'NickServ\', \'AJOIN\', [\'DEL\', \''+bsEscape(this.name)+'\'], true)">' + language.disable + '</li>' +
 			'</div>'+
 			'<li onclick="gateway.findChannel(\''+bsEscape(this.name)+'\').clearWindow()">' + language.clearMessageWindow + '</li>' +
 			'<li onclick="ircCommand.channelRedoNames(\''+bsEscape(this.name)+'\')">' + language.refreshNickList + '</li>' +

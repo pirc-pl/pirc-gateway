@@ -15,11 +15,11 @@
 			<table>
 				<tr>
 					<td class="optionsCheckBox"><input type="checkbox" id="setUmodeD" onchange="disp.changeSettings(event)" /></td>
-					<td class="info" class="language-dontWantAnyMessages"></td>
+					<td class="info language-dontWantAnyMessages"></td>
 				</tr>
 				<tr>
 					<td class="optionsCheckBox"><input type="checkbox" id="setUmodeR" onchange="disp.changeSettings(event)" /></td>
-					<td class="info" class="language-dontWantFromUnregistered"></td>
+					<td class="info language-dontWantFromUnregistered"></td>
 				</tr>
 			</table>
 		</div>
@@ -110,7 +110,7 @@
 		<div id="avatar-dialog" class="language-avatarTitle">
 		</div>
 		
-		<div id="about-dialog" class="langugage-informationsTitle">
+		<div id="about-dialog" class="language-informationsTitle">
 				<h3>Bramka WWW PIRC.PL</h3>
 				<p><span class="language-version"></span>: <script type="text/javascript">document.write(gatewayVersion);</script></p>
 				<p>&copy; 2010-2020 <a href="http://pirc.pl">PIRC.PL</a>. <span class="language-allRightsReserved"></span></p>
@@ -185,8 +185,8 @@
 						<li onclick="disp.showQueryUmodes()" class="language-privateMessagesBlocking"></li>
 						<!--<li class="nickRegistered" onclick="services.setCloak()">Ustaw automatycznego vhosta</li>-->
 						<li class="nickRegistered language-requestAVhost" onclick="services.setVhost()"></li>
-						<li class="nickRegistered language-showChannelsWithAccess" onclick="services.perform('ns', 'alist', true)"></li>
-						<li class="nickRegistered language-showAutojoinChannels" onclick="services.perform('ns', 'ajoin list', true)"></li>
+						<li class="nickRegistered language-showChannelsWithAccess" onclick="services.perform('NickServ', 'ALIST', [], true)"></li>
+						<li class="nickRegistered language-showAutojoinChannels" onclick="services.perform('NickServ', 'AJOIN', ['LIST'], true)"></li>
 					</ul>
 				</div>
 			</div>

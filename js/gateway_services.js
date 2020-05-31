@@ -109,8 +109,8 @@ var services = {
 			}
 			return false;
 		}
-		if(msg.text.match(language.nickRemovedFromNetworkMask) || msg.text.match(language.servicesReleasedNickMak)){
-			gateway.send('NICK '+guser.nickservnick);
+		if(msg.text.match(language.nickRemovedFromNetworkMask) || msg.text.match(language.servicesReleasedNickMask)){
+			ircCommand.changeNick(guser.nickservnick);
 			gateway.connectStatus = statusGhostAndNickSent;
 			return true;
 		}
@@ -167,21 +167,18 @@ var services = {
 			$$.alert(language.mustGiveNick);
 			return false;
 		}
-		gateway.send('NICK '+$('#nnick').val());
+		ircCommand.changeNick(+$('#nnick').val());
 		$(".errorwindow").fadeOut(250);
 		return true;
 	},
 	'nickInfo': function(nick){
-		var nscommand = 'INFO '+nick+' ALL';
-		var query = gateway.findOrCreate('NickServ', true);
-		query.appendMessage(language.messagePatterns.yourMsg, [$$.niceTime(), $$.nickColor(guser.nick), guser.nick, nscommand]);
-		gateway.send('PRIVMSG NickServ :'+nscommand);
+		ircCommand.NickServ('INFO', [nick, 'ALL']);
 	},
-	'perform': function(service, msg, onlyRegistered){
+	'perform': function(service, command, args, onlyRegistered){ // just another wrapper
 		if(onlyRegistered && !services.requireRegisteredNick()){
 			return;
 		}
-		gateway.send(service+' '+msg);		
+		ircCommand.serviceCommand(service, command, args);
 	},
 	'showChanServCmds': function(chan) {
 		if(!services.requireRegisteredNick()) return;
@@ -374,7 +371,7 @@ var services = {
 			$$.alert(language.nickCantContainSpaces);
 			return false;
 		}
-		gateway.send('NICK '+newNick);
+		ircCommand.changeNick(newNick);
 		return true;
 	},
 	'registerMyNick': function() {
