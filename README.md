@@ -1,6 +1,6 @@
 # pirc-gateway
 ## Bramka PIRC / PIRC websocket IRC web interface
-**Please note that this software uses Polish language in multiple places. Please notify developers about missing English UI translations.**
+**Please note that this software uses Polish language in multiple places. Please notify developers about missing English UI translations. This software also expects specific IRC network configuration for some of its functionalities. Details will be provided later.**
 
 Kompletne rozwiązanie pozwalające na dostęp do IRC za pośrednictwem przeglądarki.
 Stworzone na potrzeby sieci [PIRC](https://pirc.pl/) w okolicach roku 2011 (autorzy: Tril, samu).
@@ -11,6 +11,8 @@ location / {
 	try_files $uri $uri/ /index.html;
 }
 ```
+Skopiuj plik `/js/gateway_global_settings.example.js` do `/js/gateway_global_settings.js` i zmień ustawienia według swoich potrzeb.
+
 Otwieraj stronę pod adresem `https://example.com/` (puste pola), `https://example.com/kanal/` (nazwa kanału w adresie ma być bez znaku `#`) lub `https://example.com/kanal/nick/`.
 
 A complete solution allowing IRC access with a web browser. Created to fulfill the needs of [PIRC](https://pirc.pl/) (Polish IRC network)
@@ -21,6 +23,8 @@ location / {
 	try_files $uri $uri/ /index.html;
 }
 ```
+Rename the `/js/gateway_global_settings.example.js` to `/js/gateway_global_settings.js` and adjust the settings to fit your needs.
+
 Use the URL of `https://example.com/` (empty inputs), `https://example.com/channel/` (channel name in url should not include the `#` character) or `https://example.com/channel/nickname/`.
 
 This software contains components from other open source projects, for example:
