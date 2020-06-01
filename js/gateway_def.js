@@ -317,7 +317,6 @@ var gateway = {
 			return;
 		}
 		gateway.forceSend('PING :JavaScript');
-	//	gateway.forceSend('MODE '+guser.nick); //jest aktualna informacja o umodach, a przy okazji załatwiony ping
 		if(gateway.pingcnt > 3) {
 			gateway.connectStatus = statusError;
 			if($('#autoReconnect').is(':checked')){
@@ -362,9 +361,6 @@ var gateway = {
 					username += ' "'+ckNick+'"';
 				}
 			} catch(e) {}
-			if(token != ''){
-				gateway.send(Base64.decode(token));
-			}
 			ircCommand.performQuick('CAP', ['LS']);
 			ircCommand.performQuick('USER', ['pirc', '*', '*'], username);
 			ircCommand.changeNick(guser.nick);

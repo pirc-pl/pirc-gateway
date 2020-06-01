@@ -1,14 +1,3 @@
-var mainSettings = { // TODO move this to a more relevant place
-	'networkName': 'PIRC.pl',
-	'avatarUploadUrl': 'https://users.pirc.pl/image-upload/image-upload.php',
-	'avatarDeleteUrl': 'https://users.pirc.pl/image-upload/image-delete.php',
-	'defaultName': 'Użytkownik bramki PIRC.pl',
-	'adminMail': 'abuse'+String.fromCharCode(64)+'pirc.pl',
-	'rulesUrl': 'https://pirc.pl/teksty/zasady/',
-	
-};
-	
-
 var lang = {
 	'pl': {
 		'messagePatterns': {
@@ -1248,7 +1237,7 @@ var lang = {
 	}
 };
 
-window.language = lang.en;
+window.language = lang[mainSettings.language];
 
 function fillLanguage(){ // fills static HTML with translations
 	$('.language-privateMsgBlockingTitle').attr('title', language.privateMsgBlocking);

@@ -1,16 +1,27 @@
 # pirc-gateway
 ## Bramka PIRC / PIRC websocket IRC web interface
-**Please note that this software uses Polish language in all the messages and most comments.
-This is not very likely to change soon.**
+**Please note that this software uses Polish language in multiple places. Please notify developers about missing English UI translations.**
 
 Kompletne rozwiązanie pozwalające na dostęp do IRC za pośrednictwem przeglądarki.
 Stworzone na potrzeby sieci [PIRC](https://pirc.pl/) w okolicach roku 2011 (autorzy: Tril, samu).
-W późniejszym czasie utrzymywane i ulepszane przez k4be. Do uruchomienia tej dystrybucji wymagany jest serwer www (używamy nginx)
-oraz interpreter PHP.
+W późniejszym czasie utrzymywane i ulepszane przez k4be. Do uruchomienia tej dystrybucji wymagany jest serwer www (używamy nginx).
+Dla nginx należy użyć konfiguracji:
+```
+location / {
+	try_files $uri $uri/ /index.html;
+}
+```
+Otwieraj stronę pod adresem `https://example.com/` (puste pola), `https://example.com/kanal/` (nazwa kanału w adresie ma być bez znaku `#`) lub `https://example.com/kanal/nick/`.
 
 A complete solution allowing IRC access with a web browser. Created to fulfill the needs of [PIRC](https://pirc.pl/) (Polish IRC network)
-around year 2011 (authors: Tril, samu). Later maintained and upgraded by k4be. This distribution needs a web server (we use nginx)
-and a PHP interpreter.
+around year 2011 (authors: Tril, samu). Later maintained and upgraded by k4be. This distribution needs a web server (we use nginx).
+Use following nginx configuration:
+```
+location / {
+	try_files $uri $uri/ /index.html;
+}
+```
+Use the URL of `https://example.com/` (empty inputs), `https://example.com/channel/` (channel name in url should not include the `#` character) or `https://example.com/channel/nickname/`.
 
 This software contains components from other open source projects, for example:
 - [md5.js](https://github.com/AndreasPizsa/md5-jkmyers)

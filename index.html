@@ -1,3 +1,72 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+	<head>
+		<title>PIRC.pl</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<link rel="stylesheet" href="/styles/jquery-ui.theme.css" />
+		<link rel="stylesheet" href="/styles/jquery-ui.structure.css" />
+		<script type="text/javascript">
+			var guser = {
+				'nick': '',
+				'channels': [],
+				'nickservpass': '',
+				'nickservnick': ''
+			};
+			var gatewayVersion = '';
+			var oldGatewayHtml = '';
+			var server = '';
+		</script>
+		<script type="text/javascript" src="/js/md5.js"></script>
+		<script type="text/javascript" src="/js/foreach.js"></script>
+		<script type="text/javascript" src="/js/jquery-1.12.3.min.js"></script>
+		<script type="text/javascript" src="/js/jquery.sprintf.js"></script>
+		<script type="text/javascript" src="/js/jquery.browser.min.js"></script>
+		<script type="text/javascript" src="/js/jquery-ui.min.js"></script>
+		<script type="text/javascript" src="/js/base64.js"></script>
+		<script type="text/javascript">
+			var scripts = [
+				'/js/gateway_global_settings.js',
+				'/js/language.js',
+				'/js/gateway_conn.js',
+				'/js/gateway_functions.js',
+				'/js/gateway_ignore.js',
+				'/js/gateway_services.js',
+				'/js/gateway_cmd_binds.js',
+				'/js/gateway_user_commands.js',
+				'/js/gateway_tabs.js',
+				'/js/geoip.js',
+				'/js/gateway_cmds.js',
+				'/js/gateway_def.js',
+				'/js/gateway_users.js',
+				'/js/emoji.js',
+				'/js/g-emoji-element.js'
+			];
+			var styles = [
+				'/styles/gateway_def.css'
+			];
+			var ranid = Math.floor(Math.random() * 10000);
+			for(var lit=0; lit<scripts.length; lit++){
+				var s = document.createElement('script');
+				s.type = 'text/javascript';
+				s.src = scripts[lit] + '?' + ranid;
+				$('head').append(s);
+			}
+			for(var lit=0; lit<styles.length; lit++){
+				var s = document.createElement('link');
+				s.rel = 'stylesheet';
+				s.href = styles[lit] + '?' + ranid;
+				$('head').append(s);
+			}
+			for(var lit=0; lit<mainSettings.modules.length; lit++){
+				var modname = mainSettings.modules[lit];
+				var s = document.createElement('script');
+				s.type = 'text/javascript';
+				s.src = '/js/addons/addon_' + modname + '.js?' + ranid;
+				$('head').append(s);
+			}
+		</script>
+	</head>
 	<body>
 		<div id="background-wrapper"></div>
 		<div id="not_connected_wrapper">
