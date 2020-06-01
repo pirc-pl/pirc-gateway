@@ -2191,6 +2191,14 @@ var gateway = {
 			}
 		}
 		return avatar;
+	},
+	'getMsgid': function(msg){
+		if('msgid' in msg.tags){
+			var msgid = msg.tags.msgid;
+		} else {
+			var msgid = '';
+		}
+		return msgid;
 	}
 }
 

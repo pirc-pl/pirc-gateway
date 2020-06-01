@@ -458,11 +458,7 @@ var cmdBinds = {
 			var nick = msg.sender.nick;
 			var nickComments = '';
 			var user = users.getUser(msg.sender.nick);
-			if('msgid' in msg.tags){
-				var msgid = msg.tags.msgid;
-			} else {
-				var msgid = '';
-			}
+			var msgid = gateway.getMsgid(msg);
 			if('display-name' in user.metadata){
 				nick = user.metadata['display-name'];
 				nickComments = ' <span class="realNick" title="' + language.realNickname + '">(' + msg.sender.nick + ')</span>';
@@ -1717,16 +1713,17 @@ var cmdBinds = {
 var ctcpBinds = {
 	'ACTION': [
 		function(msg){
+			var msgid = gateway.getMsgid(msg);
 			var html = $$.parseImages(msg.text);
 			if(msg.args[0].charAt(0) == '#'){ //kanał
 				var channel = gateway.findOrCreate(msg.args[0], false);
 				if(msg.text.indexOf(guser.nick) != -1) {
-					channel.appendMessage(language.messagePatterns.channelActionHilight, [$$.niceTime(msg.time), msg.sender.nick, $$.colorize(msg.ctcptext)]);
+					channel.appendMessage(language.messagePatterns.channelActionHilight, [msgid, $$.niceTime(msg.time), msg.sender.nick, $$.colorize(msg.ctcptext)]);
 					if(gateway.active.toLowerCase() != msg.args[0].toLowerCase() || !disp.focused) {
 						channel.markNew();
 					}
 				} else {
-					channel.appendMessage((msg.sender.nick == guser.nick)?language.messagePatterns.yourAction:language.messagePatterns.channelAction, [$$.niceTime(msg.time), msg.sender.nick, $$.colorize(msg.ctcptext)]);
+					channel.appendMessage((msg.sender.nick == guser.nick)?language.messagePatterns.yourAction:language.messagePatterns.channelAction, [msgid, $$.niceTime(msg.time), msg.sender.nick, $$.colorize(msg.ctcptext)]);
 					if(gateway.active.toLowerCase() != msg.args[0].toLowerCase() || !disp.focused) {
 						channel.markBold();
 					}
@@ -1739,7 +1736,7 @@ var ctcpBinds = {
 					var qnick = msg.sender.nick;
 				}
 				query = gateway.findOrCreate(qnick);
-				query.appendMessage((msg.sender.nick == guser.nick)?language.messagePatterns.yourAction:language.messagePatterns.channelAction, [$$.niceTime(msg.time), msg.sender.nick, $$.colorize(msg.ctcptext)]);
+				query.appendMessage((msg.sender.nick == guser.nick)?language.messagePatterns.yourAction:language.messagePatterns.channelAction, [msgid, $$.niceTime(msg.time), msg.sender.nick, $$.colorize(msg.ctcptext)]);
 				if(gateway.active.toLowerCase() != sender.toLowerCase()) {
 					gateway.findQuery(qnick).markNew();
 				}
