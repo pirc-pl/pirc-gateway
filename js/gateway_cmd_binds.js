@@ -1,6 +1,6 @@
 var activeCaps = [];
 var isupport = [];
-var supportedCaps = ['userhost-in-names', 'away-notify', 'multi-prefix', 'chghost', 'extended-join', 'account-notify', 'message-tags', 'server-time', 'echo-message', 'draft/metadata', 'draft/setname', 'setname'];
+var supportedCaps = ['userhost-in-names', 'away-notify', 'multi-prefix', 'chghost', 'extended-join', 'account-notify', 'message-tags', 'server-time', 'echo-message', 'draft/metadata', 'draft/setname', 'setname', 'sasl'];
 
 var cmdBinds = {
 	'ACCOUNT': [
@@ -41,10 +41,6 @@ var cmdBinds = {
 				case 'LS':
 					var caps = supportedCaps.slice(0); //copy the array
 					var availableCaps = msg.text.split(' ');
-					
-					//if(guser.nickservpass != '' && guser.nickservnick != ''){
-						caps.push('sasl');
-					//}
 					var useCaps = '';
 					caps.forEach(function(cap){
 						if(availableCaps.indexOf(cap) >= 0){
@@ -70,16 +66,13 @@ var cmdBinds = {
 							activeCaps.splice(activeCaps.indexOf(cap), 1);
 						}
 					}
-					if(activeCaps.indexOf('sasl') >= 0){
-						gateway.sasl = true;
-					}
-					if(activeCaps.indexOf('draft/metadata') >= 0){ // subscribing to the metadata
+					if(newCaps.indexOf('draft/metadata') >= 0){ // subscribing to the metadata
 						ircCommand.metadata('SUB', '*', ['avatar', 'status', 'bot', 'homepage', 'display-name', 'bot-url', 'color']);
 						if(textSettingsValues['avatar']){
 							disp.avatarChanged();
 						}
 					}
-					if(guser.nickservpass != '' && guser.nickservnick != '' && gateway.sasl){
+					if(guser.nickservpass != '' && guser.nickservnick != '' && newCaps.indexOf('sasl') >= 0){
 						ircCommand.performQuick('AUTHENTICATE', ['PLAIN']);
 						gateway.statusWindow.appendMessage(language.messagePatterns.SaslAuthenticate, [$$.niceTime(msg.time), language.SASLLoginAttempt]);
 					} else {
@@ -1684,7 +1677,6 @@ var cmdBinds = {
 				$$.displayDialog('error', 'nickserv', language.error, html);
 				services.displayBadNickCounter();
 			}
-//			gateway.sasl = false;
 		}
 	],
 	'906': [	// ERR_SASLABORTED

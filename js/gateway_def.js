@@ -30,6 +30,12 @@ guser.clearUmodes = function(){
 	guser.umodes = {};
 }
 
+guser.clear = function(){
+	guser.clearUmodes();
+	activeCaps = [];
+	isupport = [];
+}
+
 var irc = {
 	'lastNick': '',
 	'messagedata': function() {
@@ -296,6 +302,7 @@ var gateway = {
 		gateway.connectTimeoutID = false;
 		clearInterval(gateway.pingIntervalID);
 		users.clear();
+		guser.clear();
 		gateway.pingIntervalID = false;
 		if(guser.nickservnick != ''){
 			irc.lastNick = guser.nick;
@@ -364,7 +371,7 @@ var gateway = {
 			ircCommand.performQuick('CAP', ['LS']);
 			ircCommand.performQuick('USER', ['pirc', '*', '*'], username);
 			ircCommand.changeNick(guser.nick);
-			gateway.sasl = false;
+			guser.clear();
 			gateway.connectTime = (+new Date)/1000;
 		}
 
@@ -443,7 +450,7 @@ var gateway = {
 					ircCommand.NickServ('RECOVER', [guser.nickservnick, guser.nickservpass]);
 				} else {
 					gateway.connectStatus = statusIdentified;
-					if(!gateway.sasl){
+					if(activeCaps.indexOf('sasl') < 0){
 						ircCommand.NickServ('IDENTIFY', guser.nickservpass);
 					} else {
 						gateway.retrySasl = true;
