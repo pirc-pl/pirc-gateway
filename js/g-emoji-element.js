@@ -435,7 +435,10 @@ function emojiImage(el) {
   return image
 }
 
-if (!window.customElements.get('g-emoji')) {
-  window.GEmojiElement = GEmojiElement
-  window.customElements.define('g-emoji', GEmojiElement)
+if('customElements' in window){
+	if (!window.customElements.get('g-emoji')) {
+	  window.GEmojiElement = GEmojiElement
+	  window.customElements.define('g-emoji', GEmojiElement)
+	}
 }
+

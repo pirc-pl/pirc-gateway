@@ -192,6 +192,9 @@ var conn = {
 			}
 		}, 100);
 		$('#input').on('paste', gateway.inputPaste);
+		if(!('customElements' in window)){
+			$('body').css('font-family', 'verdana,arial,tahoma,Symbola,sans-serif'); // fallback if custom elements (for emoji) not supported
+		}
 	},
 	'aliveWaitTimeout': false,
 	'waitForAlive': false

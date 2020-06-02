@@ -10,7 +10,7 @@ a:active {
 }
 
 body {
-	font-family: verdana,arial,tahoma,Symbola,sans-serif;
+	font-family: verdana,arial,tahoma,sans-serif;
 	font-size: 1em;
 	margin: 0;
 	padding: 0;
@@ -32,6 +32,17 @@ body {
 input, button, submit {
 	font-size: 1em;
 	font-family: inherit;
+}
+
+@font-face {
+	font-family: 'Symbola';
+	src: url('/styles/Symbola.woff') format('woff');
+	font-weight: normal;
+	font-style: normal;
+}
+
+.symbolFont {
+	font-family: verdana,arial,tahoma,Symbola,sans-serif;
 }
 
 #not_connected_wrapper, #background-wrapper {
