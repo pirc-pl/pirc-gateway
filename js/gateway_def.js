@@ -342,7 +342,7 @@ var gateway = {
 					username += ' "'+ckNick+'"';
 				}
 			} catch(e) {}
-			ircCommand.performQuick('CAP', ['LS']);
+			ircCommand.performQuick('CAP', ['LS', '302']);
 			ircCommand.performQuick('USER', ['pirc', '*', '*'], username);
 			ircCommand.changeNick(guser.nick);
 			guser.clear();
@@ -424,7 +424,7 @@ var gateway = {
 					ircCommand.NickServ('RECOVER', [guser.nickservnick, guser.nickservpass]);
 				} else {
 					gateway.connectStatus = 'identified';
-					if(activeCaps.indexOf('sasl') < 0){
+					if(!('sasl' in activeCaps)){
 						ircCommand.NickServ('IDENTIFY', guser.nickservpass);
 					} else {
 						gateway.retrySasl = true;
@@ -961,7 +961,8 @@ var gateway = {
 		for(f in messageProcessors){
 			message = messageProcessors[f](guser.nick, active.name, message);
 		}
-		if(activeCaps.indexOf('echo-message') < 0) active.appendMessage(language.messagePatterns.yourMsg, ['', 'null', gateway.getMeta(guser.nick), $$.niceTime(), $$.nickColor(guser.nick), guser.nick, message]); // FIXME incorrect message appearance with disabled echo-message
+		if(!'echo-message' in activeCaps)
+			active.appendMessage(language.messagePatterns.yourMsg, ['', 'null', gateway.getMeta(guser.nick, 50), $$.niceTime(), $$.nickColor(guser.nick), guser.nick, message]); // FIXME incorrect message appearance with disabled echo-message
 	},
 	'parseUserMessage': function(input){
 		var active = gateway.getActive();
@@ -979,7 +980,7 @@ var gateway = {
 							}
 							gateway.sendSingleMessage(sendNow, active);
 						} while (textToSend != "");
-						if(activeCaps.indexOf('echo-message') < 0) active.appendMessage('%s', [$$.parseImages(input)]);
+						if('echo-message' in activeCaps) active.appendMessage('%s', [$$.parseImages(input)]);
 						$(this).dialog('close');
 					}
 				}, {
@@ -992,7 +993,7 @@ var gateway = {
 				$$.displayDialog('confirm', 'command', language.confirm, html, button);
 			} else {
 				gateway.sendSingleMessage(input, active);
-				if(activeCaps.indexOf('echo-message') < 0) active.appendMessage('%s', [$$.parseImages(input)]);
+				if('echo-message' in activeCaps) active.appendMessage('%s', [$$.parseImages(input)]);
 			}
 		}
 	},
@@ -1929,7 +1930,7 @@ var gateway = {
 		}
 	},
 	'processJoin': function(msg){
-		if(activeCaps.indexOf('extended-join') >= 0){
+		if('extended-join' in activeCaps){
 			var channame = msg.args[0];
 		} else {
 			var channame = msg.text;
@@ -2117,7 +2118,7 @@ var gateway = {
 		console.log(items);
 	},
 	'inputKeypress': function(e){
-		if(activeCaps.indexOf('message-tags') < 0) return;
+		if('message-tags' in activeCaps) return;
 		if($('#input').val().length > 0 && $('#input').val().charAt(0) == '/') return; // typing a command
 		if(!gateway.getActive()) return;
 		if(gateway.lastKeypressWindow == gateway.getActive()){
@@ -2156,6 +2157,7 @@ var gateway = {
 		return meta;
 	},
 	'getAvatarUrl': function(nick, size){
+		if(!size) size = 200;
 		var user = users.getUser(nick);
 		if(user.disableAvatar) return false;
 		var avatar = false;

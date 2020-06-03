@@ -1,6 +1,7 @@
-var activeCaps = [];
+var activeCaps = {};
 var isupport = [];
-var supportedCaps = ['userhost-in-names', 'away-notify', 'multi-prefix', 'chghost', 'extended-join', 'account-notify', 'message-tags', 'server-time', 'echo-message', 'draft/metadata', 'draft/setname', 'setname', 'sasl'];
+var supportedCaps = ['userhost-in-names', 'away-notify', 'multi-prefix', 'chghost', 'extended-join', 'account-notify', 'message-tags', 'server-time', 'echo-message', 'draft/metadata', 'draft/setname', 'setname', 'sasl', 'cap-notify'];
+var serverCaps = {};
 
 var cmdBinds = {
 	'ACCOUNT': [
@@ -38,45 +39,72 @@ var cmdBinds = {
 	'CAP': [
 		function(msg) {
 			switch(msg.args[1]){
-				case 'LS':
-					var caps = supportedCaps.slice(0); //copy the array
+				case 'LS': case 'NEW':
 					var availableCaps = msg.text.split(' ');
 					var useCaps = '';
-					caps.forEach(function(cap){
-						if(availableCaps.indexOf(cap) >= 0){
+					for(var i=0; i<availableCaps.length; i++){
+						var capString = availableCaps[i];
+						var value = true;
+						var cap = '';
+						var argIndex = capString.indexOf('=')
+						if(argIndex > 0){
+							cap = capString.substring(0, argIndex);
+							value = capString.substring(argIndex+1);
+						} else {
+							cap = capString;
+						}
+						
+						serverCaps[cap] = value;
+						if(supportedCaps.indexOf(cap) >= 0){
 							if(useCaps.length > 0) useCaps += ' ';
 							useCaps += cap;
 						}
-					});
+					}
 					ircCommand.performQuick('CAP', ['REQ'], useCaps);
 					break;
 				case 'ACK':
-					newCaps = msg.text.split(' ');
+					var newCapsParsed = {};
+					var newCaps = msg.text.split(' ');
 					for(var i=0; i<newCaps.length; i++){
-						var add = true;
 						var cap = newCaps[i];
+						var add = true;
+						
 						if(cap.charAt(0) == '-'){
 							add = false;
 							cap = cap.substr(1);
 						}
-						if(activeCaps.indexOf(cap) < 0 && add){ // add capability
-							activeCaps.push(cap);
+						if(!(cap in activeCaps) && add){ // add capability
+							activeCaps[cap] = serverCaps[cap];
+							newCapsParsed[cap] = serverCaps[cap];
 						}
-						if(activeCaps.indexOf(cap) >= 0 && !add){ // remove capability
-							activeCaps.splice(activeCaps.indexOf(cap), 1);
+						if(cap in activeCaps && !add){ // remove capability
+							delete activeCaps[cap];
 						}
 					}
-					if(newCaps.indexOf('draft/metadata') >= 0){ // subscribing to the metadata
+					console.log(newCapsParsed);
+					if('draft/metadata' in newCapsParsed){ // subscribing to the metadata
 						ircCommand.metadata('SUB', '*', ['avatar', 'status', 'bot', 'homepage', 'display-name', 'bot-url', 'color']);
 						if(textSettingsValues['avatar']){
 							disp.avatarChanged();
 						}
 					}
-					if(guser.nickservpass != '' && guser.nickservnick != '' && newCaps.indexOf('sasl') >= 0){
+					if(guser.nickservpass != '' && guser.nickservnick != '' && 'sasl' in newCapsParsed){
 						ircCommand.performQuick('AUTHENTICATE', ['PLAIN']);
 						gateway.statusWindow.appendMessage(language.messagePatterns.SaslAuthenticate, [$$.niceTime(msg.time), language.SASLLoginAttempt]);
 					} else {
 						ircCommand.performQuick('CAP', ['END']);
+					}
+					break;
+				case 'DEL':
+					var delCaps = msg.text.split(' ');
+					for(var i=0; i<delCaps.length; i++){
+						var cap = delCaps[i];
+						if(cap in activeCaps){
+							delete activeCaps[cap];
+						}
+						if(cap in serverCaps){
+							delete serverCaps[cap];
+						}
 					}
 					break;
 			}
@@ -150,7 +178,7 @@ var cmdBinds = {
 	'JOIN': [
 		function(msg) { // mój własny join
 			if(msg.sender.nick == guser.nick) {
-				if(activeCaps.indexOf('extended-join') >= 0){
+				if('extended-join' in activeCaps){
 					var channame = msg.args[0];
 				} else {
 					var channame = msg.text;
@@ -174,7 +202,7 @@ var cmdBinds = {
 				gateway.processJoin(msg);
 			}
 			var user = users.addUser(msg.sender.nick);
-			if(activeCaps.indexOf('extended-join') >= 0){
+			if('extended-join' in activeCaps){
 				var channame = msg.args[0];
 			} else {
 				var channame = msg.text;
@@ -195,7 +223,7 @@ var cmdBinds = {
 			}
 			user.setIdent(msg.sender.ident);
 			user.setHost(msg.sender.host);
-			if(activeCaps.indexOf('extended-join') >= 0){
+			if('extended-join' in activeCaps){
 				if(msg.args[1] != '*'){
 					user.setAccount(msg.args[1]);
 				}

@@ -12,7 +12,7 @@ var ircCommand = {
 	},
 	'send': function(command, args, text, tags){ // TODO escape tags
 		var cmdString = '';
-		if(tags && activeCaps.indexOf('message-tags') >= 0){
+		if(tags && 'message-tags' in activeCaps){
 			console.log('sending tags');
 			cmdString += '@';
 			var first = true;
@@ -29,7 +29,7 @@ var ircCommand = {
 			cmdString += ' ';
 		}
 		if(!command){
-			if(activeCaps.indexOf('message-tags') >= 0){
+			if('message-tags' in activeCaps){
 				command = 'TAGMSG';
 			} else return;
 		}

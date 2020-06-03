@@ -33,7 +33,8 @@ var guser = {
 	},
 	'clear': function(){
 		guser.clearUmodes();
-		activeCaps = [];
+		activeCaps = {};
+		serverCaps = {};
 		isupport = [];
 	}
 };
