@@ -41,15 +41,20 @@ for(var lit=0; lit<styleFiles.length; lit++){
 		console.error(e);
 	}
 }
-for(var lit=0; lit<mainSettings.modules.length; lit++){
-	try {
-		var modname = mainSettings.modules[lit];
-		var s = document.createElement('script');
-		s.type = 'text/javascript';
-		s.src = '/js/addons/addon_' + modname + '.js?' + ranid;
-		$('head').append(s);
-	} catch(e){
-		console.error('Error loading addon JS '+modname);
-		console.error(e);
+try {
+	for(var lit=0; lit<mainSettings.modules.length; lit++){
+		try {
+			var modname = mainSettings.modules[lit];
+			var s = document.createElement('script');
+			s.type = 'text/javascript';
+			s.src = '/js/addons/addon_' + modname + '.js?' + ranid;
+			$('head').append(s);
+		} catch(e){
+			console.error('Error loading addon JS '+modname);
+			console.error(e);
+		}
 	}
+} catch(e){
+	console.error('Addons loading failed: ', e);
 }
+

@@ -1,217 +1,189 @@
 // definicje stałych globalnych
-var icons = [
-	'/styles/img/users.png',
-	'/styles/img/voice.png',
-	'/styles/img/hop.png',
-	'/styles/img/op.png',
-	'/styles/img/prot.png',
-	'/styles/img/owner.png',
-	'/styles/img/user-registered.png'
-];
-var alt = [	'', '+', '%', '@', '&', '~', '' ];
-var chStatusInfo = language.chStatusInfo;
+try {
+	var icons = [
+		'/styles/img/users.png',
+		'/styles/img/voice.png',
+		'/styles/img/hop.png',
+		'/styles/img/op.png',
+		'/styles/img/prot.png',
+		'/styles/img/owner.png',
+		'/styles/img/user-registered.png'
+	];
+	var alt = [	'', '+', '%', '@', '&', '~', '' ];
+	var chStatusInfo = language.chStatusInfo;
 
-var reqChannel = '';
+	var reqChannel = '';
 
-var booleanSettings = [ 'showPartQuit', 'showNickChanges', 'tabsListBottom', 'showUserHostnames', 'autoReconnect', 'displayLinkWarning', 'blackTheme', 'newMsgSound', 'autoDisconnect', 'coloredNicks', 'showMode', 'dispEmoji', 'sendEmoji', 'monoSpaceFont', 'automLogIn', 'setUmodeD', 'setUmodeR', 'noAvatars' ];
-var comboSettings = [ 'noticeDisplay' ];
-var numberSettings = [ 'backlogCount' ];
-var numberSettingsMinMax = {
-	'backlogCount' : { 'min' : 0, 'max' : 500, 'deflt' : 15 }
-};
-var textSettings = [ 'avatar' ];
-var textSettingsValues = {};
+	var booleanSettings = [ 'showPartQuit', 'showNickChanges', 'tabsListBottom', 'showUserHostnames', 'autoReconnect', 'displayLinkWarning', 'blackTheme', 'newMsgSound', 'autoDisconnect', 'coloredNicks', 'showMode', 'dispEmoji', 'sendEmoji', 'monoSpaceFont', 'automLogIn', 'setUmodeD', 'setUmodeR', 'noAvatars' ];
+	var comboSettings = [ 'noticeDisplay' ];
+	var numberSettings = [ 'backlogCount' ];
+	var numberSettingsMinMax = {
+		'backlogCount' : { 'min' : 0, 'max' : 500, 'deflt' : 15 }
+	};
+	var textSettings = [ 'avatar' ];
+	var textSettingsValues = {};
 
-var banData = {
-	'nick' : '',
-	'channel' : '',
-	'noIdent' : false,
-	'ident' : '',
-	'hostElements' : [],
-	'hostElementSeparators' : [],
-   	'clear' : function(){
-		banData.nick = '';
-		banData.channel = '';
-		banData.noIdent = false;
-		banData.ident = '';
-		banData.hostElements = [];
-		banData.hostElementSeparators = [];
-	}
-}
-
-var messageProcessors = []; //function (src, dst, text) returns new_text
-var nickColorProcessors = []; //function (nick)
-var settingProcessors = []; //function ()
-var addons = [];
-
-var modes = {
-	/* default modes from rfc1459, we're overwriting it with ISUPPORT data later */
-	'single': ['p', 's', 'i', 't', 'n', 'm'],
-	'argBoth': ['k'],
-	'argAdd': ['l'],
-	'list': ['b'],
-	'user': ['o', 'v'],
-	'changeableSingle': language.modes.changeableSingle,
-	'changeableArg': language.modes.changeableArg,
-	/* again defaults from rfc1459 */
-	'prefixes': {
-		'o': '@',
-		'v': '+'
-	},
-	'reversePrefixes': {
-		'@': 'o',
-		'+': 'v'
-	}
-};
-
-var servicesNicks = ['NickServ', 'ChanServ', 'HostServ', 'OperServ', 'Global', 'BotServ'];
-
-var newMessage = language.newMessage;
-
-var emoji = {
-	':D':	'😃',
-	'O:->':	'😇',
-	']:->': '😈',
-	'^^':	'😊',
-	':p':	'😋',
-	'3)':	'😌',
-	'8)':	'😎',
-	':>':	'😏',
-	':|':	'😐',
-	':<':	'😒',
-	':((':	'😓',
-	':/':	'😕',
-	':c':	'😕',
-	':o':	'😕',
-	':O':	'😱',
-	'xo':	'😵',
-	':*':	'😘',
-	';*':	'😙',
-	':P':	'😛',
-	';p':	'😜',
-	':(':	'🙁',
-	':)':	'🙂',
-	'(:':	'🙃',
-	'<3':	'💗',
-	'-_-':	'😑',
-	';(':	'😢',
-	';)':	'😉'
-};	
-
-function ChannelModes() {
-	modes.single.forEach(function(mode){
-		this[mode] =  false;
-	}, this);
-	modes.argAdd.forEach(function(mode){
-		this[mode] = false;
-	}, this);
-	this['k'] = false;
-	this['f'] = false;
-}
-
-function getModeInfo(letter, type){
-	if(!type){
-		type = 0;
-	}
-	if(!(letter in language.modes.chModeInfo)) return 'tryb '+letter; //nieznany tryb
-	var data = language.modes.chModeInfo[letter];
-	if(data.constructor === Array){
-		return data[type];
-	} else {
-		return data;
-	}
-}
-
-// pomocnicze funkcje globalne
-function str2bool(b){
-	return (b === 'true');
-}
-
-function he(text) { //HTML Escape
-	return $('<div/>').text(text).html().replace(/"/g, '&quot;');
-}
-
-function bsEscape(text) { // escapowanie beksleszy
-	return text.replace(/\\/g, '\\\\');
-}
-
-function rxEscape(text) { //backupowanie regex
-	return text.replace(/[.^$*+?()[{\\|]/g, '\\$&');
-}
-
-if (!String.prototype.isInList) {
-   String.prototype.isInList = function(list) {
-      var value = this.valueOf();
-      for (var i = 0, l = list.length; i < l; i += 1) {
-         if (list[i].toLowerCase() === value.toLowerCase()) return true;
-      }
-      return false;
-   }
-}
-
-if(!String.prototype.apList){
-	String.prototype.apList = function(data){
-		if(this == ''){
-			return data;
-		} else {
-			return this.valueOf() + ', '+data;
+	var banData = {
+		'nick' : '',
+		'channel' : '',
+		'noIdent' : false,
+		'ident' : '',
+		'hostElements' : [],
+		'hostElementSeparators' : [],
+		'clear' : function(){
+			banData.nick = '';
+			banData.channel = '';
+			banData.noIdent = false;
+			banData.ident = '';
+			banData.hostElements = [];
+			banData.hostElementSeparators = [];
 		}
 	}
-}
 
-if(!String.prototype.startsWith){
-	String.prototype.startsWith = function(searchString, position) {
-		position = position || 0;
-		return this.indexOf(searchString, position) === position;
+	var messageProcessors = []; //function (src, dst, text) returns new_text
+	var nickColorProcessors = []; //function (nick)
+	var settingProcessors = []; //function ()
+	var addons = [];
+
+	var modes = {
+		/* default modes from rfc1459, we're overwriting it with ISUPPORT data later */
+		'single': ['p', 's', 'i', 't', 'n', 'm'],
+		'argBoth': ['k'],
+		'argAdd': ['l'],
+		'list': ['b'],
+		'user': ['o', 'v'],
+		'changeableSingle': language.modes.changeableSingle,
+		'changeableArg': language.modes.changeableArg,
+		/* again defaults from rfc1459 */
+		'prefixes': {
+			'o': '@',
+			'v': '+'
+		},
+		'reversePrefixes': {
+			'@': 'o',
+			'+': 'v'
+		}
 	};
-}
 
-var emojiRegex = [];
+	var servicesNicks = ['NickServ', 'ChanServ', 'HostServ', 'OperServ', 'Global', 'BotServ'];
 
-var out1 = '';
-var out2 = '';
-for(i in emoji){
-	var expr = rxEscape(i)+'(($)|(\\s))';
-	var regex = new RegExp(expr, 'g');
-	emojiRegex.push([regex, emoji[i]]);
-	out1 += emoji[i] + ' ';
-	out2 += i + ' ';
-}
-/*console.log(out1); // emoji setup logging
-console.log(out2);*/
+	var newMessage = language.newMessage;
 
-// zmienna gateway.connectStatus
+	var emoji = {
+		':D':	'😃',
+		'O:->':	'😇',
+		']:->': '😈',
+		'^^':	'😊',
+		':p':	'😋',
+		'3)':	'😌',
+		'8)':	'😎',
+		':>':	'😏',
+		':|':	'😐',
+		':<':	'😒',
+		':((':	'😓',
+		':/':	'😕',
+		':c':	'😕',
+		':o':	'😕',
+		':O':	'😱',
+		'xo':	'😵',
+		':*':	'😘',
+		';*':	'😙',
+		':P':	'😛',
+		';p':	'😜',
+		':(':	'🙁',
+		':)':	'🙂',
+		'(:':	'🙃',
+		'<3':	'💗',
+		'-_-':	'😑',
+		';(':	'😢',
+		';)':	'😉'
+	};
 
-var statusDisconnected = 0;
-var status001 = 1;
-var statusGhostSent = 2;
-var statusIdentified = 3;
-var statusConnected = 4;
-var statusReIdentify = 5;
-var statusError = 6;
-var statusBanned = 7;
-var statusWrongPassword = 8;
-var statusGhostAndNickSent = 9;
+	function ChannelModes() {
+		modes.single.forEach(function(mode){
+			this[mode] =  false;
+		}, this);
+		modes.argAdd.forEach(function(mode){
+			this[mode] = false;
+		}, this);
+		this['k'] = false;
+		this['f'] = false;
+	}
 
-// stany parsera irc
+	function getModeInfo(letter, type){
+		if(!type){
+			type = 0;
+		}
+		if(!(letter in language.modes.chModeInfo)) return 'tryb '+letter; //nieznany tryb
+		var data = language.modes.chModeInfo[letter];
+		if(data.constructor === Array){
+			return data[type];
+		} else {
+			return data;
+		}
+	}
 
-var stateStart = 0;
-var stateSenderNick = 1;
-var stateArgs = 2;
-var stateMessage = 3;
-var stateCommand = 4;
-var stateSenderUser = 5;
-var stateSenderHost = 6;
-var stateTags = 7;
+	// pomocnicze funkcje globalne
+	function str2bool(b){
+		return (b === 'true');
+	}
 
-// tags parser states
+	function he(text) { //HTML Escape
+		return $('<div/>').text(text).html().replace(/"/g, '&quot;');
+	}
 
-var tagStateKeyName = 0;
-var tagStateKeyValue = 1;
-var tagStateKeyValueEscape = 2;
+	function bsEscape(text) { // escapowanie beksleszy
+		return text.replace(/\\/g, '\\\\');
+	}
 
-var settings = {
-	'backlogLength': 15
+	function rxEscape(text) { //backupowanie regex
+		return text.replace(/[.^$*+?()[{\\|]/g, '\\$&');
+	}
+
+	if (!String.prototype.isInList) {
+	   String.prototype.isInList = function(list) {
+		  var value = this.valueOf();
+		  for (var i = 0, l = list.length; i < l; i += 1) {
+		     if (list[i].toLowerCase() === value.toLowerCase()) return true;
+		  }
+		  return false;
+	   }
+	}
+
+	if(!String.prototype.apList){
+		String.prototype.apList = function(data){
+			if(this == ''){
+				return data;
+			} else {
+				return this.valueOf() + ', '+data;
+			}
+		}
+	}
+
+	if(!String.prototype.startsWith){
+		String.prototype.startsWith = function(searchString, position) {
+			position = position || 0;
+			return this.indexOf(searchString, position) === position;
+		};
+	}
+
+	var emojiRegex = [];
+
+	var out1 = '';
+	var out2 = '';
+	for(i in emoji){
+		var expr = rxEscape(i)+'(($)|(\\s))';
+		var regex = new RegExp(expr, 'g');
+		emojiRegex.push([regex, emoji[i]]);
+		out1 += emoji[i] + ' ';
+		out2 += i + ' ';
+	}
+
+	var settings = {
+		'backlogLength': 15
+	}
+} catch(e){
+	console.error('Failed to set up environment:', e)
 }
 
 var loaded = false;
@@ -220,6 +192,11 @@ var readyFunctions = [ conn.gatewayInit, fillEmoticonSelector, fillColorSelector
 
 var readyFunc = function(){
 	if(loaded) return;
+	if(!('mainSettings' in window)){ // someone forgot to load settings
+		$('.not-connected-text > h3').html('Błąd / Error');
+		$('.not-connected-text > p').html('Niepoprawna konfiguracja aplikacji. Proszę skontaktować się z administratorem.<br>Invalid application configuration. Please contact administrator.');
+		return;
+	}
 	$('.not-connected-text > h3').html(language.loading);
 	$('.not-connected-text > p').html(language.loadingWait);
 	if($.browser.msie && parseInt($.browser.version, 10) < 9) {
@@ -1269,7 +1246,7 @@ var $$ = {
 	'displayDialog': function(type, sender, title, message, button){
 		switch(type){ //specyficzne dla typu okna
 			case 'whois':
-				if(gateway.connectStatus != statusConnected){
+				if(gateway.connectStatus != 'connected'){
 					return;
 				}
 				if(sender.toLowerCase() == guser.nick.toLowerCase() && !gateway.displayOwnWhois){

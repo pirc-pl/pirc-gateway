@@ -71,12 +71,12 @@ var services = {
 			return true;
 		}
 		if(msg.text.match(language.registeredProtectedNickMask)){
-			if(gateway.connectStatus == statusGhostAndNickSent){
+			if(gateway.connectStatus == 'ghostAndNickSent'){
 				gateway.send('PRIVMSG NickServ :IDENTIFY '+guser.nickservpass);
-				gateway.connectStatus = statusIdentified;
+				gateway.connectStatus = 'identified';
 				return true;
 			}
-			gateway.connectStatus = statusWrongPassword;
+			gateway.connectStatus = 'wrongPassword';
 			if($$.getDialogSelector('error', 'nickserv').length < 1){
 				services.showTimeToChange = true;
 				services.nickStore = guser.nick;
@@ -94,8 +94,8 @@ var services = {
 				return true;
 		}
 		if(msg.text.match(language.accessDeniedMask)){
-			if(gateway.connectStatus == statusGhostSent){
-				gateway.connectStatus = statusIdentified;
+			if(gateway.connectStatus == 'ghostSent'){
+				gateway.connectStatus = 'identified';
 				services.nickStore = guser.nickservnick;
 				guser.nickservnick = '';
 				guser.nickservpass = '';
@@ -111,7 +111,7 @@ var services = {
 		}
 		if(msg.text.match(language.nickRemovedFromNetworkMask) || msg.text.match(language.servicesReleasedNickMask)){
 			ircCommand.changeNick(guser.nickservnick);
-			gateway.connectStatus = statusGhostAndNickSent;
+			gateway.connectStatus = 'ghostAndNickSent';
 			return true;
 		}
 		var expr = /^APIKEY=(.*)$/i;
@@ -156,7 +156,7 @@ var services = {
 				localStorage.setItem('password', btoa(guser.nickservpass));
 			} catch(e) {}
 		}
-		gateway.connectStatus = statusReIdentify;
+		gateway.connectStatus = 'reIdentify';
 		gateway.setConnectedWhenIdentified = 1;
 		gateway.processStatus();
 		$(".errorwindow").fadeOut(250);

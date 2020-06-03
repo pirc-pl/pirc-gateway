@@ -156,11 +156,11 @@ var conn = {
 			$(document).attr('title', language.unknown + ' @ ' + mainSettings.networkName);
 		}
 		$(window).on('beforeunload', function() {
-			if (gateway.connectStatus != statusDisconnected) {
+			if (gateway.connectStatus != 'disconnected') {
 				if ($('#autoDisconnect').is(':checked')) {
 					gateway.send('QUIT :'+language.userClosedPage);
 					gateway.userQuit = true;
-					gateway.connectStatus = statusDisconnected;
+					gateway.connectStatus = 'disconnected';
 				} else {
 					gateway.clickQuit();
 					return language.youreStillConnected;

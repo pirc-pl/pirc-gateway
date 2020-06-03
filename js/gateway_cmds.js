@@ -156,7 +156,7 @@ var ircCommand = {
 	},
 	'quit': function(text){
 		ircCommand.performQuick('QUIT', [], text);
-		gateway.connectStatus = statusDisconnected;
+		gateway.connectStatus = 'disconnected';
 		ircCommand.flushCmdQueue();
 	},
 	'whois': function(nick){

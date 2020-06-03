@@ -61,16 +61,16 @@ var irc = {
 	},
 	'parseTags': function(tagsLine){
 		var tags = [];
-		var tagState = tagStateKeyName;
+		var tagState = 'keyName';
 		var keyValue;
 		var keyName = '';
 		for(var i = 0; i < tagsLine.length; i++){
 			var cchar = tagsLine.charAt(i);
 			switch(tagState){
-				case tagStateKeyName:
+				case 'keyName':
 					switch(cchar){
 						case '=':
-							tagState = tagStateKeyValue;
+							tagState = 'keyValue';
 							keyValue = '';
 							break;
 						case ';':
@@ -80,18 +80,18 @@ var irc = {
 						default: keyName += cchar; break;
 					}
 					break;
-				case tagStateKeyValue:
+				case 'keyValue':
 					switch(cchar){
-						case '\\': tagState = tagStateKeyValueEscape; break;
+						case '\\': tagState = 'keyValueEscape'; break;
 						case ';':
 							tags[keyName] = keyValue;
 							keyName = '';
-							tagState = tagStateKeyName;
+							tagState = 'keyName';
 							break;
 						default: keyValue += cchar; break;
 					}
 					break;
-				case tagStateKeyValueEscape:
+				case 'keyValueEscape':
 					switch(cchar){
 						case ':': keyValue += ';'; break;
 						case 's': keyValue += ' '; break;
@@ -99,7 +99,7 @@ var irc = {
 						case 'n': keyValue += '\n'; break;
 						default: keyValue += cchar; break;
 					}
-					tagState = tagStateKeyValue;
+					tagState = 'keyValue';
 					break;
 			}
 		}
@@ -118,7 +118,7 @@ var irc = {
 		
 		var msglen = line.length;
 	
-		var pstate = stateStart;
+		var pstate = 'start';
 		var currArg = '';
 		var tags = '';
 		var haveText = false;
@@ -128,53 +128,53 @@ var irc = {
 		for(var i = 0; i < msglen; i++){
 			var cchar = line.charAt(i);
 			switch(pstate){
-				case stateStart:
+				case 'start':
 					switch(cchar){
-						case '@': pstate = stateTags; break;
-						case ':': pstate = stateSenderNick; break;
+						case '@': pstate = 'tags'; break;
+						case ':': pstate = 'senderNick'; break;
 						default:
-							pstate = stateCommand; 
+							pstate = 'command';
 							ircmsg.command += cchar;
 							break;
 					}
 					break;
-				case stateTags:
+				case 'tags':
 					switch(cchar){
 						case ' ':
-							pstate = stateStart;
+							pstate = 'start';
 							ircmsg.tags = irc.parseTags(tags);
 							break;
 						default: tags += cchar; break;
 					}
 					break;
-				case stateSenderNick:
+				case 'senderNick':
 					switch(cchar){
-						case '!': pstate = stateSenderUser; break;
-						case '@': pstate = stateSenderHost; break;
-						case ' ': pstate = stateCommand; break;
+						case '!': pstate = 'senderUser'; break;
+						case '@': pstate = 'senderHost'; break;
+						case ' ': pstate = 'command'; break;
 						default: ircmsg.sender.nick += cchar; break;
 					}
 					break;
-				case stateSenderUser:
+				case 'senderUser':
 					switch(cchar){
-						case '@': pstate = stateSenderHost; break;
-						case ' ': pstate = stateCommand; break;
+						case '@': pstate = 'senderHost'; break;
+						case ' ': pstate = 'command'; break;
 						default: ircmsg.sender.ident += cchar; break;
 					}
 					break;
-				case stateSenderHost:
+				case 'senderHost':
 					switch(cchar){
-						case ' ': pstate = stateCommand; break;
+						case ' ': pstate = 'command'; break;
 						default: ircmsg.sender.host += cchar; break;
 					}
 					break;
-				case stateCommand:
+				case 'command':
 					switch(cchar){
-						case ' ': pstate = stateArgs; break;
+						case ' ': pstate = 'args'; break;
 						default: ircmsg.command += cchar; break;
 					}
 					break;
-				case stateArgs:
+				case 'args':
 					switch(cchar){
 						case ' ':
 							if(currArg != ''){
@@ -184,7 +184,7 @@ var irc = {
 							break;
 						case ':':
 							if(prevChar == ' '){
-								pstate = stateMessage;
+								pstate = 'message';
 								haveText = true;
 							} else {
 								currArg += cchar;
@@ -193,13 +193,13 @@ var irc = {
 						default: currArg += cchar; break;
 					}
 					break;
-				case stateMessage:
+				case 'message':
 					ircmsg.text += cchar;
 					break;
 			}
 			var prevChar = cchar;
 		}
-		if(pstate == stateArgs){
+		if(pstate == 'args'){
 			ircmsg.args.push(currArg);
 		}
 	
@@ -239,7 +239,7 @@ var irc = {
 var gateway = {
 	'websock': 0,
 	'whois': '',
-	'connectStatus': statusDisconnected,
+	'connectStatus': 'disconnected',
 	'joined': 0,
 	'setConnectedWhenIdentified': 0,
 	'connectTimeoutID': 0,
@@ -272,7 +272,7 @@ var gateway = {
 		gateway.websock.close();
 		gateway.websock = false;
 		setTimeout(function(){
-			gateway.connectStatus = statusDisconnected;
+			gateway.connectStatus = 'disconnected';
 			$$.closeDialog('connect', 'reconnect');
 			$$.displayDialog('connect', '1', language.connecting, language.reconnectingWait);
 			gateway.connect(true);
@@ -319,13 +319,13 @@ var gateway = {
 		gateway.statusWindow.appendMessage(language.messagePatterns.error, [$$.niceTime(), text]);
 	},
 	'ping': function() { //pytanie IRCD o ping i błąd kiedy brak odpowiedzi
-		if(gateway.connectStatus != statusConnected) {
+		if(gateway.connectStatus != 'connected') {
 			gateway.pingcnt = 0;
 			return;
 		}
 		gateway.forceSend('PING :JavaScript');
 		if(gateway.pingcnt > 3) {
-			gateway.connectStatus = statusError;
+			gateway.connectStatus = 'error';
 			if($('#autoReconnect').is(':checked')){
 				gateway.reconnect();
 			} else {
@@ -405,8 +405,8 @@ var gateway = {
 	'sockError': function(e) {
 		console.log('WebSocket error!');
 		setTimeout(function(){
-			if(gateway.connectStatus != statusDisconnected && gateway.connectStatus != statusError && gateway.connectStatus != statusBanned){
-				gateway.connectStatus = statusError;
+			if(gateway.connectStatus != 'disconnected' && gateway.connectStatus != 'error' && gateway.connectStatus != 'banned'){
+				gateway.connectStatus = 'error';
 				gateway.disconnected(language.lostNetworkConnection);
 				if($('#autoReconnect').is(':checked')){
 					gateway.reconnect();
@@ -437,19 +437,19 @@ var gateway = {
 	},
 	'processStatus': function() {
 		if(guser.nickservpass != '' && guser.nickservnick != ''){
-			if(gateway.connectStatus == status001) {
+			if(gateway.connectStatus == '001') {
 				if(guser.nick != guser.nickservnick) { //auto-ghost
-					gateway.connectStatus = statusGhostSent;
+					gateway.connectStatus = 'ghostSent';
 					ircCommand.NickServ('RECOVER', [guser.nickservnick, guser.nickservpass]);
-					gatewayStatus = statusGhostSent;
-				} else gateway.connectStatus = statusIdentified;
+					gatewayStatus = 'ghostSent';
+				} else gateway.connectStatus = 'identified';
 			}
-			if(gateway.connectStatus == statusReIdentify){
+			if(gateway.connectStatus == 'reIdentify'){
 				if(guser.nick != guser.nickservnick){
-					gateway.connectStatus = statusGhostSent;
+					gateway.connectStatus = 'ghostSent';
 					ircCommand.NickServ('RECOVER', [guser.nickservnick, guser.nickservpass]);
 				} else {
-					gateway.connectStatus = statusIdentified;
+					gateway.connectStatus = 'identified';
 					if(activeCaps.indexOf('sasl') < 0){
 						ircCommand.NickServ('IDENTIFY', guser.nickservpass);
 					} else {
@@ -460,23 +460,23 @@ var gateway = {
 					}					
 				}
 			}
-			if(gateway.connectStatus == statusGhostAndNickSent && guser.nick == guser.nickservnick){ //ghost się udał
+			if(gateway.connectStatus == 'ghostAndNickSent' && guser.nick == guser.nickservnick){ //ghost się udał
 				if(gateway.nickWasInUse){
 					var html = '<p>' + language.nickNoLongerInUse + '</p>';
 					$$.displayDialog('warning', 'warning', language.warning, html);
 					gateway.nickWasInUse = false;
 				}
-				gateway.connectStatus = statusIdentified;
+				gateway.connectStatus = 'identified';
 			}
 		} else {
-			if(gateway.connectStatus == status001) { //nie ma hasła więc od razu uznajemy że ok
-				gateway.connectStatus = statusIdentified;
+			if(gateway.connectStatus == '001') { //nie ma hasła więc od razu uznajemy że ok
+				gateway.connectStatus = 'identified';
 			}
 		}
-		if(gateway.connectStatus == statusIdentified && gateway.setConnectedWhenIdentified == 1){ //podłączony, a szare tło schowane już wcześniej
-			gateway.connectStatus = statusConnected;
+		if(gateway.connectStatus == 'identified' && gateway.setConnectedWhenIdentified == 1){ //podłączony, a szare tło schowane już wcześniej
+			gateway.connectStatus = 'connected';
 		}
-		if(gateway.connectStatus == statusConnected){
+		if(gateway.connectStatus == 'connected'){
 			gateway.setConnectedWhenIdentified = 0;
 			if(!gateway.joined) {
 				$('#input').focus();
@@ -508,7 +508,7 @@ var gateway = {
 		if(gateway.userQuit){
 			return;
 		}
-		if(gateway.connectStatus != statusConnected){
+		if(gateway.connectStatus != 'connected'){
 			var button = [ {
 				text: language.reconnect,
 				click: function(){
@@ -611,7 +611,7 @@ var gateway = {
 		gateway.toSend.push(data);
 	},
 	'send': function(data) {
-		if(gateway.websock.readyState === gateway.websock.OPEN && (gateway.sendDelayCnt < 3 || gateway.connectStatus != statusConnected)){
+		if(gateway.websock.readyState === gateway.websock.OPEN && (gateway.sendDelayCnt < 3 || gateway.connectStatus != 'connected')){
 			gateway.forceSend(data);
 			gateway.sendDelayCnt++;
 		} else {
@@ -1000,8 +1000,6 @@ var gateway = {
 								sendNow += textToSend.charAt(0);
 								textToSend = textToSend.substring(1);
 							}
-							/*var sendNow = textToSend.substring(0, 420);
-							textToSend = textToSend.substring(420);*/
 							gateway.sendSingleMessage(sendNow, active);
 						} while (textToSend != "");
 						if(activeCaps.indexOf('echo-message') < 0) active.appendMessage('%s', [$$.parseImages(input)]);
@@ -1031,7 +1029,7 @@ var gateway = {
 		if (!input) {
 			return;
 		}
-		if(gateway.connectStatus > 0) {
+		if(gateway.connectStatus != 'disconnected') {
 			var regexp = /^\s+(\/.*)$/;
 			var match = regexp.exec(input);
 			if(match){
@@ -1835,7 +1833,7 @@ var gateway = {
 
 			$$.displayDialog('connect', '0', language.alreadyConnected, html);
 		}
-		if(gateway.connectStatus == statusConnected){
+		if(gateway.connectStatus == 'connected'){
 			try {
 				if(evt.key == 'checkAlive'){
 					localStorage.removeItem(evt.key);
@@ -2082,7 +2080,7 @@ var gateway = {
 		return modeString;
 	},
 	'enterPressed': function(){
-		if(gateway.connectStatus == statusDisconnected || gateway.connectStatus == statusError){
+		if(gateway.connectStatus == 'disconnected' || gateway.connectStatus == 'error'){
 			$$.alert(language.cantSendNoConnection);
 			return;
 		}
@@ -2134,7 +2132,7 @@ var gateway = {
 			'</ul><br><p>' + language.serverMessageIs + '<br>'+he(text)+'</p>';
 		$$.closeDialog('connect', '1');
 		$$.displayDialog('error', 'noaccess', language.noAccessToNetwork, html);
-		gateway.connectStatus = statusBanned;
+		gateway.connectStatus = 'banned';
 	},
 	'inputPaste': function(e){ // TODO
 		console.log(e);

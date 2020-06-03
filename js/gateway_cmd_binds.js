@@ -21,7 +21,7 @@ var cmdBinds = {
 			} else {
 				ircCommand.performQuick('CAP', ['END']);
 			}
-			gateway.connectStatus = statusIdentified;
+			gateway.connectStatus = 'identified';
 		}
 	],
 	'AWAY': [
@@ -100,18 +100,18 @@ var cmdBinds = {
 			if(match){
 				console.log('IP: '+match[1]);
 				gateway.displayGlobalBanInfo(msg.text);
-				gateway.connectStatus = statusBanned;
+				gateway.connectStatus = 'banned';
 			} 
-			if(gateway.connectStatus == statusBanned) return;
+			if(gateway.connectStatus == 'banned') return;
 
-			if(gateway.connectStatus == statusDisconnected) {
+			if(gateway.connectStatus == 'disconnected') {
 				if(gateway.firstConnect){
 					gateway.reconnect();
 				}
 				return;
 			}
 		
-			gateway.connectStatus = statusDisconnected;
+			gateway.connectStatus = 'disconnected';
 
 			if(msg.text.match(/\(NickServ \(RECOVER command used by [^ ]+\)\)$/) || msg.text.match(/\(NickServ \(Użytkownik [^ ]+\ użył komendy RECOVER\)\)$/)){
 				$$.displayReconnect();
@@ -613,7 +613,7 @@ var cmdBinds = {
 			}
 			gateway.statusWindow.appendMessage(language.messagePatterns.motd, [$$.niceTime(msg.time), he(msg.text)]);
 			gateway.pingcnt = 0;
-			gateway.connectStatus = status001;
+			gateway.connectStatus = '001';
 		}
 	],
 	'002': [	// RPL_YOURHOST
@@ -758,7 +758,7 @@ var cmdBinds = {
 	],
 	'319': [	// RPL_WHOISCHANNELS
 		function(msg) {
-			if(gateway.connectStatus == statusConnected){ // normalny whois
+			if(gateway.connectStatus == 'connected'){ // normalny whois
 				var chanlist = msg.text.split(' ');
 				var chanHtml = '';
 				chanlist.forEach(function(channel){
@@ -776,7 +776,7 @@ var cmdBinds = {
 				});
 				$$.displayDialog('whois', msg.args[1], false, "<p class='whois'><span class='info'>" + language.channels + ":</span><span class='data'> "+ chanHtml + "</span></p>");
 			} else {	// sprawdzam, na jakich kanałach sam jestem
-				gateway.connectStatus = status001;
+				gateway.connectStatus = '001';
 				if(msg.args[1] == guser.nick){
 					var chans = msg.text.split(' ');
 					chans.forEach( function(channame){
@@ -1292,7 +1292,7 @@ var cmdBinds = {
 	],
 	'411': [	//ERR_NORECIPIENT - that was a hack to discover own nick with previous websocket interface
 		function(msg) {
-			if(gateway.connectStatus != statusDisconnected){
+			if(gateway.connectStatus != 'disconnected'){
 				return;
 			}
 			if(guser.nick == ''){
@@ -1305,7 +1305,7 @@ var cmdBinds = {
 				guser.changeNick(msg.args[0], true);
 			}
 			ircCommand.whois(guser.nick);
-			gateway.connectStatus = status001;
+			gateway.connectStatus = '001';
 		}
 	],
 	'412': [	// ERR_ERR_NOTEXTTOSEND
@@ -1332,11 +1332,11 @@ var cmdBinds = {
 	],
 	'432': [	// ERR_ERRONEUSNICKNAME 
 		function(msg) {
-			if(gateway.connectStatus == statusDisconnected){
+			if(gateway.connectStatus == 'disconnected'){
 				ircCommand.changeNick('PIRC-'+Math.round(Math.random()*100));
 			}
 			var html = '<p>' + language.nickname + ' <b>'+he(msg.args[1])+'</b>' + language.isCurrentlyNotAvailable + '</p>';
-			if(gateway.connectStatus != statusDisconnected){
+			if(gateway.connectStatus != 'disconnected'){
 				html += '<p>' + language.yourCurrentNickIs + '<b>'+guser.nick+'</b>.</p>';
 			}
 			$$.displayDialog('warning', 'warning', language.warning, html);
@@ -1346,7 +1346,7 @@ var cmdBinds = {
 	],
 	'433': [	// ERR_NICKNAMEINUSE 
 		function(msg) {
-			if(gateway.connectStatus == statusDisconnected){
+			if(gateway.connectStatus == 'disconnected'){
 				var expr = /^([^0-9]+)(\d*)$/;
 				var match = expr.exec(guser.nick);
 				if(match && match[2] && !isNaN(match[2])){
@@ -1361,7 +1361,7 @@ var cmdBinds = {
 			var html = '<p>' + language.nickname + ' <b>'+he(msg.args[1])+'</b>' + language.isAlreadyUsedBySomeone + '</p>';
 			gateway.nickWasInUse = true;
 			
-			if(gateway.connectStatus != statusDisconnected){
+			if(gateway.connectStatus != 'disconnected'){
 				html += '<p>' + language.yourCurrentNickIs + '<b>'+guser.nick+'.</p>';
 			}
 			$$.displayDialog('warning', 'warning', language.warning, html);
