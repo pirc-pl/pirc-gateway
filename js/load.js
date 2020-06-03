@@ -20,21 +20,36 @@ var styleFiles = [
 ];
 var ranid = Math.floor(Math.random() * 10000);
 for(var lit=0; lit<scriptFiles.length; lit++){
-	var s = document.createElement('script');
-	s.type = 'text/javascript';
-	s.src = scriptFiles[lit] + '?' + ranid;
-	$('head').append(s);
+	try {
+		var s = document.createElement('script');
+		s.type = 'text/javascript';
+		s.src = scriptFiles[lit] + '?' + ranid;
+		$('head').append(s);
+	} catch(e){
+		console.error('Error loading main JS '+scriptFiles[lit]);
+		console.error(e);
+	}
 }
 for(var lit=0; lit<styleFiles.length; lit++){
-	var s = document.createElement('link');
-	s.rel = 'stylesheet';
-	s.href = styleFiles[lit] + '?' + ranid;
-	$('head').append(s);
+	try {
+		var s = document.createElement('link');
+		s.rel = 'stylesheet';
+		s.href = styleFiles[lit] + '?' + ranid;
+		$('head').append(s);
+	} catch(e){
+		console.error('Error loading style '+styleFiles[lit]);
+		console.error(e);
+	}
 }
 for(var lit=0; lit<mainSettings.modules.length; lit++){
-	var modname = mainSettings.modules[lit];
-	var s = document.createElement('script');
-	s.type = 'text/javascript';
-	s.src = '/js/addons/addon_' + modname + '.js?' + ranid;
-	$('head').append(s);
+	try {
+		var modname = mainSettings.modules[lit];
+		var s = document.createElement('script');
+		s.type = 'text/javascript';
+		s.src = '/js/addons/addon_' + modname + '.js?' + ranid;
+		$('head').append(s);
+	} catch(e){
+		console.error('Error loading addon JS '+modname);
+		console.error(e);
+	}
 }
