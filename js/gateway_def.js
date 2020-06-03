@@ -961,7 +961,7 @@ var gateway = {
 		for(f in messageProcessors){
 			message = messageProcessors[f](guser.nick, active.name, message);
 		}
-		if(!'echo-message' in activeCaps)
+		if(!('echo-message' in activeCaps))
 			active.appendMessage(language.messagePatterns.yourMsg, ['', 'null', gateway.getMeta(guser.nick, 50), $$.niceTime(), $$.nickColor(guser.nick), guser.nick, message]); // FIXME incorrect message appearance with disabled echo-message
 	},
 	'parseUserMessage': function(input){
@@ -980,7 +980,7 @@ var gateway = {
 							}
 							gateway.sendSingleMessage(sendNow, active);
 						} while (textToSend != "");
-						if('echo-message' in activeCaps) active.appendMessage('%s', [$$.parseImages(input)]);
+						if(!('echo-message' in activeCaps)) active.appendMessage('%s', [$$.parseImages(input)]);
 						$(this).dialog('close');
 					}
 				}, {
@@ -993,7 +993,7 @@ var gateway = {
 				$$.displayDialog('confirm', 'command', language.confirm, html, button);
 			} else {
 				gateway.sendSingleMessage(input, active);
-				if('echo-message' in activeCaps) active.appendMessage('%s', [$$.parseImages(input)]);
+				if(!('echo-message' in activeCaps)) active.appendMessage('%s', [$$.parseImages(input)]);
 			}
 		}
 	},
@@ -2118,7 +2118,7 @@ var gateway = {
 		console.log(items);
 	},
 	'inputKeypress': function(e){
-		if('message-tags' in activeCaps) return;
+		if(!('message-tags' in activeCaps)) return;
 		if($('#input').val().length > 0 && $('#input').val().charAt(0) == '/') return; // typing a command
 		if(!gateway.getActive()) return;
 		if(gateway.lastKeypressWindow == gateway.getActive()){
