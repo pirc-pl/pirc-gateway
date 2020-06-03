@@ -383,9 +383,11 @@ class GEmojiElement extends HTMLElement {
 
   connectedCallback() {
     if (this.image === null && !isEmojiSupported()) {
+      const origEmoji = this.textContent;
       this.textContent = ''
       const image = emojiImage(this)
       image.src = this.getAttribute('fallback-src') || ''
+      image.alt = origEmoji;
       this.appendChild(image)
     }
 
