@@ -14,26 +14,3 @@ var mainSettings = {
 	]
 };
 
-server = mainSettings.server;
-gatewayVersion = mainSettings.version;
-oldGatewayHtml = mainSettings.oldGatewayHtml;
-
-function parsePath(){
-	if(window.location.pathname == '/bramka'){
-		var path = '';
-	} else if(window.location.pathname.indexOf('/bramka/') == 0){
-		var path = window.location.pathname.substring(7);
-	} else {
-		var path = window.location.pathname;
-	}
-	var params = path.substring(1).split('/');
-	if(params.length > 1){
-		guser.nick = params[1];
-	}
-	if(params.length > 0){
-		guser.channels.push('#' + params[0]);
-	}
-}
-
-parsePath();
-
