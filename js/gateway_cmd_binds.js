@@ -1739,7 +1739,7 @@ var ctcpBinds = {
 	],
 	'VERSION': [
 		function(msg){
-			version_string = language.gatewayVersionIs+gatewayVersion;
+			version_string = language.gatewayVersionIs+mainSettings.version;
 			if(addons.length > 0){
 				version_string += language.versionWithAddons;
 				for(i in addons){
@@ -1755,7 +1755,7 @@ var ctcpBinds = {
 	],
 	'USERINFO': [
 		function(msg){
-			version_string = language.gatewayVersionIs+gatewayVersion;
+			version_string = language.gatewayVersionIs+mainSettings.version;
 			if(addons.length > 0){
 				version_string += language.versionWithAddons;
 				for(i in addons){
@@ -1765,7 +1765,7 @@ var ctcpBinds = {
 					version_string += addons[i];
 				}
 			}
-			version_string += ', na '+navigator.userAgent;
+			version_string += ', ' + language.runningOn + ' '+navigator.userAgent;
 			ircCommand.sendCtcpReply(msg.sender.nick, 'USERINFO '+version_string);
 		}
 	],

@@ -1,9 +1,68 @@
+var guser = {
+	'nick': '',
+	'channels': [],
+	'nickservpass': '',
+	'nickservnick': '',
+	'changeNick': function(newnick, silent) {
+		irc.lastNick = guser.nick;
+		guser.nick = newnick;
+		$('#usernick').text(he(guser.nick));
+		$(document).attr('title', he(guser.nick)+ ' @ '+mainSettings.networkName);
+		if(!silent) {
+			for (i in gateway.channels) {
+				gateway.channels[i].appendMessage(language.messagePatterns.nickChangeOwn, [$$.niceTime(), he(guser.nick)]);
+			}
+		}
+		return true;
+	},
+	'umodes': {},
+	'setUmode': function(modechar, plus){
+		if(modechar){
+			guser.umodes[modechar] = plus;
+		}
+		if(guser.umodes.r){
+			$('#nickRegister').hide();
+			$('.nickRegistered').show();
+		} else {
+			$('#nickRegister').show();
+			$('.nickRegistered').hide();
+		}
+	},
+	'clearUmodes': function(){
+		guser.umodes = {};
+	},
+	'clear': function(){
+		guser.clearUmodes();
+		activeCaps = [];
+		isupport = [];
+	}
+};
+
+function parsePath(){
+	if(window.location.pathname == '/bramka'){ // old path prefix
+		var path = '';
+	} else if(window.location.pathname.indexOf('/bramka/') == 0){
+		var path = window.location.pathname.substring(7);
+	} else {
+		var path = window.location.pathname;
+	}
+	var params = path.substring(1).split('/');
+	if(params.length > 1){
+		guser.nick = params[1];
+	}
+	if(params.length > 0){
+		guser.channels.push('#' + params[0]);
+	}
+}
+
+parsePath();
+
 var conn = {
 	'my_nick': '',
 	'my_pass': '',
 	'my_reqChannel' : '',
 	'connectTimeout': function(){
-			$('.not-connected-text > p').html(language.connectingForTooLong + oldGatewayHtml);
+			$('.not-connected-text > p').html(language.connectingForTooLong + mainSettings.oldGatewayHtml);
 	},
 	'dispConnectDialog': function(){
 		reqChannel = guser.channels[0];
@@ -173,7 +232,7 @@ var conn = {
 			return;
 		}
 		if(window.WebSocket == null){
-			$('.not-connected-text > p').html(language.websocketDisabledHtml + oldGatewayHtml);
+			$('.not-connected-text > p').html(language.websocketDisabledHtml + mainSettings.oldGatewayHtml);
 			return;
 		}
 		

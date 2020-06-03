@@ -6,17 +6,6 @@
 		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 		<link rel="stylesheet" href="/styles/jquery-ui.theme.css" />
 		<link rel="stylesheet" href="/styles/jquery-ui.structure.css" />
-		<script type="text/javascript">
-			var guser = {
-				'nick': '',
-				'channels': [],
-				'nickservpass': '',
-				'nickservnick': ''
-			};
-			var gatewayVersion = '';
-			var oldGatewayHtml = '';
-			var server = '';
-		</script>
 		<script type="text/javascript" src="/js/md5.js"></script>
 		<script type="text/javascript" src="/js/foreach.js"></script>
 		<script type="text/javascript" src="/js/jquery-1.12.3.min.js"></script>
@@ -140,7 +129,7 @@
 		
 		<div id="about-dialog" class="language-informationsTitle">
 				<h3>Bramka WWW PIRC.PL</h3>
-				<p><span class="language-version"></span>: <script type="text/javascript">document.write(gatewayVersion);</script></p>
+				<p><span class="language-version"></span>: <script type="text/javascript">document.write(mainSettings.version);</script></p>
 				<p>&copy; 2010-2020 <a href="http://pirc.pl">PIRC.PL</a>. <span class="language-allRightsReserved"></span></p>
 		</div>
 

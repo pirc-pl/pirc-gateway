@@ -1,41 +1,3 @@
-guser.changeNick = function(newnick, silent) {
-	irc.lastNick = guser.nick;
-	guser.nick = newnick;
-	$('#usernick').text(he(guser.nick));
-	$(document).attr('title', he(guser.nick)+ ' @ '+mainSettings.networkName);
-	if(!silent) {
-		for (i in gateway.channels) {
-			gateway.channels[i].appendMessage(language.messagePatterns.nickChangeOwn, [$$.niceTime(), he(guser.nick)]);
-		}
-	}
-	return true;
-}
-
-guser.umodes = {};
-
-guser.setUmode = function(modechar, plus){
-	if(modechar){
-		guser.umodes[modechar] = plus;
-	}
-	if(guser.umodes.r){
-		$('#nickRegister').hide();
-		$('.nickRegistered').show();
-	} else {
-		$('#nickRegister').show();
-		$('.nickRegistered').hide();
-	}
-}
-
-guser.clearUmodes = function(){
-	guser.umodes = {};
-}
-
-guser.clear = function(){
-	guser.clearUmodes();
-	activeCaps = [];
-	isupport = [];
-}
-
 var irc = {
 	'lastNick': '',
 	'messagedata': function() {
@@ -240,6 +202,18 @@ var gateway = {
 	'websock': 0,
 	'whois': '',
 	'connectStatus': 'disconnected',
+	/* possible values are:
+		disconnected
+		001
+		ghostSent
+		identified
+		connected
+		reIdentify
+		error
+		banned
+		wrongPassword
+		ghostAndNickSent
+	*/
 	'joined': 0,
 	'setConnectedWhenIdentified': 0,
 	'connectTimeoutID': 0,
@@ -358,7 +332,7 @@ var gateway = {
 	'connect': function(force) {
 		gateway.userQuit = false;
 		gateway.connectTimeoutID = setTimeout(gateway.connectTimeout, 20000);
-		gateway.websock = new WebSocket(server);
+		gateway.websock = new WebSocket(mainSettings.server);
 		gateway.websock.onopen = function(e){
 			gateway.configureConnection();
 			var username = mainSettings.defaultName;
@@ -599,6 +573,9 @@ var gateway = {
 			}
 		} catch(e) {}
 		guser.account = guser.nick;
+		try {
+			window.history.pushState('', guser.nick+ ' @ '+mainSettings.networkName, '/'+chanInput.substr(1)+'/'+nickInput+'/');
+		} catch(e) {}
 		gateway.initSys();
 		gateway.connect(false);
 
