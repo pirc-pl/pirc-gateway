@@ -114,7 +114,7 @@ try {
 		if(!type){
 			type = 0;
 		}
-		if(!(letter in language.modes.chModeInfo)) return 'tryb '+letter; //nieznany tryb
+		if(!(letter in language.modes.chModeInfo)) return language.mode+' '+letter; // no text description for this mode char
 		var data = language.modes.chModeInfo[letter];
 		if(data.constructor === Array){
 			return data[type];
@@ -512,7 +512,7 @@ var disp = {
 		disp.displaySpecialDialog('about-dialog', 'OK');
 	},
 	'showAvatarSetting': function(){
-		if(!guser.umodes.r || window.FormData === undefined){
+		if(!guser.me.registered || window.FormData === undefined){
 			var html =
 				'<div id="current-avatar">' +
 					'<div id="current-letter-avatar">' +
@@ -599,7 +599,7 @@ var disp = {
 		$('#submit-avatar').show();
 	},
 	'submitAvatar': function() {
-		if(!guser.umodes.r){
+		if(!guser.me.registered){
 			var url = $('#avatar-url').val();
 			if(!url.startsWith('https://')){
 				$$.alert(language.addressMustStartWithHttps);
@@ -644,7 +644,7 @@ var disp = {
 		}
 	},
 	'deleteAvatar': function() {
-		if(!guser.umodes.r){
+		if(!guser.me.registered){
 			if(!confirm(language.areYouSureToDeleteAvatar + '"' +textSettingsValues['avatar']+ '"?')){
 				return;
 			}

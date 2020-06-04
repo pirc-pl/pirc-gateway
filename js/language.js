@@ -614,7 +614,8 @@ var lang = {
 		'symbolsTitle': 'Symbole',
 		'selectTextSizeTitle': 'Wybierz wielkość tekstu',
 		'ignoreThis': 'Ignoruj',
-		'topicOfChannel': 'Temat kanału '
+		'topicOfChannel': 'Temat kanału ',
+		'mode': 'tryb'
 	},
 	'en': {
 		'messagePatterns': {
@@ -1233,7 +1234,8 @@ var lang = {
 		'symbolsTitle': 'Symbols',
 		'selectTextSizeTitle': 'Select text size',
 		'ignoreThis': 'Ignore',
-		'topicOfChannel': 'Topic of '
+		'topicOfChannel': 'Topic of ',
+		'mode': 'mode'
 	}
 };
 

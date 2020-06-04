@@ -7,7 +7,7 @@ var cmdBinds = {
 	'ACCOUNT': [
 		function(msg) {
 			var user = users.getUser(msg.sender.nick);
-			if(msg.args[0]){
+			if(msg.args.length < 1 || msg.args[0] == '*' || msg.args[0] == '0'){
 				user.setAccount(false);
 			} else {
 				user.setAccount(msg.args[0]);
@@ -1033,9 +1033,9 @@ var cmdBinds = {
 			}
 			if(msg.args[6].indexOf('r') > -1){
 				user.setRegistered(true);
-			} else {
+			}/* else {
 				user.setRegistered(false);
-			}
+			}*/
 		}
 	],
 	'353': [	// RPL_NAMREPLY 
@@ -1178,7 +1178,7 @@ var cmdBinds = {
 			channel.hasNames = true;
 		}
 	],
-	'367': [	// RPL_BANLIST 
+	'367': [	// RPL_BANLIST
 		function(msg) {
 			disp.insertLinebeI('b', msg.args);
 		}
@@ -1186,7 +1186,7 @@ var cmdBinds = {
 	'368': [	// RPL_ENDOFBANLIST
 		function(msg) {
 			disp.endListbeI('b', msg.args[1]);
-		}			
+		}
 	],
 	'369': [	// RPL_ENDOFWHOWAS
 		function(msg) { // not displaying end of whowas
@@ -1196,7 +1196,8 @@ var cmdBinds = {
 	],
 	'372': [	// RPL_MOTD
 		function(msg) {
-			gateway.statusWindow.appendMessage(language.messagePatterns.motd, [$$.niceTime(msg.time), msg.text]);
+			var message = $$.colorize(msg.text);
+			gateway.statusWindow.appendMessage(language.messagePatterns.motd, [$$.niceTime(msg.time), message]);
 		}
 	],
 	'373': [	// RPL_INFOSTART

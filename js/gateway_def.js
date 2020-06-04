@@ -392,14 +392,20 @@ var gateway = {
 	},
 	'onRecv': function(sdata) {
 		//data = irc.parseMessage(Base64.decode(sdata.data));
-		var reader = new FileReader();
-		reader.addEventListener("loadend", function() {
-		   // reader.result contains the contents of blob as a typed array
-			data = irc.parseMessage(reader.result);
+		if(typeof sdata.data === 'string' || sdata.data instanceof String){
+			var data = irc.parseMessage(sdata.data);
 			gateway.processData(data);
 			gateway.processStatus();
-		});
-		reader.readAsText(sdata.data);
+		} else {
+			var reader = new FileReader();
+			reader.addEventListener("loadend", function() {
+			   // reader.result contains the contents of blob as a typed array
+				var data = irc.parseMessage(reader.result);
+				gateway.processData(data);
+				gateway.processStatus();
+			});
+			reader.readAsText(sdata.data);
+		}
 
 //		data = irc.parseMessage(sdata.data);
 //		gateway.processData(data);

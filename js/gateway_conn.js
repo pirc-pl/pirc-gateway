@@ -3,6 +3,7 @@ var guser = {
 	'channels': [],
 	'nickservpass': '',
 	'nickservnick': '',
+	'me': null,
 	'changeNick': function(newnick, silent) {
 		irc.lastNick = guser.nick;
 		guser.nick = newnick;
@@ -21,17 +22,15 @@ var guser = {
 			guser.umodes[modechar] = plus;
 		}
 		if(guser.umodes.r){
-			$('#nickRegister').hide();
-			$('.nickRegistered').show();
-		} else {
-			$('#nickRegister').show();
-			$('.nickRegistered').hide();
+			guser.me.setRegistered(true);
 		}
 	},
 	'clearUmodes': function(){
 		guser.umodes = {};
 	},
 	'clear': function(){
+		if(guser.me) guser.me.setRegistered(false);
+		guser.me = null;
 		guser.clearUmodes();
 		activeCaps = {};
 		serverCaps = {};

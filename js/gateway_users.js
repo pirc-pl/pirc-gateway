@@ -5,6 +5,7 @@ var users = {
 		this.host = false;
 		this.realname = false;
 		this.account = false;
+		this.registered = false;
 		this.ircOp = false;
 		this.bot = false;
 		this.disableAvatar = false;
@@ -28,6 +29,11 @@ var users = {
 		};
 		this.setAccount = function(account){
 			this.account = account;
+			if(!account && this.registered){
+				this.setRegistered(false);
+			} else {
+				this.setRegistered(true);
+			}
 			for(c in gateway.channels) {
 				var nicklistUser = gateway.channels[c].nicklist.findNick(this.nick);
 				if(nicklistUser){
@@ -66,7 +72,7 @@ var users = {
 					var nicklist = gateway.channels[c].nicklist;
 					var nli = nicklist.findNick(this.nick);
 					if(nli)
-						nli.updateAvatar();					
+						nli.updateAvatar();
 				}
 				if(value && this.nick == guser.nick){ // this is our own avatar
 					textSettingsValues['avatar'] = value;
@@ -103,11 +109,29 @@ var users = {
 				}
 			}.bind(this));
 		};
+		this.setRegistered = function(registered){
+			this.registered = registered;
+			if(!registered){
+				this.setAccount(false);
+			}
+			if(this.nick == guser.nick){
+				if(registered){
+					$('#nickRegister').hide();
+					$('.nickRegistered').show();
+				} else {
+					$('#nickRegister').show();
+					$('.nickRegistered').hide();
+
+				}
+			}
+		};
 	},
 	'list': {},
 	'addUser': function(nick){
+		if(nick == '*') return users.addUser(guser.nick);
 		if(nick in users.list) return users.list[nick];
 		users.list[nick] = new users.user(nick);
+		if(nick == guser.nick) guser.me = users.list[nick];
 		return users.list[nick];
 	},
 	'delUser': function(nick){
@@ -129,7 +153,7 @@ var users = {
 			var nicklist = gateway.channels[c].nicklist;
 			var nli = nicklist.findNick(user.nick);
 			if(nli)
-				nli.updateAvatar();					
+				nli.updateAvatar();
 		}
 	},
 	'changeNick': function(oldNick, newNick){

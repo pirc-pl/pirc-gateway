@@ -338,7 +338,7 @@ var services = {
 		gateway.performCommand(banString);
 	},
 	'requireRegisteredNick': function() {
-		if(!guser.umodes.r){
+		if(!guser.me.registered){
 			$$.alert(language.youNeedRegisteredNickToUseThis);
 			return false;
 		}
