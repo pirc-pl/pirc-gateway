@@ -321,7 +321,7 @@ var commands = {
 				if(reason) {
 					gateway.send("PRIVMSG "+command[1]+" :"+reason);
 					
-					if(activeCaps.indexOf('echo-message') <= 0 && command[1].isInList(servicesNicks)){
+					if(!('echo-message' in activeCaps) && command[1].isInList(servicesNicks)){
 						var displayInTab = false;
 						if(gateway.find(command[1])) displayInTab = true;
 						if(displayInTab || $("#noticeDisplay").val() == 1){ // query
@@ -484,7 +484,7 @@ var commands = {
 					}
 					if(tabToSend){
 						gateway.send("PRIVMSG "+gateway.active+" :\001ACTION "+input.slice(1).substr(3)+"\001");
-						if(activeCaps.indexOf('echo-message') <= 0){
+						if(!('echo-message' in activeCaps)){
 							tabToSend.appendMessage(language.messagePatterns.yourAction, [$$.niceTime(), guser.nick, $$.colorize(input.slice(1).substr(3))]);
 							tabToSend.appendMessage('%s', [$$.parseImages(input.slice(1).substr(3))]);
 						}
