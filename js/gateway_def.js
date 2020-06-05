@@ -73,18 +73,14 @@ var irc = {
 
 		var line = line.trim();
 		line.replace(/^\s+|\s+$/gm,'');
-		
 		if(line == ''){
 			return;
 		}
-		
 		var msglen = line.length;
-	
 		var pstate = 'start';
 		var currArg = '';
 		var tags = '';
 		var haveText = false;
-		
 		console.log(line);
 
 		for(var i = 0; i < msglen; i++){
@@ -164,7 +160,6 @@ var irc = {
 		if(pstate == 'args'){
 			ircmsg.args.push(currArg);
 		}
-	
 		if(ircmsg.sender.ident == '' && ircmsg.sender.host == '' && ircmsg.sender.nick.indexOf('.')!=-1){
 			ircmsg.sender.server = true;
 		} else {
@@ -324,7 +319,7 @@ var gateway = {
 				gateway.forceSend(gateway.toSend.shift());
 			} else {
 				if(gateway.sendDelayCnt > 0){
-					gateway.sendDelayCnt--;	
+					gateway.sendDelayCnt--;
 				}
 			}
 		}, 1000);
@@ -437,7 +432,7 @@ var gateway = {
 						ircCommand.performQuick('AUTHENTICATE', ['PLAIN']);
 						var date = new Date();
 						gateway.statusWindow.appendMessage(language.messagePatterns.SaslAuthenticate, [$$.niceTime(date), language.SASLLoginAttempt]);
-					}					
+					}
 				}
 			}
 			if(gateway.connectStatus == 'ghostAndNickSent' && guser.nick == guser.nickservnick){ //ghost się udał
@@ -824,7 +819,6 @@ var gateway = {
 					gateway.findChannel(chan).restoreScroll();
 				}, 200);
 			}
-			
 		} else if(chan != "--status" && gateway.findQuery(chan)) {
 			$('#main-window > span').hide();
 			$('#nicklist-main > span').hide();
@@ -1222,7 +1216,7 @@ var gateway = {
 		} ];
 
 		$$.displayDialog('admin', channel, language.administrationOf+he(channel), html, button);
-			
+		
 		var chanModes = gateway.findChannel(channel).modes;
 		if(!chanModes){
 			return;
@@ -1728,8 +1722,7 @@ var gateway = {
 								} else {
 									mode = cchar;
 								}
-								
-								chan.nicklist.findNick(args[nextarg]).setMode(mode, plus);					
+								chan.nicklist.findNick(args[nextarg]).setMode(mode, plus);
 								infoText = infoText.apList((plus?language.gave:language.taken)+getModeInfo(cchar, dispType)+(plus?language.forUser:'')+' <span class="modevictim">'+args[nextarg]+'</span>');
 							}
 							nextarg++;
@@ -1950,7 +1943,7 @@ var gateway = {
 				netjoin = true;
 			}
 			delete gateway.netJoinUsers[msg.text][msg.sender.nick];
-		} 
+		}
 		if(netjoin){
 			gateway.netJoinQueue.push(msg);
 			if(gateway.netJoinTimeout){
@@ -2007,8 +2000,6 @@ var gateway = {
 			$("#nicklist").animate({
 				"bottom":	nicklistBottom
 			}, 400);
-			
-			
 			
 			$('#chlist-button').text('⮙ ' + language.channelList + ' ⮙');
 		} else {

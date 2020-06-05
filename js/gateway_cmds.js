@@ -68,7 +68,6 @@ var ircCommand = {
 		} else {
 			ircCommand.performQuick('KICK', [channel, user], reason);
 		}
-		
 	},
 	'channelJoin': function(channels, passwords){ // TODO obsługa haseł jeśli tablice
 		if(Array.isArray(channels)){
@@ -89,7 +88,6 @@ var ircCommand = {
 			} else {
 				ircCommand.perform('JOIN', [channels]);
 			}
-			
 		}
 	},
 	'channelTopic': function(chan, text){
@@ -169,7 +167,7 @@ var ircCommand = {
 		ircCommand.perform('WHO', [dest]);
 	},
 	'whox': function(dest, args){
-		ircCommand.perform('WHO', [dest, '%'+args]);	
+		ircCommand.perform('WHO', [dest, '%'+args]);
 	},
 	'metadata': function(cmd, target, args){
 		if(args == null) args = [];
@@ -187,7 +185,7 @@ var ircCommand = {
 			tags[name] = value;
 		}
 		console.log(name, value, tags);
-		ircCommand.perform(false, [target], false, tags); 
+		ircCommand.perform(false, [target], false, tags);
 	}
 };
 

@@ -2,7 +2,6 @@ function Nicklist(chan, id) {
 	this.channel = chan;
 	this.id = id+'-nicklist';
 	this.list = [];
-	
 	this.sortFunc = function(a, b) {
 		if(a.level < b.level) {
 			return 1;
@@ -240,7 +239,7 @@ function NicklistUser(usernick, chan) {
 		this.showTitle();
 	}
 	this.setAway = function(away) {
-		if(this.away != away){			
+		if(this.away != away){
 			this.away = away;
 			if(!away){
 				this.awayReason = false;
@@ -490,10 +489,8 @@ function Query(nick) {
 	$('#'+this.id+'-topic').html('<h1>'+this.name+'</h1><h2></h2>');
 	$('<li/>').attr('id', this.id+'-tab').html('<a href="javascript:void(0);" class="switchTab" onclick="gateway.switchTab(\''+this.name+'\')">'+he(this.name)+'</a><a href="javascript:void(0);" onclick="gateway.removeQuery(\''+this.name+'\')"><div class="close" title="' + language.closeQuery + '"></div></a>').appendTo('#tabs');
 	$('#chstats').append('<div class="chstatswrapper" id="'+this.id+'-chstats"><span class="chstats-text symbolFont">' + language.query + '</span></div>');
-	
 	try {
 		var qCookie = localStorage.getItem('query'+md5(this.name));
-	
 		if(qCookie) {
 			qCookie = Base64.decode(qCookie).split('\377').join('<!--newline-->');
 			$('#'+this.id+'-window').append('<div class="backlog"></div>');
@@ -501,7 +498,6 @@ function Query(nick) {
 			$('#'+this.id+'-window .backlog').append(qCookie);
 		}
 	} catch(e) {}
-	
 	$('#'+this.id+'-window').vprintf(language.messagePatterns.startedQuery, [$$.niceTime(), he(this.name), this.name]);
 }
 
@@ -556,7 +552,6 @@ function Channel(chan) {
 			this.scrollSaved =  true;
 			this.scrollPos = $('#chat-wrapper').scrollTop();
 		}
-		
 	}
 	this.setMark = function() {
 		$('#'+this.id+'-window hr').remove();
@@ -577,7 +572,6 @@ function Channel(chan) {
 		if(!this.hilight) {
 			this.hilight = window.setInterval('gateway.findChannel(\''+this.name+'\').toggleClass();', 500);
 		}
-		
 		if (this.hilight2) {
 			window.clearInterval(this.hilight2);
 			this.hilight2 = false;
@@ -611,12 +605,10 @@ function Channel(chan) {
 			window.clearInterval(this.hilight);
 			this.hilight = false;
 		}
-		
 		if(this.hilight2) {
 			window.clearInterval(this.hilight2);
 			this.hilight2 = false;
 		}
-		
 		if(this.classAdded) {
 			this.toggleClass();
 		}
@@ -630,7 +622,6 @@ function Channel(chan) {
 		setTimeout("$('#"+this.id+"-tab').removeClass('newmsg')", 100);
 		setTimeout("$('#"+this.id+"-tab').removeClass('newmsg')", 300);
 		setTimeout("$('#"+this.id+"-tab').removeClass('newmsg')", 600);
-		
 		setTimeout("$('#"+this.id+"-tab').removeClass('newmsg2')", 100);
 		setTimeout("$('#"+this.id+"-tab').removeClass('newmsg2')", 300);
 		setTimeout("$('#"+this.id+"-tab').removeClass('newmsg2')", 600);
@@ -694,22 +685,18 @@ function Channel(chan) {
 		}
 		this.newLines = true;
 	}
-	
 	this.appendMsgid = function(msgid){
 		this.msgidHistory.push(msgid);
 	}
-	
 	this.hasMsgid = function(msgid){
 		if(this.msgidHistory.indexOf(msgid) >= 0) return true;
 		return false;
 	}
-	
 	this.setTopic = function(topic) {
 		$('#'+this.id+'-topic > h2').html($$.colorize(topic));
 		$('#'+this.id+'-topic').unbind('click').click(disp.topicClick);
 		this.topic = topic;
 	}
-	
 	this.clearWindow = function() {
 		$('#'+this.id+'-window').html(' ');
 	}
@@ -750,10 +737,8 @@ function Channel(chan) {
 	$('#'+this.id+'-chstats').append(operHtml);
 	this.setTopic('');
 	guser.setUmode(false);
-	
 	try {
 		var qCookie = localStorage.getItem('channel'+md5(this.name));
-	
 		if(qCookie) {
 			qCookie = Base64.decode(qCookie).split('\377').join('<!--newline-->');
 			$('#'+this.id+'-window').append('<div class="backlog"></div>');
@@ -822,7 +807,6 @@ function Status() {
 		if(!this.hilight) {
 			this.hilight = window.setInterval('gateway.statusWindow.toggleClass();', 500);
 		}
-		
 		if (this.hilight2) {
 			window.clearInterval(this.hilight2);
 			this.hilight2 = false;
@@ -859,12 +843,10 @@ function Status() {
 			window.clearInterval(this.hilight);
 			this.hilight = false;
 		}
-		
 		if(this.hilight2) {
 			window.clearInterval(this.hilight2);
 			this.hilight2 = false;
 		}
-		
 		if(this.classAdded) {
 			this.toggleClass();
 		}
@@ -878,7 +860,6 @@ function Status() {
 		setTimeout("$('#"+this.id+"-tab').removeClass('newmsg')", 100);
 		setTimeout("$('#"+this.id+"-tab').removeClass('newmsg')", 300);
 		setTimeout("$('#"+this.id+"-tab').removeClass('newmsg')", 600);
-		
 		setTimeout("$('#"+this.id+"-tab').removeClass('newmsg2')", 100);
 		setTimeout("$('#"+this.id+"-tab').removeClass('newmsg2')", 300);
 		setTimeout("$('#"+this.id+"-tab').removeClass('newmsg2')", 600);

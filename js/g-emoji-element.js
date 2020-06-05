@@ -1,10 +1,10 @@
-/* 
+/*
 This code is derived from https://github.com/github/g-emoji-element
 2020 k4be, PIRC.pl Team
 Note: I don't know how does this exactly work. Don't ask me.
-   
+
 The original license text:
-   
+
 Copyright (c) 2018 GitHub, Inc.
 
 Permission is hereby granted, free of charge, to any person obtaining

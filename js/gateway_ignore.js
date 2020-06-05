@@ -68,7 +68,6 @@ var ignore = {
 				var ignoreType = language.privateDiscussionSmall;
 			}
 			var ignoreMask = data[i][1];
-			
 			var html = '<tr><td>'+ignoreType+'</td><td>'+he(ignoreMask)+'</td>' +
 				'<td><button id="unignore_'+ignoreT+'_'+md5(ignoreMask)+'">' + language.remove + '</button>' +
 				'</td></tr>';

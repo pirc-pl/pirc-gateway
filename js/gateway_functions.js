@@ -213,7 +213,7 @@ var readyFunc = function(){
 				readyFunctions[f]();
 			} catch(e) {}
 		}
-	}	
+	}
 }
 
 $('document').ready(function(){setTimeout(readyFunc, 100);});
@@ -301,7 +301,6 @@ function lengthInUtf8Bytes(str) {
 			add++;
 		}
 	} while(!success);
-	
 	return str.length + (m ? m.length : 0) + add;
 }
 
@@ -826,7 +825,7 @@ var $$ = {
 			var ret = nickColorProcessors[a](nick);
 			if(ret){
 				color = ret;
-			}				
+			}
 		}
 		if(codeOnly){
 			return color;
@@ -850,28 +849,23 @@ var $$ = {
 			message = $$.textToEmoji(message);
 		}
 		if(!strip){
-			message = he(message); 
+			message = he(message);
 			message = $$.parseLinks(message);
 			if($('#dispEmoji').is(':checked')){
 				message = emoji.addTags(message);
 			}
 		}
-		var length	= message.length;
-		
+		var length = message.length;
 		var bold = false;
 		var italic = false;
 		var underline = false;
 		var invert = false;
-		
 		var formatSet = false;
 		var formatWaiting = false;
-		
 		for (var i = 0 ; i < length ; i++) {
-		
 			var isText = false;
 			var append = '';
-			
-			switch (message.charAt(i)) {		
+			switch (message.charAt(i)) {
 				case String.fromCharCode(3):
 					var fgCode = null;
 					var bgCode = null;
@@ -923,7 +917,6 @@ var $$ = {
 					invert = false;
 					formatWaiting = true;
 					break;
-					
 				case String.fromCharCode(2):
 					bold = !bold;
 					formatWaiting = true;
@@ -933,7 +926,6 @@ var $$ = {
 					invert = !invert;
 					formatWaiting = true;
 					break;
-				
 				case String.fromCharCode(29): // pochylenie - tylko kto je obsługuje?
 					italic = !italic;
 					formatWaiting = true;
@@ -942,13 +934,12 @@ var $$ = {
 				case String.fromCharCode(31): // podkreślenie
 					underline = !underline;
 					formatWaiting = true;
-					break;				
+					break;
 				default:
 					isText = true;
 					append = message.charAt(i);
 					break;
 			}
-			
 			if(!strip && isText && formatWaiting){
 				formatWaiting = false;
 				if(formatSet){
@@ -978,8 +969,6 @@ var $$ = {
 				newText += append;
 			}
 		}
-			
-
 		if(!strip && formatSet){
 			newText += '</span><wbr>';
 		}
@@ -987,7 +976,7 @@ var $$ = {
 	},
 	'getColor': function(numeric, what) {
 		var num = parseInt(numeric);
-		/*if (what == "foreground") {	
+		/*if (what == "foreground") {
 			switch (num) {
 				case 0:  return 'white';
 				case 1:  return 'black';
@@ -1124,9 +1113,7 @@ var $$ = {
 					'<div style="display:none;" id="img-'+rand+'"><img id="imgc-'+rand+'" style="max-width:100%;" /></div>';
 			});
 		}
-		
 		var rexpr = /https?:\/\/(?:(?:www|m)\.youtube\.com\/watch\?[^ ]*v=|youtu\.be\/)([^ ]+)/i;
-		
 		var fmatch = text.match(/(https?:\/\/(?:(?:www|m)\.youtube\.com\/watch\?[^ ]*v=|youtu\.be\/)[^ ?&]+)/gi);
 		if(fmatch){
 			fmatch.forEach(function(arg){
@@ -1219,7 +1206,7 @@ var $$ = {
 						state = stateText;
 					}
 					break;
-			}			
+			}
 		}
 		if(state == stateUrl){
 			var link = $$.correctLink(currLink);
@@ -1258,8 +1245,7 @@ var $$ = {
 			default:
 				var html = "<p><span class=\"time\">"+$$.niceTime()+"</span> "+message+"</p>";
 				break;
-		}	
-	
+		}
 		var id = type+'Dialog-'+md5(sender.toLowerCase());
 		var $dialog = $('#'+id);
 		if($dialog.length == 0){

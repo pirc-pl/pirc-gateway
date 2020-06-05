@@ -281,7 +281,7 @@ var services = {
 				opts.cmd = 'SAY '+chan;
 				break;
 		}
-		
+
 		var cmdArgs = services.servMakeArgs(opts, cmd, chan, 'bs');
 		if(cmdArgs === false){
 			return;
@@ -308,7 +308,7 @@ var services = {
 	'showCSBan': function(channel, nick) {
 		var html = '<p>'+language.banAndKickUserFrom +he(nick)+language.fromChannel+he(channel)+'. '+ language.giveKickReason +'</p>' +
 			'<input type="text" id="kbinput" maxlength="307" /><br>' +
-			'<select id="kbtime">' + 
+			'<select id="kbtime">' +
 				'<option value=" ">' + language.noAutoUnban + '</option>' +
 				'<option value="+1d">' + language.unban1Day + '</option>' +
 				'<option value="+1h">' + language.unban1Hour + '</option>' +

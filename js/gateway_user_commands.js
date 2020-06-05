@@ -320,7 +320,6 @@ var commands = {
 				}
 				if(reason) {
 					gateway.send("PRIVMSG "+command[1]+" :"+reason);
-					
 					if(!('echo-message' in activeCaps) && command[1].isInList(servicesNicks)){
 						var displayInTab = false;
 						if(gateway.find(command[1])) displayInTab = true;
@@ -335,8 +334,6 @@ var commands = {
 							gateway.statusWindow.appendMessage(language.messagePatterns.yourMsg, [$$.niceTime(), $$.nickColor(guser.nick), guser.nick + ' → ' + command[1], $$.colorize(reason)]);
 						}
 					}
-					
-					
 				} else {
 					gateway.notEnoughParams("msg", language.youHaveToGiveMsgText);
 				}
@@ -551,7 +548,7 @@ var commands = {
 				gateway.notEnoughParams("deprotect", language.youHaveToGiveChannelAndNickToTakeGivePerms);
 			}
 		}
-	},	
+	},
 	'protect': {
 		'channels': true,
 		'nicks': false,
@@ -573,7 +570,7 @@ var commands = {
 				gateway.notEnoughParams("protect", language.youHaveToGiveChannelAndNickToTakeGivePerms);
 			}
 		}
-	},	
+	},
 	'op': {
 		'channels': true,
 		'nicks': false,
@@ -595,7 +592,7 @@ var commands = {
 				gateway.notEnoughParams("op", language.youHaveToGiveChannelAndNickToTakeGivePerms);
 			}
 		}
-	},	
+	},
 	'deop': {
 		'channels': true,
 		'nicks': false,
@@ -617,7 +614,7 @@ var commands = {
 				gateway.notEnoughParams("deop", language.youHaveToGiveChannelAndNickToTakeGivePerms);
 			}
 		}
-	},	
+	},
 	'voice': {
 		'channels': true,
 		'nicks': false,
@@ -661,7 +658,7 @@ var commands = {
 				gateway.notEnoughParams("devoice", language.youHaveToGiveChannelAndNickToTakeGivePerms);
 			}
 		}
-	},	
+	},
 	'mode': {
 		'channels': true,
 		'nicks': false,

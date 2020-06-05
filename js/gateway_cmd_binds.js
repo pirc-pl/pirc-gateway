@@ -269,7 +269,6 @@ var cmdBinds = {
 					}
 				}
 				modestr = modestr.slice(0,-1);
-	
 				var chan = gateway.findChannel(chanName);
 				var args2 = msg.args;
 				args2.shift();
@@ -517,7 +516,7 @@ var cmdBinds = {
 				for(f in messageProcessors){
 					message = messageProcessors[f](msg.sender.nick, msg.args[0], message);
 				}
-					
+				
 				var messageDiv = $('#'+channel.id+'-window div.messageDiv:not(".msgRepeat"):last');
 				var messageClass = 'msgNormal';
 				if(messageDiv.hasClass('sender'+md5(msg.sender.nick))){
@@ -577,9 +576,9 @@ var cmdBinds = {
 				if(messageDiv.hasClass('sender'+md5(msg.sender.nick))){
 					messageDiv.find('span.msgText').append('<span class="msgRepeatBlock"><br><span class="time">'+$$.niceTime(msg.time)+'</span> &nbsp; '+message+'</span>');
 					messageClass = 'msgRepeat';
-					
-				}	
-							
+				
+				}
+				
 				query.appendMessage((msg.sender.nick == guser.nick)?language.messagePatterns.yourMsg:language.messagePatterns.channelMsg, ['sender'+md5(msg.sender.nick) + ' ' + messageClass, msgid, meta, $$.niceTime(msg.time), '', nick, nickComments, message]);
 				if(msg.sender.nick != guser.nick && (gateway.active.toLowerCase() != qnick.toLowerCase() || !disp.focused)) {
 					query.markNew();
@@ -624,7 +623,7 @@ var cmdBinds = {
 			}
 		}
 	],
-	'001': [	// RPL_WELCOME 
+	'001': [	// RPL_WELCOME
 		function(msg) {
 			try {
 				var ckNick = localStorage.getItem('origNick');
@@ -689,7 +688,7 @@ var cmdBinds = {
 	],
 	'304': [	// RPL_TEXT
 	],
-	'305': [	// RPL_UNAWAY 
+	'305': [	// RPL_UNAWAY
 		function(msg) {
 			gateway.channels.forEach(function(channel){
 				var nickListItem = channel.nicklist.findNick(guser.nick);
@@ -709,7 +708,7 @@ var cmdBinds = {
 			gateway.statusWindow.markBold();
 		}
 	],
-	'307': [	// RPL_WHOISREGNICK 
+	'307': [	// RPL_WHOISREGNICK
 		function(msg) {
 			$$.displayDialog('whois', msg.args[1], false, '<p class="whois"><span class="info"><br /></span><span class="data">' + language.nickRegistered + '</span></p>');
 		}
@@ -720,14 +719,14 @@ var cmdBinds = {
 	],
 	'310': [	// RPL_WHOISHELPOP
 	],
-	'311': [	// RPL_WHOISUSER 
+	'311': [	// RPL_WHOISUSER
 		function(msg) {
 			var html = "<p class='whois'><span class='info'>" + language.fullMask + ":</span><span class='data'> " + he(msg.args[1]) + "!" + msg.args[2] + "@" + msg.args[3] + "</span></p>" +
 				"<p class='whois'><span class='info'>" + language.realname + ":</span><span class='data'> " + he(msg.text) + "</span></p>";
 			$$.displayDialog('whois', msg.args[1], language.userInformation + he(msg.args[1]), html);
 		}
 	],
-	'312': [	// RPL_WHOISSERVER 
+	'312': [	// RPL_WHOISSERVER
 		function(msg) {
 			if(!gateway.whowasExpect312){
 				var html = "<p class='whois'><span class='info'>" + language.server + ":</span><span class='data'>" + msg.args[2] + " "+ he(msg.text) + "</span></p>";
@@ -757,7 +756,7 @@ var cmdBinds = {
 	],
 	'314': [	// RPL_WHOWASUSER
 		function(msg){
-			var html = "<p class='whois'><span class='info'>" + language.fullMask + ":</span><span class='data'> " + msg.args[1] + '!' + msg.args[2] + '@' + msg.args[3] + '</span></p>' + 
+			var html = "<p class='whois'><span class='info'>" + language.fullMask + ":</span><span class='data'> " + msg.args[1] + '!' + msg.args[2] + '@' + msg.args[3] + '</span></p>' +
 				"<p class='whois'><span class='info'>" + language.realname + ":</span><span class='data'> " + he(msg.text) + "</span></p>";
 			$$.displayDialog('whois', msg.args[1], language.previousVisitsBy + he(msg.args[1]), html);
 			gateway.whowasExpect312 = true;
@@ -768,14 +767,14 @@ var cmdBinds = {
 		}
 	],
 	// 316 reserved
-	'317': [	// RPL_WHOISIDLE 
+	'317': [	// RPL_WHOISIDLE
 		function(msg) {
 			$$.displayDialog('whois', msg.args[1], false, "<p class='whois'><span class='info'>" + language.signedOn + ":</span><span class='data'>" + $$.parseTime(msg.args[3]) + "</span></p>");
 			var idle = msg.args[2];
 			var hour = Math.floor(idle/3600);
 			idle = idle - hour * 3600;
 			var min = Math.floor(idle/60);
-			var sec = idle - min * 60;   		
+			var sec = idle - min * 60;
 			$$.displayDialog('whois', msg.args[1], false, "<p class='whois'><span class='info'>" + language.idle + "</span><span class='data'>" + (hour>0? hour + ' ' + language.hoursShort + ' ' : "") + (min>0? min + ' ' + language.minutesShort + ' ' : "") + sec + ' ' + language.secondsShort + '</span></p>');
 		}
 	],
@@ -928,7 +927,7 @@ var cmdBinds = {
 	],
 	'331': [	// RPL_NOTOPIC
 	],
-	'332': [	// RPL_TOPIC 
+	'332': [	// RPL_TOPIC
 		function(msg) {
 			var chan = gateway.findChannel(msg.args[1]);
 			if(chan){
@@ -946,7 +945,7 @@ var cmdBinds = {
 			}
 		}
 	],
-	'333': [	// RPL_TOPICWHOTIME 
+	'333': [	// RPL_TOPICWHOTIME
 		function(msg) {
 			if(gateway.findChannel(msg.args[1])) {
 				gateway.findChannel(msg.args[1]).appendMessage(language.messagePatterns.topicTime, [$$.niceTime(msg.time), msg.args[2], $$.parseTime(msg.args[3])]);
@@ -986,14 +985,14 @@ var cmdBinds = {
 	'347': [	// RPL_INVITELISTEND
 		function(msg) {
 			disp.endListbeI('I', msg.args[1]);
-		}			
+		}
 	],
 	'348': [	// RPL_EXCEPTLIST
 		function(msg) {
 			disp.insertLinebeI('e', msg.args);
 		}
 	],
-	'349': [	// RPL_ENDOFEXCEPTLIST 
+	'349': [	// RPL_ENDOFEXCEPTLIST
 		function(msg) {
 			disp.endListbeI('e', msg.args[1]);
 		}
@@ -1038,7 +1037,7 @@ var cmdBinds = {
 			}*/
 		}
 	],
-	'353': [	// RPL_NAMREPLY 
+	'353': [	// RPL_NAMREPLY
 		function(msg) {
 			gateway.iKnowIAmConnected();
 			var channel = gateway.findChannel(msg.args[2]);
@@ -1266,7 +1265,7 @@ var cmdBinds = {
 			gateway.statusWindow.appendMessage(language.messagePatterns.noSuchNick, [$$.niceTime(msg.time), he(msg.args[1])]);
 		}
 	],
-	'403': [	// ERR_NOSUCHCHANNEL 
+	'403': [	// ERR_NOSUCHCHANNEL
 		function(msg) {
 			$$.displayDialog('error', 'error', language.error, '<p>' + language.noSuchChannel + ': <b>'+msg.args[1]+'</b></p>');
 			gateway.statusWindow.appendMessage(language.messagePatterns.noSuchChannel, [$$.niceTime(msg.time), he(msg.args[1])]);
@@ -1359,7 +1358,7 @@ var cmdBinds = {
 	],
 	'431': [	// ERR_NONICKNAMEGIVEN
 	],
-	'432': [	// ERR_ERRONEUSNICKNAME 
+	'432': [	// ERR_ERRONEUSNICKNAME
 		function(msg) {
 			if(gateway.connectStatus == 'disconnected'){
 				ircCommand.changeNick('PIRC-'+Math.round(Math.random()*100));
@@ -1373,7 +1372,7 @@ var cmdBinds = {
 			gateway.statusWindow.appendMessage(language.messagePatterns.badNick, [$$.niceTime(msg.time), msg.args[1]]);
 		}
 	],
-	'433': [	// ERR_NICKNAMEINUSE 
+	'433': [	// ERR_NICKNAMEINUSE
 		function(msg) {
 			if(gateway.connectStatus == 'disconnected'){
 				var expr = /^([^0-9]+)(\d*)$/;
@@ -1433,7 +1432,7 @@ var cmdBinds = {
 	],
 	'446': [	// ERR_USERSDISABLED
 	],
-	'447': [	// ERR_NONICKCHANGE 
+	'447': [	// ERR_NONICKCHANGE
 		function(msg) {
 			var html = '<p>' + language.cantChangeNickMessageHtml + he(msg.text) + '</p>';
 			$$.displayDialog('error', 'error', language.error, html);
@@ -1543,7 +1542,7 @@ var cmdBinds = {
 	],
 	'481': [	// ERR_NOPRIVILEGES
 	],
-	'482': [	// ERR_CHANOPRIVSNEEDED 
+	'482': [	// ERR_CHANOPRIVSNEEDED
 		function(msg) {
 			var html = msg.args[1] + ': ' + language.noAccess + '.<br>' + language.notEnoughPrivileges;
 			if(gateway.findChannel(msg.args[1])) {
@@ -1564,12 +1563,12 @@ var cmdBinds = {
 				$$.displayDialog('error', 'error', language.error, '<p>' + language.cantSendPMTo + '<b>'+match[1]+'</b></p><p>' + language.userAcceptsPMsOnlyFromRegistered + '</p>');
 			} else {
 				$$.displayDialog('error', 'error', language.error, '<p>' + language.cantSendPM + '</p><p>' + language.serverMessageIs + he(msg.text)+'</p>');
-			}					
+			}
 		}
 	],
 	'487': [	// ERR_NOTFORUSERS
 	],
-	'489': [	// ERR_SECUREONLYCHAN 
+	'489': [	// ERR_SECUREONLYCHAN
 		function(msg) { // to się nie zdarzy gdy używamy wss
 			gateway.iKnowIAmConnected();
 			var html = '<p>' + language.cantJoin + ' <b>' + he(msg.args[1]) + "</b>" +
@@ -1629,7 +1628,7 @@ var cmdBinds = {
 				$$.displayDialog('error', 'error', 'Błąd', '<p>' + language.cantSendPMTo + ' <b>'+msg.args[1]+'</b></p><p>' + language.userAcceptsPMsOnlyFromRegistered + '</p>');
 			} else {
 				$$.displayDialog('error', 'error', 'Błąd', '<p>' + language.cantSendPM + '.</p><p>' + language.serverMessageIs + he(msg.text)+'</p>');
-			}					
+			}
 		}
 	],
 	'597': [	// RPL_REAWAY

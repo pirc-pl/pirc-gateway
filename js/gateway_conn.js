@@ -161,18 +161,15 @@ var conn = {
 			//za mało miejsca na dysku?
 		}
 		disp.changeSettings();
-		
 		$('#chatbox').click(function() {
 			gateway.inputFocus();
 		});
 		$('#nicklist').click(function() {
 			gateway.inputFocus();
 		});
-		
 		$(window).resize(function () {
 			$('#chat-wrapper').scrollTop(document.getElementById('chat-wrapper').scrollHeight);
 		});
-	
 		$('#input').keydown(function(e) {
 			if(e.which == 13 || e.which == 38 || e.which == 40 || e.which == 9) {
 				e.preventDefault();
