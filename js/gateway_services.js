@@ -167,7 +167,7 @@ var services = {
 			$$.alert(language.mustGiveNick);
 			return false;
 		}
-		ircCommand.changeNick(+$('#nnick').val());
+		ircCommand.changeNick($('#nnick').val());
 		$(".errorwindow").fadeOut(250);
 		return true;
 	},
