@@ -1688,7 +1688,8 @@ var cmdBinds = {
 		function(msg) {
 			ircCommand.performQuick('CAP', ['END']);
 			gateway.statusWindow.appendMessage(language.messagePatterns.SaslAuthenticate, [$$.niceTime(msg.time), language.weAreLoggedInAs + he(msg.args[2])]);
-			guser.account = msg.args[2];
+			guser.account = msg.args[2]; // TODO use guser.me here
+			$$.closeDialog('error', 'nickserv'); // if we displayed login prompt, let's close it.
 		}
 	],
 	'903': [	// RPL_SASLSUCCESS
@@ -1713,7 +1714,7 @@ var cmdBinds = {
 			gateway.statusWindow.appendMessage(language.messagePatterns.SaslAuthenticate, [$$.niceTime(msg.time), language.SASLNotLoggedIn]);
 		}
 	],
-	'972': [	// ERR_CANNOTDOCOMMAND 
+	'972': [	// ERR_CANNOTDOCOMMAND
 		function(msg) {
 			gateway.showPermError(msg.text);
 			if(gateway.getActive()) {
