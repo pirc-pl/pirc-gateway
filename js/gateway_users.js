@@ -31,7 +31,7 @@ var users = {
 			this.account = account;
 			if(!account && this.registered){
 				this.setRegistered(false);
-			} else {
+			} else if(account) {
 				this.setRegistered(true);
 			}
 			for(c in gateway.channels) {
