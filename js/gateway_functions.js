@@ -511,7 +511,8 @@ var disp = {
 		disp.displaySpecialDialog('about-dialog', 'OK');
 	},
 	'showAvatarSetting': function(){
-		if(!guser.me.registered || window.FormData === undefined){
+		if(!mainSettings.supportAvatars) return;
+		if(!guser.me.registered || window.FormData === undefined || !mainSettings.avatarUploadUrl){
 			var html =
 				'<div id="current-avatar">' +
 					'<div id="current-letter-avatar">' +
@@ -521,12 +522,12 @@ var disp = {
 					'<span id="current-avatar-info">' + language.noAvatarSet + '</span> <button type="button" value="" id="delete-avatar" onClick="disp.deleteAvatar()">' + language.remove + '</button>' +
 				'</div>' +
 				'<div id="set-avatar">' +
-					'Podaj adres URL: <input type="text" id="avatar-url" name="avatar-url" autocomplete="photo"> <button type="button" value="" onClick="disp.checkAvatarUrl()">' + language.check +  '</button><br>' +
+					language.enterUrl + ' <input type="text" id="avatar-url" name="avatar-url" autocomplete="photo"> <button type="button" value="" onClick="disp.checkAvatarUrl()">' + language.check +  '</button><br>' +
 					'<button type="button" value="" id="submit-avatar" onClick="disp.submitAvatar()">' + language.applySetting + '</button><br>' +
 					language.avatarFileInfo + '<br>';
 				if(window.FormData === undefined){
 					html += language.browserTooOldForAvatars;
-				} else {
+				} else if(mainSettings.avatarUploadUrl) {
 					html += language.registerNickForAvatars;
 				}
 				html += '</div>';
@@ -555,11 +556,11 @@ var disp = {
 					'<div id="current-letter-avatar">' +
 						'<span class="avatar letterAvatar" id="letterAvatarExample"><span role="presentation" id="letterAvatarExampleContent"></span></span>' +
 					'</div>' +
-					'<img id="current-avatar-image" src="/styles/img/noavatar.png" alt="' + language.avatarNotSet + '"><br>' +
-					'<span id="current-avatar-info">' + language.avatarNotSet + '</span> <button type="button" value="" id="delete-avatar" onClick="disp.deleteAvatar()">' + language.remove + '</button>' +
+					'<img id="current-avatar-image" src="/styles/img/noavatar.png" alt="' + language.noAvatarSet + '"><br>' +
+					'<span id="current-avatar-info">' + language.noAvatarSet + '</span> <button type="button" value="" id="delete-avatar" onClick="disp.deleteAvatar()">' + language.remove + '</button>' +
 				'</div>' +
 				'<div id="set-avatar">' +
-					'Wybierz obrazek: <input type="file" name="avatarFileToUpload" id="avatarFileToUpload"><br>' +
+					language.selectAnImage + ' <input type="file" name="avatarFileToUpload" id="avatarFileToUpload"><br>' +
 					'<button type="submit" value="" id="submit-avatar" name="submit" onClick="disp.submitAvatar()">' + language.applySetting + '</button><br>' +
 					language.youAcceptToStoreTheData + mainSettings.networkName + '.' +
 				'</div>';
@@ -633,7 +634,7 @@ var disp = {
 						disp.showAvatarSetting();
 						disp.avatarChanged();
 					} else {
-						$$.alert(language.failedToSendImageWithResponse + data['result']);
+						$$.alert(language.failedToSendImageWithResponse + data['result']); // TODO parse the result
 					}
 				},
 				error: function(){
@@ -670,7 +671,7 @@ var disp = {
 						disp.showAvatarSetting();
 						disp.avatarChanged();
 					} else {
-						$$.alert(language.failedToDeleteImageWithResponse + data['result']);
+						$$.alert(language.failedToDeleteImageWithResponse + data['result']); // TODO parse the result
 					}
 				},
 				error: function(){

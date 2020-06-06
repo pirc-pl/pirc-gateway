@@ -5,7 +5,7 @@ var lang = {
 			'nickInUse': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="kick"><span class="symbolFont">✯</span> <span class="modeinfo">%s</span>: Nick jest już używany przez kogoś innego.</span></div><!--newline-->',
 			'badNick': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="kick"><span class="symbolFont">⮿</span> <span class="modeinfo">%s</span>: Nick nie jest dostępny.</span></div><!--newline-->',
 			'nickChangeOwn': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">✯</span> Jesteś teraz znany jako <span class="modeinfo">%s</span></span></div><!--newline-->',
-			'joinOwn': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="join"><span class="symbolFont">🢡</span> Dołączyłeś do kanału <span class="modeinfo">%s</span>.</span></div><!--newline-->',
+			'joinOwn': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="join"><span class="symbolFont">🢡</span> Dołączyłeś <i class="userhost">(%s!%s@%s)</i> do kanału <span class="modeinfo">%s</span>.</span></div><!--newline-->',
 			'join': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="join"><span class="symbolFont">🢡</span> <b>%s</b> <i class="userhost">[%s@%s]</i> dołączył do <span class="modeinfo">%s</span>.</span></div><!--newline-->',
 			'part': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="part"><span class="symbolFont">🢠</span> <b>%s</b> <i class="userhost">[%s@%s]</i> opuścił <span class="modeinfo">%s</span> [%s]</span></div><!--newline-->',
 			'quit': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="part"><span class="symbolFont">🢠</span> <b>%s</b> <i class="userhost">[%s@%s]</i> opuścił IRC [%s]</span></div><!--newline-->',
@@ -615,7 +615,9 @@ var lang = {
 		'selectTextSizeTitle': 'Wybierz wielkość tekstu',
 		'ignoreThis': 'Ignoruj',
 		'topicOfChannel': 'Temat kanału ',
-		'mode': 'tryb'
+		'mode': 'tryb',
+		'enterUrl': 'Podaj adres URL:',
+		'selectAnImage': 'Wybierz obrazek:'
 	},
 	'en': {
 		'messagePatterns': {
@@ -623,7 +625,7 @@ var lang = {
 			'nickInUse': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="kick"><span class="symbolFont">✯</span> <span class="modeinfo">%s</span>: Nick is already in use.</span></div><!--newline-->',
 			'badNick': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="kick"><span class="symbolFont">⮿</span> <span class="modeinfo">%s</span>: Nick is not available.</span></div><!--newline-->',
 			'nickChangeOwn': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">✯</span> You\'re now known as <span class="modeinfo">%s</span></span></div><!--newline-->',
-			'joinOwn': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="join"><span class="symbolFont">🢡</span> You joined <span class="modeinfo">%s</span>.</span></div><!--newline-->',
+			'joinOwn': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="join"><span class="symbolFont">🢡</span> You <i class="userhost">(%s!%s@%s)</i> joined <span class="modeinfo">%s</span>.</span></div><!--newline-->',
 			'join': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="join"><span class="symbolFont">🢡</span> <b>%s</b> <i class="userhost">[%s@%s]</i> has joined <span class="modeinfo">%s</span>.</span></div><!--newline-->',
 			'part': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="part"><span class="symbolFont">🢠</span> <b>%s</b> <i class="userhost">[%s@%s]</i> has left <span class="modeinfo">%s</span> [%s]</span></div><!--newline-->',
 			'quit': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="part"><span class="symbolFont">🢠</span> <b>%s</b> <i class="userhost">[%s@%s]</i> has left IRC [%s]</span></div><!--newline-->',
@@ -1235,7 +1237,9 @@ var lang = {
 		'selectTextSizeTitle': 'Select text size',
 		'ignoreThis': 'Ignore',
 		'topicOfChannel': 'Topic of ',
-		'mode': 'mode'
+		'mode': 'mode',
+		'enterUrl': 'Enter URL address:',
+		'selectAnImage': 'Select an image:'
 	}
 };
 

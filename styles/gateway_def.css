@@ -1375,3 +1375,7 @@ span.realNick {
     background-color: #efefef;
 }
 
+.setAvatar {
+	display: none;
+}
+

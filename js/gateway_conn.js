@@ -34,6 +34,7 @@ var guser = {
 		guser.clearUmodes();
 		activeCaps = {};
 		serverCaps = {};
+		$('.setAvatar').hide();
 		isupport = [];
 	}
 };

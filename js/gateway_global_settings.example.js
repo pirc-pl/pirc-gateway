@@ -1,7 +1,8 @@
 var mainSettings = {
 	'networkName': 'PIRC.pl',
 	'server': 'wss://wss.pirc.pl:8082/',
-	'avatarUploadUrl': 'https://users.pirc.pl/image-upload/image-upload.php',
+	'supportAvatars': true, // requires metadata
+	'avatarUploadUrl': 'https://users.pirc.pl/image-upload/image-upload.php', // set to null to disable avatar API
 	'avatarDeleteUrl': 'https://users.pirc.pl/image-upload/image-delete.php',
 	'defaultName': 'Użytkownik bramki PIRC.pl',
 	'adminMail': 'abuse'+String.fromCharCode(64)+'pirc.pl',

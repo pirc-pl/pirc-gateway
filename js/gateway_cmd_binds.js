@@ -82,11 +82,12 @@ var cmdBinds = {
 						}
 					}
 					console.log(newCapsParsed);
-					if('draft/metadata' in newCapsParsed){ // subscribing to the metadata
-						ircCommand.metadata('SUB', '*', ['avatar', 'status', 'bot', 'homepage', 'display-name', 'bot-url', 'color']);
+					if('draft/metadata' in newCapsParsed){
+						ircCommand.metadata('SUB', '*', ['avatar', 'status', 'bot', 'homepage', 'display-name', 'bot-url', 'color']); // subscribing to the metadata
 						if(textSettingsValues['avatar']){
 							disp.avatarChanged();
 						}
+						$('.setAvatar').show(); // now that we support metadata, we can show own avatar
 					}
 					if(guser.nickservpass != '' && guser.nickservnick != '' && 'sasl' in newCapsParsed){
 						ircCommand.performQuick('AUTHENTICATE', ['PLAIN']);
@@ -187,7 +188,7 @@ var cmdBinds = {
 					gateway.findChannel(channame).rejoin();
 				} else {
 					var chan = gateway.findOrCreate(channame, true);
-					chan.appendMessage(language.messagePatterns.joinOwn, [$$.niceTime(msg.time), channame]);
+					chan.appendMessage(language.messagePatterns.joinOwn, [$$.niceTime(msg.time), msg.sender.nick, msg.sender.ident, msg.sender.host, channame]);
 				}
 				ircCommand.mode(channame, '');
 				if("WHOX" in isupport){

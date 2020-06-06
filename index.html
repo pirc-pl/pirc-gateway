@@ -1,11 +1,11 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-
+<!DOCTYPE html>
+<html>
 	<head>
 		<title>PIRC.pl</title>
-		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-		<link rel="stylesheet" href="/styles/jquery-ui.theme.css" />
-		<link rel="stylesheet" href="/styles/jquery-ui.structure.css" />
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<link rel="stylesheet" href="/styles/jquery-ui.theme.css">
+		<link rel="stylesheet" href="/styles/jquery-ui.structure.css">
+		<link rel="stylesheet" href="/styles/gateway_def.css" id="defaultStyle">
 		<script type="text/javascript" src="/js/md5.js"></script>
 		<script type="text/javascript" src="/js/foreach.js"></script>
 		<script type="text/javascript" src="/js/jquery-1.12.3.min.js"></script>
@@ -44,7 +44,7 @@
 			<table>
 				<tr>
 					<td class="optionsCheckBox"><input type="checkbox" id="noAvatars" onchange="disp.changeSettings(event)" /></td>
-					<td class="info"><span class="language-dontShowAvatars"></span> <a href="javascript:void(0)" onclick="disp.showAvatarSetting()" class="language-setOwnAvatar"></a></td>
+					<td class="info"><span class="language-dontShowAvatars"></span><span class="setAvatar"> <a href="javascript:void(0)" onclick="disp.showAvatarSetting()" class="language-setOwnAvatar"></a></span></td>
 				</tr>
 				<tr>
 					<td class="optionsCheckBox"><input type="checkbox" id="showPartQuit" onchange="disp.changeSettings(event)" /></td>

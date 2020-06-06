@@ -57,4 +57,5 @@ try {
 } catch(e){
 	console.error('Addons loading failed: ', e);
 }
+$('#defaultStyle').remove(); // we can remove the default style now
 
