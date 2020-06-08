@@ -6,11 +6,10 @@ var serverCaps = {};
 var cmdBinds = {
 	'ACCOUNT': [
 		function(msg) {
-			var user = users.getUser(msg.sender.nick);
 			if(msg.args.length < 1 || msg.args[0] == '*' || msg.args[0] == '0'){
-				user.setAccount(false);
+				msg.user.setAccount(false);
 			} else {
-				user.setAccount(msg.args[0]);
+				msg.user.setAccount(msg.args[0]);
 			}
 		}
 	],
@@ -27,12 +26,10 @@ var cmdBinds = {
 	],
 	'AWAY': [
 		function(msg) {
-			var user = users.getUser(msg.sender.nick);
-			if(!user) return;
 			if(msg.text == ''){
-				user.notAway();
+				msg.user.notAway();
 			} else {
-				user.setAway(msg.text);
+				msg.user.setAway(msg.text);
 			}
 		}
 	],
@@ -113,9 +110,8 @@ var cmdBinds = {
 	],
 	'CHGHOST': [
 		function(msg) {
-			var user = users.getUser(msg.sender.nick);
-			user.setIdent(msg.args[0]);
-			user.setHost(msg.args[1]);
+			msg.user.setIdent(msg.args[0]);
+			msg.user.setHost(msg.args[1]);
 		}
 	],
 	'ERROR' : [
@@ -199,8 +195,7 @@ var cmdBinds = {
 			}
 		},
 		function(msg) { // wszystkie
-			var user = users.addUser(msg.sender.nick);
-			if(user != guser.me) {
+			if(msg.user != guser.me) {
 				gateway.processJoin(msg);
 			}
 			if('extended-join' in activeCaps){
@@ -211,24 +206,22 @@ var cmdBinds = {
 			}
 			var chan = gateway.findChannel(channame);
 			if(!chan) return;
-			user.setIdent(msg.sender.ident);
-			user.setHost(msg.sender.host);
+			msg.user.setIdent(msg.sender.ident);
+			msg.user.setHost(msg.sender.host);
 			if('extended-join' in activeCaps){
 				if(msg.args[1] != '*'){
-					user.setAccount(msg.args[1]);
+					msg.user.setAccount(msg.args[1]);
+				} else {
+					msg.user.setRegistered(false);
 				}
-				user.setRealname(msg.text);
+				msg.user.setRealname(msg.text);
 			}
-			var nicklistUser = chan.nicklist.findUser(user);
-			if(!nicklistUser) {
-				nicklistUser = chan.nicklist.addUser(user);
-			} else {
-				nicklistUser.setMode('owner', false);
-				nicklistUser.setMode('admin', false);
-				nicklistUser.setMode('op', false);
-				nicklistUser.setMode('halfop', false);
-				nicklistUser.setMode('voice', false);
-			}
+			nicklistUser = chan.nicklist.addUser(msg.user);
+			nicklistUser.setMode('owner', false);
+			nicklistUser.setMode('admin', false);
+			nicklistUser.setMode('op', false);
+			nicklistUser.setMode('halfop', false);
+			nicklistUser.setMode('voice', false);
 		}
 	],
 	'KICK': [
@@ -472,24 +465,23 @@ var cmdBinds = {
 			var meta = gateway.getMeta(msg.sender.nick, 100);
 			var nick = msg.sender.nick;
 			var nickComments = '';
-			var user = users.getUser(msg.sender.nick);
 			var msgid = gateway.getMsgid(msg);
-			if('display-name' in user.metadata){
+			if('display-name' in msg.user.metadata){
 				nick = user.metadata['display-name'];
 				nickComments = ' <span class="realNick" title="' + language.realNickname + '">(' + msg.sender.nick + ')</span>';
 			}
-			var nickInfo = language.notLoggedIn;
-			if('account' in msg.tags || user.account){
-				if('account' in msg.tags){
-					var account = msg.tags['account'];
-				} else if(user.account){
-					var account = user.account;
-				}
-				if(account === true){ // possible if the server does not send account name
-					nickInfo = language.loggedIn;
-				} else {
-					nickInfo = language.loggedInAs + account;
-				}
+
+			var nickInfo = '';
+			if(msg.user.account){
+				nickInfo = language.loggedInAs + msg.user.account;
+			} else if(msg.user.registered) { // possible if the server does not send account name
+				nickInfo = language.loggedIn;
+			} else {
+				nickInfo = language.notLoggedIn;
+			}
+			if(msg.user.bot){
+				if(nickInfo.length > 0) nickInfo += '\n';
+				nickInfo += language.userIsBot;
 			}
 			
 			nick = '<span title="' + nickInfo + '">' + nick + '</span>';
@@ -597,7 +589,7 @@ var cmdBinds = {
 	],
 	'SETNAME': [
 		function(msg) {
-			users.getUser(msg.sender.nick).setRealname(msg.text);
+			msg.user.setRealname(msg.text);
 		}
 	],
 	'TAGMSG': [

@@ -13,6 +13,7 @@ var irc = {
 			'user': false
 		};
 		this.time = new Date();
+		this.user = null;
 	},
 	'oldData': '',
 	'parseMessage': function(msg){
@@ -172,10 +173,15 @@ var irc = {
 			ircmsg.args.push(ircmsg.text); // handling text as a last argument as required by the protocol
 		}
 
+		if(ircmsg.sender.nick.length > 0){
+			var user = users.getUser(ircmsg.sender.nick);
+			ircmsg.user = user;
+		}
+
 // add u@h
 		if(ircmsg.sender.user){
-			if(ircmsg.sender.ident) users.getUser(ircmsg.sender.nick).setIdent(ircmsg.sender.ident);
-			if(ircmsg.sender.host) users.getUser(ircmsg.sender.nick).setHost(ircmsg.sender.host);
+			if(ircmsg.sender.ident.length > 0) user.setIdent(ircmsg.sender.ident);
+			if(ircmsg.sender.host.length > 0) user.setHost(ircmsg.sender.host);
 		}
 
 // process known tags
@@ -184,7 +190,11 @@ var irc = {
 		}
 
 		if('account' in ircmsg.tags){
-			users.getUser(ircmsg.sender.nick).setAccount(ircmsg.tags['account']);
+			user.setAccount(ircmsg.tags['account']);
+		}
+		
+		if('inspircd.org/bot' in ircmsg.tags){
+			user.setBot(true);
 		}
 
 		console.log(ircmsg);

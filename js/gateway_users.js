@@ -60,9 +60,11 @@ var users = {
 		};
 		this.setIrcOp = function(ircOp){
 			this.ircOp = ircOp;
+			users.updateNicklists(this);
 		};
 		this.setBot = function(bot){
 			this.bot = bot;
+			users.updateNicklists(this);
 		};
 		this.setAway = function(text){
 			this.away = text;
