@@ -8,9 +8,9 @@ function Nicklist(chan, id) {
 		} else if(a.level > b.level) {
 			return -1;
 		} else {
-			if(a.nick.toLowerCase() < b.nick.toLowerCase()) {
+			if(a.user.nick.toLowerCase() < b.user.nick.toLowerCase()) {
 				return -1;
-			} else if(a.nick.toLowerCase() > b.nick.toLowerCase()) {
+			} else if(a.user.nick.toLowerCase() > b.user.nick.toLowerCase()) {
 				return 1;
 			} else {
 				return 0; //nigdy nie powinno nastapic ;p
@@ -25,20 +25,23 @@ function Nicklist(chan, id) {
 		$('#'+this.id).remove();
 		this.list = [];
 	}
-	this.findNick = function(nick) {
+	this.findUser = function(user) {
 		for (i in this.list) {
-			if(this.list[i].nick.toLowerCase() == nick.toLowerCase()) {
+			if(this.list[i].user == user) {
 				return this.list[i];
 			}
 		}
 		return false;
+	}
+	this.findNick = function(nick) {
+		return this.findUser(users.getUser(nick));
 	}
 	this.insertNick = function(nickListItem) {
 		var userHTML = nickListItem.makeHTML();
 		this.sort();
 		for(i in this.list){
 			if(this.sortFunc(this.list[i], nickListItem) > 0){
-				$('#'+this.id+' .'+md5(this.list[i].nick)).before(userHTML);
+				$('#'+this.id+' .'+md5(this.list[i].user.nick)).before(userHTML);
 				userHTML = false;
 				break;
 			}
@@ -46,15 +49,14 @@ function Nicklist(chan, id) {
 		if(userHTML){
 			$('#'+this.id+' .nicklist').append(userHTML);
 		}
-		if(nickListItem.host && nickListItem.ident){
-			$('#'+nickListItem.id).attr('title', nickListItem.nick+'!'+nickListItem.ident+'@'+nickListItem.host);
+		if(nickListItem.user.host && nickListItem.user.ident){
+			$('#'+nickListItem.id).attr('title', nickListItem.user.nick+'!'+nickListItem.user.ident+'@'+nickListItem.user.host);
 		}
 		this.showChstats();
 	}
-	this.changeNick = function(nick, newnick) {
-		var nickListItem = this.findNick(nick);
+	this.changeNick = function(user) {
+		var nickListItem = this.findUser(user);
 		if(nickListItem) {
-			nickListItem.nick = newnick;
 			nickListItem.remove();
 			this.insertNick(nickListItem);
 			return true;
@@ -62,20 +64,21 @@ function Nicklist(chan, id) {
 			return false;
 		}
 	}
-	this.addNick = function(nick) {
-		var nickListItem = this.findNick(nick);
+	this.addUser = function(user) {
+		var nickListItem = this.findUser(user);
 		if(!nickListItem) {
-			var newNick = new NicklistUser(nick, this.channel);
-			this.list.push(newNick);
-			this.insertNick(newNick);
+			var nickListItem = new NicklistUser(user, this.channel);
+			this.list.push(nickListItem);
+			this.insertNick(nickListItem);
 		} else {
 			nickListItem.remove();
 			this.insertNick(nickListItem);
 		}
+		return nickListItem;
 	}
 	this.removeNick = function(nick) {
 		for (i in this.list) {
-			if(this.list[i].nick == nick) {
+			if(this.list[i].user.nick == nick) {
 				this.list[i].remove();
 				this.list.splice(i, 1);
 				this.showChstats();
@@ -116,14 +119,14 @@ function Nicklist(chan, id) {
 	try {
 		$('<span id="'+this.id+'"></span>').hide().appendTo('#nicklist-main');
 		$('<ul/>').addClass('nicklist').appendTo('#'+this.id);
-	} catch(e) {
+	} catch(e) { // FIXME better handling of this exception
 		gateway.send('QUIT :' + language.browserTooOldQuit);
 		$('.not-connected-text > h3').html(language.outdatedBrowser);
 		$('.not-connected-text > p').html(language.outdatedBrowserInfo);
 	}
 }
 
-function NicklistUser(usernick, chan) {
+function NicklistUser(user, chan) {
 	this.modes = {
 		owner: false, // lvl = 5;
 		admin: false,
@@ -132,26 +135,18 @@ function NicklistUser(usernick, chan) {
 		voice: false
 	}
 	this.channel = chan;
-	this.ident = false;
-	this.host = false;
-	this.realname = false;
-	this.away = false;
-	this.awayReason = false;
-	this.ircOp = false;
-	this.isBot = false;
-	this.isRegistered = false;
-	this.account = false;
+	this.user = user;
 
 	this.makeHTML = function() {
 		var index = this.level;
 	/*	if(this.level == 0 && this.isRegistered){
 			index = 6;
 		}*/
-		var html = '<li id="'+this.id+'" class="'+md5(this.nick)+'">'+
+		var html = '<li id="'+this.id+'" class="'+md5(this.user.nick)+'">'+
 			'<table><tr onclick="gateway.toggleNickOpt(\''+this.id+'\')">'+
 				'<td valign="top">'+
-					'<img class="chavatar" alt="' + (this.isRegistered?language.registered:language.unRegistered) + '" src="'+disp.getAvatarIcon(this.nick, this.isRegistered)+'" title="' + (this.isRegistered?language.registered:language.unRegistered) + '" '+
-					'onerror="users.disableAutoAvatar(\'' + this.nick + '\')">'+
+					'<img class="chavatar" alt="' + (this.user.registered?language.registered:language.unRegistered) + '" src="'+disp.getAvatarIcon(this.user.nick, this.user.registered)+'" title="' + (this.user.registered?language.registered:language.unRegistered) + '" '+
+					'onerror="users.disableAutoAvatar(\'' + this.user.nick + '\')">'+
 				'</td><td valign="top">';
 		if(index > 0){
 			html += '<img class="chrank" alt="'+alt[index]+'" src="'+(index>0?icons[index]:'')+'" title="'+(index?chStatusInfo[index]:'')+'" />';
@@ -159,26 +154,26 @@ function NicklistUser(usernick, chan) {
 			html += '<span class="chrank"></span>';
 		}
 		html += '</td>'+
-				'<td valign="top" style="text-align:left;width:100%;" class="'+((this.nick.toLowerCase()==guser.nick.toLowerCase())?'ownNick ':'')+'nickname">'+this.nick+'</td>'+
+				'<td valign="top" style="text-align:left;width:100%;" class="'+((this.user == guser.me)?'ownNick ':'')+'nickname">'+this.user.nick+'</td>'+
 			'</tr></table>'+
 			'<ul class="options" id="'+this.id+'-opt">'+
 				'<li class="nicklistAvatar"></li>'+
-				'<li onClick="gateway.openQuery(\''+this.nick+'\', \''+this.id+'\')" class="switchTab">' + language.query + '</li>'+
-				((this.nick.toLowerCase() == guser.nick.toLowerCase())?'':'<li onClick="ignore.askIgnore(\''+this.nick+'\');">' + language.ignoreThis + '</li>')+
+				'<li onClick="gateway.openQuery(\''+this.user.nick+'\', \''+this.id+'\')" class="switchTab">' + language.query + '</li>'+
+				((this.user == guser.me)?'':'<li onClick="ignore.askIgnore(\''+this.user.nick+'\');">' + language.ignoreThis + '</li>')+
 				'<li><div style="width:100%;" onClick="gateway.toggleNickOptInfo(\''+this.id+'\')">' + language.informations + '</div>'+
 					'<ul class="suboptions" id="'+this.id+'-opt-info'+'">'+
-						'<li onClick="' + ((this.nick.toLowerCase() == guser.nick.toLowerCase())?'gateway.displayOwnWhois = true; ':'') + 'gateway.send(\'WHOIS '+$$.sescape(this.nick)+' '+$$.sescape(this.nick)+'\');gateway.toggleNickOpt(\''+this.id+'\');">WHOIS</li>'+
-						'<li onClick="services.nickInfo(\''+this.nick+'\');gateway.toggleNickOpt(\''+this.id+'\');">NickServ</li>'+
-						((this.nick.toLowerCase() == guser.nick.toLowerCase())?'':'<li onClick="gateway.ctcp(\''+this.nick+'\', \'VERSION\');gateway.toggleNickOpt(\''+this.id+'\');">' + language.softwareVersion + '</li>')+
+						'<li onClick="' + ((this.user == guser.me)?'gateway.displayOwnWhois = true; ':'') + 'gateway.send(\'WHOIS '+$$.sescape(this.user.nick)+' '+$$.sescape(this.user.nick)+'\');gateway.toggleNickOpt(\''+this.id+'\');">WHOIS</li>'+
+						'<li onClick="services.nickInfo(\''+this.user.nick+'\');gateway.toggleNickOpt(\''+this.id+'\');">NickServ</li>'+
+						((this.user == guser.me)?'':'<li onClick="gateway.ctcp(\''+this.usernick+'\', \'VERSION\');gateway.toggleNickOpt(\''+this.id+'\');">' + language.softwareVersion + '</li>')+
 					'</ul>'+
 				'</li>'+
 				'<li class="' + gateway.findChannel(this.channel).id + '-operActions" style="display:none;"><div style="width:100%;" onClick="gateway.toggleNickOptAdmin(\''+this.id+'\')">' + language.channelAdministration + '</div>'+
 					'<ul class="suboptions" id="'+this.id+'-opt-admin'+'">'+
-						'<li onClick="gateway.showKick(\''+this.channel+'\', \''+this.nick+'\')">' + language.kickFromChannel + '</li>'+
-						'<li onClick="services.showCSBan(\''+this.channel+'\', \''+this.nick+'\')">' + language.banUsingChanserv + '</li>'+
-						'<li onClick="gateway.showStatus(\''+this.channel+'\', \''+this.nick+'\')">' + language.givePrivileges + '</li>'+
-						'<li onClick="gateway.showStatusAnti(\''+this.channel+'\', \''+this.nick+'\')">' + language.takePrivileges + '</li>'+
-					/*	'<li onClick="gateway.showBan(\''+this.channel+'\', \''+this.nick+'\')">Banuj</li>'+*/
+						'<li onClick="gateway.showKick(\''+this.channel+'\', \''+this.user.nick+'\')">' + language.kickFromChannel + '</li>'+
+						'<li onClick="services.showCSBan(\''+this.channel+'\', \''+this.user.nick+'\')">' + language.banUsingChanserv + '</li>'+
+						'<li onClick="gateway.showStatus(\''+this.channel+'\', \''+this.user.nick+'\')">' + language.givePrivileges + '</li>'+
+						'<li onClick="gateway.showStatusAnti(\''+this.channel+'\', \''+this.user.nick+'\')">' + language.takePrivileges + '</li>'+
+					/*	'<li onClick="gateway.showBan(\''+this.channel+'\', \''+this.user.nick+'\')">Banuj</li>'+*/
 					'</ul>'+
 				'</li>'+
 			'</ul>';
@@ -203,7 +198,7 @@ function NicklistUser(usernick, chan) {
 				this.level = 0;
 			}
 		}
-		if(this.nick.toLowerCase() == guser.nick.toLowerCase()){
+		if(this.user == guser.me){
 			var chanId = gateway.findChannel(this.channel).id;
 			if(this.level >= 2){
 				$('#'+chanId+'-displayOperCss').remove();
@@ -215,7 +210,7 @@ function NicklistUser(usernick, chan) {
 		}
 		if(this.level != oldLevel){
 			var nicklist = gateway.findChannel(this.channel).nicklist;
-			var nickListElement = $('#'+nicklist.id+' .'+md5(this.nick));
+			var nickListElement = $('#'+nicklist.id+' .'+md5(this.user.nick));
 			if(nickListElement.length){
 				nickListElement.remove();
 				nicklist.insertNick(this);
@@ -226,113 +221,65 @@ function NicklistUser(usernick, chan) {
 	this.remove = function() {
 		$('#'+this.id).remove();
 	}
-	this.setIdent = function(ident) {
-		this.ident = ident;
-		this.showTitle();
-	}
-	this.setUserHost = function(host) {
-		this.host = host;
-		this.showTitle();
-	}
-	this.setRealname = function(realname) {
-		this.realname = realname;
-		this.showTitle();
-	}
-	this.setAway = function(away) {
-		if(this.away != away){
-			this.away = away;
-			if(!away){
-				this.awayReason = false;
-			}
-			this.showTitle();
-		}
-	}
-	this.setAwayReason = function(reason) {
-		if(this.away){
-			this.awayReason = reason;
-		} else {
-			this.awayReason = false;
-		}
-		this.showTitle();
-	}
-	this.setIrcOp = function() {
-		this.ircOp = true;
-		this.showTitle();
-	}
-	this.setBot = function(val) {
-		this.isBot = val;
-		this.showTitle();
-	}
-	this.updateAvatar = function() {
-		this.displayLoggedIn();
-	}
-	this.setRegistered = function(val) {
-		this.isRegistered = val;
-		this.displayLoggedIn();
-	}
-	this.setAccount = function(acc) {
-		this.account = acc;
+	this.update = function() {
 		this.showTitle();
 		this.displayLoggedIn();
 	}
 	this.displayLoggedIn = function() {
 		var loggedIn = true;
-		if(this.account == this.nick){
-			var regText = language.registered;
-		} else if(this.account){
+		if(this.account){
 			var regText = language.loggedInAs+this.account;
-		} else if(this.isRegistered){
+		} else if(this.user.registered){
 			var regText = language.registered;
 		} else {
 			var regText = language.unRegistered;
 			loggedIn = false;
 		}
-		$('#'+this.id+' .chavatar').attr('alt', regText).attr('src', disp.getAvatarIcon(this.nick, loggedIn)).attr('title', regText).on('error', function(){ users.disableAutoAvatar(this.nick); });
-		$('#'+this.id+'-opt .nicklistAvatar').html(gateway.getMeta(this.nick, 500));
+		$('#'+this.id+' .chavatar').attr('alt', regText).attr('src', disp.getAvatarIcon(this.user.nick, loggedIn)).attr('title', regText).on('error', function(){ users.disableAutoAvatar(this.user.nick); });
+		$('#'+this.id+'-opt .nicklistAvatar').html(gateway.getMeta(this.user.nick, 500));
 	}
 	this.showTitle = function() {
 		var text = '';
-		if(this.ident && this.host){
-			text = this.nick+'!'+this.ident+'@'+this.host;
-			if(this.realname){
-				text += ' \n'+this.realname;
+		if(this.user.ident && this.user.host){
+			text = this.user.nick+'!'+this.user.ident+'@'+this.user.host;
+			if(this.user.realname){
+				text += ' \n'+this.user.realname;
 			}
 		}
-		if(this.away){
+		if(this.user.away){
 			if(text != ''){
 				text += ' \n';
 			}
 			text += language.userIsAway;
-			if(this.awayReason){
-				text += ' (' + language.reason + ': '+this.awayReason+')';
+			if(this.user.away !== true){
+				text += ' (' + language.reason + ': '+this.user.away+')';
 			}
 			$('#'+this.id+' .nickname').css('opacity', '0.3');
 		} else {
 			$('#'+this.id+' .nickname').css('opacity', '');
 		}
-		if(this.ircOp){
+		if(this.user.ircOp){
 			if(text != ''){
 				text += '\n';
 			}
 			text += language.userIsIrcop;
 		}
-		if(this.isBot){
+		if(this.user.bot){
 			if(text != ''){
 				text += '\n';
 			}
 			text += language.userIsBot;
 		}
-		if(this.isRegistered && this.account == false){
+		if(this.user.account){
+			if(text != ''){
+				text += '\n';
+			}
+			text += language.userIsLoggedIntoAccount+this.user.account;
+		} else if(this.user.registered){
 			if(text != ''){
 				text += '\n';
 			}
 			text += language.nickIsRegistered;
-		}
-		if(this.account != false){
-			if(text != ''){
-				text += '\n';
-			}
-			text += language.userIsLoggedIntoAccount+this.account;
 		}
 		if(text != ''){
 			$('#'+this.id).attr('title', text);
@@ -340,8 +287,7 @@ function NicklistUser(usernick, chan) {
 		this.displayLoggedIn();
 	}
 	this.level = 0;
-	this.nick = usernick;
-	this.id = usernick.replace(/[^a-z0-9A-Z]+/ig, '-').toLowerCase()+Math.round(Math.random()*10000);
+	this.id = user.nick.replace(/[^a-z0-9A-Z]+/ig, '-').toLowerCase()+Math.round(Math.random()*10000);
 }
 
 function Query(nick) {
@@ -879,3 +825,4 @@ function Status() {
 		this.newLines = true;
 	}
 }
+

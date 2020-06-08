@@ -199,10 +199,10 @@ var cmdBinds = {
 			}
 		},
 		function(msg) { // wszystkie
-			if(msg.sender.nick != guser.nick) {
+			var user = users.addUser(msg.sender.nick);
+			if(user != guser.me) {
 				gateway.processJoin(msg);
 			}
-			var user = users.addUser(msg.sender.nick);
 			if('extended-join' in activeCaps){
 				var channame = msg.args[0];
 			} else {
@@ -211,17 +211,6 @@ var cmdBinds = {
 			}
 			var chan = gateway.findChannel(channame);
 			if(!chan) return;
-			var nicklistUser = chan.nicklist.findNick(msg.sender.nick);
-			if(!nicklistUser) {
-				chan.nicklist.addNick(msg.sender.nick);
-				nicklistUser = chan.nicklist.findNick(msg.sender.nick);
-			} else {
-				nicklistUser.setMode('owner', false);
-				nicklistUser.setMode('admin', false);
-				nicklistUser.setMode('op', false);
-				nicklistUser.setMode('halfop', false);
-				nicklistUser.setMode('voice', false);
-			}
 			user.setIdent(msg.sender.ident);
 			user.setHost(msg.sender.host);
 			if('extended-join' in activeCaps){
@@ -229,6 +218,16 @@ var cmdBinds = {
 					user.setAccount(msg.args[1]);
 				}
 				user.setRealname(msg.text);
+			}
+			var nicklistUser = chan.nicklist.findUser(user);
+			if(!nicklistUser) {
+				nicklistUser = chan.nicklist.addUser(user);
+			} else {
+				nicklistUser.setMode('owner', false);
+				nicklistUser.setMode('admin', false);
+				nicklistUser.setMode('op', false);
+				nicklistUser.setMode('halfop', false);
+				nicklistUser.setMode('voice', false);
 			}
 		}
 	],
@@ -282,11 +281,6 @@ var cmdBinds = {
 	],
 	'NICK': [
 		function(msg) {
-			if (!$('#showNickChanges').is(':checked')) for(c in gateway.channels) {
-				if(gateway.channels[c].nicklist.findNick(msg.sender.nick)) {
-					gateway.channels[c].appendMessage(language.messagePatterns.nickChange, [$$.niceTime(msg.time), he(msg.sender.nick), he(msg.text)]);
-				}
-			}
 			users.changeNick(msg.sender.nick, msg.text);
 		}
 	],
@@ -691,20 +685,14 @@ var cmdBinds = {
 	],
 	'305': [	// RPL_UNAWAY
 		function(msg) {
-			gateway.channels.forEach(function(channel){
-				var nickListItem = channel.nicklist.findNick(guser.nick);
-				nickListItem.setAway(false);
-			});
+			guser.me.setAway(false);
 			gateway.statusWindow.appendMessage(language.messagePatterns.yourAwayDisabled, [$$.niceTime(msg.time)]);
 			gateway.statusWindow.markBold();
 		}
 	],
 	'306': [	// RPL_NOWAWAY
 		function(msg) {
-			gateway.channels.forEach(function(channel){
-				var nickListItem = channel.nicklist.findNick(guser.nick);
-				nickListItem.setAway(true);
-			});
+			guser.me.setAway(true); // FIXME add reason
 			gateway.statusWindow.appendMessage(language.messagePatterns.yourAwayEnabled, [$$.niceTime(msg.time)]);
 			gateway.statusWindow.markBold();
 		}
@@ -1112,12 +1100,10 @@ var cmdBinds = {
 			}
 			for(userId in newUsers){
 				var user = newUsers[userId];
-				console.log(user);
-				channel.nicklist.addNick(user.nick);
 				var newUser = users.getUser(user.nick);
 				newUser.setIdent(user.ident);
 				newUser.setHost(user.host);
-				var nickListItem = channel.nicklist.findNick(user.nick);
+				var nickListItem = channel.nicklist.addUser(newUser);
 				for(var i=0; i<user.modes.length; i++){
 					if(user.modes[i] in language.modes.chStatusNames){
 						nickListItem.setMode(language.modes.chStatusNames[user.modes[i]], true);
