@@ -6,7 +6,7 @@ var commands = {
 		'callback': function(command, input) {
 			clearTimeout(gateway.connectTimeoutID);
 			gateway.userQuit = true;
-			gateway.connectStatus = statusDisconnected;
+			gateway.connectStatus = 'disconnected';
 			var button = [ {
 				text: language.reconnect,
 				click: function(){
