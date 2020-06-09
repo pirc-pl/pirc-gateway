@@ -12,7 +12,7 @@ var ircCommand = {
 	},
 	'send': function(command, args, text, tags){ // TODO escape tags
 		var cmdString = '';
-		if(tags && 'message-tags' in activeCaps){
+		if(tags && 'message-tags' in activeCaps){ // checking only for message-tags, ignoring other tag capabilities, we'll need to change this if problems appear
 			console.log('sending tags');
 			cmdString += '@';
 			var first = true;
@@ -45,16 +45,18 @@ var ircCommand = {
 		gateway.send(cmdString); // TODO przenieść buforowanie tutaj
 	},
 	'sendMessage': function(dest, text, notice, slow){
+		var label = gateway.makeLabel();
 		if(notice){
 			var cmd = 'NOTICE';
 		} else {
 			var cmd = 'PRIVMSG';
 		}
 		if(slow){
-			ircCommand.performSlow(cmd, [dest], text);
+			ircCommand.performSlow(cmd, [dest], text, {'label': label});
 		} else {
-			ircCommand.perform(cmd, [dest], text);
+			ircCommand.perform(cmd, [dest], text, {'label': label});
 		}
+		gateway.insertMessage(cmd, dest, text, true, label);
 	},
 	'sendMessageSlow': function(dest, text, notice){
 		ircCommand.sendMessage(dest, text, notice, true);

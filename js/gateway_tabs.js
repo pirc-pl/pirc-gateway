@@ -460,7 +460,6 @@ function Channel(chan) {
 	this.topic = '';
 	this.newLines = false;
 	this.hasNames = false;
-	this.msgidHistory = [];
 	this.markingSwitch = false; // we use this to alternate the backgrounds of message blocks
 
 	this.part = function() {
@@ -589,7 +588,7 @@ function Channel(chan) {
 	}
 	this.rejoin = function() {
 		this.left = false;
-		$('#'+this.id+'-window').vprintf(language.messagePatterns.joinOwn, [$$.niceTime(), this.name]);
+		$('#'+this.id+'-window').vprintf(language.messagePatterns.joinOwn, [$$.niceTime(), guser.me.nick, guser.me.ident, guser.me.host, this.name]);
 		if(this.name == gateway.active) {
 			this.restoreScroll();
 		}
@@ -630,13 +629,6 @@ function Channel(chan) {
 		} catch(e){
 		}
 		this.newLines = true;
-	}
-	this.appendMsgid = function(msgid){
-		this.msgidHistory.push(msgid);
-	}
-	this.hasMsgid = function(msgid){
-		if(this.msgidHistory.indexOf(msgid) >= 0) return true;
-		return false;
 	}
 	this.setTopic = function(topic) {
 		$('#'+this.id+'-topic > h2').html($$.colorize(topic));

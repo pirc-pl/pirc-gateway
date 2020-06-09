@@ -94,7 +94,18 @@ var users = {
 	},
 	'list': {},
 	'addUser': function(nick){
-		if(nick == '*') return users.addUser(guser.nick);
+		if(nick == '*'){
+			if('*' in users.list){
+				return users.list['*'];
+			} else if(guser.nick in users.list){
+				return users.addUser(guser.nick);
+			} else {
+				users.list['*'] = new users.user('*');
+				guser.me = users.list['*'];
+				console.log('added own user');
+				return users.list['*'];
+			}
+		}
 		if(nick in users.list) return users.list[nick];
 		users.list[nick] = new users.user(nick);
 		if(nick == guser.nick) guser.me = users.list[nick];
@@ -110,6 +121,7 @@ var users = {
 	},
 	'clear': function(){
 		users.list = {};
+		users.addUser('*');
 	},
 	'disableAutoAvatar': function(nick){
 		var user = this.list[nick];
@@ -138,6 +150,12 @@ var users = {
 			}
 			gateway.channels[c].nicklist.changeNick(user);
 		}
+	},
+	'knowOwnNick': function(){ // called once on connect (001)
+		var user = users.getUser('*');
+		users.list[guser.nick] = user;
+		delete users.list['*'];
+		user.setNick(guser.nick);
 	}
 }
 

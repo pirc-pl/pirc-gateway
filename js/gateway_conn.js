@@ -21,8 +21,8 @@ var guser = {
 		if(modechar){
 			guser.umodes[modechar] = plus;
 		}
-		if(guser.umodes.r){
-			guser.me.setRegistered(true);
+		if(modechar == 'r'){
+			guser.me.setRegistered(plus);
 		}
 	},
 	'clearUmodes': function(){
@@ -30,7 +30,8 @@ var guser = {
 	},
 	'clear': function(){
 		if(guser.me) guser.me.setRegistered(false);
-		guser.me = null;
+		users.clear();
+		guser.me = users.getUser('*');
 		guser.clearUmodes();
 		activeCaps = {};
 		serverCaps = {};
@@ -252,6 +253,7 @@ var conn = {
 		if(!('customElements' in window)){
 			$('body').css('font-family', 'verdana,arial,tahoma,Symbola,sans-serif'); // fallback if custom elements (for emoji) not supported
 		}
+		users.clear();
 	},
 	'aliveWaitTimeout': false,
 	'waitForAlive': false

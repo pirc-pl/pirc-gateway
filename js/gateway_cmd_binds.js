@@ -1,6 +1,23 @@
 var activeCaps = {};
 var isupport = [];
-var supportedCaps = ['userhost-in-names', 'away-notify', 'multi-prefix', 'chghost', 'extended-join', 'account-notify', 'message-tags', 'server-time', 'echo-message', 'draft/metadata', 'draft/setname', 'setname', 'sasl', 'cap-notify'];
+var supportedCaps = [
+	'userhost-in-names',
+	'away-notify',
+	'multi-prefix',
+	'chghost',
+	'extended-join',
+	'account-notify',
+	'message-tags',
+	'server-time',
+	'echo-message',
+	'draft/metadata',
+	'draft/setname',
+	'setname',
+	'sasl',
+	'cap-notify',
+	'batch',
+	'labeled-response'
+];
 var serverCaps = {};
 
 var cmdBinds = {
@@ -31,6 +48,10 @@ var cmdBinds = {
 			} else {
 				msg.user.setAway(msg.text);
 			}
+		}
+	],
+	'BATCH': [
+		function(msg) { // TODO support batch
 		}
 	],
 	'CAP': [
@@ -487,54 +508,7 @@ var cmdBinds = {
 			nick = '<span title="' + nickInfo + '">' + nick + '</span>';
 
 			if(msg.args[0].indexOf('#') == 0) { // wiadomość kanałowa
-				if(ignore.ignoring(msg.sender.nick, 'channel')){
-					console.log('Ignoring message on '+msg.args[0]+' by '+msg.sender.nick);
-					return;
-				}
-				var channel = gateway.findOrCreate(msg.args[0]);
-				
-				var pattern = "\\b"+escapeRegExp(guser.nick)+"\\b";
-				var re = new RegExp(pattern);
-				var hlmatch = re.test(message);
-				console.log("highlight pattern="+pattern+", returned="+hlmatch)
-
-				if(msgid.length > 0 && channel.hasMsgid(msgid)) return; //we already received this message and this is a history entry
-				
-				for(f in messageProcessors){
-					message = messageProcessors[f](msg.sender.nick, msg.args[0], message);
-				}
-				
-				var messageDiv = $('#'+channel.id+'-window div.messageDiv:not(".msgRepeat"):last');
-				var messageClass = 'msgNormal';
-				if(messageDiv.hasClass('sender'+md5(msg.sender.nick))){
-					messageDiv.find('span.msgText').append('<span class="msgRepeatBlock"><br><span class="time">'+$$.niceTime(msg.time)+'</span> &nbsp;'+message+'</span>');
-					messageClass = 'msgRepeat';
-				} else {
-					channel.markingSwitch = !channel.markingSwitch;
-				}
-				if(channel.markingSwitch){
-					messageClass += ' oddMessage';
-				} else {
-					messageClass += ' evenMessage';
-				}
-				message = '<span class="time msgRepeatBlock">'+$$.niceTime(msg.time)+'</span> &nbsp;' + message;
-				if(hlmatch) { //hajlajt
-					channel.appendMessage(language.messagePatterns.channelMsgHilight, ['sender'+md5(msg.sender.nick) + ' ' + messageClass, msgid, meta, $$.niceTime(msg.time), nick, nickComments, message]);
-					if(messageClass.indexOf('msgRepeat') > -1){
-						messageDiv.find('span.nick').addClass('repeat-hilight');
-					}
-					if(gateway.active != msg.args[0].toLowerCase() || !disp.focused) {
-						channel.markNew();
-					}
-				} else { //bez hajlajtu
-					channel.appendMessage((msg.sender.nick == guser.nick)?language.messagePatterns.yourMsg:language.messagePatterns.channelMsg, ['sender'+md5(msg.sender.nick) + ' ' + messageClass, msgid, meta, $$.niceTime(msg.time), $$.nickColor(msg.sender.nick), nick, nickComments, message]);
-					if(gateway.active.toLowerCase() != msg.args[0].toLowerCase() || !disp.focused) {
-						channel.markBold();
-					}
-				}
-
-				if(msgid.length > 0) channel.appendMsgid(msgid);
-				channel.appendMessage('%s', [html]);
+				gateway.insertMessage('PRIVMSG', msg.args[0], msg.text, false, false, msg.tags, msg.user, msg.time, false);
 			} else if(!msg.sender.server/* && msg.sender.nick != guser.nick*/){ // wiadomość prywatna
 				if(msg.sender.nick == guser.nick){
 					var qnick = msg.args[0];
@@ -551,7 +525,7 @@ var cmdBinds = {
 						$$.displayDialog('notice', 'service', language.networkServiceMessage, html);
 						return;
 					} else { // status
-						gateway.statusWindow.appendMessage(language.messagePatterns.yourMsg, ['', msgid, meta, $$.niceTime(), $$.nickColor(guser.nick), guser.nick + ' → ' + command[1], '', $$.colorize(msg.text)]);
+						gateway.statusWindow.appendMessage(language.messagePatterns.yourMsg, ['', 'data-msgid="'+msgid+'"', meta, $$.niceTime(), $$.nickColor(guser.nick), guser.nick + ' → ' + command[1], '', $$.colorize(msg.text)]);
 						return;
 					}
 				}
@@ -566,7 +540,7 @@ var cmdBinds = {
 				
 				}
 				
-				query.appendMessage((msg.sender.nick == guser.nick)?language.messagePatterns.yourMsg:language.messagePatterns.channelMsg, ['sender'+md5(msg.sender.nick) + ' ' + messageClass, msgid, meta, $$.niceTime(msg.time), '', nick, nickComments, message]);
+				query.appendMessage((msg.sender.nick == guser.nick)?language.messagePatterns.yourMsg:language.messagePatterns.channelMsg, ['sender'+md5(msg.sender.nick) + ' ' + messageClass, 'data-msgid="'+msgid+'"', meta, $$.niceTime(msg.time), '', nick, nickComments, message]);
 				if(msg.sender.nick != guser.nick && (gateway.active.toLowerCase() != qnick.toLowerCase() || !disp.focused)) {
 					query.markNew();
 				}
@@ -628,6 +602,7 @@ var cmdBinds = {
 			gateway.statusWindow.appendMessage(language.messagePatterns.motd, [$$.niceTime(msg.time), he(msg.text)]);
 			gateway.pingcnt = 0;
 			gateway.connectStatus = '001';
+			users.knowOwnNick();
 		}
 	],
 	'002': [	// RPL_YOURHOST
@@ -1666,10 +1641,15 @@ var cmdBinds = {
 		function(msg) {
 			ircCommand.performQuick('CAP', ['END']);
 			gateway.statusWindow.appendMessage(language.messagePatterns.SaslAuthenticate, [$$.niceTime(msg.time), language.weAreLoggedInAs + he(msg.args[2])]);
-			guser.account = msg.args[2]; // TODO use guser.me here
+			if(msg.args[2] != '0'){
+				guser.me.setAccount(msg.args[2]); // TODO use guser.me here
+			} else {
+				guser.me.setAccount(false);
+			}
 			$$.closeDialog('error', 'nickserv'); // if we displayed login prompt, let's close it.
 		}
 	],
+	// TODO RPL_LOGGEDOUT
 	'903': [	// RPL_SASLSUCCESS
 		function(msg) {
 			gateway.statusWindow.appendMessage(language.messagePatterns.SaslAuthenticate, [$$.niceTime(msg.time), language.SASLLoginSuccess]);
@@ -1718,12 +1698,12 @@ var ctcpBinds = {
 			if(msg.args[0].charAt(0) == '#'){ //kanał
 				var channel = gateway.findOrCreate(msg.args[0], false);
 				if(msg.text.indexOf(guser.nick) != -1) {
-					channel.appendMessage(language.messagePatterns.channelActionHilight, [msgid, $$.niceTime(msg.time), msg.sender.nick, $$.colorize(msg.ctcptext)]);
+					channel.appendMessage(language.messagePatterns.channelActionHilight, ['data-msgid="'+msgid+'"', $$.niceTime(msg.time), msg.sender.nick, $$.colorize(msg.ctcptext)]);
 					if(gateway.active.toLowerCase() != msg.args[0].toLowerCase() || !disp.focused) {
 						channel.markNew();
 					}
 				} else {
-					channel.appendMessage((msg.sender.nick == guser.nick)?language.messagePatterns.yourAction:language.messagePatterns.channelAction, [msgid, $$.niceTime(msg.time), msg.sender.nick, $$.colorize(msg.ctcptext)]);
+					channel.appendMessage((msg.sender.nick == guser.nick)?language.messagePatterns.yourAction:language.messagePatterns.channelAction, ['data-msgid="'+msgid+'"', $$.niceTime(msg.time), msg.sender.nick, $$.colorize(msg.ctcptext)]);
 					if(gateway.active.toLowerCase() != msg.args[0].toLowerCase() || !disp.focused) {
 						channel.markBold();
 					}
@@ -1736,7 +1716,7 @@ var ctcpBinds = {
 					var qnick = msg.sender.nick;
 				}
 				query = gateway.findOrCreate(qnick);
-				query.appendMessage((msg.sender.nick == guser.nick)?language.messagePatterns.yourAction:language.messagePatterns.channelAction, [msgid, $$.niceTime(msg.time), msg.sender.nick, $$.colorize(msg.ctcptext)]);
+				query.appendMessage((msg.sender.nick == guser.nick)?language.messagePatterns.yourAction:language.messagePatterns.channelAction, ['data-msgid="'+msgid+'"', $$.niceTime(msg.time), msg.sender.nick, $$.colorize(msg.ctcptext)]);
 				if(gateway.active.toLowerCase() != sender.toLowerCase()) {
 					gateway.findQuery(qnick).markNew();
 				}
@@ -1793,7 +1773,7 @@ function cmdNotImplemented(msg){
 	var text = '('+msg.command+') ';
 	var startIndex = 0;
 
-	if(msg.args[0].charAt(0) == '#' && gateway.findChannel(msg.args[0])){
+	if(msg.args && msg.args.length > 0 && msg.args[0].charAt(0) == '#' && gateway.findChannel(msg.args[0])){
 		tab = gateway.findChannel(msg.args[0]);
 		startIndex = 1;
 		text = '[' + msg.sender.nick + ']' + text;

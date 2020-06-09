@@ -616,7 +616,7 @@ var disp = {
 				return;
 			}
 			fd.append('fileToUpload', file);
-			fd.append('account', guser.account);
+			fd.append('account', guser.me.account);
 			fd.append('apikey', services.apiKey);
 			fd.append('image-type', 'avatar');
 			$('#set-avatar').append('<br>' + language.processing);
@@ -660,7 +660,7 @@ var disp = {
 				dataType: 'json',
 				method: 'post',
 				data: {
-					'account': guser.account,
+					'account': guser.me.account,
 					'apikey': services.apiKey,
 					'image-type': 'avatar'
 				},
