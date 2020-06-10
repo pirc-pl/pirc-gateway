@@ -18,6 +18,7 @@ var users = {
 		this.disableAvatar = false;
 		this.account = false;
 		this.away = false;
+		this.server = false; // this user is a server
 		this.metadata = {};
 		this.setIdent = function(ident){
 			this.ident = ident;

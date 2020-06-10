@@ -183,6 +183,10 @@ var irc = {
 			if(ircmsg.sender.ident.length > 0) user.setIdent(ircmsg.sender.ident);
 			if(ircmsg.sender.host.length > 0) user.setHost(ircmsg.sender.host);
 		}
+		
+		if(ircmsg.sender.server){
+			user.server = true;
+		}
 
 // process known tags
 		if('time' in ircmsg.tags){
@@ -974,7 +978,7 @@ var gateway = {
 			var textToSend = input;
 			if(lengthInUtf8Bytes(textToSend) >= 420){
 				var button = [ {
-					text: 'Tak',
+					text: language.yes,
 					click: function(){
 						do {
 							var sendNow = '';
@@ -987,7 +991,7 @@ var gateway = {
 						$(this).dialog('close');
 					}
 				}, {
-					text: 'Nie',
+					text: language.no,
 					click: function(){
 						$(this).dialog('close');
 					}
@@ -2205,6 +2209,8 @@ var gateway = {
 		
 		if(!sender) sender = guser.me;
 		
+		if(sender == guser.me && text.charAt(0) == '\001') return; // don't display own ctcp requests/replies
+		
 		var meta = gateway.getMeta(sender.nick, 100);
 		var html = $$.parseImages(text);
 		var message = $$.colorize(text);
@@ -2247,69 +2253,173 @@ var gateway = {
 			} else {
 				var hlmatch = false;
 			}
-			var messageDiv = $('#'+channel.id+'-window div.messageDiv:not(".msgRepeat"):last');
-			var messageClass = 'msgNormal';
-			if(messageDiv.hasClass('sender'+md5(sender.nick))){
-				messageDiv.find('span.msgText').append('<span class="msgRepeatBlock" ' + attrs + '><br><span class="time">'+$$.niceTime(time)+'</span> &nbsp;'+message+'</span>');
-				messageClass = 'msgRepeat';
-			} else {
-				channel.markingSwitch = !channel.markingSwitch;
-			}
-			if(channel.markingSwitch){
-				messageClass += ' oddMessage';
-			} else {
-				messageClass += ' evenMessage';
-			}
-			message = '<span class="time msgRepeatBlock">'+$$.niceTime(time)+'</span> &nbsp;' + message;
-			if(hlmatch) { // highlighted
-				channel.appendMessage(language.messagePatterns.channelMsgHilight, ['sender'+md5(sender.nick) + ' ' + messageClass, attrs, meta, $$.niceTime(time), nick, nickComments, message]);
-				if(messageClass.indexOf('msgRepeat') > -1){
-					messageDiv.find('span.nick').addClass('repeat-hilight');
+			if(cmd == 'PRIVMSG'){
+				var messageDiv = $('#'+channel.id+'-window div.messageDiv:not(".msgRepeat"):last');
+				var messageClass = 'msgNormal';
+				if(messageDiv.hasClass('sender'+md5(sender.nick))){
+					messageDiv.find('span.msgText').append('<span class="msgRepeatBlock" ' + attrs + '><br><span class="time">'+$$.niceTime(time)+'</span> &nbsp;'+message+'</span>');
+					messageClass = 'msgRepeat';
+				} else {
+					channel.markingSwitch = !channel.markingSwitch;
 				}
-				if(gateway.active != dest.toLowerCase() || !disp.focused) {
-					channel.markNew();
+				if(channel.markingSwitch){
+					messageClass += ' oddMessage';
+				} else {
+					messageClass += ' evenMessage';
 				}
-			} else { // not highlighted
-				channel.appendMessage((sender.nick == guser.nick)?language.messagePatterns.yourMsg:language.messagePatterns.channelMsg, ['sender'+md5(sender.nick) + ' ' + messageClass, attrs, meta, $$.niceTime(time), $$.nickColor(sender.nick), nick, nickComments, message]);
-				if(gateway.active.toLowerCase() != dest.toLowerCase() || !disp.focused) {
+				message = '<span class="time msgRepeatBlock">'+$$.niceTime(time)+'</span> &nbsp;' + message;
+				if(hlmatch) { // highlighted
+					channel.appendMessage(language.messagePatterns.channelMsgHilight, ['sender'+md5(sender.nick) + ' ' + messageClass, attrs, meta, $$.niceTime(time), nick, nickComments, message]);
+					if(messageClass.indexOf('msgRepeat') > -1){
+						messageDiv.find('span.nick').addClass('repeat-hilight');
+					}
+					if(gateway.active != dest.toLowerCase() || !disp.focused) {
+						channel.markNew();
+					}
+				} else { // not highlighted
+					channel.appendMessage((sender.nick == guser.nick)?language.messagePatterns.yourMsg:language.messagePatterns.channelMsg, ['sender'+md5(sender.nick) + ' ' + messageClass, attrs, meta, $$.niceTime(time), $$.nickColor(sender.nick), nick, nickComments, message]);
+					if(gateway.active.toLowerCase() != dest.toLowerCase() || !disp.focused) {
+						channel.markBold();
+					}
+				}
+
+				channel.appendMessage('%s', [html]);
+			} else if(cmd == 'NOTICE'){
+				channel.appendMessage(language.messagePatterns.notice, [attrs, $$.niceTime(time), he(sender.nick), he(sender.ident), he(sender.host), message]);
+				if(hlmatch && gateway.active != channel.name) {
 					channel.markBold();
 				}
 			}
-
-			channel.appendMessage('%s', [html]);
 		} else { // private message
 			if(sender.nick == guser.nick){
 				var qnick = dest;
 			} else {
 				var qnick = sender.nick;
 			}
-
-			if(sender.nick == guser.nick && dest.isInList(servicesNicks) && !gateway.find(qnick)){
-				if($("#noticeDisplay").val() == 0){ // okienko
-					var html = "<span class=\"notice\">[<b>"+he(guser.nick)+" → " + dest + "</b>]</span> " + $$.colorize(msg.text);
-					$$.displayDialog('notice', 'service', language.networkServiceMessage, html);
-					return;
-				} else { // status
-					gateway.statusWindow.appendMessage(language.messagePatterns.yourMsg, ['', attrs, meta, $$.niceTime(time), $$.nickColor(guser.nick), guser.nick + ' → ' + dest, '', message]);
+			
+			if(cmd == 'PRIVMSG'){
+				if(
+				((sender.nick == guser.nick && dest.isInList(servicesNicks))
+				|| (dest == guser.nick && sender.nick.isInList(servicesNicks)))
+				&& !gateway.find(qnick)){ // do not open a query when expecting service messages in pop-up or status
+					if($("#noticeDisplay").val() == 0){ // pop-up
+						var html = "<span class=\"notice\">[<b>" + sender.nick + " → " + dest + "</b>]</span> " + message;
+						$$.displayDialog('notice', 'service', language.networkServiceMessage, html);
+						return;
+					} else if($("#noticeDisplay").val() == 2){ // status
+						gateway.statusWindow.appendMessage(language.messagePatterns.yourServiceCommand, [attrs, $$.niceTime(time), guser.nick, dest, message]);
+						return;
+					} else { // query
+						// default behavior
+					}
+				}
+				query = gateway.findOrCreate(qnick);
+				
+				var messageDiv = $('#'+query.id+'-window div.messageDiv:not(".msgRepeat"):last');
+				var messageClass = 'msgNormal';
+				if(messageDiv.hasClass('sender'+md5(sender.nick))){
+					messageDiv.find('span.msgText').append('<span class="msgRepeatBlock"' + attrs + '><br><span class="time">'+$$.niceTime(time)+'</span> &nbsp;'+message+'</span>');
+					messageClass = 'msgRepeat';
+				}
+				message = '<span class="time msgRepeatBlock">'+$$.niceTime(time)+'</span> &nbsp;' + message;
+				query.appendMessage((sender.nick == guser.nick)?language.messagePatterns.yourMsg:language.messagePatterns.channelMsg, ['sender'+md5(sender.nick) + ' ' + messageClass, attrs, meta, $$.niceTime(time), $$.nickColor(sender.nick), nick, nickComments, message]);
+				if(sender.nick != guser.nick && (gateway.active.toLowerCase() != qnick.toLowerCase() || !disp.focused)) {
+					query.markNew();
+				}
+				query.appendMessage('%s', [html]);
+			} else if(cmd == 'NOTICE'){
+				if(ownMsg){
+					if($("#noticeDisplay").val() == 2) { // notice in status window
+						gateway.statusWindow.appendMessage(language.messagePatterns.yourNotice, [attrs, $$.niceTime(), dest, message]);
+					} else if($("#noticeDisplay").val() == 1) { // notice in a query window
+						var query = gateway.findOrCreate(command[1]);
+						query.appendMessage(language.messagePatterns.yourNotice, [attrs, $$.niceTime(), dest, message]);
+					} else if($("#noticeDisplay").val() == 0) { // notice in pop-up
+						if('echo-message' in activeCaps) return;
+						var html = "<span class=\"notice\">[<b>"+he(sender.nick)+" → "+he(dest) + "</b>]</span> " + message;
+						$$.displayDialog('notice', dest, language.privateNoticeFrom+' '+dest, html);
+					}
 					return;
 				}
+				if(!sender.server){ // sent by user or service
+					if(sender == guser.me){
+						var query = gateway.findQuery(dest);
+					} else {
+						var query = gateway.findQuery(sender.nick);
+					}
+					var displayAsQuery = Boolean(query) || ($("#noticeDisplay").val() == 1);
+					if(displayAsQuery){ // notice in a query window
+						if(!query) {
+							query = gateway.findOrCreate(sender.nick);
+						}
+						if(sender == guser.me){
+							query.appendMessage(language.messagePatterns.yourNotice, [attrs, $$.niceTime(), dest, message]);
+						} else {
+							query.appendMessage(language.messagePatterns.notice, [attrs, $$.niceTime(time), he(sender.nick), he(sender.ident), he(sender.host), message]);
+						}
+						if(gateway.active.toLowerCase() != sender.nick.toLowerCase()) {
+							query.markNew();
+						}
+					}  else if ($("#noticeDisplay").val() == 2) { // notice in status window
+						if(sender == guser.me){
+							gateway.statusWindow.appendMessage(language.messagePatterns.yourNotice, [attrs, $$.niceTime(), dest, message]);
+						} else {
+							gateway.statusWindow.appendMessage(language.messagePatterns.notice, [attrs, $$.niceTime(time), he(sender.nick), he(sender.ident), he(sender.host), message]);
+							gateway.statusWindow.markBold();
+						}
+					} else if($("#noticeDisplay").val() == 0) { // notice in pop-up
+						if(sender.nick.isInList(servicesNicks)){
+							if(sender == guser.me){
+								var html = "<span class=\"notice\">[<b>"+he(sender.nick)+" → "+he(dest) + "</b>]</span> " + message;
+							} else {
+								var html = '<span class="notice-nick">&lt;<b>'+sender.nick+'</b>&gt</span> ' + message;
+							}
+							$$.displayDialog('notice', 'service', language.networkServiceMessage, html);
+						} else {
+							if(sender == guser.me){
+								var html = "<span class=\"notice\">[<b>"+he(sender.nick)+" → "+he(dest) + "</b>]</span> " + message;
+								$$.displayDialog('notice', dest, language.privateNoticeFrom + dest, html);
+							} else {
+								$$.displayDialog('notice', sender.nick, language.privateNoticeFrom + sender.nick, message);
+							}
+						}
+					}
+				} else { // sent by server
+					var expressions = [/^Your "real name" is now set to be/, / invited [^ ]+ into the channel.$/]; // TODO should this look like this?
+					for(var i=0; i<expressions.length; i++){
+						if(text.match(expressions[i])){
+							return;
+						}
+					}
+
+					var expr = /^\[Knock\] by ([^ !]+)![^ ]+ \(([^)]+)\)$/; // detect KNOCK by someone
+					var match = expr.exec(text);
+					if(match){
+						gateway.knocking(dest.substring(dest.indexOf('#')), match[1], match[2]);
+						return;
+					}
+					expr = /^Knocked on (.*)$/; // detect own KNOCK
+					var match = expr.exec(text);
+					if(match){
+						var chan = gateway.findChannel(match[1]);
+						if(chan){
+							chan.appendMessage(language.messagePatterns.knocked, [$$.niceTime(time), match[1]]);
+						} else {
+							gateway.statusWindow.appendMessage(language.messagePatterns.knocked, [$$.niceTime(time), match[1]]);
+						}
+						return;
+					}
+					
+					// we ignore these not to bug users with pop-ups
+					if(sender.nick == 'AUTH' || sender.nick == '*'){ // connect notices
+						return;
+					}// *** You are connected to bramka2.pirc.pl with TLSv1.2-AES128-GCM-SHA256-128bits
+					if(text.match(/^\*\*\* You are connected to .+ with .+$/)){
+						return;
+					}
+					$$.displayDialog('notice', sender.nick, language.privateNoticeFromServer + he(sender.nick)+' do '+he(dest), message);
+				}
 			}
-			
-			query = gateway.findOrCreate(qnick);
-			
-			var messageDiv = $('#'+query.id+'-window div.messageDiv:not(".msgRepeat"):last');
-			var messageClass = 'msgNormal';
-			if(messageDiv.hasClass('sender'+md5(msg.sender.nick))){
-				messageDiv.find('span.msgText').append('<span class="msgRepeatBlock"><br><span class="time">'+$$.niceTime(msg.time)+'</span> &nbsp; '+message+'</span>');
-				messageClass = 'msgRepeat';
-			
-			}
-			
-			query.appendMessage((sender.nick == guser.nick)?language.messagePatterns.yourMsg:language.messagePatterns.channelMsg, ['sender'+md5(msg.sender.nick) + ' ' + messageClass, attrs, meta, $$.niceTime(time), $$.nickColor(sender.nick), nick, nickComments, message]);
-			if(sender.nick != guser.nick && (gateway.active.toLowerCase() != qnick.toLowerCase() || !disp.focused)) {
-				query.markNew();
-			}
-			query.appendMessage('%s', [html]);
 		}
 	}
 }

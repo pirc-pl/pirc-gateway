@@ -285,16 +285,7 @@ var commands = {
 					}
 				}
 				if(reason) {
-					gateway.send("NOTICE "+command[1]+" :"+reason);
-					if($("#noticeDisplay").val() == 2) { // notice w statusie
-						gateway.statusWindow.appendMessage(language.messagePatterns.yourNotice, [$$.niceTime(), command[1], reason]);
-					} else if($("#noticeDisplay").val() == 1) { // notice jako query
-						var query = gateway.findOrCreate(command[1]);
-						query.appendMessage(language.messagePatterns.yourNotice, [$$.niceTime(), command[1], reason]);
-					} else if($("#noticeDisplay").val() == 0) { // notice jako okienko
-						var html = "<span class=\"notice\">[<b>"+he(guser.nick)+" → "+command[1] + "</b>]</span> " + $$.colorize(reason);
-						$$.displayDialog('notice', command[1], language.privateNoticeFrom+' '+command[1], html);
-					}
+					ircCommand.sendMessage(command[1], reason, true);
 				} else {
 					gateway.notEnoughParams("notice", language.youHaveToGiveMsgText);
 				}

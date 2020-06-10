@@ -321,93 +321,17 @@ var cmdBinds = {
 					$$.displayDialog('whois', msg.sender.nick, language.userInformation + he(msg.sender.nick), language.userSoftware + '<b>'+msg.sender.nick+'</b>:<br>'+he(text));
 				}
 			} else { // nie-ctcp
-				if(msg.args[0].indexOf('#') == 0) { //kanał
-					if(ignore.ignoring(msg.sender.nick, 'channel')){
-						console.log('Ignoring notice on '+msg.args[0]+' by '+msg.sender.nick);
+				if(msg.sender.nick.toLowerCase() == 'nickserv'){
+					if(services.nickservMessage(msg)) {
 						return;
 					}
-					if(gateway.findChannel(msg.args[0])) {
-						if(msg.text.indexOf(guser.nick) != -1) {
-							gateway.findChannel(msg.args[0]).appendMessage(language.messagePatterns.notice, [$$.niceTime(msg.time), he(msg.sender.nick), he(msg.sender.ident), he(msg.sender.host), $$.colorize(msg.text)]);
-							if(gateway.active != msg.args[0]) {
-								gateway.findChannel(msg.args[0]).markBold();
-							}
-						} else {
-							gateway.findChannel(msg.args[0]).appendMessage(language.messagePatterns.notice, [$$.niceTime(msg.time), he(msg.sender.nick), he(msg.sender.ident), he(msg.sender.host), $$.colorize(msg.text)]);
-						}
-					}
-				} else if(!msg.sender.server && msg.sender.nick != guser.nick) { // użytkownik
-					if(ignore.ignoring(msg.sender.nick, 'query')){
-						console.log('Ignoring notice by '+msg.sender.nick);
-						return;
-					}
-					if(msg.sender.nick.toLowerCase() == 'nickserv'){
-						if(services.nickservMessage(msg)) {
-							return;
-						}
-					}
-					if(msg.sender.nick.toLowerCase() == 'chanserv'){
-						if(services.chanservMessage(msg)) {
-							return;
-						}
-					}
-					var query = gateway.findQuery(msg.sender.nick);
-					var displayAsQuery = Boolean(query);
-					if(displayAsQuery || $("#noticeDisplay").val() == 1){ // notice jako query
-						if(!query) {
-							query = gateway.findOrCreate(msg.sender.nick);
-						}
-						query.appendMessage(language.messagePatterns.notice, [$$.niceTime(msg.time), he(msg.sender.nick), he(msg.sender.ident), he(msg.sender.host), $$.colorize(msg.text)]);
-						if(gateway.active.toLowerCase() != msg.sender.nick.toLowerCase()) {
-							query.markNew();
-						}
-					} else if ($("#noticeDisplay").val() == 2) { // notice w statusie
-						gateway.statusWindow.appendMessage(language.messagePatterns.notice, [$$.niceTime(msg.time), he(msg.sender.nick), he(msg.sender.ident), he(msg.sender.host), $$.colorize(msg.text)]);
-						gateway.statusWindow.markBold();
-					} else if($("#noticeDisplay").val() == 0) { // notice jako okienko
-						if(msg.sender.nick.isInList(servicesNicks)){
-							var html = '<span class="notice-nick">&lt;<b>'+msg.sender.nick+'</b>&gt</span> '+$$.colorize(msg.text);
-							$$.displayDialog('notice', 'service', language.networkServiceMessage, html);
-						} else {
-							$$.displayDialog('notice', msg.sender.nick, language.privateNoticeFrom + msg.sender.nick, $$.colorize(msg.text));
-						}
-					}
-				} else if(msg.sender.server){
-					var expressions = [/^Your "real name" is now set to be/, / invited [^ ]+ into the channel.$/];
-					for(var i=0; i<expressions.length; i++){
-						if(msg.text.match(expressions[i])){
-							return;
-						}
-					}
-				//	if(msg.args[0] == guser.nick){
-				//		gateway.statusWindow.appendMessage(language.messagePatterns.serverNotice, [$$.niceTime(msg.time), he(msg.sender.nick), $$.colorize(msg.text)]);
-				//	} else {
-						var expr = /^\[Knock\] by ([^ !]+)![^ ]+ \(([^)]+)\)$/;
-						var match = expr.exec(msg.text);
-						if(match){
-							gateway.knocking(msg.args[0].substring(msg.args[0].indexOf('#')), match[1], match[2]);
-							return;
-						}
-						expr = /^Knocked on (.*)$/;
-						var match = expr.exec(msg.text);
-						if(match){
-							var chan = gateway.findChannel(match[1]);
-							if(chan){
-								chan.appendMessage(language.messagePatterns.knocked, [$$.niceTime(msg.time), match[1]]);
-							} else {
-								gateway.statusWindow.appendMessage(language.messagePatterns.knocked, [$$.niceTime(msg.time), match[1]]);
-							}
-							return;
-						}
-						if(msg.args[0] == 'AUTH' || msg.args[0] == '*'){
-							return;
-						}// *** You are connected to bramka2.pirc.pl with TLSv1.2-AES128-GCM-SHA256-128bits
-						if(msg.text.match(/^\*\*\* You are connected to .+ with .+$/)){
-							return;
-						}
-						$$.displayDialog('notice', msg.sender.nick, language.privateNoticeFromServer + he(msg.sender.nick)+' do '+he(msg.args[0]), $$.colorize(msg.text));
-				//	}
 				}
+				if(msg.sender.nick.toLowerCase() == 'chanserv'){
+					if(services.chanservMessage(msg)) {
+						return;
+					}
+				}
+				gateway.insertMessage('NOTICE', msg.args[0], msg.text, false, false, msg.tags, msg.user, msg.time, false);
 			}
 		}
 	],
@@ -482,70 +406,8 @@ var cmdBinds = {
 				return;
 			}
 			
-			var message = $$.colorize(msg.text);
-			var meta = gateway.getMeta(msg.sender.nick, 100);
-			var nick = msg.sender.nick;
-			var nickComments = '';
-			var msgid = gateway.getMsgid(msg);
-			if('display-name' in msg.user.metadata){
-				nick = user.metadata['display-name'];
-				nickComments = ' <span class="realNick" title="' + language.realNickname + '">(' + msg.sender.nick + ')</span>';
-			}
+			gateway.insertMessage('PRIVMSG', msg.args[0], msg.text, false, false, msg.tags, msg.user, msg.time, false);
 
-			var nickInfo = '';
-			if(msg.user.account){
-				nickInfo = language.loggedInAs + msg.user.account;
-			} else if(msg.user.registered) { // possible if the server does not send account name
-				nickInfo = language.loggedIn;
-			} else {
-				nickInfo = language.notLoggedIn;
-			}
-			if(msg.user.bot){
-				if(nickInfo.length > 0) nickInfo += '\n';
-				nickInfo += language.userIsBot;
-			}
-			
-			nick = '<span title="' + nickInfo + '">' + nick + '</span>';
-
-			if(msg.args[0].indexOf('#') == 0) { // wiadomość kanałowa
-				gateway.insertMessage('PRIVMSG', msg.args[0], msg.text, false, false, msg.tags, msg.user, msg.time, false);
-			} else if(!msg.sender.server/* && msg.sender.nick != guser.nick*/){ // wiadomość prywatna
-				if(msg.sender.nick == guser.nick){
-					var qnick = msg.args[0];
-				} else {
-					var qnick = msg.sender.nick;
-				}
-				for(f in messageProcessors){
-					message = messageProcessors[f](msg.sender.nick, guser.nick, message);
-				}
-
-				if(msg.sender.nick == guser.nick && msg.args[0].isInList(servicesNicks) && !gateway.find(qnick)){
-					if($("#noticeDisplay").val() == 0){ // okienko
-						var html = "<span class=\"notice\">[<b>"+he(guser.nick)+" → "+msg.args[0] + "</b>]</span> " + $$.colorize(msg.text);
-						$$.displayDialog('notice', 'service', language.networkServiceMessage, html);
-						return;
-					} else { // status
-						gateway.statusWindow.appendMessage(language.messagePatterns.yourMsg, ['', 'data-msgid="'+msgid+'"', meta, $$.niceTime(), $$.nickColor(guser.nick), guser.nick + ' → ' + command[1], '', $$.colorize(msg.text)]);
-						return;
-					}
-				}
-				
-				query = gateway.findOrCreate(qnick);
-				
-				var messageDiv = $('#'+query.id+'-window div.messageDiv:not(".msgRepeat"):last');
-				var messageClass = 'msgNormal';
-				if(messageDiv.hasClass('sender'+md5(msg.sender.nick))){
-					messageDiv.find('span.msgText').append('<span class="msgRepeatBlock"><br><span class="time">'+$$.niceTime(msg.time)+'</span> &nbsp; '+message+'</span>');
-					messageClass = 'msgRepeat';
-				
-				}
-				
-				query.appendMessage((msg.sender.nick == guser.nick)?language.messagePatterns.yourMsg:language.messagePatterns.channelMsg, ['sender'+md5(msg.sender.nick) + ' ' + messageClass, 'data-msgid="'+msgid+'"', meta, $$.niceTime(msg.time), '', nick, nickComments, message]);
-				if(msg.sender.nick != guser.nick && (gateway.active.toLowerCase() != qnick.toLowerCase() || !disp.focused)) {
-					query.markNew();
-				}
-				query.appendMessage('%s', [html]);
-			}
 		}
 	],
 	'QUIT': [

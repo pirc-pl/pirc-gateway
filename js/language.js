@@ -44,9 +44,10 @@ var lang = {
 			'cannotSendToUser': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="kick"><span class="symbolFont">⮿</span> Nie można pisać do <span class="modeinfo">%s</span>: %s. Wiadomość nie została dostarczona.</span></div><!--newline-->',
 			'cannotJoin': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="kick"><span class="symbolFont">⮿</span> Nie można dołączyć do kanału <span class="modeinfo">%s</span>: %s</span></div><!--newline-->',
 			'noPerms': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="kick"><span class="symbolFont">⮿</span> Brak uprawnień.</span></div><!--newline-->',
-			'notice': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="notice-nick"><b>-%s-</b></span><span class="userhost">(<span class="notice-nick">%s</span>@<span class="notice-nick">%s</span>)</span> <span class="notice">%s</span></div><!--newline-->',
-			'serverNotice': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="notice-nick">Wiadomość od serwera <b>%s</b>:</span> <span class="notice">%s</span></div><!--newline-->',
-			'yourNotice': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="notice"><b>-NOTICE/%s-</b> %s</span></div><!--newline-->',
+			'notice': '<div class="messageDiv" %s><span class="time">%s</span> &nbsp; <span class="notice-nick"><b>-%s-</b></span><span class="userhost">(<span class="notice-nick">%s</span>@<span class="notice-nick">%s</span>)</span> <span class="notice">%s</span></div><!--newline-->',
+			'serverNotice': '<div class="messageDiv" %s><span class="time">%s</span> &nbsp; <span class="notice-nick">Wiadomość od serwera <b>%s</b>:</span> <span class="notice">%s</span></div><!--newline-->',
+			'yourNotice': '<div class="messageDiv" %s><span class="time">%s</span> &nbsp; <span class="notice"><b>-NOTICE/%s-</b> %s</span></div><!--newline-->',
+			'yourServiceCommand': '<div class="messageDiv" %s><span class="time">%s</span> &nbsp; <span class="notice"><b>[%s → %s]</b> %s</span></div><!--newline-->',
 			'notEnoughParams': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">⮿</span> <span class="modeinfo">%s</span>: za mało argumentów: %s</span></div><!--newline-->',
 			'motd': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="motd"><span class="symbolFont">✯</span> %s</span></div><!--newline-->',
 			'SaslAuthenticate': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="sinfo"><span class="symbolFont">🔧</span> %s</span></div><!--newline-->',
@@ -617,7 +618,9 @@ var lang = {
 		'topicOfChannel': 'Temat kanału ',
 		'mode': 'tryb',
 		'enterUrl': 'Podaj adres URL:',
-		'selectAnImage': 'Wybierz obrazek:'
+		'selectAnImage': 'Wybierz obrazek:',
+		'yes': 'Tak',
+		'no': 'Nie'
 	},
 	'en': {
 		'messagePatterns': {
@@ -664,9 +667,10 @@ var lang = {
 			'cannotSendToUser': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="kick"><span class="symbolFont">⮿</span> Can\'t send to <span class="modeinfo">%s</span>: %s. Message is not delivered.</span></div><!--newline-->',
 			'cannotJoin': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="kick"><span class="symbolFont">⮿</span> Can\'t join <span class="modeinfo">%s</span>: %s</span></div><!--newline-->',
 			'noPerms': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="kick"><span class="symbolFont">⮿</span> No access.</span></div><!--newline-->',
-			'notice': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="notice-nick"><b>-%s-</b></span><span class="userhost">(<span class="notice-nick">%s</span>@<span class="notice-nick">%s</span>)</span> <span class="notice">%s</span></div><!--newline-->',
-			'serverNotice': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="notice-nick">Notice from server <b>%s</b>:</span> <span class="notice">%s</span></div><!--newline-->',
-			'yourNotice': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="notice"><b>-NOTICE/%s-</b> %s</span></div><!--newline-->',
+			'notice': '<div class="messageDiv" %s><span class="time">%s</span> &nbsp; <span class="notice-nick"><b>-%s-</b></span><span class="userhost">(<span class="notice-nick">%s</span>@<span class="notice-nick">%s</span>)</span> <span class="notice">%s</span></div><!--newline-->',
+			'serverNotice': '<div class="messageDiv" %s><span class="time">%s</span> &nbsp; <span class="notice-nick">Notice from server <b>%s</b>:</span> <span class="notice">%s</span></div><!--newline-->',
+			'yourNotice': '<div class="messageDiv" %s><span class="time">%s</span> &nbsp; <span class="notice"><b>-NOTICE/%s-</b> %s</span></div><!--newline-->',
+			'yourServiceCommand': '<div class="messageDiv" %s><span class="time">%s</span> &nbsp; <span class="notice"><b>[%s → %s]</b> %s</span></div><!--newline-->',
 			'notEnoughParams': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">⮿</span> <span class="modeinfo">%s</span>: too few arguments: %s</span></div><!--newline-->',
 			'motd': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="motd"><span class="symbolFont">✯</span> %s</span></div><!--newline-->',
 			'SaslAuthenticate': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="sinfo"><span class="symbolFont">🔧</span> %s</span></div><!--newline-->',
@@ -1239,7 +1243,9 @@ var lang = {
 		'topicOfChannel': 'Topic of ',
 		'mode': 'mode',
 		'enterUrl': 'Enter URL address:',
-		'selectAnImage': 'Select an image:'
+		'selectAnImage': 'Select an image:',
+		'yes': 'Yes',
+		'no': 'No'
 	}
 };
 
