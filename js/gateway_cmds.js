@@ -58,6 +58,12 @@ var ircCommand = {
 		}
 		gateway.insertMessage(cmd, dest, text, true, label);
 	},
+	'sendAction': function(dest, text){
+		var ctcp = '\001' + 'ACTION ' + text + '\001';
+		var label = gateway.makeLabel();
+		ircCommand.performSlow('PRIVMSG', [dest], ctcp, {'label': label});
+		gateway.insertMessage('ACTION', dest, text, true, label);
+	},
 	'sendMessageSlow': function(dest, text, notice){
 		ircCommand.sendMessage(dest, text, notice, true);
 	},

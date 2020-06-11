@@ -254,6 +254,7 @@ var conn = {
 			$('body').css('font-family', 'verdana,arial,tahoma,Symbola,sans-serif'); // fallback if custom elements (for emoji) not supported
 		}
 		users.clear();
+		setInterval(gateway.updateHistory, 15000);
 	},
 	'aliveWaitTimeout': false,
 	'waitForAlive': false

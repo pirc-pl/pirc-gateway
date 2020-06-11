@@ -310,7 +310,7 @@ var commands = {
 					}
 				}
 				if(reason) {
-					gateway.send("PRIVMSG "+command[1]+" :"+reason);
+					/*gateway.send("PRIVMSG "+command[1]+" :"+reason);
 					if(!('echo-message' in activeCaps) && command[1].isInList(servicesNicks)){
 						var displayInTab = false;
 						if(gateway.find(command[1])) displayInTab = true;
@@ -324,7 +324,8 @@ var commands = {
 						} else { // status
 							gateway.statusWindow.appendMessage(language.messagePatterns.yourMsg, [$$.niceTime(), $$.nickColor(guser.nick), guser.nick + ' → ' + command[1], $$.colorize(reason)]);
 						}
-					}
+					}*/
+					ircCommand.sendMessage(command[1], reason, false);
 				} else {
 					gateway.notEnoughParams("msg", language.youHaveToGiveMsgText);
 				}
@@ -466,7 +467,7 @@ var commands = {
 		'callback': function(command, input) {
 			if(command[1]) {
 				if (gateway.getActive()) {
-					var tabToSend = gateway.findChannel(gateway.active);
+					/*var tabToSend = gateway.findChannel(gateway.active);
 					if(!tabToSend){
 						tabToSend = gateway.findQuery(gateway.active);
 					}
@@ -478,7 +479,8 @@ var commands = {
 						}
 					} else {
 						console.log('błąd /me !!!');
-					}
+					}*/
+					ircCommand.sendAction(gateway.active, input.slice(1).substr(3));
 				} else {
 					gateway.notEnoughParams("me", language.youHaveToBeOnChan);
 				}

@@ -303,11 +303,18 @@ var cmdBinds = {
 			if (msg.text == false) {
 				msg.text = " ";
 			}
-			if(msg.text.match(/^\001.*\001$/i)) { // ctcp
-				if(ignore.ignoring(msg.sender.nick, 'query')){
-					console.log('Ignoring CTCP reply by '+msg.sender.nick);
+			if(msg.args[0].indexOf('#') == 0) { // wiadomość kanałowa
+				if(ignore.ignoring(msg.sender.nick, 'channel')){
+					console.log('Ignoring message on '+msg.args[0]+' by '+msg.sender.nick);
 					return;
 				}
+			} else { //prywatna
+				if(ignore.ignoring(msg.sender.nick, 'query')){
+					console.log('Ignoring private message by '+msg.sender.nick);
+					return;
+				}
+			}
+			if(msg.text.match(/^\001.*\001$/i)) { // ctcp
 				var ctcpreg = msg.text.match(/^\001(([^ ]+)( (.*))?)\001$/i);
 				var acttext = ctcpreg[1];
 				var ctcp = ctcpreg[2];
@@ -331,7 +338,7 @@ var cmdBinds = {
 						return;
 					}
 				}
-				gateway.insertMessage('NOTICE', msg.args[0], msg.text, false, false, msg.tags, msg.user, msg.time, false);
+				gateway.insertMessage('NOTICE', msg.args[0], msg.text, false, false, msg.tags, msg.user, msg.time);
 			}
 		}
 	],
@@ -381,6 +388,9 @@ var cmdBinds = {
 			var html = $$.parseImages(msg.text);
 			
 			if(msg.text.match(/^\001.*\001$/i)) { //CTCP
+				if('label' in msg.tags){
+					return; // don't display nor process own requests, this may change later
+				}
 				var space = msg.text.indexOf(' ');
 				if(space > -1){
 					var ctcp = msg.text.substring(1, space);
@@ -393,20 +403,23 @@ var cmdBinds = {
 					for(func in ctcpBinds[ctcp]){
 						ctcpBinds[ctcp][func](msg);
 					}
-				} else {
-					var query = gateway.findQuery(qnick);
-					var acttext = msg.text.replace(/^\001(.*)\001$/i, '$1');
-					if(query) {
-						query.appendMessage(language.messagePatterns.ctcpRequest, [$$.niceTime(msg.time), msg.sender.nick, $$.colorize(acttext)]);
+				} else { // unknown ctcp request
+					if(msg.sender.nick == guser.nick){
+						var qname = msg.args[0];
 					} else {
-						gateway.statusWindow.appendMessage(language.messagePatterns.ctcpRequest, [$$.niceTime(msg.time), msg.sender.nick, $$.colorize(acttext)]);
-						gateway.statusWindow.markBold();
+						var qname = msg.sender.nick;
 					}
+					var tab = gateway.find(qname);
+					if(!tab)
+						tab = gateway.statusWindow;
+					var acttext = msg.text.replace(/^\001(.*)\001$/i, '$1');
+					tab.appendMessage(language.messagePatterns.ctcpRequest, [$$.niceTime(msg.time), msg.sender.nick, $$.colorize(acttext)]);
+					if(tab == gateway.statusWindow)
+						gateway.statusWindow.markBold();
 				}
 				return;
 			}
-			
-			gateway.insertMessage('PRIVMSG', msg.args[0], msg.text, false, false, msg.tags, msg.user, msg.time, false);
+			gateway.insertMessage('PRIVMSG', msg.args[0], msg.text, false, false, msg.tags, msg.user, msg.time);
 
 		}
 	],
@@ -1555,36 +1568,7 @@ var cmdBinds = {
 var ctcpBinds = {
 	'ACTION': [
 		function(msg){
-			var msgid = gateway.getMsgid(msg);
-			var html = $$.parseImages(msg.text);
-			if(msg.args[0].charAt(0) == '#'){ //kanał
-				var channel = gateway.findOrCreate(msg.args[0], false);
-				if(msg.text.indexOf(guser.nick) != -1) {
-					channel.appendMessage(language.messagePatterns.channelActionHilight, ['data-msgid="'+msgid+'"', $$.niceTime(msg.time), msg.sender.nick, $$.colorize(msg.ctcptext)]);
-					if(gateway.active.toLowerCase() != msg.args[0].toLowerCase() || !disp.focused) {
-						channel.markNew();
-					}
-				} else {
-					channel.appendMessage((msg.sender.nick == guser.nick)?language.messagePatterns.yourAction:language.messagePatterns.channelAction, ['data-msgid="'+msgid+'"', $$.niceTime(msg.time), msg.sender.nick, $$.colorize(msg.ctcptext)]);
-					if(gateway.active.toLowerCase() != msg.args[0].toLowerCase() || !disp.focused) {
-						channel.markBold();
-					}
-				}
-				channel.appendMessage('%s', [html]);
-			} else {
-				if(msg.sender.nick == guser.nick){
-					var qnick = msg.args[0];
-				} else {
-					var qnick = msg.sender.nick;
-				}
-				query = gateway.findOrCreate(qnick);
-				query.appendMessage((msg.sender.nick == guser.nick)?language.messagePatterns.yourAction:language.messagePatterns.channelAction, ['data-msgid="'+msgid+'"', $$.niceTime(msg.time), msg.sender.nick, $$.colorize(msg.ctcptext)]);
-				if(gateway.active.toLowerCase() != sender.toLowerCase()) {
-					gateway.findQuery(qnick).markNew();
-				}
-				query.appendMessage('%s', [html]);
-			}
-
+			gateway.insertMessage('ACTION', msg.args[0], msg.ctcptext, false, false, msg.tags, msg.user, msg.time);
 		}
 	],
 	'VERSION': [

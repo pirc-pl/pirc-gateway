@@ -882,11 +882,6 @@ span.td_right {
 	object-fit: contain;
 }
 
-.backlog {
-	opacity: 0.4;
-	filter: alpha(opacity=40);
-}
-
 #options-dialog input[type="text"]  {
 	width: 3em;
 	margin: 0;
