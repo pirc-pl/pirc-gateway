@@ -128,7 +128,7 @@ var users = {
 		var user = this.list[nick];
 		if(!user) return;
 		user.disableAvatar = true;
-		users.updateNicklists(this);
+		users.updateNicklists(user);
 	},
 	'changeNick': function(oldNick, newNick){
 		var user = users.getUser(oldNick);

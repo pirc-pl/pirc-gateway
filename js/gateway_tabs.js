@@ -223,7 +223,6 @@ function NicklistUser(user, chan) {
 	}
 	this.update = function() {
 		this.showTitle();
-		this.displayLoggedIn();
 	}
 	this.displayLoggedIn = function() {
 		var loggedIn = true;
@@ -235,8 +234,9 @@ function NicklistUser(user, chan) {
 			var regText = language.unRegistered;
 			loggedIn = false;
 		}
-		$('#'+this.id+' .chavatar').attr('alt', regText).attr('src', disp.getAvatarIcon(this.user.nick, loggedIn)).attr('title', regText).on('error', function(){ users.disableAutoAvatar(this.user.nick); });
-		$('#'+this.id+'-opt .nicklistAvatar').html(gateway.getMeta(this.user.nick, 500));
+		var nick = this.user.nick;
+		$('#'+this.id+' .chavatar').attr('alt', regText).attr('src', disp.getAvatarIcon(nick, loggedIn)).attr('title', regText).on('error', function(){ users.disableAutoAvatar(nick); });
+		$('#'+this.id+'-opt .nicklistAvatar').html(gateway.getMeta(nick, 500));
 	}
 	this.showTitle = function() {
 		var text = '';
