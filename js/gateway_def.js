@@ -1936,7 +1936,7 @@ var gateway = {
 			if(gateway.quitTimeout){
 				clearTimeout(gateway.quitTimeout);
 			}
-			gateway.quitTimeout = setTimeout(gateway.processNetsplit, 700);
+			gateway.quitTimeout = setTimeout(gateway.processNetsplit, 700); // FIXME at that point we'll have the user deleted...
 			return;
 		}
 		

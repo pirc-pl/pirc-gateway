@@ -429,14 +429,14 @@ var cmdBinds = {
 	],
 	'QUIT': [
 		function(msg) {
-			if(msg.sender.nick == guser.nick) {
+			if(msg.sender.nick == guser.nick) { // does not happen on Unreal
 				for(c in gateway.channels) {
 					gateway.channels[c].part();
 					//gateway.channels[c].appendMessage(language.messagePatterns.nickChange, [$$.niceTime(msg.time), msg.sender.nick, msg.text]);
 				}
 			} else {
-				users.delUser(msg.sender.nick);
 				gateway.processQuit(msg);
+				users.delUser(msg.sender.nick);
 			}
 		}
 	],
