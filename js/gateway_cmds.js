@@ -13,7 +13,6 @@ var ircCommand = {
 	'send': function(command, args, text, tags){ // TODO escape tags
 		var cmdString = '';
 		if(tags && 'message-tags' in activeCaps){ // checking only for message-tags, ignoring other tag capabilities, we'll need to change this if problems appear
-			console.log('sending tags');
 			cmdString += '@';
 			var first = true;
 			for(tagName in tags){
@@ -46,6 +45,7 @@ var ircCommand = {
 	},
 	'sendMessage': function(dest, text, notice, slow){
 		var label = gateway.makeLabel();
+		gateway.labelCallbacks[label] = gateway.msgNotDelivered;
 		if(notice){
 			var cmd = 'NOTICE';
 		} else {
@@ -61,6 +61,7 @@ var ircCommand = {
 	'sendAction': function(dest, text){
 		var ctcp = '\001' + 'ACTION ' + text + '\001';
 		var label = gateway.makeLabel();
+		gateway.labelCallbacks[label] = gateway.msgNotDelivered;
 		ircCommand.performSlow('PRIVMSG', [dest], ctcp, {'label': label});
 		gateway.insertMessage('ACTION', dest, text, true, label);
 	},
@@ -192,7 +193,6 @@ var ircCommand = {
 		} else {
 			tags[name] = value;
 		}
-		console.log(name, value, tags);
 		ircCommand.perform(false, [target], false, tags);
 	}
 };

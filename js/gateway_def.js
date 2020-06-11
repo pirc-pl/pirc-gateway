@@ -241,6 +241,8 @@ var gateway = {
 	'keypressSuppress': false,
 	'retrySasl': false,
 	'label': 0,
+	'labelProcessed': false,
+	'labelCallbacks': {},
 	'chanPassword': function(chan) {
 		if($('#chpass').val() == ''){
 			$$.alert(language.passwordNotGiven);
@@ -288,6 +290,10 @@ var gateway = {
 		guser.clear();
 		gateway.pingIntervalID = false;
 		gateway.updateHistory();
+		for(label in gateway.labelCallbacks){
+			gateway.labelFailed(label, null);
+		}
+		gateway.labelCallbacks = {};
 		if(guser.nickservnick != ''){
 			irc.lastNick = guser.nick;
 			guser.nick = guser.nickservnick;
@@ -364,9 +370,10 @@ var gateway = {
 	//	while(gateway.commandProcessing); // potrzebne czy nie?
 		gateway.commandProcessing = true;
 		for (i in data.packets) { //wywoływanie funkcji 'handlerów' od poleceń
+			gateway.labelProcessed = false;
 			try {
 				var msg = data.packets[i];
-				var command = msg.command
+				var command = msg.command;
 				if(command in cmdBinds) {
 					if(cmdBinds[command].length == 0){ // implementation empty
 						cmdNotImplemented(msg);
@@ -382,6 +389,12 @@ var gateway = {
 				console.log('Error processing message!');
 				console.log(msg);
 				console.log(error);
+			}
+			if('label' in msg.tags && !gateway.labelProcessed){
+				gateway.labelFailed(msg.tags.label, msg);
+			}
+			if('label' in msg.tags && msg.tags.label in gateway.labelCallbacks){
+				delete gateway.labelCallbacks[msg.tags.label]; // no longer needed
 			}
 		}
 		gateway.commandProcessing = false;
@@ -2196,14 +2209,17 @@ var gateway = {
 		if(!time)
 			time = new Date();
 		var attrs = 'data-time="' + time.getTime() + '"';
+		var addClass = '';
 		if(ownMsg && !('labeled-response' in activeCaps) && ('echo-message' in activeCaps)) return; // if label is not supported, no use in displaying own message
 		if(ownMsg){ // I'm sending this and it's not echo-message
 			if(label){
 				attrs += ' data-label="' + label + '"';
+				addClass = 'notDelivered';
 			}
 		} else {
 			if('label' in tags){ // we're using labeled-response and this is our echo-message
 				$('[data-label="'+tags.label+'"]').remove(); // removing temporary display
+				gateway.labelProcessed = true;
 			}
 			if('msgid' in tags){
 				attrs += ' data-msgid="' + tags.msgid + '"';
@@ -2212,7 +2228,7 @@ var gateway = {
 		
 		if(!sender) sender = guser.me;
 		
-		if(sender == guser.me && text.charAt(0) == '\001') return; // don't display own ctcp requests/replies, this is confirmed to be called when sending requests
+		if(sender == guser.me && text.charAt(0) == '\001') return; // don't display own ctcp requests/replies, this is confirmed to be called when sending requests and NOT for actions
 		
 		var meta = gateway.getMeta(sender.nick, 100);
 		var html = $$.parseImages(text);
@@ -2243,7 +2259,7 @@ var gateway = {
 			message = messageProcessors[f](sender.nick, dest, message);
 		}
 
-		$('.backlog [data-msgid="'+msgid+'"]').remove(); // drop the message from backlog field
+		$('[data-msgid="'+msgid+'"]').remove(); // drop the message from backlog field
 		if(msgid.length > 0 && $('[data-msgid="'+msgid+'"]').length > 0) return; //we already received this message and this is a history entry
 
 		var tab = null;
@@ -2263,7 +2279,7 @@ var gateway = {
 		}
 
 		if(cmd == 'NOTICE' && channel){ // channel notice
-			tab.appendMessage(language.messagePatterns.notice, [attrs, $$.niceTime(time), he(sender.nick), he(sender.ident), he(sender.host), message]);
+			tab.appendMessage(language.messagePatterns.notice, [addClass, attrs, $$.niceTime(time), he(sender.nick), he(sender.ident), he(sender.host), message]);
 			if(hlmatch && gateway.active != tab.name) {
 				tab.markBold();
 			}
@@ -2285,7 +2301,7 @@ var gateway = {
 						$$.displayDialog('notice', 'service', language.networkServiceMessage, html);
 						return;
 					} else if($("#noticeDisplay").val() == 2){ // status
-						gateway.statusWindow.appendMessage(language.messagePatterns.yourServiceCommand, [attrs, $$.niceTime(time), guser.nick, dest, message], time);
+						gateway.statusWindow.appendMessage(language.messagePatterns.yourServiceCommand, [addClass, attrs, $$.niceTime(time), guser.nick, dest, message], time);
 						return;
 					} else { // query
 						// default behavior
@@ -2299,10 +2315,14 @@ var gateway = {
 				var messageDiv = $('#'+tab.id+'-window div.messageDiv:not(".msgRepeat"):last');
 				var messageClass = 'msgNormal';
 				if(messageDiv.hasClass('sender'+md5(sender.nick))){
-					messageDiv.find('span.msgText').append('<span class="msgRepeatBlock" ' + attrs + '><br><span class="time">'+$$.niceTime(time)+'</span> &nbsp;'+message+'</span>');
+					messageDiv.find('span.msgText').append('<span class="msgRepeatBlock ' + addClass + '" ' + attrs + '><br><span class="time">'+$$.niceTime(time)+'</span> &nbsp;'+message+'</span>');
 					messageClass = 'msgRepeat';
 				} else {
-					tab.markingSwitch = !tab.markingSwitch;
+					if('labeled-response' in activeCaps && 'echo-message' in activeCaps && ownMsg){
+						// the message will be re-sent anyway
+					} else {
+						tab.markingSwitch = !tab.markingSwitch;
+					}
 				}
 				if(tab.markingSwitch){
 					messageClass += ' oddMessage';
@@ -2311,11 +2331,12 @@ var gateway = {
 				}
 				message = '<span class="time msgRepeatBlock">'+$$.niceTime(time)+'</span> &nbsp;' + message;
 			}
+			messageClass += ' ' + addClass;
 			if(hlmatch) { // highlighted
 				if(cmd != 'ACTION'){
 					tab.appendMessage(language.messagePatterns.channelMsgHilight, ['sender'+md5(sender.nick) + ' ' + messageClass, attrs, meta, $$.niceTime(time), nick, nickComments, message], time);
 				} else {
-					tab.appendMessage(language.messagePatterns.channelActionHilight, [attrs, $$.niceTime(time), nick, message], time);
+					tab.appendMessage(language.messagePatterns.channelActionHilight, [addClass, attrs, $$.niceTime(time), nick, message], time);
 				}
 				if(messageClass.indexOf('msgRepeat') > -1){
 					messageDiv.find('span.nick').addClass('repeat-hilight');
@@ -2327,7 +2348,7 @@ var gateway = {
 				if(cmd != 'ACTION'){
 					tab.appendMessage((sender.nick == guser.nick)?language.messagePatterns.yourMsg:language.messagePatterns.channelMsg, ['sender'+md5(sender.nick) + ' ' + messageClass, attrs, meta, $$.niceTime(time), $$.nickColor(sender.nick), nick, nickComments, message], time);
 				} else {
-					tab.appendMessage((sender.nick == guser.nick)?language.messagePatterns.yourAction:language.messagePatterns.channelAction, [attrs, $$.niceTime(time), $$.nickColor(sender.nick), nick, message], time);
+					tab.appendMessage((sender.nick == guser.nick)?language.messagePatterns.yourAction:language.messagePatterns.channelAction, [addClass, attrs, $$.niceTime(time), $$.nickColor(sender.nick), nick, message], time);
 				}
 				if(gateway.active.toLowerCase() != qname.toLowerCase() || !disp.focused) {
 					if(channel){
@@ -2344,10 +2365,10 @@ var gateway = {
 		if(cmd == 'NOTICE'){ // private notice
 			if(ownMsg){
 				if($("#noticeDisplay").val() == 2) { // notice in status window
-					gateway.statusWindow.appendMessage(language.messagePatterns.yourNotice, [attrs, $$.niceTime(), dest, message], time);
+					gateway.statusWindow.appendMessage(language.messagePatterns.yourNotice, [addClass, attrs, $$.niceTime(), dest, message], time);
 				} else if($("#noticeDisplay").val() == 1) { // notice in a query window
 					var query = gateway.findOrCreate(command[1]);
-					query.appendMessage(language.messagePatterns.yourNotice, [attrs, $$.niceTime(), dest, message], time);
+					query.appendMessage(language.messagePatterns.yourNotice, [addClass, attrs, $$.niceTime(), dest, message], time);
 				} else if($("#noticeDisplay").val() == 0) { // notice in pop-up
 					if('echo-message' in activeCaps) return;
 					var html = "<span class=\"notice\">[<b>"+he(sender.nick)+" → "+he(dest) + "</b>]</span> " + message;
@@ -2367,18 +2388,18 @@ var gateway = {
 						query = gateway.findOrCreate(sender.nick);
 					}
 					if(sender == guser.me){
-						query.appendMessage(language.messagePatterns.yourNotice, [attrs, $$.niceTime(), dest, message], time);
+						query.appendMessage(language.messagePatterns.yourNotice, [addClass, attrs, $$.niceTime(), dest, message], time);
 					} else {
-						query.appendMessage(language.messagePatterns.notice, [attrs, $$.niceTime(time), he(sender.nick), he(sender.ident), he(sender.host), message], time);
+						query.appendMessage(language.messagePatterns.notice, [addClass, attrs, $$.niceTime(time), he(sender.nick), he(sender.ident), he(sender.host), message], time);
 					}
 					if(gateway.active.toLowerCase() != sender.nick.toLowerCase()) {
 						query.markNew();
 					}
 				}  else if ($("#noticeDisplay").val() == 2) { // notice in status window
 					if(sender == guser.me){
-						gateway.statusWindow.appendMessage(language.messagePatterns.yourNotice, [attrs, $$.niceTime(), dest, message], time);
+						gateway.statusWindow.appendMessage(language.messagePatterns.yourNotice, [addClass, attrs, $$.niceTime(), dest, message], time);
 					} else {
-						gateway.statusWindow.appendMessage(language.messagePatterns.notice, [attrs, $$.niceTime(time), he(sender.nick), he(sender.ident), he(sender.host), message], time);
+						gateway.statusWindow.appendMessage(language.messagePatterns.notice, [addClass, attrs, $$.niceTime(time), he(sender.nick), he(sender.ident), he(sender.host), message], time);
 						gateway.statusWindow.markBold();
 					}
 				} else if($("#noticeDisplay").val() == 0) { // notice in pop-up
@@ -2446,6 +2467,20 @@ var gateway = {
 			var query = gateway.queries[i];
 			updateHistory(query.name, query.id);
 		}
+	},
+	'labelFailed': function(label, msg){ // we sent a @label-ed command but no handler processed the label
+		if(msg.tags.label in gateway.labelCallbacks){
+			gateway.labelCallbacks[msg.tags.label](label, msg);
+		} else {
+			console.log('No handler for labeled-response (' + msg.command + ')');
+		}
+	},
+	'msgNotDelivered': function(label, msg){ // called for unexpected replies when waiting for echo-message
+		if(!('echo-message' in activeCaps))
+			return;
+		var sel = $('[data-label="'+label+'"]');
+		sel.addClass('msgDeliveryFailed');
+		sel.prop('title', language.messageNotDelivered);
 	}
 }
 

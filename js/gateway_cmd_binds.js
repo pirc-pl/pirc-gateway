@@ -30,6 +30,10 @@ var cmdBinds = {
 			}
 		}
 	],
+	'ACK': [ // labeled-response
+		function(msg) {
+		}
+	],
 	'AUTHENTICATE': [
 		function(msg) {
 			if(msg.args[0] == '+'){
@@ -388,9 +392,6 @@ var cmdBinds = {
 			var html = $$.parseImages(msg.text);
 			
 			if(msg.text.match(/^\001.*\001$/i)) { //CTCP
-				if('label' in msg.tags){
-					return; // don't display nor process own requests, this may change later
-				}
 				var space = msg.text.indexOf(' ');
 				if(space > -1){
 					var ctcp = msg.text.substring(1, space);
@@ -398,6 +399,9 @@ var cmdBinds = {
 				} else {
 					var ctcp = msg.text.slice(1, -1);
 					msg.ctcptext = '';
+				}
+				if('label' in msg.tags && ctcp != 'ACTION'){
+					return; // don't display nor process own requests, this may change later
 				}
 				if(ctcp in ctcpBinds){
 					for(func in ctcpBinds[ctcp]){

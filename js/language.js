@@ -13,9 +13,9 @@ var lang = {
 			'channelMsg': '<div class="messageDiv %s" %s><div class="messageMeta">%s</div><div class="messageHeader"><span class="time">%s &nbsp;</span><span class="nick">&lt;<span %s>%s</span>&gt;%s</span></div><span class="msgText">%s</span></div>',
 			'yourMsg': '<div class="messageDiv %s" %s><div class="messageMeta">%s</div><div class="messageHeader"><span class="time">%s &nbsp;</span><span class="yournick">&lt;<span %s>%s</span>&gt;%s</span></div><span class="msgText">%s</span></div>',
 			'channelMsgHilight': '<div class="messageDiv %s" %s><div class="messageMeta">%s</div><div class="messageHeader"><span class="time">%s &nbsp;</span><span class="hilight"><span class="nick">&lt;%s&gt;%s</span></span></div><span class="msgText">%s</span></div>',
-			'channelAction': '<div class="messageDiv" %s><span class="time">%s</span> &nbsp; <span class="symbolFont">❇</span> <span class="nick"><span %s>%s</span></span> %s</div>',
-			'yourAction': '<div class="messageDiv" %s><span class="time">%s</span> &nbsp; <span class="symbolFont">❇</span> <span class="yournick"><span %s>%s</span></span> %s</div>',
-			'channelActionHilight': '<div class="messageDiv" %s><span class="time">%s</span> &nbsp; <span class="symbolFont">❇</span> <span class="hilight"><span class="nick">%s</span> %s</span></div>',
+			'channelAction': '<div class="messageDiv %s" %s><span class="time">%s</span> &nbsp; <span class="symbolFont">❇</span> <span class="nick"><span %s>%s</span></span> %s</div>',
+			'yourAction': '<div class="messageDiv %s" %s><span class="time">%s</span> &nbsp; <span class="symbolFont">❇</span> <span class="yournick"><span %s>%s</span></span> %s</div>',
+			'channelActionHilight': '<div class="messageDiv %s" %s><span class="time">%s</span> &nbsp; <span class="symbolFont">❇</span> <span class="hilight"><span class="nick">%s</span> %s</span></div>',
 			'changeTopic': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">✯</span> <span class="modeinfo">%s</span> zmienił temat na: %s</span></div>',
 			'deleteTopic': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">✯</span> <span class="modeinfo">%s</span> usunął temat <span class="modeinfo">%s</span></span></div>',
 			'topic': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">✯</span> Temat kanału <span class="modeinfo">%s</span>: %s</span></div>',
@@ -44,10 +44,10 @@ var lang = {
 			'cannotSendToUser': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="kick"><span class="symbolFont">⮿</span> Nie można pisać do <span class="modeinfo">%s</span>: %s. Wiadomość nie została dostarczona.</span></div>',
 			'cannotJoin': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="kick"><span class="symbolFont">⮿</span> Nie można dołączyć do kanału <span class="modeinfo">%s</span>: %s</span></div>',
 			'noPerms': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="kick"><span class="symbolFont">⮿</span> Brak uprawnień.</span></div>',
-			'notice': '<div class="messageDiv" %s><span class="time">%s</span> &nbsp; <span class="notice-nick"><b>-%s-</b></span><span class="userhost">(<span class="notice-nick">%s</span>@<span class="notice-nick">%s</span>)</span> <span class="notice">%s</span></div>',
+			'notice': '<div class="messageDiv %s" %s><span class="time">%s</span> &nbsp; <span class="notice-nick"><b>-%s-</b></span><span class="userhost">(<span class="notice-nick">%s</span>@<span class="notice-nick">%s</span>)</span> <span class="notice">%s</span></div>',
 			'serverNotice': '<div class="messageDiv" %s><span class="time">%s</span> &nbsp; <span class="notice-nick">Wiadomość od serwera <b>%s</b>:</span> <span class="notice">%s</span></div>',
-			'yourNotice': '<div class="messageDiv" %s><span class="time">%s</span> &nbsp; <span class="notice"><b>-NOTICE/%s-</b> %s</span></div>',
-			'yourServiceCommand': '<div class="messageDiv" %s><span class="time">%s</span> &nbsp; <span class="notice"><b>[%s → %s]</b> %s</span></div>',
+			'yourNotice': '<div class="messageDiv %s" %s><span class="time">%s</span> &nbsp; <span class="notice"><b>-NOTICE/%s-</b> %s</span></div>',
+			'yourServiceCommand': '<div class="messageDiv %s" %s><span class="time">%s</span> &nbsp; <span class="notice"><b>[%s → %s]</b> %s</span></div>',
 			'notEnoughParams': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">⮿</span> <span class="modeinfo">%s</span>: za mało argumentów: %s</span></div>',
 			'motd': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="motd"><span class="symbolFont">✯</span> %s</span></div>',
 			'SaslAuthenticate': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="sinfo"><span class="symbolFont">🔧</span> %s</span></div>',
@@ -620,7 +620,8 @@ var lang = {
 		'enterUrl': 'Podaj adres URL:',
 		'selectAnImage': 'Wybierz obrazek:',
 		'yes': 'Tak',
-		'no': 'Nie'
+		'no': 'Nie',
+		'messageNotDelivered': 'Ta wiadomość nie została dostarczona'
 	},
 	'en': {
 		'messagePatterns': {
@@ -636,9 +637,9 @@ var lang = {
 			'channelMsg': '<div class="messageDiv %s" %s><div class="messageMeta">%s</div><div class="messageHeader"><span class="time">%s &nbsp;</span><span class="nick">&lt;<span %s>%s</span>&gt;%s</span></div><span class="msgText">%s</span></div>',
 			'yourMsg': '<div class="messageDiv %s" %s><div class="messageMeta">%s</div><div class="messageHeader"><span class="time">%s &nbsp;</span><span class="yournick">&lt;<span %s>%s</span>&gt;%s</span></div><span class="msgText">%s</span></div>',
 			'channelMsgHilight': '<div class="messageDiv %s" %s><div class="messageMeta">%s</div><div class="messageHeader"><span class="time">%s &nbsp;</span><span class="hilight"><span class="nick">&lt;%s&gt;%s</span></span></div><span class="msgText">%s</span></div>',
-			'channelAction': '<div class="messageDiv" %s><span class="time">%s</span> &nbsp; ❇ <span class="nick"><span %s>%s</span></span> %s</div>',
-			'yourAction': '<div class="messageDiv" %s><span class="time">%s</span> &nbsp; ❇ <span class="yournick"><span %s>%s</span></span> %s</div>',
-			'channelActionHilight': '<div class="messageDiv" %s><span class="time">%s</span> &nbsp; ❇ <span class="hilight"><span class="nick">%s</span> %s</span></div>',
+			'channelAction': '<div class="messageDiv %s" %s><span class="time">%s</span> &nbsp; ❇ <span class="nick"><span %s>%s</span></span> %s</div>',
+			'yourAction': '<div class="messageDiv %s" %s><span class="time">%s</span> &nbsp; ❇ <span class="yournick"><span %s>%s</span></span> %s</div>',
+			'channelActionHilight': '<div class="messageDiv %s" %s><span class="time">%s</span> &nbsp; ❇ <span class="hilight"><span class="nick">%s</span> %s</span></div>',
 			'changeTopic': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">✯</span> <span class="modeinfo">%s</span> changed channel topic to: %s</span></div>',
 			'deleteTopic': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">✯</span> <span class="modeinfo">%s</span> removed topic of <span class="modeinfo">%s</span></span></div>',
 			'topic': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">✯</span> Topic of <span class="modeinfo">%s</span> is: %s</span></div>',
@@ -667,10 +668,10 @@ var lang = {
 			'cannotSendToUser': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="kick"><span class="symbolFont">⮿</span> Can\'t send to <span class="modeinfo">%s</span>: %s. Message is not delivered.</span></div>',
 			'cannotJoin': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="kick"><span class="symbolFont">⮿</span> Can\'t join <span class="modeinfo">%s</span>: %s</span></div>',
 			'noPerms': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="kick"><span class="symbolFont">⮿</span> No access.</span></div>',
-			'notice': '<div class="messageDiv" %s><span class="time">%s</span> &nbsp; <span class="notice-nick"><b>-%s-</b></span><span class="userhost">(<span class="notice-nick">%s</span>@<span class="notice-nick">%s</span>)</span> <span class="notice">%s</span></div>',
+			'notice': '<div class="messageDiv %s" %s><span class="time">%s</span> &nbsp; <span class="notice-nick"><b>-%s-</b></span><span class="userhost">(<span class="notice-nick">%s</span>@<span class="notice-nick">%s</span>)</span> <span class="notice">%s</span></div>',
 			'serverNotice': '<div class="messageDiv" %s><span class="time">%s</span> &nbsp; <span class="notice-nick">Notice from server <b>%s</b>:</span> <span class="notice">%s</span></div>',
-			'yourNotice': '<div class="messageDiv" %s><span class="time">%s</span> &nbsp; <span class="notice"><b>-NOTICE/%s-</b> %s</span></div>',
-			'yourServiceCommand': '<div class="messageDiv" %s><span class="time">%s</span> &nbsp; <span class="notice"><b>[%s → %s]</b> %s</span></div>',
+			'yourNotice': '<div class="messageDiv %s" %s><span class="time">%s</span> &nbsp; <span class="notice"><b>-NOTICE/%s-</b> %s</span></div>',
+			'yourServiceCommand': '<div class="messageDiv %s" %s><span class="time">%s</span> &nbsp; <span class="notice"><b>[%s → %s]</b> %s</span></div>',
 			'notEnoughParams': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">⮿</span> <span class="modeinfo">%s</span>: too few arguments: %s</span></div>',
 			'motd': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="motd"><span class="symbolFont">✯</span> %s</span></div>',
 			'SaslAuthenticate': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="sinfo"><span class="symbolFont">🔧</span> %s</span></div>',
@@ -1245,7 +1246,8 @@ var lang = {
 		'enterUrl': 'Enter URL address:',
 		'selectAnImage': 'Select an image:',
 		'yes': 'Yes',
-		'no': 'No'
+		'no': 'No',
+		'messageNotDelivered': 'This message was not delivered'
 	}
 };
 

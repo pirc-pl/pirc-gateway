@@ -1374,3 +1374,13 @@ span.realNick {
 	display: none;
 }
 
+.notDelivered {
+	opacity: 0.4;
+	filter: alpha(opacity=40);
+}
+
+.msgDeliveryFailed {
+	background: #FFC7C7;
+	padding-right: 3em;
+}
+

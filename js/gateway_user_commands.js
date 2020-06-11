@@ -310,21 +310,6 @@ var commands = {
 					}
 				}
 				if(reason) {
-					/*gateway.send("PRIVMSG "+command[1]+" :"+reason);
-					if(!('echo-message' in activeCaps) && command[1].isInList(servicesNicks)){
-						var displayInTab = false;
-						if(gateway.find(command[1])) displayInTab = true;
-						if(displayInTab || $("#noticeDisplay").val() == 1){ // query
-							var query = gateway.findOrCreate(command[1]);
-							query.appendMessage(language.messagePatterns.yourMsg, [$$.niceTime(), $$.nickColor(guser.nick), guser.nick, $$.colorize(reason)]);
-							query.appendMessage('%s', [$$.parseImages(reason)]);
-						} else if($("#noticeDisplay").val() == 0){ // okienko
-							var html = "<span class=\"notice\">[<b>"+he(guser.nick)+" → "+command[1] + "</b>]</span> " + $$.colorize(reason);
-							$$.displayDialog('notice', 'service', language.networkServiceMessage, html);
-						} else { // status
-							gateway.statusWindow.appendMessage(language.messagePatterns.yourMsg, [$$.niceTime(), $$.nickColor(guser.nick), guser.nick + ' → ' + command[1], $$.colorize(reason)]);
-						}
-					}*/
 					ircCommand.sendMessage(command[1], reason, false);
 				} else {
 					gateway.notEnoughParams("msg", language.youHaveToGiveMsgText);
@@ -467,19 +452,6 @@ var commands = {
 		'callback': function(command, input) {
 			if(command[1]) {
 				if (gateway.getActive()) {
-					/*var tabToSend = gateway.findChannel(gateway.active);
-					if(!tabToSend){
-						tabToSend = gateway.findQuery(gateway.active);
-					}
-					if(tabToSend){
-						gateway.send("PRIVMSG "+gateway.active+" :\001ACTION "+input.slice(1).substr(3)+"\001");
-						if(!('echo-message' in activeCaps)){
-							tabToSend.appendMessage(language.messagePatterns.yourAction, [$$.niceTime(), guser.nick, $$.colorize(input.slice(1).substr(3))]);
-							tabToSend.appendMessage('%s', [$$.parseImages(input.slice(1).substr(3))]);
-						}
-					} else {
-						console.log('błąd /me !!!');
-					}*/
 					ircCommand.sendAction(gateway.active, input.slice(1).substr(3));
 				} else {
 					gateway.notEnoughParams("me", language.youHaveToBeOnChan);
