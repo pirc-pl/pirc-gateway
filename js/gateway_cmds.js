@@ -27,6 +27,13 @@ var ircCommand = {
 			}
 			cmdString += ' ';
 		}
+		if(tags && 'labeled-response' in activeCaps && 'label' in tags){
+			if(tags.label in gateway.labelInfo){
+				gateway.labelInfo[tags.label].cmd = command;
+			} else {
+				gateway.labelInfo[tags.label] = {'cmd': command};
+			}
+		}
 		if(!command){
 			if('message-tags' in activeCaps){
 				command = 'TAGMSG';
@@ -44,13 +51,13 @@ var ircCommand = {
 		gateway.send(cmdString); // TODO przenieść buforowanie tutaj
 	},
 	'sendMessage': function(dest, text, notice, slow){
-		var label = gateway.makeLabel();
-		gateway.labelCallbacks[label] = gateway.msgNotDelivered;
 		if(notice){
 			var cmd = 'NOTICE';
 		} else {
 			var cmd = 'PRIVMSG';
 		}
+		var label = gateway.makeLabel();
+		gateway.labelCallbacks[label] = gateway.msgNotDelivered;
 		if(slow){
 			ircCommand.performSlow(cmd, [dest], text, {'label': label});
 		} else {
@@ -77,6 +84,15 @@ var ircCommand = {
 		} else {
 			ircCommand.performQuick('KICK', [channel, user], reason);
 		}
+	},
+	'channelHistory': function(channel, lines){
+		var args = [channel];
+		if(lines)
+			args.push(lines);
+	//	var label = gateway.makeLabel();
+	//	var tags = {'label': label};
+		var tags = false;
+		ircCommand.send('HISTORY', args, false, tags);
 	},
 	'channelJoin': function(channels, passwords){ // TODO obsługa haseł jeśli tablice
 		if(Array.isArray(channels)){

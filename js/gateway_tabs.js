@@ -369,23 +369,8 @@ function Query(nick) {
 		if(this.name.toLowerCase() == gateway.active.toLowerCase() && currHeight > fullHeight-200) {
 			rescroll = true;
 		}
-		
-		var windowElements = $('#'+this.id+'-window .messageDiv');
-		var newElement = $(messageData);
-		var appended = false;
-		for(var i=0; i<windowElements.length; i++){
-			var element = windowElements[i];
-			var elTime = element.getAttribute('data-time');
-			if(!elTime) continue;
-			if(elTime > time){
-				newElement.insertBefore(element);
-				appended = true;
-				console.log('Append done');
-				break;
-			}
-		}
-		if(!appended)
-			$('#'+this.id+'-window').append(messageData);
+
+		$('#'+this.id+'-window').append(messageData);
 		if(rescroll && this.name.toLowerCase() == gateway.active.toLowerCase()) {
 			$('#chat-wrapper').scrollTop(document.getElementById('chat-wrapper').scrollHeight);
 		}
@@ -601,18 +586,20 @@ function Channel(chan) {
 		if(this.name.toLowerCase() == gateway.active.toLowerCase() && currHeight > fullHeight-200) {
 			rescroll = true;
 		}
-		var newElement = $(messageData);
+		
 		var appended = false;
-		var windowElements = $('#'+this.id+'-window .messageDiv');
-		for(var i=0; i<windowElements.length; i++){
-			var element = windowElements[i];
-			var elTime = element.getAttribute('data-time');
-			if(!elTime) continue;
-			if(elTime > time){
-				newElement.insertBefore(element);
-				appended = true;
-				console.log('Append done');
-				break;
+		if(gateway.historyBatchActive(this.name)){ // history entries may arrive out of order, we handle this here
+			var newElement = $(messageData);
+			var windowElements = $('#'+this.id+'-window .messageDiv');
+			for(var i=0; i<windowElements.length; i++){
+				var element = windowElements[i];
+				var elTime = element.getAttribute('data-time');
+				if(!elTime) continue;
+				if(elTime > time){
+					newElement.insertBefore(element);
+					appended = true;
+					break;
+				}
 			}
 		}
 		if(!appended)

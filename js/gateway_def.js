@@ -243,6 +243,8 @@ var gateway = {
 	'label': 0,
 	'labelProcessed': false,
 	'labelCallbacks': {},
+	'labelInfo': {},
+	'batch': {},
 	'chanPassword': function(chan) {
 		if($('#chpass').val() == ''){
 			$$.alert(language.passwordNotGiven);
@@ -294,6 +296,7 @@ var gateway = {
 			gateway.labelFailed(label, null);
 		}
 		gateway.labelCallbacks = {};
+		gateway.labelInfo = {};
 		if(guser.nickservnick != ''){
 			irc.lastNick = guser.nick;
 			guser.nick = guser.nickservnick;
@@ -386,21 +389,25 @@ var gateway = {
 					cmdNotImplemented(msg);
 				}
 			} catch(error) {
-				console.log('Error processing message!');
-				console.log(msg);
-				console.log(error);
+				console.error('Error processing message!', msg, error);
 			}
-			if('label' in msg.tags && !gateway.labelProcessed){
-				gateway.labelFailed(msg.tags.label, msg);
-			}
-			if('label' in msg.tags && msg.tags.label in gateway.labelCallbacks){
-				delete gateway.labelCallbacks[msg.tags.label]; // no longer needed
+			if('label' in msg.tags){
+				var label = msg.tags.label;
+				if(!gateway.labelProcessed){
+					gateway.labelFailed(label, msg);
+				}
+				if(label in gateway.labelCallbacks){
+					delete gateway.labelCallbacks[label]; // no longer needed
+				}
+				if(label in gateway.labelInfo){
+					delete gateway.labelInfo[label];
+				}
 			}
 		}
 		gateway.commandProcessing = false;
 	},
 	'sockError': function(e) {
-		console.log('WebSocket error!');
+		console.error('WebSocket error!');
 		setTimeout(function(){
 			if(gateway.connectStatus != 'disconnected' && gateway.connectStatus != 'error' && gateway.connectStatus != 'banned'){
 				gateway.connectStatus = 'error';
@@ -1094,7 +1101,7 @@ var gateway = {
 		input = '/' + input;
 		var command = input.slice(1).split(" ");
 		if(!gateway.callCommand(command, input)) {
-			console.log('Invalid performCommand: '+command[0]);
+			console.error('Invalid performCommand: '+command[0]);
 		}
 	},
 	'commandHistory': [],
@@ -1764,7 +1771,7 @@ var gateway = {
 		if('CHANMODES' in isupport){
 			var modeTypes = isupport['CHANMODES'].split(',');
 			if(modeTypes.length != 4){
-				console.log('Error parsing CHANMODES isupport!');
+				console.error('Error parsing CHANMODES isupport!');
 				return;
 			}
 			modes.single = [];
@@ -1795,7 +1802,7 @@ var gateway = {
 			var expr = /^\(([^)]+)\)(.+)$/;
 			var prefix = expr.exec(isupport['PREFIX']);
 			if(!prefix || prefix[1].length != prefix[2].length){
-				console.log('Error parsing PREFIX isupport!');
+				console.error('Error parsing PREFIX isupport!');
 				return;
 			}
 			modes.user = [];
@@ -2237,6 +2244,15 @@ var gateway = {
 		var nickComments = '';
 		var nick = sender.nick;
 		var msgid = gateway.getMsgid(tags);
+		var tab = null;
+		var channel = false;
+		
+		if(msgid.length > 0 && $('[data-msgid="'+msgid+'"]').length > 0) return; //we already received this message and this is a history entry
+		
+		if(dest.charAt(0) == '#'){
+			tab = gateway.findOrCreate(dest);
+			channel = true;
+		}
 
 		var nickInfo = '';
 		if(sender.account){
@@ -2250,6 +2266,12 @@ var gateway = {
 			if(nickInfo.length > 0) nickInfo += '\n';
 			nickInfo += language.userIsBot;
 		}
+		if(channel){
+			if(gateway.isHistoryBatch(tags)){
+				if(nickInfo.length > 0) nickInfo += '\n';
+				nickInfo += language.historyEntry;
+			}
+		}
 		if(nickInfo.length > 0)
 			nick = '<span title="' + nickInfo + '">' + nick + '</span>';
 		if('display-name' in sender.metadata){
@@ -2260,15 +2282,7 @@ var gateway = {
 			message = messageProcessors[f](sender.nick, dest, message);
 		}
 
-		$('[data-msgid="'+msgid+'"]').remove(); // drop the message from backlog field
-		if(msgid.length > 0 && $('[data-msgid="'+msgid+'"]').length > 0) return; //we already received this message and this is a history entry
-
-		var tab = null;
-		var channel = false;
-		if(dest.charAt(0) == '#'){
-			tab = gateway.findOrCreate(dest);
-			channel = true;
-		}
+//		$('[data-msgid="'+msgid+'"]').remove(); // drop the message from backlog field
 
 		if(channel && sender != guser.me){
 			var pattern = "\\b"+escapeRegExp(guser.nick)+"\\b";
@@ -2315,7 +2329,7 @@ var gateway = {
 			if(cmd != 'ACTION'){
 				var messageDiv = $('#'+tab.id+'-window div.messageDiv:not(".msgRepeat"):last');
 				var messageClass = 'msgNormal';
-				if(messageDiv.hasClass('sender'+md5(sender.nick))){
+				if(messageDiv.hasClass('sender'+md5(sender.nick)) && messageDiv[0].getAttribute('data-time') <= time.getTime()){ // last message was by the same sender and is not newer that the received one
 					messageDiv.find('span.msgText').append('<span class="msgRepeatBlock ' + addClass + '" ' + attrs + '><br><span class="time">'+$$.niceTime(time)+'</span> &nbsp;'+message+'</span>');
 					messageClass = 'msgRepeat';
 				} else {
@@ -2457,7 +2471,7 @@ var gateway = {
 			}
 			return;
 		}
-		console.log('Unhandled message from '+sender.nick+' to '+dest+'!');
+		console.error('Unhandled message from '+sender.nick+' to '+dest+'!');
 	},
 	'updateHistory': function(){
 		for(var i=0; i<gateway.channels.length; i++){
@@ -2482,6 +2496,49 @@ var gateway = {
 		var sel = $('[data-label="'+label+'"]');
 		sel.addClass('msgDeliveryFailed');
 		sel.prop('title', language.messageNotDelivered);
+	},
+	'isHistoryBatch': function(tags){
+		return gateway.findBatchOfType(tags, 'chathistory');
+	},
+	'historyBatchActive': function(chan){ // active at all, that is not related to any message
+		for(name in gateway.batch){
+			if(gateway.batch[name].type == 'chathistory' && gateway.batch[name].args[0].toLowerCase() == chan.toLowerCase()){
+				return gateway.batch[name];
+			}
+		}
+		return false;
+	}/*,
+	'endOfJoinHistory': function(batch, msg){
+		console.log('endOfJoinHistory called', batch);
+		var channel = gateway.findChannel(batch.args[0]);
+		if(!channel) return;
+	//	if(!channel.modes['H'])
+	//		return;
+	//	var hcount = parseInt(channel.modes['H'].split(':')[0]);
+	//	if(hcount > 15){
+			var html = '<div class="getHistoryButton"><a href="javascript:void(0)" onclick="gateway.getMoreHistory(\'' + channel.name + '\')">' + language.getMoreHistory + '</a></div>';
+			channel.appendMessage('%s', [html]);
+	//	}			
+	},
+	'getMoreHistory': function(channel){
+		ircCommand.channelHistory(channel);
+		var chan = gateway.findChannel(channel);
+		var selector = '#' + chan.id + ' .getHistoryButton';
+		$(selector).remove();
+	}*/,
+	'findBatchOfType': function(tags, type){
+		if(!tags || !('batch' in tags))
+			return null;
+		var batch = gateway.batch[tags.batch];
+		if(!batch)
+			return null;
+		if(batch.type == type)
+			return batch;
+		for(var i=0; i<batch.parents.length; i++){
+			if(batch.parents[i].type == type)
+				return batch.parents[i];
+		}
+		return null;
 	}
 }
 

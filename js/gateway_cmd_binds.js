@@ -20,6 +20,37 @@ var supportedCaps = [
 ];
 var serverCaps = {};
 
+function ircBatch(name, type, args, msg){
+	this.name = name;
+	this.type = type;
+	this.args = args;
+	this.callback = null;
+	this.label = null;
+	this.parents = [];
+	
+	if(msg && msg.tags && 'batch' in msg.tags){ // nested batches - add parent
+		var parentBatch = gateway.batch[msg.tags.batch];
+		this.parents.push(parentBatch);
+		this.parents = this.parents.concat(parentBatch.parents);
+	}
+}
+
+var batchBinds = {
+	'chathistory': [
+		function(msg, batch){
+			console.log('chathistory batch handler called');
+			if(!batch.label || gateway.labelInfo[batch.label].command != 'HISTORY'){ // caused by join
+//				batch.callback = gateway.endOfJoinHistory;
+				return;
+			}
+			gateway.labelProcessed = true;
+			/*var chan = gateway.findChannel(batch.args[0]);
+			var selector = '#' + chan.id + ' .getHistoryButton';
+			$(selector).remove();*/
+		}
+	]
+};
+
 var cmdBinds = {
 	'ACCOUNT': [
 		function(msg) {
@@ -55,7 +86,37 @@ var cmdBinds = {
 		}
 	],
 	'BATCH': [
-		function(msg) { // TODO support batch
+		function(msg) {
+			var name = msg.args[0].substr(1);
+			var type = msg.args[1];
+			if(msg.args[0].charAt(0) == '-'){
+				var batch = gateway.batch[name];
+				if(!batch){
+					console.error('BATCH "' + name + '" ended but not started!');
+					return;
+				}
+				if(batch.callback){
+					batch.callback(batch, msg);
+				}
+				delete gateway.batch[name];
+				console.log('Ending batch "' + name + '"');
+			} else if(msg.args[0].charAt(0) == '+'){
+				var batch = new ircBatch(name, type, msg.args.slice(2), msg);
+				gateway.batch[name] = batch;
+				if('label' in msg.tags){
+					batch.label = msg.tags.label;
+				}
+				console.log('Starting batch "' + name + '"');
+				console.log(batch);
+				if(type in batchBinds){
+					for(var i=0; i<batchBinds[type].length; i++){
+						batchBinds[type][i](msg, batch);
+					}
+				}
+			} else {
+				console.error('Unknown batch argument!');
+				return;
+			}
 		}
 	],
 	'CAP': [

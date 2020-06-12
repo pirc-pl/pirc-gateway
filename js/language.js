@@ -621,7 +621,9 @@ var lang = {
 		'selectAnImage': 'Wybierz obrazek:',
 		'yes': 'Tak',
 		'no': 'Nie',
-		'messageNotDelivered': 'Ta wiadomość nie została dostarczona'
+		'messageNotDelivered': 'Ta wiadomość nie została dostarczona',
+		'historyEntry': 'Historia rozmowy',
+		'getMoreHistory': 'Pobierz więcej historii…'
 	},
 	'en': {
 		'messagePatterns': {
@@ -1247,7 +1249,9 @@ var lang = {
 		'selectAnImage': 'Select an image:',
 		'yes': 'Yes',
 		'no': 'No',
-		'messageNotDelivered': 'This message was not delivered'
+		'messageNotDelivered': 'This message was not delivered',
+		'historyEntry': 'Message history entry',
+		'getMoreHistory': 'Get more history…'
 	}
 };
 
