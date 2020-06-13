@@ -374,6 +374,7 @@ function Query(nick) {
 		if(rescroll && this.name.toLowerCase() == gateway.active.toLowerCase()) {
 			$('#chat-wrapper').scrollTop(document.getElementById('chat-wrapper').scrollHeight);
 		}
+		updateHistory(this.name, this.id, true);
 		this.newLines = true;
 	}
 
@@ -607,6 +608,7 @@ function Channel(chan) {
 		if(rescroll && this.name.toLowerCase() == gateway.active.toLowerCase()) {
 			$('#chat-wrapper').scrollTop(document.getElementById('chat-wrapper').scrollHeight);
 		}
+		updateHistory(this.name, this.id);
 		this.newLines = true;
 	}
 	this.setTopic = function(topic) {
@@ -797,22 +799,28 @@ function Status() {
 	}
 }
 
-function updateHistory(name, id){
+function updateHistory(name, id, query){
+	if(query){
+		var type = 'query';
+	} else {
+		var type = 'channel';
+	}
 	try {
 		var qCookie = '';
 		var count = 0;
 		var windowElements = $('#'+id+'-window .messageDiv');
-		for(var i = windowElements.length - 1; i--; i >= 0){
+		for(var i = windowElements.length-1; i >= 0; i--){
 			var html = windowElements[i].outerHTML;
 			if(html == '' || html.match(/class="join"/) || html.match(/class="mode"/) || html.match(/data-label="/)){
 				continue;
 			}
 			qCookie = html + '\377' + qCookie;
 			count++;
-			if(count >= settings.backlogLength)
+			if(count >= settings.backlogLength){
 				break;
+			}
 		}
-		localStorage.setItem('channel'+md5(name), Base64.encode(qCookie));
+		localStorage.setItem(type+md5(name), Base64.encode(qCookie));
 	} catch(e){
 	}
 }
