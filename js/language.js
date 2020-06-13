@@ -1334,9 +1334,10 @@ function setDefaultLanguage(){
 		if(localStorage.getItem('setLanguage') == null){
 			$('#setLanguage').val(mainSettings.language);
 		} else {
-			window.language = lang[$('#setLanguage').val()];
+			$('#setLanguage').val(localStorage.getItem('setLanguage'));
 		}
 	} catch(e){
+		console.error('Error setting language!');
 		$('#setLanguage').val(mainSettings.language);
 	}
 	conn.setLanguage();
