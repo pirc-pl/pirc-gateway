@@ -225,7 +225,6 @@ var conn = {
 				}
 			}
 		});
-		
 		if(!navigator.cookieEnabled){
 			$('.not-connected-text > p').html(language.cookiesDisabledHtml);
 			return;
@@ -257,6 +256,10 @@ var conn = {
 		setInterval(gateway.updateHistory, 15000);
 	},
 	'aliveWaitTimeout': false,
-	'waitForAlive': false
+	'waitForAlive': false,
+	'setLanguage': function(){
+		var lang = $('#setLanguage').val();
+		setLanguage(lang);
+	}
 }
 

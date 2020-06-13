@@ -2461,7 +2461,7 @@ var gateway = {
 				}
 				
 				// we ignore these not to bug users with pop-ups
-				if(sender.nick == 'AUTH' || sender.nick == '*'){ // connect notices
+				if(sender.nick == 'AUTH' || sender.nick == '*' || dest == '*'){ // connect notices
 					return;
 				}// *** You are connected to bramka2.pirc.pl with TLSv1.2-AES128-GCM-SHA256-128bits
 				if(text.match(/^\*\*\* You are connected to .+ with .+$/)){

@@ -1,194 +1,128 @@
 // definicje stałych globalnych
-try {
-	var icons = [
-		'/styles/img/users.png',
-		'/styles/img/voice.png',
-		'/styles/img/hop.png',
-		'/styles/img/op.png',
-		'/styles/img/prot.png',
-		'/styles/img/owner.png',
-		'/styles/img/user-registered.png'
-	];
-	var alt = [	'', '+', '%', '@', '&', '~', '' ];
-	var chStatusInfo = language.chStatusInfo;
+function setEnvironment(){
+	try {
+		window.icons = [
+			'/styles/img/users.png',
+			'/styles/img/voice.png',
+			'/styles/img/hop.png',
+			'/styles/img/op.png',
+			'/styles/img/prot.png',
+			'/styles/img/owner.png',
+			'/styles/img/user-registered.png'
+		];
+		window.alt = [	'', '+', '%', '@', '&', '~', '' ];
+		window.chStatusInfo = language.chStatusInfo;
 
-	var reqChannel = '';
+		window.reqChannel = '';
 
-	var booleanSettings = [ 'showPartQuit', 'showNickChanges', 'tabsListBottom', 'showUserHostnames', 'autoReconnect', 'displayLinkWarning', 'blackTheme', 'newMsgSound', 'autoDisconnect', 'coloredNicks', 'showMode', 'dispEmoji', 'sendEmoji', 'monoSpaceFont', 'automLogIn', 'setUmodeD', 'setUmodeR', 'noAvatars' ];
-	var comboSettings = [ 'noticeDisplay' ];
-	var numberSettings = [ 'backlogCount' ];
-	var numberSettingsMinMax = {
-		'backlogCount' : { 'min' : 0, 'max' : 500, 'deflt' : 15 }
-	};
-	var textSettings = [ 'avatar' ];
-	var textSettingsValues = {};
+		window.booleanSettings = [ 'showPartQuit', 'showNickChanges', 'tabsListBottom', 'showUserHostnames', 'autoReconnect', 'displayLinkWarning', 'blackTheme', 'newMsgSound', 'autoDisconnect', 'coloredNicks', 'showMode', 'dispEmoji', 'sendEmoji', 'monoSpaceFont', 'automLogIn', 'setUmodeD', 'setUmodeR', 'noAvatars' ];
+		window.comboSettings = [ 'noticeDisplay', 'setLanguage' ];
+		window.numberSettings = [ 'backlogCount' ];
+		window.numberSettingsMinMax = {
+			'backlogCount' : { 'min' : 0, 'max' : 500, 'deflt' : 15 }
+		};
+		window.textSettings = [ 'avatar' ];
+		window.textSettingsValues = {};
 
-	var banData = {
-		'nick' : '',
-		'channel' : '',
-		'noIdent' : false,
-		'ident' : '',
-		'hostElements' : [],
-		'hostElementSeparators' : [],
-		'clear' : function(){
-			banData.nick = '';
-			banData.channel = '';
-			banData.noIdent = false;
-			banData.ident = '';
-			banData.hostElements = [];
-			banData.hostElementSeparators = [];
-		}
-	}
-
-	var messageProcessors = []; //function (src, dst, text) returns new_text
-	var nickColorProcessors = []; //function (nick)
-	var settingProcessors = []; //function ()
-	var addons = [];
-
-	var modes = {
-		/* default modes from rfc1459, we're overwriting it with ISUPPORT data later */
-		'single': ['p', 's', 'i', 't', 'n', 'm'],
-		'argBoth': ['k'],
-		'argAdd': ['l'],
-		'list': ['b'],
-		'user': ['o', 'v'],
-		'changeableSingle': language.modes.changeableSingle,
-		'changeableArg': language.modes.changeableArg,
-		/* again defaults from rfc1459 */
-		'prefixes': {
-			'o': '@',
-			'v': '+'
-		},
-		'reversePrefixes': {
-			'@': 'o',
-			'+': 'v'
-		}
-	};
-
-	var servicesNicks = ['NickServ', 'ChanServ', 'HostServ', 'OperServ', 'Global', 'BotServ'];
-
-	var newMessage = language.newMessage;
-
-	var emoji = {
-		':D':	'😃',
-		'O:->':	'😇',
-		']:->': '😈',
-		'^^':	'😊',
-		':p':	'😋',
-		'3)':	'😌',
-		'8)':	'😎',
-		':>':	'😏',
-		':|':	'😐',
-		':<':	'😒',
-		':((':	'😓',
-		':/':	'😕',
-		':c':	'😕',
-		':o':	'😕',
-		':O':	'😱',
-		'xo':	'😵',
-		':*':	'😘',
-		';*':	'😙',
-		':P':	'😛',
-		';p':	'😜',
-		':(':	'🙁',
-		':)':	'🙂',
-		'(:':	'🙃',
-		'<3':	'💗',
-		'-_-':	'😑',
-		';(':	'😢',
-		';)':	'😉'
-	};
-
-	function ChannelModes() {
-		modes.single.forEach(function(mode){
-			this[mode] =  false;
-		}, this);
-		modes.argAdd.forEach(function(mode){
-			this[mode] = false;
-		}, this);
-		this['k'] = false;
-		this['f'] = false;
-	}
-
-	function getModeInfo(letter, type){
-		if(!type){
-			type = 0;
-		}
-		if(!(letter in language.modes.chModeInfo)) return language.mode+' '+letter; // no text description for this mode char
-		var data = language.modes.chModeInfo[letter];
-		if(data.constructor === Array){
-			return data[type];
-		} else {
-			return data;
-		}
-	}
-
-	// pomocnicze funkcje globalne
-	function str2bool(b){
-		return (b === 'true');
-	}
-
-	function he(text) { //HTML Escape
-		return $('<div/>').text(text).html().replace(/"/g, '&quot;');
-	}
-
-	function bsEscape(text) { // escapowanie beksleszy
-		return text.replace(/\\/g, '\\\\');
-	}
-
-	function rxEscape(text) { //backupowanie regex
-		return text.replace(/[.^$*+?()[{\\|]/g, '\\$&');
-	}
-
-	if (!String.prototype.isInList) {
-	   String.prototype.isInList = function(list) {
-		  var value = this.valueOf();
-		  for (var i = 0, l = list.length; i < l; i += 1) {
-		     if (list[i].toLowerCase() === value.toLowerCase()) return true;
-		  }
-		  return false;
-	   }
-	}
-
-	if(!String.prototype.apList){
-		String.prototype.apList = function(data){
-			if(this == ''){
-				return data;
-			} else {
-				return this.valueOf() + ', '+data;
+		window.banData = {
+			'nick' : '',
+			'channel' : '',
+			'noIdent' : false,
+			'ident' : '',
+			'hostElements' : [],
+			'hostElementSeparators' : [],
+			'clear' : function(){
+				banData.nick = '';
+				banData.channel = '';
+				banData.noIdent = false;
+				banData.ident = '';
+				banData.hostElements = [];
+				banData.hostElementSeparators = [];
 			}
 		}
-	}
 
-	if(!String.prototype.startsWith){
-		String.prototype.startsWith = function(searchString, position) {
-			position = position || 0;
-			return this.indexOf(searchString, position) === position;
+		window.modes = {
+			/* default modes from rfc1459, we're overwriting it with ISUPPORT data later */
+			'single': ['p', 's', 'i', 't', 'n', 'm'],
+			'argBoth': ['k'],
+			'argAdd': ['l'],
+			'list': ['b'],
+			'user': ['o', 'v'],
+			'changeableSingle': language.modes.changeableSingle,
+			'changeableArg': language.modes.changeableArg,
+			/* again defaults from rfc1459 */
+			'prefixes': {
+				'o': '@',
+				'v': '+'
+			},
+			'reversePrefixes': {
+				'@': 'o',
+				'+': 'v'
+			}
 		};
-	}
 
-	var emojiRegex = [];
+		window.servicesNicks = ['NickServ', 'ChanServ', 'HostServ', 'OperServ', 'Global', 'BotServ'];
 
-	var out1 = '';
-	var out2 = '';
-	for(i in emoji){
-		var expr = rxEscape(i)+'(($)|(\\s))';
-		var regex = new RegExp(expr, 'g');
-		emojiRegex.push([regex, emoji[i]]);
-		out1 += emoji[i] + ' ';
-		out2 += i + ' ';
-	}
+		window.newMessage = language.newMessage;
 
-	var settings = {
-		'backlogLength': 15
+		var emoji = {
+			':D':	'😃',
+			'O:->':	'😇',
+			']:->': '😈',
+			'^^':	'😊',
+			':p':	'😋',
+			'3)':	'😌',
+			'8)':	'😎',
+			':>':	'😏',
+			':|':	'😐',
+			':<':	'😒',
+			':((':	'😓',
+			':/':	'😕',
+			':c':	'😕',
+			':o':	'😕',
+			':O':	'😱',
+			'xo':	'😵',
+			':*':	'😘',
+			';*':	'😙',
+			':P':	'😛',
+			';p':	'😜',
+			':(':	'🙁',
+			':)':	'🙂',
+			'(:':	'🙃',
+			'<3':	'💗',
+			'-_-':	'😑',
+			';(':	'😢',
+			';)':	'😉'
+		};
+
+		window.emojiRegex = [];
+
+		var out1 = '';
+		var out2 = '';
+		for(i in emoji){
+			var expr = rxEscape(i)+'(($)|(\\s))';
+			var regex = new RegExp(expr, 'g');
+			emojiRegex.push([regex, emoji[i]]);
+			out1 += emoji[i] + ' ';
+			out2 += i + ' ';
+		}
+
+		window.settings = {
+			'backlogLength': 15
+		}
+	} catch(e){
+		console.error('Failed to set up environment:', e)
 	}
-} catch(e){
-	console.error('Failed to set up environment:', e)
 }
 
+window.messageProcessors = []; //function (src, dst, text) returns new_text
+window.nickColorProcessors = []; //function (nick)
+window.settingProcessors = []; //function ()
+window.metadataBinds = {};
+window.addons = [];
 var loaded = false;
 
-var readyFunctions = [ conn.gatewayInit, fillEmoticonSelector, fillColorSelector, fillLanguage ];
+var readyFunctions = [ setEnvironment, conn.gatewayInit, fillEmoticonSelector, fillColorSelector ];
 
 var readyFunc = function(){
 	if(loaded) return;
@@ -197,6 +131,7 @@ var readyFunc = function(){
 		$('.not-connected-text > p').html('Niepoprawna konfiguracja aplikacji. Proszę skontaktować się z administratorem.<br>Invalid application configuration. Please contact administrator.');
 		return;
 	}
+	setDefaultLanguage();
 	$('.not-connected-text > h3').html(language.loading);
 	$('.not-connected-text > p').html(language.loadingWait);
 	if($.browser.msie && parseInt($.browser.version, 10) < 9) {
@@ -217,6 +152,74 @@ var readyFunc = function(){
 }
 
 $('document').ready(function(){setTimeout(readyFunc, 100);});
+
+function ChannelModes() {
+	modes.single.forEach(function(mode){
+		this[mode] =  false;
+	}, this);
+	modes.argAdd.forEach(function(mode){
+		this[mode] = false;
+	}, this);
+	this['k'] = false;
+	this['f'] = false;
+}
+
+function getModeInfo(letter, type){
+	if(!type){
+		type = 0;
+	}
+	if(!(letter in language.modes.chModeInfo)) return language.mode+' '+letter; // no text description for this mode char
+	var data = language.modes.chModeInfo[letter];
+	if(data.constructor === Array){
+		return data[type];
+	} else {
+		return data;
+	}
+}
+
+// pomocnicze funkcje globalne
+function str2bool(b){
+	return (b === 'true');
+}
+
+function he(text) { //HTML Escape
+	return $('<div/>').text(text).html().replace(/"/g, '&quot;');
+}
+
+function bsEscape(text) { // escapowanie beksleszy
+	return text.replace(/\\/g, '\\\\');
+}
+
+function rxEscape(text) { //backupowanie regex
+	return text.replace(/[.^$*+?()[{\\|]/g, '\\$&');
+}
+
+if (!String.prototype.isInList) {
+   String.prototype.isInList = function(list) {
+	  var value = this.valueOf();
+	  for (var i = 0, l = list.length; i < l; i += 1) {
+		 if (list[i].toLowerCase() === value.toLowerCase()) return true;
+	  }
+	  return false;
+   }
+}
+
+if(!String.prototype.apList){
+	String.prototype.apList = function(data){
+		if(this == ''){
+			return data;
+		} else {
+			return this.valueOf() + ', '+data;
+		}
+	}
+}
+
+if(!String.prototype.startsWith){
+	String.prototype.startsWith = function(searchString, position) {
+		position = position || 0;
+		return this.indexOf(searchString, position) === position;
+	};
+}
 
 function fillColorSelector(){
 	var html = '<tr>';
@@ -500,6 +503,9 @@ var disp = {
 					gateway.send('MODE '+guser.nick+' +R');
 				}
 			}
+		} else if(e.currentTarget.id == 'setLanguage') {
+			var lang = $('#setLanguage').val();
+			setLanguage(lang);
 		}
 		$('#nicklist').removeAttr('style');
 		$('#chlist').removeAttr('style');

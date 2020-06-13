@@ -5,19 +5,21 @@ var services = {
 	'showTimeToChange': false,
 	'ignoreNextAccessDenial': false,
 	'apiKey': false,
-	'badNickString': '<div class="table">'+
-		'<form class="tr" onsubmit="services.logIn();$$.closeDialog(\'error\', \'nickserv\')" action="javascript:void(0);">'+
-			'<span class="td_right">' + language.yourPassword + '</span>'+
-			'<span class="td"><input type="password" id="nspass" /></span>'+
-			'<span class="td"><input type="submit" value="' + language.logIn + '" /></span>'+
-			'<span class="td"><input type="checkbox" id="saveNewPassword" checked="checked" />  ' + language.saveThisPassword + '</span>'+
-		'</form>'+
-		'<form class="tr" onsubmit="services.changeNick();$$.closeDialog(\'error\', \'nickserv\')" action="javascript:void(0);">'+
-			'<span class="td_right">' + language.newNick + '</span>'+
-			'<span class="td"><input type="text" id="nnick" /></span>'+
-			'<span class="td"><input type="submit" value="' + language.changeNick + '" /></span>'+
-		'</form>'+
-	'</div>',
+	'badNickString': function(){
+		return '<div class="table">'+
+			'<form class="tr" onsubmit="services.logIn();$$.closeDialog(\'error\', \'nickserv\')" action="javascript:void(0);">'+
+				'<span class="td_right">' + language.yourPassword + '</span>'+
+				'<span class="td"><input type="password" id="nspass" /></span>'+
+				'<span class="td"><input type="submit" value="' + language.logIn + '" /></span>'+
+				'<span class="td"><input type="checkbox" id="saveNewPassword" checked="checked" />  ' + language.saveThisPassword + '</span>'+
+			'</form>'+
+			'<form class="tr" onsubmit="services.changeNick();$$.closeDialog(\'error\', \'nickserv\')" action="javascript:void(0);">'+
+				'<span class="td_right">' + language.newNick + '</span>'+
+				'<span class="td"><input type="text" id="nnick" /></span>'+
+				'<span class="td"><input type="submit" value="' + language.changeNick + '" /></span>'+
+			'</form>'+
+		'</div>';
+	},
 	'displayBadNickCounter': function(){
 		if(services.badNickCounter == false) return;
 		var html = '<br>' + language.youHaveLimitedTimeToLogInHtml;
@@ -65,7 +67,7 @@ var services = {
 		}
 		if (msg.text.match(language.invalidPasswordMask)) { // złe hasło nickserv
 			services.nickStore = guser.nickservnick;
-			var html = language.givenPasswordForNick + '<b>'+guser.nickservnick+'</b>' + language.isInvalidChangeNick + '<br>'+services.badNickString;
+			var html = language.givenPasswordForNick + '<b>'+guser.nickservnick+'</b>' + language.isInvalidChangeNick + '<br>'+services.badNickString();
 			$$.displayDialog('error', 'nickserv', language.error, html);
 			services.displayBadNickCounter();
 			return true;
@@ -80,7 +82,7 @@ var services = {
 			if($$.getDialogSelector('error', 'nickserv').length < 1){
 				services.showTimeToChange = true;
 				services.nickStore = guser.nick;
-				var html = language.selectedNick + '<b>'+guser.nick+'</b>' + language.isRegisteredChangeNick + '<br>'+services.badNickString;
+				var html = language.selectedNick + '<b>'+guser.nick+'</b>' + language.isRegisteredChangeNick + '<br>'+services.badNickString();
 				$$.displayDialog('error', 'nickserv', language.error, html);
 			}
 			return true;
@@ -99,7 +101,7 @@ var services = {
 				services.nickStore = guser.nickservnick;
 				guser.nickservnick = '';
 				guser.nickservpass = '';
-				var html = language.passwordForUsedNick + '<b>'+guser.nickservnick+'</b>' + language.isInvalidRetryOrChangeNick + '<br>'+services.badNickString;
+				var html = language.passwordForUsedNick + '<b>'+guser.nickservnick+'</b>' + language.isInvalidRetryOrChangeNick + '<br>'+services.badNickString();
 				$$.displayDialog('error', 'nickserv', language.error, html);
 				services.ignoreNextAccessDenial = true;
 				return true;

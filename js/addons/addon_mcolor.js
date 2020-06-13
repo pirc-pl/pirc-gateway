@@ -35,31 +35,27 @@ var isCorrectColor = function(color){
 }
 
 var setMyColor = function(color){
+	colorExampleApply();
 	if(!color){
-		if(!mcolor) return;
 		mcolor = false;
 		var scolor = false;
-		$('#nickColorPick').val('#000000');
 	} else {
-		if(color == mcolor){
-			return;
-		}
-		if(isCorrectColor(color)){
-			mcolor = color;
-		} else {
+		if(!isCorrectColor(color)){
 			$$.displayDialog('info', 'info', 'Info', '<p>' + language.invalidColorCode + ' '+he(color)+'</p>');
 			return;
 		}
-		var scolor = mcolor;
+		mcolor = color;
+		var scolor = color;
 	}
 	if(scolor){
 		ircCommand.metadata('SET', '*', ['color', scolor]);
 	} else {
-		ircCommand.metadata('SET', '*', ['color']);
+		if('color' in guser.me.metadata)
+			ircCommand.metadata('SET', '*', ['color']);
 	}
 	try {
-		if(mcolor){
-			localStorage.setItem('mcolor', mcolor);
+		if(scolor){
+			localStorage.setItem('mcolor', scolor);
 		} else {
 			localStorage.removeItem('mcolor');
 		}
@@ -83,16 +79,11 @@ var colorsAllowed = function(chan){
 }
 
 var getColor = function(nick){
-	if(nick == guser.nick){
-		var color = mcolor;
-	} else {
-		var user = users.getUser(nick);
-		if('color' in user.metadata){
-			return user.metadata['color'];
-		}
-		return false;
+	var user = users.getUser(nick);
+	if('color' in user.metadata){
+		return user.metadata['color'];
 	}
-	return color;
+	return false;
 }
 
 var colorMessage = function(src, dst, text){
@@ -130,7 +121,13 @@ var colorSettingsChange = function(){
 	}
 }
 
+var mcolorMetadataChanged = function(user, key, value){
+	if(user == guser.me)
+		setMyColor(value);
+}
+
 insertBinding(cmdBinds, '001', mcolorMetadataSet);
+insertBinding(metadataBinds, 'color', mcolorMetadataChanged);
 messageProcessors.push(colorMessage);
 nickColorProcessors.push(colorNick);
 settingProcessors.push(colorSettingsChange);
@@ -151,9 +148,11 @@ var colorExampleApply = function(){
 	if(mcolor){
 		var lightColor = mcolor;
 		var darkColor = mcolor;
+		$('#nickColorPick').val(mcolor);
 	} else {
 		var lightColor = '#000000';
 		var darkColor = '#E6E6E6';
+		$('#nickColorPick').val('#000000');
 	}
 	$('#lightBgPreview').css('color', lightColor);
 	$('#darkBgPreview').css('color', darkColor);
@@ -185,7 +184,6 @@ var mcolorInit = function(){
 			$('#nickColorInfo').text(' ');
 		}*/
 		setMyColor($('#nickColorPick').val());
-		colorExampleApply();
 	});
 /*	$('#setNickColor').click(function(){
 		setMyColor($('#nickColorPick').val());
@@ -193,7 +191,6 @@ var mcolorInit = function(){
 	$('#clearNickColor').click(function(){
 		setMyColor(false);
 		$('#nickColorPick').val('#000000');
-		colorExampleApply();
 	});
 	if(mcolor){
 		$('#nickColorPick').val(mcolor);
@@ -203,6 +200,6 @@ var mcolorInit = function(){
 	});*/
 }
 
-readyFunctions.unshift(mcolorInit);
+readyFunctions.push(mcolorInit);
 addons.push('mcolor');
 

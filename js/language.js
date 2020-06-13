@@ -1255,9 +1255,9 @@ var lang = {
 	}
 };
 
-window.language = lang[mainSettings.language];
-
-function fillLanguage(){ // fills static HTML with translations
+function setLanguage(slang){
+	window.language = lang[slang];
+	// fill static HTML with translations
 	$('.language-privateMsgBlockingTitle').attr('title', language.privateMsgBlocking);
 	$('.language-settingsTitle').attr('title', language.settings);
 	$('.language-showUserHostTitle').attr('title', language.showUserHostTitle);
@@ -1328,3 +1328,17 @@ function fillLanguage(){ // fills static HTML with translations
 	$('.language-reverseColors').html(language.reverseColors);
 	$('.language-italicText').html(language.italicText);
 };
+
+function setDefaultLanguage(){
+	try {
+		if(localStorage.getItem('setLanguage') == null){
+			$('#setLanguage').val(mainSettings.language);
+		} else {
+			window.language = lang[$('#setLanguage').val()];
+		}
+	} catch(e){
+		$('#setLanguage').val(mainSettings.language);
+	}
+	conn.setLanguage();
+}
+

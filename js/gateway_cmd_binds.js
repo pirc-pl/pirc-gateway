@@ -7,6 +7,7 @@ var supportedCaps = [
 	'chghost',
 	'extended-join',
 	'account-notify',
+	'account-tag',
 	'message-tags',
 	'server-time',
 	'echo-message',
@@ -330,7 +331,13 @@ var cmdBinds = {
 			var value = msg.args[3];
 			if(target.charAt(0) == '#'){ // channel
 			} else {
-				users.getUser(target).setMetadata(key, value);
+				var user = users.getUser(target);
+				user.setMetadata(key, value);
+				if(key in metadataBinds){
+					for(var i=0; i<metadataBinds[key].length; i++){
+						metadataBinds[key][i](user, key, value);
+					}
+				}
 			}
 		}
 	],
