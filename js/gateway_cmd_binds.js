@@ -1608,7 +1608,7 @@ var cmdBinds = {
 			ircCommand.performQuick('CAP', ['END']);
 			gateway.statusWindow.appendMessage(language.messagePatterns.SaslAuthenticate, [$$.niceTime(msg.time), language.SASLLoginFail]);
 			if(gateway.retrySasl){
-				var html = language.SuppliedNickPassword + '<b>'+guser.nickservnick+'</b>'+language.passwordInvalidTryAgain+'<br>'+services.badNickString;
+				var html = language.suppliedNickPassword + '<b>'+guser.nickservnick+'</b>'+language.passwordInvalidTryAgain+'<br>'+services.badNickString();
 				$$.displayDialog('error', 'nickserv', language.error, html);
 				services.displayBadNickCounter();
 			}

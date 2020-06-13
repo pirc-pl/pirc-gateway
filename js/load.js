@@ -18,6 +18,10 @@ var scriptFiles = [
 var styleFiles = [
 	'/styles/gateway_def.css'
 ];
+var languageFiles = [
+	'en',
+	'pl'
+];
 var ranid = Math.floor(Math.random() * 10000);
 for(var lit=0; lit<scriptFiles.length; lit++){
 	try {
@@ -27,6 +31,18 @@ for(var lit=0; lit<scriptFiles.length; lit++){
 		$('head').append(s);
 	} catch(e){
 		console.error('Error loading main JS '+scriptFiles[lit]);
+		console.error(e);
+	}
+}
+for(var lit=0; lit<languageFiles.length; lit++){
+	try {
+		var modname = languageFiles[lit];
+		var s = document.createElement('script');
+		s.type = 'text/javascript';
+		s.src = '/js/lang/' + modname + '.js?' + ranid;
+		$('head').append(s);
+	} catch(e){
+		console.error('Error loading language JS '+modname);
 		console.error(e);
 	}
 }

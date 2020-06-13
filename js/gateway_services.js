@@ -1,3 +1,81 @@
+var masks = {
+	'anope': {
+		'maskBanned': [ // this comes from a custom anope module
+			/^Zbanowano maskę .(.*). \(dla .(.*).\)$/i
+		],
+		'youreIdentified': [
+			/^Hasło przyjęte - jesteś zidentyfikowany\(a\)\.$/i,
+			/^Password accepted - you are now recognized\.$/i
+		],
+		'nickNotRegistered': [
+			/^Nick [^ ]+ nie jest zarejestrowany\.$/i,
+			/^Nick [^ ]+ isn't registered\.$/i
+		],
+		'invalidPassword': [
+			/^Nieprawidłowe hasło\.$/i,
+			/^Password incorrect\.$/i
+		],
+		'registeredProtectedNick': [
+			/^Ten nick jest zarejestrowany i chroniony\.( Jeśli należy do Ciebie,)?$/i,
+			/^This nickname is registered and protected\.(  If it is your)?$/i
+		],
+		'identify': [
+			/^Zidentyfikuj się pisząc: /i // is this old anope version?
+		],
+		'nickBelongingToYou': [
+			/^jeśli nick należy do Ciebie, w przeciwnym razie zmień go\.$/i,
+			/^please choose a different nick./i
+		],
+		'notUsedByServices': [
+			/^Nick .* nie jest zajęty przez serwisy\.$/i // is this old anope version?
+		],
+		'notCurrentlyUsed': [
+			/^Nick .* nie jest aktualnie używany\.$/i,
+			/^No one is using your nick, and services are not holding it\.$/i
+		],
+		'loginPrompt': [
+			/^wpisz .\/msg NickServ IDENTIFY .hasło..\. W przeciwnym wypadku$/i,
+			/^nick, type..\/msg NickServ IDENTIFY .password..\.  Otherwise,$/i
+		],
+		'selectOtherNick': [
+			/^wybierz proszę inny nick\.$/i,
+			/^please choose a different nick\.$/i
+		],
+		'accessDenied': [
+			/^Odmowa dostępu\.$/i,
+			/^Access denied\.$/i
+		],
+		'nickRemovedFromNetwork': [
+			/^Nick został usunięty z sieci\.$/i // is this old anope version?
+		],
+		'servicesReleasedNick': [
+			/^Serwisy właśnie zwolniły.*nicka.*\.$/i,
+			/^You have regained control of /i
+		],
+		'youHaveTimeToChangeNick': [
+			/^Masz (.*) na zmianę nicka, potem zostanie zmieniony siłą\.$/i // is this old anope version?
+		],
+		'ifYouDontChange': [
+			/^Jeśli go nie zmienisz w ciągu (.*), zostanie zmieniony siłą\.$/i,
+			/^If you do not change within (.*), I will change your nick\.$/i
+		]
+	}
+};
+
+var currentMasks = masks.anope;
+
+function maskMatch(text, name){
+	if(!name in currentMasks)
+		return false;
+	for(var i=0; i<currentMasks[name].length; i++){
+		var expr = currentMasks[name][i];
+		var result = expr.exec(text);
+		if(result)
+			return result;
+	}
+	return false;
+}
+
 var services = {
 	'badNickCounter': false,
 	'badNickInterval': false,
@@ -43,8 +121,7 @@ var services = {
 		}, 1000);
 	},
 	'chanservMessage': function(msg){
-		var expr = language.maskBannedMask;
-		var match = expr.exec(msg.text);
+		var match = maskMatch(msg.text, 'maskBanned');
 		if(match){
 			try {
 				localStorage.setItem('banmask-'+md5(match[1]), match[2]);
@@ -54,27 +131,27 @@ var services = {
 		return false;
 	},
 	'nickservMessage': function(msg){
-		if (msg.text.match(language.youreIdentifiedMask)){
+		if (maskMatch(msg.text, 'youreIdentified')){
 			services.badNickCounter = false;
 			services.showTimeToChange = false;
 			$$.closeDialog('error', 'nickserv');
 			return false;
 		}
-		if(msg.text.match(language.nickNotRegisteredMask) && guser.nickservpass != ''){
+		if(maskMatch(msg.text, 'nickNotRegistered') && guser.nickservpass != ''){
 			guser.nickservpass = '';
 			guser.nickservnick = '';
 			return false;
 		}
-		if (msg.text.match(language.invalidPasswordMask)) { // złe hasło nickserv
+		if (maskMatch(msg.text, 'invalidPassword')) { // złe hasło nickserv
 			services.nickStore = guser.nickservnick;
 			var html = language.givenPasswordForNick + '<b>'+guser.nickservnick+'</b>' + language.isInvalidChangeNick + '<br>'+services.badNickString();
 			$$.displayDialog('error', 'nickserv', language.error, html);
 			services.displayBadNickCounter();
 			return true;
 		}
-		if(msg.text.match(language.registeredProtectedNickMask)){
+		if(maskMatch(msg.text, 'registeredProtectedNick')){
 			if(gateway.connectStatus == 'ghostAndNickSent'){
-				gateway.send('PRIVMSG NickServ :IDENTIFY '+guser.nickservpass);
+				gateway.send('PRIVMSG NickServ :IDENTIFY '+guser.nickservpass); // TODO sasl?
 				gateway.connectStatus = 'identified';
 				return true;
 			}
@@ -87,15 +164,15 @@ var services = {
 			}
 			return true;
 		}
-		if(msg.text.match(language.identifyMask)
-			|| msg.text.match(language.nickBelongingToYouMask)
-			|| msg.text.match(language.notUsedByServicesMask)
-			|| msg.text.match(language.notCurrentlyUsedMask)
-			|| msg.text.match(language.loginPromptMask)
-			|| msg.text.match(language.selectOtherNickMask)){
+		if(maskMatch(msg.text, 'identify')
+			|| maskMatch(msg.text, 'nickBelongingToYou')
+			|| maskMatch(msg.text, 'notUsedByServices')
+			|| maskMatch(msg.text, 'notCurrentlyUsed')
+			|| maskMatch(msg.text, 'loginPrompt')
+			|| maskMatch(msg.text, 'selectOtherNick')){
 				return true;
 		}
-		if(msg.text.match(language.accessDeniedMask)){
+		if(maskMatch(msg.text ,'accessDenied')){
 			if(gateway.connectStatus == 'ghostSent'){
 				gateway.connectStatus = 'identified';
 				services.nickStore = guser.nickservnick;
@@ -111,7 +188,7 @@ var services = {
 			}
 			return false;
 		}
-		if(msg.text.match(language.nickRemovedFromNetworkMask) || msg.text.match(language.servicesReleasedNickMask)){
+		if(maskMatch(msg.text, 'nickRemovedFromNetwork') || maskMatch(msg.text, 'servicesReleasedNick')){
 			ircCommand.changeNick(guser.nickservnick);
 			gateway.connectStatus = 'ghostAndNickSent';
 			return true;
@@ -123,11 +200,9 @@ var services = {
 			return true;
 		}
 		var time = false;
-		var expr = language.youHaveTimeToChangeNickMask;
-		var match = expr.exec(msg.text);
+		var match = maskMatch(msg.text, 'youHaveTimeToChangeNick');
 		if(!match){
-			var expr = language.ifYouDontChangeMask;
-			match = expr.exec(msg.text);
+			match = maskMatch(msg.text, 'ifYouDontChange');
 		}
 		if(match){
 			if(match[1] == language.oneMinute || match[1] == language.n60seconds || match[1] == language.n1minute || match[1] == language.n1minute2){
