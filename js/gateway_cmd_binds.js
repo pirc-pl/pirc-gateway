@@ -261,16 +261,17 @@ var cmdBinds = {
 	],
 	'JOIN': [
 		function(msg) { // mój własny join
-			if(msg.sender.nick == guser.nick) {
+			if(msg.user == guser.me) {
 				if('extended-join' in activeCaps){
 					var channame = msg.args[0];
 				} else {
 					var channame = msg.text;
 				}
-				if(gateway.findChannel(channame)) {
-					gateway.findChannel(channame).rejoin();
+				var chan = gateway.findChannel(channame);
+				if(chan) {
+					chan.rejoin();
 				} else {
-					var chan = gateway.findOrCreate(channame, true);
+					chan = gateway.findOrCreate(channame, true);
 					chan.appendMessage(language.messagePatterns.joinOwn, [$$.niceTime(msg.time), msg.sender.nick, msg.sender.ident, msg.sender.host, channame]);
 				}
 				ircCommand.mode(channame, '');

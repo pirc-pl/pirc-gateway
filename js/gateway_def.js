@@ -645,8 +645,8 @@ var gateway = {
 	'channels': [],
 	'findChannel': function(name) {
 		if(typeof(name) != 'string') return false;
-		for (i in gateway.channels) {
-			if(gateway.channels[i] && gateway.channels[i].name.toLowerCase() == name.toLowerCase()) {
+		for (var i=0; i<gateway.channels.length; i++) {
+			if(gateway.channels[i].name.toLowerCase() == name.toLowerCase()) {
 				return gateway.channels[i];
 			}
 		}
