@@ -75,6 +75,8 @@ var emoji = {
 						hasJoiner = true;
 					}
 					i++;
+				} else {
+					i--;
 				}
 			} while(e);
 			if(foundEmoji == 'this'){
@@ -90,7 +92,10 @@ var emoji = {
 		var found = false;
 		for(var i=0; i<emojiList.length; i++){
 			var line = emojiList[i];
-			if(code == line) return 'this'; // code is a valid sequence
+			if(code == line){
+				found = 'this'; // code is a valid sequence
+				break;
+			}
 			if(line.startsWith(code)){
 				found = 'next'; // code is not a valid sequence but one may start with that
 			}
