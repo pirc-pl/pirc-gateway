@@ -503,8 +503,8 @@ var cmdBinds = {
 					//gateway.channels[c].appendMessage(language.messagePatterns.nickChange, [$$.niceTime(msg.time), msg.sender.nick, msg.text]);
 				}
 			} else {
-				gateway.processQuit(msg);
-				users.delUser(msg.sender.nick);
+				if(gateway.processQuit(msg))
+					users.delUser(msg.sender.nick);
 			}
 		}
 	],

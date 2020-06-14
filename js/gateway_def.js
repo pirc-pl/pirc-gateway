@@ -1901,6 +1901,10 @@ var gateway = {
 				chan.appendMessage(language.messagePatterns.netsplit, [$$.niceTime(), nickNames]);
 			}
 		}
+		for(n in gateway.quitQueue){
+			var nick = gateway.quitQueue[n].sender.nick;
+			users.delUser(nick);
+		}
 		gateway.quitQueue = [];
 	},
 	'processNetjoin': function(){
@@ -1911,15 +1915,15 @@ var gateway = {
 			var nickNames = '';
 			var chan = gateway.channels[c];
 			var nicklist = chan.nicklist;
-			for(n in gateway.netJoinQueue){
+			for(var n=0; n<gateway.netJoinQueue.length; n++){
 				try {
-					if(gateway.netJoinQueue[n].msg.text.toLowerCase() != chan.name.toLowerCase()){
+					if(gateway.netJoinQueue[n].chan.toLowerCase() != chan.name.toLowerCase()){
 						continue;
 					}
 				} catch(e) {
 					console.error(e);
 				}
-				var nick = gateway.netJoinQueue[n].sender.nick;
+				var nick = gateway.netJoinQueue[n].nick;
 				if(nickNames != ''){
 					nickNames += ', ';
 				}
@@ -1943,8 +1947,8 @@ var gateway = {
 			if(gateway.quitTimeout){
 				clearTimeout(gateway.quitTimeout);
 			}
-			gateway.quitTimeout = setTimeout(gateway.processNetsplit, 700); // FIXME at that point we'll have the user deleted...
-			return;
+			gateway.quitTimeout = setTimeout(gateway.processNetsplit, 700);
+			return false;
 		}
 		
 		for(c in gateway.channels) {
@@ -1955,6 +1959,7 @@ var gateway = {
 				}
 			}
 		}
+		return true;
 	},
 	'processJoin': function(msg){
 		if('extended-join' in activeCaps){
@@ -1966,14 +1971,14 @@ var gateway = {
 		var dlimit = (+new Date)/1000 - 300;
 		if(!chan) return;
 		var netjoin = false;
-		if(gateway.netJoinUsers[msg.text] && gateway.netJoinUsers[msg.text][msg.sender.nick]){
-			if(gateway.netJoinUsers[msg.text][msg.sender.nick] > dlimit){
+		if(gateway.netJoinUsers[channame] && gateway.netJoinUsers[channame][msg.sender.nick]){
+			if(gateway.netJoinUsers[channame][msg.sender.nick] > dlimit){
 				netjoin = true;
 			}
-			delete gateway.netJoinUsers[msg.text][msg.sender.nick];
+			delete gateway.netJoinUsers[channame][msg.sender.nick];
 		}
 		if(netjoin){
-			gateway.netJoinQueue.push(msg);
+			gateway.netJoinQueue.push({'chan': channame, 'nick': msg.sender.nick});
 			if(gateway.netJoinTimeout){
 				clearTimeout(gateway.netJoinTimeout);
 			}
