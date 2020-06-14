@@ -39,7 +39,7 @@ function Nicklist(chan, id) {
 	this.insertNick = function(nickListItem) {
 		var userHTML = nickListItem.makeHTML();
 		this.sort();
-		for(i in this.list){
+		for(var i=0; i<this.list.length; i++){
 			if(this.sortFunc(this.list[i], nickListItem) > 0){
 				$('#'+this.id+' .'+md5(this.list[i].user.nick)).before(userHTML);
 				userHTML = false;
@@ -515,7 +515,7 @@ function Channel(chan) {
 			}
 			disp.titleBlinkInterval = setInterval(function(){
 				var title = document.title;
-				document.title = (title == newMessage ? (he(guser.nick)+' @ '+mainSettings+networkName) : newMessage);
+				document.title = (title == newMessage ? (he(guser.nick)+' @ '+mainSettings.networkName) : newMessage);
 			}, 500);
 		}
 	}
@@ -544,7 +544,7 @@ function Channel(chan) {
 		}
 		clearInterval(disp.titleBlinkInterval);
 		disp.titleBlinkInterval = false;
-		if(document.title == newMessage) document.title = he(guser.nick)+' @ '+mainSettings+networkName;
+		if(document.title == newMessage) document.title = he(guser.nick)+' @ '+mainSettings.networkName;
 		$('#'+this.id+'-tab > a').css('font-weight', 'normal');
 		setTimeout("$('#"+this.id+"-tab').removeClass('newmsg')", 100);
 		setTimeout("$('#"+this.id+"-tab').removeClass('newmsg')", 300);
