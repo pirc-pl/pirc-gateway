@@ -1108,7 +1108,9 @@ var $$ = {
 			}
 		//}
 	},
-	'parseImages': function(text) {
+	'parseImages': function(text, attrs) {
+		if(!attrs)
+			attrs = '';
 		var rmatch = text.match(/(https?:\/\/[^ ]+\.(png|jpeg|jpg|gif)(\?[^ ]+)?)/gi);
 		var html = '';
 		if(rmatch){
@@ -1116,7 +1118,7 @@ var $$ = {
 				var rand = Math.floor(Math.random() * 10000).toString();
 				var imgurl = encodeURI(arg);
 				html += '<a onclick="disp.toggleImageView(\''+rand+'\', \''+decodeURIComponent(imgurl)+'\')"'+
-					' class="image_link"><span id="show-'+rand+'" style="display:inline;">' + language.show + '</span><span id="hide-'+rand+'" style="display:none;">' + language.hide + '</span>' + language.aPicture + '</a>'+
+					' class="image_link"'+attrs+'><span id="show-'+rand+'" style="display:inline;">' + language.show + '</span><span id="hide-'+rand+'" style="display:none;">' + language.hide + '</span>' + language.aPicture + '</a>'+
 					'<div style="display:none;" id="img-'+rand+'"><img id="imgc-'+rand+'" style="max-width:100%;" /></div>';
 			});
 		}
@@ -1129,7 +1131,7 @@ var $$ = {
 					var rand = Math.floor(Math.random() * 10000).toString();
 					var imgurl = encodeURI(rmatch[1]);
 					html += '<a onclick="disp.toggleVideoView(\''+rand+'\', \''+imgurl+'\')"'+
-						' class="image_link"><span id="show-'+rand+'" style="display:inline;">' + language.show + '</span><span id="hide-'+rand+'" style="display:none;">' + language.hide + '</span>' + language.aVideo + '</a>'+
+						' class="image_link"'+attrs+'><span id="show-'+rand+'" style="display:inline;">' + language.show + '</span><span id="hide-'+rand+'" style="display:none;">' + language.hide + '</span>' + language.aVideo + '</a>'+
 						'<div style="display:none;" id="img-'+rand+'"><iframe width="560" height="315" id="vid-'+rand+'" frameborder="0" allowfullscreen></iframe></div>';
 				}
 			});
@@ -1237,7 +1239,9 @@ var $$ = {
 	'getDialogSelector': function(type, sender) {
 		return $('#'+type+'Dialog-'+md5(sender.toLowerCase()));
 	},
-	'displayDialog': function(type, sender, title, message, button){
+	'displayDialog': function(type, sender, title, message, button, attrs){
+		if(!attrs)
+			attrs = '';
 		switch(type){ //specyficzne dla typu okna
 			case 'whois':
 				if(gateway.connectStatus != 'connected'){
@@ -1247,10 +1251,10 @@ var $$ = {
 					return;
 				}
 			case 'warning': case 'error': case 'confirm': case 'connect': case 'admin': case 'services': case 'ignore': case 'list': case 'alert': case 'emoticons': // nie wyświetlamy czasu
-				var html = message;
+				var html = '<span ' + attrs + '>' + message + '</span>';
 				break;
 			default:
-				var html = "<p><span class=\"time\">"+$$.niceTime()+"</span> "+message+"</p>";
+				var html = '<p '+attrs+'><span class="time">'+$$.niceTime()+'</span> '+message+'</p>';
 				break;
 		}
 		var id = type+'Dialog-'+md5(sender.toLowerCase());

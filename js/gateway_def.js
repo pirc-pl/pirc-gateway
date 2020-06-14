@@ -2244,7 +2244,7 @@ var gateway = {
 		if(sender == guser.me && text.charAt(0) == '\001') return; // don't display own ctcp requests/replies, this is confirmed to be called when sending requests and NOT for actions
 		
 		var meta = gateway.getMeta(sender.nick, 100);
-		var html = $$.parseImages(text);
+		var html = $$.parseImages(text, attrs);
 		var message = $$.colorize(text);
 		var nickComments = '';
 		var nick = sender.nick;
@@ -2317,8 +2317,8 @@ var gateway = {
 				|| (dest == guser.nick && sender.nick.isInList(servicesNicks)))
 				&& !gateway.find(qname)){ // do not open a query when expecting service messages in pop-up or status
 					if($("#noticeDisplay").val() == 0){ // pop-up
-						var html = "<span class=\"notice\">[<b>" + sender.nick + " → " + dest + "</b>]</span> " + message;
-						$$.displayDialog('notice', 'service', language.networkServiceMessage, html);
+						var html = '<span class=\"notice\">[<b>' + sender.nick + " → " + dest + "</b>]</span> " + message;
+						$$.displayDialog('notice', 'service', language.networkServiceMessage, html, false, attrs);
 						return;
 					} else if($("#noticeDisplay").val() == 2){ // status
 						gateway.statusWindow.appendMessage(language.messagePatterns.yourServiceCommand, [addClass, attrs, $$.niceTime(time), guser.nick, dest, message], time);
@@ -2390,9 +2390,8 @@ var gateway = {
 					var query = gateway.findOrCreate(command[1]);
 					query.appendMessage(language.messagePatterns.yourNotice, [addClass, attrs, $$.niceTime(), dest, message], time);
 				} else if($("#noticeDisplay").val() == 0) { // notice in pop-up
-					if('echo-message' in activeCaps) return;
 					var html = "<span class=\"notice\">[<b>"+he(sender.nick)+" → "+he(dest) + "</b>]</span> " + message;
-					$$.displayDialog('notice', dest, language.privateNoticeFrom+' '+dest, html);
+					$$.displayDialog('notice', dest, language.privateNoticeFrom+' '+dest, html, false, attrs);
 				}
 				return;
 			}
@@ -2429,13 +2428,13 @@ var gateway = {
 						} else {
 							var html = '<span class="notice-nick">&lt;<b>'+sender.nick+'</b>&gt</span> ' + message;
 						}
-						$$.displayDialog('notice', 'service', language.networkServiceMessage, html);
+						$$.displayDialog('notice', 'service', language.networkServiceMessage, html, false, attrs);
 					} else {
 						if(sender == guser.me){
 							var html = "<span class=\"notice\">[<b>"+he(sender.nick)+" → "+he(dest) + "</b>]</span> " + message;
-							$$.displayDialog('notice', dest, language.privateNoticeFrom + dest, html);
+							$$.displayDialog('notice', dest, language.privateNoticeFrom + dest, html, false, attrs);
 						} else {
-							$$.displayDialog('notice', sender.nick, language.privateNoticeFrom + sender.nick, message);
+							$$.displayDialog('notice', sender.nick, language.privateNoticeFrom + sender.nick, message, false, attrs);
 						}
 					}
 				}
@@ -2472,7 +2471,7 @@ var gateway = {
 				if(text.match(/^\*\*\* You are connected to .+ with .+$/)){
 					return;
 				}
-				$$.displayDialog('notice', sender.nick, language.privateNoticeFromServer + he(sender.nick)+' do '+he(dest), message);
+				$$.displayDialog('notice', sender.nick, language.privateNoticeFromServer + he(sender.nick) + language.to + he(dest), message, false, attrs);
 			}
 			return;
 		}

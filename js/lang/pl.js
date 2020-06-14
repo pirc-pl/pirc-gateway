@@ -540,6 +540,7 @@ lang.pl = {
 	'messageNotDelivered': 'Ta wiadomość nie została dostarczona',
 	'historyEntry': 'Historia rozmowy',
 	'getMoreHistory': 'Pobierz więcej historii…',
+	'to': ' do ',
 	'chStatusInfo': [ 'Niezarejestrowany', 'Prawo głosu', 'Pół-operator', 'Operator', 'Admin', 'Właściciel', 'Zarejestrowany' ],
 	'modes': {
 		/* unrealircd mode comments */

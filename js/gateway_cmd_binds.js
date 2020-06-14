@@ -457,8 +457,6 @@ var cmdBinds = {
 				}
 			}
 			
-			var html = $$.parseImages(msg.text);
-			
 			if(msg.text.match(/^\001.*\001$/i)) { //CTCP
 				var space = msg.text.indexOf(' ');
 				if(space > -1){

@@ -539,6 +539,7 @@ lang.en = {
 	'messageNotDelivered': 'This message was not delivered',
 	'historyEntry': 'Message history entry',
 	'getMoreHistory': 'Get more history…',
+	'to': ' to ',
 	'chStatusInfo': [ 'Unregistered', 'Voice', 'Half-op', 'Operator', 'Admin', 'Owner', 'Registered' ],
 	'modes': {
 		/* unrealircd mode comments */
