@@ -1,3 +1,7 @@
+/* Licence: MIT
+ * Source: https://github.com/AndreasPizsa/md5-jkmyers
+ */
+
 function md5cycle(x, k) {
 var a = x[0], b = x[1], c = x[2], d = x[3];
 
