@@ -18,6 +18,7 @@ Otwieraj stronę pod adresem `https://example.com/` (puste pola), `https://examp
 
 W tym momencie staramy się wspierać następujące konfiguracje sieci IRC:
 - [UnrealIRCd](https://www.unrealircd.org/) + [Anope](https://anope.org/)
+
 W przyszłości:
 - [Oragono](https://oragono.io/) (już zdatne do użycia, ale nie idealne)
 - [InspIRCd](https://www.inspircd.org/) + [Anope](https://anope.org/) (nie testowane)
@@ -39,6 +40,7 @@ Use the URL of `https://example.com/` (empty inputs), `https://example.com/chann
 
 At the moment, we are trying to support the following IRC network configurations:
 - [UnrealIRCd](https://www.unrealircd.org/) + [Anope](https://anope.org/)
+
 Planned in future:
 - [Oragono](https://oragono.io/) (already usable but not perfect)
 - [InspIRCd](https://www.inspircd.org/) + [Anope](https://anope.org/) (not tested)
