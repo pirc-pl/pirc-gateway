@@ -152,7 +152,9 @@ var users = {
 		user.disableAvatar = true;
 		users.updateNicklists(user);
 	},
-	'changeNick': function(oldNick, newNick){
+	'changeNick': function(oldNick, newNick, time){
+		if(!time)
+			time = new Date();
 		var user = users.getUser(oldNick);
 		users.list[newNick] = user;
 		delete users.list[oldNick];
@@ -168,7 +170,7 @@ var users = {
 		for(c in gateway.channels) {
 			if (user != guser.me && !$('#showNickChanges').is(':checked')){
 				if(gateway.channels[c].nicklist.findUser(user)) {
-					gateway.channels[c].appendMessage(language.messagePatterns.nickChange, [$$.niceTime(msg.time), he(oldNick), he(newNick)]);
+					gateway.channels[c].appendMessage(language.messagePatterns.nickChange, [$$.niceTime(time), he(oldNick), he(newNick)]);
 				}
 			}
 			gateway.channels[c].nicklist.changeNick(user);

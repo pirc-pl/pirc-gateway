@@ -390,7 +390,7 @@ var cmdBinds = {
 	],
 	'NICK': [
 		function(msg) {
-			users.changeNick(msg.sender.nick, msg.text);
+			users.changeNick(msg.sender.nick, msg.text, msg.time);
 		}
 	],
 	'NOTICE': [
