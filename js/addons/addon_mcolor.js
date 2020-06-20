@@ -56,7 +56,7 @@ var isCorrectColor = function(color){
 	return false;
 }
 
-var setMyColor = function(color){
+var setMyColor = function(color, serverOrigin){
 	colorExampleApply();
 	if(!color){
 		mcolor = false;
@@ -69,11 +69,13 @@ var setMyColor = function(color){
 		mcolor = color;
 		var scolor = color;
 	}
-	if(scolor){
-		ircCommand.metadata('SET', '*', ['color', scolor]);
-	} else {
-		if('color' in guser.me.metadata)
-			ircCommand.metadata('SET', '*', ['color']);
+	if(!serverOrigin){ // we were getting caught in an infinite loop without this
+		if(scolor){
+			ircCommand.metadata('SET', '*', ['color', scolor]);
+		} else {
+			if('color' in guser.me.metadata)
+				ircCommand.metadata('SET', '*', ['color']);
+		}
 	}
 	try {
 		if(scolor){
@@ -145,7 +147,7 @@ var colorSettingsChange = function(){
 
 var mcolorMetadataChanged = function(user, key, value){
 	if(user == guser.me)
-		setMyColor(value);
+		setMyColor(value, true);
 }
 
 insertBinding(cmdBinds, '001', mcolorMetadataSet);
