@@ -232,7 +232,7 @@ lang.pl = {
 	'ofBans': 'banów',
 	'ofExcepts': 'wyjątków',
 	'ofInvites': 'zaproszeń',
-	'allEmoticons': 'Wszystkie emotikony',
+	'allEmoticons': 'Wszystkie emotikony i symbole graficzne',
 	'weekdays': [ 'Niedziela', 'Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota' ],
 	'months': [ 'sty', 'lut', 'mar', 'kwi', 'maj', 'cze', 'lip', 'sie', 'wrz', 'paź', 'lis', 'gru' ],
 	'show': 'Pokaż',

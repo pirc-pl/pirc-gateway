@@ -277,6 +277,14 @@ var geoip = {
 		var name = language.countries[code];
 		if(name == undefined) return false;
 		return name;
+	},
+	'flag': function(code){
+		var out = '';
+		code = code.toUpperCase();
+		for(var i=0; i<code.length; i++){
+			out += String.fromCodePoint(code.codePointAt(i) + 0x1F1A5);
+		}
+		return emoji.addTags(out);
 	}
 };
 

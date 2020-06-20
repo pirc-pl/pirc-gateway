@@ -231,7 +231,7 @@ lang.en = {
 	'ofBans': 'bans',
 	'ofExcepts': 'exceptions',
 	'ofInvites': 'invite exceptions',
-	'allEmoticons': 'All emoticons',
+	'allEmoticons': 'All emoticons and graphical symbols',
 	'weekdays': [ 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday' ],
 	'months': [ 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec' ],
 	'show': 'Show',

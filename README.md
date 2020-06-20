@@ -55,8 +55,7 @@ This software contains components from other open projects:
 - [base64.js](https://gist.github.com/chrisyip/5764115)
 - [Symbola font](https://fontlibrary.org/en/font/symbola) (modified)
 - [Tango icons](https://commons.wikimedia.org/wiki/Tango_icons) (modified)
-- [famfamfam flags](http://www.famfamfam.com/lab/icons/flags/)
 - [g-emoji-element](https://github.com/github/g-emoji-element) (modified)
-- [emoji asset](https://github.com/rodrigopolo/emoji-assets/tree/master/Microsoft/40)
+- [OpenMoji emoji asset](https://github.com/hfg-gmuend/openmoji)
 
 Published on [GitHub](https://github.com/pirc-pl/pirc-gateway/) by k4be.

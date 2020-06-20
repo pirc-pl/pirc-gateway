@@ -432,8 +432,8 @@ function emojiImage(el) {
   const image = document.createElement('img')
   image.className = 'emoji'
   image.alt = el.getAttribute('alias') || ''
-  image.height = 20
-  image.width = 20
+//  image.height = '20
+//  image.width = 20
   return image
 }
 

@@ -757,7 +757,7 @@ var cmdBinds = {
 				if(!cname){
 					html += match[1] + ' (' + match[2] + ')';
 				} else {
-					html += '<img src="/styles/img/flagi/'+match[2]+'-flag.png" alt="('+match[2]+')"> '+cname;
+					html += geoip.flag(match[2])+' '+cname;
 				}
 			} else {
 				var sel = $$.getDialogSelector('whois', msg.args[1]).find('span.admin');

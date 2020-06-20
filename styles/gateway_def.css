@@ -1384,3 +1384,13 @@ span.realNick {
 	padding-right: 3em;
 }
 
+a.charSelect img.emoji {
+    margin-top: -.38em;
+    margin-left: -.31em;
+}
+
+img.emoji {
+    height: 2em;
+    vertical-align: middle;
+}
+
