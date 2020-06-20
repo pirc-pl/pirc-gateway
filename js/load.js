@@ -30,7 +30,6 @@ var scriptFiles = [
 	'/js/gateway_cmd_binds.js',
 	'/js/gateway_user_commands.js',
 	'/js/gateway_tabs.js',
-	'/js/geoip.js',
 	'/js/gateway_cmds.js',
 	'/js/gateway_def.js',
 	'/js/gateway_users.js',

@@ -272,6 +272,14 @@ function fillEmoticonSelector(){
 	$('#emoticon-symbols').html(html);
 }
 
+var geoip = {
+	'getName': function(code){
+		var name = language.countries[code];
+		if(name == undefined) return false;
+		return name;
+	}
+};
+
 function onBlur() {
 	disp.focused = false;
 	var act = gateway.getActive();
