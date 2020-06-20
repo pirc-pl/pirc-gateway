@@ -36,6 +36,22 @@ var irc = {
 		};
 		this.time = new Date();
 		this.user = null;
+		this.getLabel = function(){ // get originating label even if it's a batch or even a nested batch
+			if('label' in this.tags)
+				return this.tags.label;
+			if('batch' in this.tags){
+				var batch = gateway.batch[tags.batch];
+				if(!batch)
+					return null;
+				if(batch.label)
+					return batch.label;
+				for(var i=0; i<batch.parents.length; i++){
+					if(batch.parents[i].label)
+						return batch.parents[i].label;
+				}
+				return null;			
+			};
+		};
 	},
 	'oldData': '',
 	'parseMessage': function(msg){
