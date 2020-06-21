@@ -322,6 +322,8 @@ function Query(nick) {
 	this.scrollSaved = false;
 	this.newLines = false;
 	
+	this.typing = new typingHandler(this);
+	
 	this.toggleClass = function() {
 		if(this.ClassAdded) {
 			$('#'+this.id+'-tab').removeClass('newmsg');
@@ -375,6 +377,7 @@ function Query(nick) {
 		$('#'+this.id+'-window').remove();
 		$('#'+this.id+'-topic').remove();
 		$('#'+this.id+'-chstats').remove();
+		$('#'+this.id+'-tab-info').remove();
 		if(this.name.toLowerCase() == gateway.active.toLowerCase()) {
 			gateway.switchTab(gateway.tabHistoryLast(this.name));
 		}
@@ -437,6 +440,7 @@ function Query(nick) {
 	}
 	$('<span/>').attr('id', this.id+'-window').hide().appendTo('#main-window');
 	$('<span/>').attr('id', this.id+'-topic').hide().appendTo('#info');
+	$('<span/>').attr('id', this.id+'-tab-info').hide().appendTo('#tab-info');
 	$('#'+this.id+'-topic').html('<h1>'+this.name+'</h1><h2></h2>');
 	$('<li/>').attr('id', this.id+'-tab').html('<a href="javascript:void(0);" class="switchTab" onclick="gateway.switchTab(\''+this.name+'\')">'+he(this.name)+'</a><a href="javascript:void(0);" onclick="gateway.removeQuery(\''+this.name+'\')"><div class="close" title="' + language.closeQuery + '"></div></a>').appendTo('#tabs');
 	$('#chstats').append('<div class="chstatswrapper" id="'+this.id+'-chstats"><span class="chstats-text symbolFont">' + language.query + '</span></div>');
@@ -465,6 +469,8 @@ function Channel(chan) {
 	this.newLines = false;
 	this.hasNames = false;
 	this.markingSwitch = false; // we use this to alternate the backgrounds of message blocks
+
+	this.typing = new typingHandler(this);
 
 	this.part = function() {
 		this.left = true;
@@ -586,6 +592,7 @@ function Channel(chan) {
 		$('#'+this.id+'-window').remove();
 		$('#'+this.id+'-topic').remove();
 		$('#'+this.id+'-chstats').remove();
+		$('#'+this.id+'-tab-info').remove();
 		if(this.name.toLowerCase() == gateway.active.toLowerCase()) {
 			gateway.switchTab(gateway.tabHistoryLast(this.name));
 		}
@@ -644,6 +651,7 @@ function Channel(chan) {
 
 	$('<span/>').attr('id', this.id+'-window').hide().appendTo('#main-window');
 	$('<span/>').attr('id', this.id+'-topic').hide().appendTo('#info');
+	$('<span/>').attr('id', this.id+'-tab-info').hide().appendTo('#tab-info');
 	$('#'+this.id+'-topic').html('<h1>'+he(this.name)+'</h1><h2></h2>');
 	$('<li/>').attr('id', this.id+'-tab').html('<a href="javascript:void(0);" onclick="gateway.switchTab(\''+bsEscape(this.name)+'\')" class="switchTab">'+he(this.name)+'</a>'+
 		'<a href="javascript:void(0);" onclick="gateway.removeChannel(\''+bsEscape(this.name)+'\')"><div class="close" title="' + language.leaveChannel + '"></div></a>').appendTo('#tabs');
@@ -845,5 +853,67 @@ function updateHistory(name, id, query){
 		localStorage.setItem(type+md5(name), Base64.encode(qCookie));
 	} catch(e){
 	}
+}
+
+function typingHandler(tab){
+	this.tab = tab;
+	this.list = [];
+	this.start = function(user, time){
+		if(user == guser.me)
+			return;
+		var idx = this.findUser(user);
+		if(idx === false){
+			console.log('Setting typing for', user.nick, ', time =', time);
+			var timeout = setTimeout(function(){ this.stop(user); }.bind(this), time*1000);
+			var t = {'user': user, 'timeout': timeout };
+			this.list.push(t);
+			this.display();
+		} else {
+			console.log('Extending typing for', user.nick, ', time =', time);
+			clearTimeout(this.list[idx].timeout);
+			this.list[idx].timeout = setTimeout(function(){ this.stop(user); }.bind(this), time*1000);
+		}
+	};
+	this.stop = function(user){
+		console.log('Stopping typing for', user.nick);
+		var idx = this.findUser(user);
+		if(idx === false)
+			return;
+		console.log('Really stopping typing for', user.nick);
+		clearTimeout(this.list[idx].timeout);
+		this.list.splice(idx, 1);
+		this.display();
+	};
+	this.findUser = function(user){
+		for(var i=0; i<this.list.length; i++){
+			if(this.list[i].user == user)
+				return i;
+		}
+		return false;
+	};
+	this.clear = function(){
+		for(var i=0; i<this.list.length; i++){
+			clearTimeout(this.list[i].timeout);
+		}
+		this.list = [];
+		this.display();
+	};
+	this.display = function(){
+		var infoText = '';
+		if(this.list.length > 0){
+			for(var i=0; i<this.list.length; i++){
+				if(infoText.length > 0){
+					infoText += ', ';
+				}
+				infoText += this.list[i].user.nick;
+			}
+			if(this.list.length == 1){
+				infoText += ' ' + language.isTyping;
+			} else {
+				infoText += ' ' + language.areTyping;
+			}
+		}
+		$('#'+this.tab.id+'-tab-info').html(infoText);
+	};
 }
 

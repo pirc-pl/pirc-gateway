@@ -226,21 +226,8 @@ var irc = {
 			user.server = true;
 		}
 
-// process known tags
-		if('time' in ircmsg.tags){
-			ircmsg.time = parseISOString(ircmsg.tags['time']);
-		}
-
-		if('account' in ircmsg.tags){
-			user.setAccount(ircmsg.tags['account']);
-		}
-		
-		if('inspircd.org/bot' in ircmsg.tags){
-			user.setBot(true);
-		}
-
+		gateway.processIncomingTags(ircmsg);
 		console.log(ircmsg);
-
 		return ircmsg;
 	}
 };
@@ -850,17 +837,21 @@ var gateway = {
 		}
 		chan = chan.toLowerCase();
 		if(chan != "--status" && gateway.findChannel(chan)) {
+			var id = gateway.findChannel(chan).id;
 			$('#main-window > span').hide();
+			$('#tab-info > span').hide();
 			$('#nicklist-main > span').hide();
 			$('#chstats > div').hide();
 			$('#info > span').hide();
-			$('#'+gateway.findChannel(chan).id+'-nicklist').show();
+			$('#'+id+'-nicklist').show();
 			$('#tabs > li').removeClass("activeWindow");
-			$('#'+gateway.findChannel(chan).id+'-tab').addClass("activeWindow");
-			$('#'+gateway.findChannel(chan).id+'-window').show();
-			$('#'+gateway.findChannel(chan).id+'-chstats').show();
-			$('#'+gateway.findChannel(chan).id+'-topic').show();
-			$('#'+gateway.findChannel(chan).id+'-topic').prop('title', language.clickForWholeTopic);
+			$('#'+id+'-tab').addClass("activeWindow");
+			$('#'+id+'-window').show();
+			$('#'+id+'-chstats').show();
+			$('#'+id+'-topic').show();
+			$('#'+id+'-tab-info').show();
+			$('#'+id+'-topic').prop('title', language.clickForWholeTopic);
+			
 			gateway.findChannel(chan).markRead();
 			gateway.active = chan;
 			gateway.tabHistory.push(chan);
@@ -893,17 +884,20 @@ var gateway = {
 				}, 200);
 			}
 		} else if(chan != "--status" && gateway.findQuery(chan)) {
+			var id = gateway.findQuery(chan).id;
 			$('#main-window > span').hide();
+			$('#tab-info > span').hide();
 			$('#nicklist-main > span').hide();
 			$('#info > span').hide();
 			$('#chstats > div').hide();
 			$('#--status-nicklist').show();
 			$('#tabs > li').removeClass("activeWindow");
-			$('#'+gateway.findQuery(chan).id+'-tab').addClass("activeWindow");
-			$('#'+gateway.findQuery(chan).id+'-window').show();
-			$('#'+gateway.findQuery(chan).id+'-topic').show();
-			$('#'+gateway.findQuery(chan).id+'-chstats').show();
-			$('#'+gateway.findChannel(chan).id+'-topic').prop('title', '');
+			$('#'+id+'-tab').addClass("activeWindow");
+			$('#'+id+'-window').show();
+			$('#'+id+'-topic').show();
+			$('#'+id+'-chstats').show();
+			$('#'+id+'-tab-info').show();
+			$('#'+id+'-topic').prop('title', '');
 			gateway.active = chan;
 			gateway.tabHistory.push(chan);
 			$('#input').focus();
@@ -936,6 +930,7 @@ var gateway = {
 			gateway.findQuery(chan).markRead();
 		} else if(chan == "--status") {
 			$('#main-window > span').hide();
+			$('#tab-info > span').hide();
 			$('#nicklist-main > span').hide();
 			$('#info > span').hide();
 			$('#chstats > div').hide();
@@ -2206,7 +2201,7 @@ var gateway = {
 		}
 		gateway.keypressSuppress = setTimeout(function(){
 			gateway.keypressSuppress = false;
-		}, 6500);
+		}, 5500);
 		gateway.lastKeypressWindow = gateway.getActive();
 		ircCommand.sendTags(gateway.getActive().name, ['+draft/typing', '+typing'], ['active', 'active']);
 	},
@@ -2294,6 +2289,7 @@ var gateway = {
 		
 		if(dest.charAt(0) == '#'){
 			tab = gateway.findOrCreate(dest);
+			tab.typing.stop(sender);
 			channel = true;
 		}
 
@@ -2366,6 +2362,7 @@ var gateway = {
 					}
 				}
 				tab = gateway.findOrCreate(qname);
+				tab.typing.stop(sender);
 			} else {
 				var qname = dest;
 			}
@@ -2476,6 +2473,9 @@ var gateway = {
 						}
 					}
 				}
+				if(query){
+					query.typing.stop(sender);
+				}
 			} else { // sent by server
 				var expressions = [/^Your "real name" is now set to be/, / invited [^ ]+ into the channel.$/]; // TODO should this look like this?
 				for(var i=0; i<expressions.length; i++){
@@ -2581,6 +2581,44 @@ var gateway = {
 				return batch.parents[i];
 		}
 		return null;
+	},
+	'processIncomingTags': function(ircmsg){
+		if('time' in ircmsg.tags){
+			ircmsg.time = parseISOString(ircmsg.tags['time']);
+		}
+		if('account' in ircmsg.tags){
+			ircmsg.user.setAccount(ircmsg.tags['account']);
+		}
+		if('inspircd.org/bot' in ircmsg.tags){
+			ircmsg.user.setBot(true);
+		}
+		if(('+typing' in ircmsg.tags || '+draft/typing' in ircmsg.tags) && ircmsg.command == 'TAGMSG'){
+			if('+draft/typing' in ircmsg.tags)
+				var typing = ircmsg.tags['+draft/typing'];
+			if('+typing' in ircmsg.tags)
+				var typing = ircmsg.tags['+typing'];
+			gateway.typing(ircmsg.user, ircmsg.args[0], typing);
+		}
+	},
+	'typing': function(user, dest, mode){
+		if(dest.charAt(0) == '#'){
+			var tab = gateway.find(dest);
+		} else {
+			var tab = gateway.find(user.nick);
+		}
+		if(!tab)
+			return;
+		switch(mode){
+			case 'active':
+				tab.typing.start(user, 6);
+				break;
+			case 'paused':
+				tab.typing.start(user, 30);
+				break;
+			case 'done':
+				tab.typing.stop(user);
+				break;
+		}
 	}
 }
 

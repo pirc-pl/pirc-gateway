@@ -152,7 +152,7 @@ input, button, submit {
 }
 	
 #chatbox {
-	bottom: 4em;
+	bottom: 5em;
 	left: 0;
 	position: absolute;
 	top: 6.7em;
@@ -1392,5 +1392,12 @@ a.charSelect img.emoji {
 img.emoji {
     height: 2em;
     vertical-align: middle;
+}
+
+#tab-info {
+    height: 1em;
+    padding-left: 3em;
+    position: absolute;
+    bottom: 3em;
 }
 

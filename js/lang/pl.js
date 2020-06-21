@@ -563,6 +563,8 @@ lang.pl = {
 	'historyEntry': 'Historia rozmowy',
 	'getMoreHistory': 'Pobierz więcej historii…',
 	'to': ' do ',
+	'isTyping': 'pisze…',
+	'areTyping': 'piszą…',
 	'chStatusInfo': [ 'Niezarejestrowany', 'Prawo głosu', 'Pół-operator', 'Operator', 'Admin', 'Właściciel', 'Zarejestrowany' ],
 	'modes': {
 		/* unrealircd mode comments */

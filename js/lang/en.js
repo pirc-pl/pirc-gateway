@@ -562,6 +562,8 @@ lang.en = {
 	'historyEntry': 'Message history entry',
 	'getMoreHistory': 'Get more history…',
 	'to': ' to ',
+	'isTyping': 'is typing…',
+	'areTyping': 'are typing…',
 	'chStatusInfo': [ 'Unregistered', 'Voice', 'Half-op', 'Operator', 'Admin', 'Owner', 'Registered' ],
 	'modes': {
 		/* unrealircd mode comments */
