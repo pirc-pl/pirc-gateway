@@ -1394,10 +1394,14 @@ img.emoji {
     vertical-align: middle;
 }
 
+#tab-info > span {
+    font-size: .8em;
+}
+
 #tab-info {
     height: 1em;
     padding-left: 3em;
     position: absolute;
-    bottom: 3em;
+    bottom: 3.2em;
 }
 
