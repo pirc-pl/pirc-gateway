@@ -863,23 +863,19 @@ function typingHandler(tab){
 			return;
 		var idx = this.findUser(user);
 		if(idx === false){
-			console.log('Setting typing for', user.nick, ', time =', time);
 			var timeout = setTimeout(function(){ this.stop(user); }.bind(this), time*1000);
 			var t = {'user': user, 'timeout': timeout };
 			this.list.push(t);
 			this.display();
 		} else {
-			console.log('Extending typing for', user.nick, ', time =', time);
 			clearTimeout(this.list[idx].timeout);
 			this.list[idx].timeout = setTimeout(function(){ this.stop(user); }.bind(this), time*1000);
 		}
 	};
 	this.stop = function(user){
-		console.log('Stopping typing for', user.nick);
 		var idx = this.findUser(user);
 		if(idx === false)
 			return;
-		console.log('Really stopping typing for', user.nick);
 		clearTimeout(this.list[idx].timeout);
 		this.list.splice(idx, 1);
 		this.display();
