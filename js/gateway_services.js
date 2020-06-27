@@ -104,7 +104,6 @@ var services = {
 	'nickStore': '',
 	'showTimeToChange': false,
 	'ignoreNextAccessDenial': false,
-	'apiKey': false,
 	'badNickString': function(){
 		return '<div class="table">'+
 			'<form class="tr" onsubmit="services.logIn();$$.closeDialog(\'error\', \'nickserv\')" action="javascript:void(0);">'+
@@ -213,12 +212,6 @@ var services = {
 		if(maskMatch(msg.text, 'nickRemovedFromNetwork') || maskMatch(msg.text, 'servicesReleasedNick')){
 			ircCommand.changeNick(guser.nickservnick);
 			gateway.connectStatus = 'ghostAndNickSent';
-			return true;
-		}
-		var expr = /^APIKEY=(.*)$/i;
-		var match = expr.exec(msg.text);
-		if(match){
-			services.apiKey = match[1];
 			return true;
 		}
 		var time = false;
@@ -524,9 +517,6 @@ var services = {
 		gateway.send('NS REGISTER '+password+' '+email);
 		gateway.send('NS SET KILL QUICK');
 		return true;
-	},
-	'getApiKey': function(){
-		gateway.send('NS APIKEY');
 	},
 	/*'setCloak': function(){
 		var html = '<p>To polecenie ustawi vHosta o treści <b>cloak:'+guser.nick+'</b>. Jeśli masz już vHosta, zostanie on usunięty.</p>';

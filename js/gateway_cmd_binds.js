@@ -263,6 +263,10 @@ var cmdBinds = {
 			}
 		}
 	],
+	'EXTJWT': [
+		function(msg){ // This is temporarily handled only by the label handler
+		}
+	],
 	'INVITE': [
 		function(msg) {
 			var html = '<b>'+he(msg.sender.nick)+'</b> ' + language.inviting + ' <b>'+he(msg.text);

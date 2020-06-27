@@ -594,7 +594,6 @@ var disp = {
 			}
 			$('#submit-avatar').hide();
 		} else {
-			services.getApiKey();
 			var html =
 				'<div id="current-avatar">' +
 					'<div id="current-letter-avatar">' +
@@ -660,31 +659,34 @@ var disp = {
 				return;
 			}
 			fd.append('fileToUpload', file);
-			fd.append('account', guser.me.account);
-			fd.append('apikey', services.apiKey);
 			fd.append('image-type', 'avatar');
 			$('#set-avatar').append('<br>' + language.processing);
-			$.ajax({
-				url: mainSettings.avatarUploadUrl,
-				dataType: 'json',
-				method: 'post',
-				processData: false,
-				contentType: false,
-				data: fd,
-				success: function(data){
-					console.log(data);
-					if(data['result'] == 'ok'){
-						textSettingsValues['avatar'] = data['url'];
-						disp.showAvatarSetting();
-						disp.avatarChanged();
-					} else {
-						$$.alert(language.failedToSendImageWithResponse + data['result']); // TODO parse the result
+			var label = gateway.makeLabel();
+			gateway.labelCallbacks[label] = function(label, msg){
+				fd.append('jwt', msg.args[2]); // TODO multiline jwts?
+				$.ajax({
+					url: mainSettings.avatarUploadUrl,
+					dataType: 'json',
+					method: 'post',
+					processData: false,
+					contentType: false,
+					data: fd,
+					success: function(data){
+						console.log(data);
+						if(data['result'] == 'ok'){
+							textSettingsValues['avatar'] = data['url'];
+							disp.showAvatarSetting();
+							disp.avatarChanged();
+						} else {
+							$$.alert(language.failedToSendImageWithResponse + data['result']); // TODO parse the result
+						}
+					},
+					error: function(){
+						$$.alert(language.failedToSendImage);
 					}
-				},
-				error: function(){
-					$$.alert(language.failedToSendImage);
-				}
-			});
+				});
+			};
+			ircCommand.perform('EXTJWT', ['*'], false, {'label': label});
 		}
 	},
 	'deleteAvatar': function() {
@@ -699,29 +701,32 @@ var disp = {
 			if(!confirm(language.deleteAvatarQ)){
 				return;
 			}
-			$.ajax({
-				url: mainSettings.avatarDeleteUrl,
-				dataType: 'json',
-				method: 'post',
-				data: {
-					'account': guser.me.account,
-					'apikey': services.apiKey,
-					'image-type': 'avatar'
-				},
-				success: function(data){
-					console.log(data);
-					if(data['result'] == 'ok'){
-						textSettingsValues['avatar'] = false;
-						disp.showAvatarSetting();
-						disp.avatarChanged();
-					} else {
-						$$.alert(language.failedToDeleteImageWithResponse + data['result']); // TODO parse the result
+			var label = gateway.makeLabel();
+			gateway.labelCallbacks[label] = function(label, msg){
+				$.ajax({
+					url: mainSettings.avatarDeleteUrl,
+					dataType: 'json',
+					method: 'post',
+					data: {
+						'image-type': 'avatar',
+						'jwt': msg.args[2] // TODO multiline jwts?
+					},
+					success: function(data){
+						console.log(data);
+						if(data['result'] == 'ok'){
+							textSettingsValues['avatar'] = false;
+							disp.showAvatarSetting();
+							disp.avatarChanged();
+						} else {
+							$$.alert(language.failedToDeleteImageWithResponse + data['result']); // TODO parse the result
+						}
+					},
+					error: function(){
+						$$.alert(language.failedToDeleteImage);
 					}
-				},
-				error: function(){
-					$$.alert(language.failedToDeleteImage);
-				}
-			});
+				});
+			};
+			ircCommand.perform('EXTJWT', ['*'], false, {'label': label});
 		}
 	},
 	'avatarChanged': function() {
