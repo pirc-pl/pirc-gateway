@@ -662,8 +662,14 @@ var disp = {
 			fd.append('image-type', 'avatar');
 			$('#set-avatar').append('<br>' + language.processing);
 			var label = gateway.makeLabel();
-			gateway.labelCallbacks[label] = function(label, msg){
-				fd.append('jwt', msg.args[2]); // TODO multiline jwts?
+			gateway.labelCallbacks[label] = function(label, msg, batch){
+				if(!batch){
+					var jwt = msg.args[2];
+				} else {
+					var jwt = batch.extjwtContent;
+				}
+				fd.append('jwt', jwt);
+				console.log('jwt is: '+jwt);
 				$.ajax({
 					url: mainSettings.avatarUploadUrl,
 					dataType: 'json',
@@ -686,7 +692,11 @@ var disp = {
 					}
 				});
 			};
-			ircCommand.perform('EXTJWT', ['*'], false, {'label': label});
+			var args = ['*'];
+			if(mainSettings.extjwtService){
+				args.push(mainSettings.extjwtService);
+			}
+			ircCommand.perform('EXTJWT', args, false, {'label': label});
 		}
 	},
 	'deleteAvatar': function() {
@@ -702,14 +712,20 @@ var disp = {
 				return;
 			}
 			var label = gateway.makeLabel();
-			gateway.labelCallbacks[label] = function(label, msg){
+			gateway.labelCallbacks[label] = function(label, msg, batch){
+				if(!batch){
+					var jwt = msg.args[2];
+				} else {
+					var jwt = batch.extjwtContent;
+				}
+				console.log('jwt is: '+jwt);
 				$.ajax({
 					url: mainSettings.avatarDeleteUrl,
 					dataType: 'json',
 					method: 'post',
 					data: {
 						'image-type': 'avatar',
-						'jwt': msg.args[2] // TODO multiline jwts?
+						'jwt': jwt
 					},
 					success: function(data){
 						console.log(data);
@@ -726,7 +742,11 @@ var disp = {
 					}
 				});
 			};
-			ircCommand.perform('EXTJWT', ['*'], false, {'label': label});
+			var args = ['*'];
+			if(mainSettings.extjwtService){
+				args.push(mainSettings.extjwtService);
+			}
+			ircCommand.perform('EXTJWT', args, false, {'label': label});
 		}
 	},
 	'avatarChanged': function() {

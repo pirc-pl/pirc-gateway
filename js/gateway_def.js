@@ -57,7 +57,10 @@ var irc = {
 	'parseMessage': function(msg){
 		var packets = [];
 		var packetcnt = 0;
-		packets[packetcnt++] = irc.parseLine(msg);
+		msg = msg.split(/\r?\n/);
+		for(var i=0; i<msg.length; i++){
+			packets[packetcnt++] = irc.parseLine(msg[i]);
+		}
 		return {'status': 2, 'packets': packets };
 	},
 	'parseTags': function(tagsLine){
@@ -227,7 +230,6 @@ var irc = {
 		}
 
 		gateway.processIncomingTags(ircmsg);
-		console.log(ircmsg);
 		return ircmsg;
 	}
 };
@@ -318,7 +320,7 @@ var gateway = {
 		gateway.pingIntervalID = false;
 		gateway.updateHistory();
 		for(label in gateway.labelCallbacks){
-			gateway.labelFailed(label, null);
+			gateway.labelNotProcessed(label, null);
 		}
 		gateway.labelCallbacks = {};
 		gateway.labelInfo = {};
@@ -401,6 +403,10 @@ var gateway = {
 			gateway.labelProcessed = false;
 			try {
 				var msg = data.packets[i];
+				console.log(msg);
+				if('batch' in msg.tags && msg.tags.batch in gateway.batch){
+					msg.batch = gateway.batch[msg.tags.batch];
+				}
 				var command = msg.command;
 				if(command in cmdBinds) {
 					if(cmdBinds[command].length == 0){ // implementation empty
@@ -416,10 +422,20 @@ var gateway = {
 			} catch(error) {
 				console.error('Error processing message!', msg, error);
 			}
-			if('label' in msg.tags){
-				var label = msg.tags.label;
+			if(('label' in msg.tags && !('isBatchStart' in msg)) || ('isBatchEnd' in msg)){
+				var batch = null;
+				if('label' in msg.tags){
+					var label = msg.tags.label;
+				} else {
+					if(!msg.batch.label)
+						continue;
+					var label = msg.batch.getLabel();
+					if(!label)
+						continue;
+					batch = msg.batch;
+				}
 				if(!gateway.labelProcessed){
-					gateway.labelFailed(label, msg);
+					gateway.labelNotProcessed(label, msg, batch);
 				}
 				if(label in gateway.labelCallbacks){
 					delete gateway.labelCallbacks[label]; // no longer needed
@@ -2525,11 +2541,11 @@ var gateway = {
 			updateHistory(query.name, query.id);
 		}
 	},
-	'labelFailed': function(label, msg){ // we sent a @label-ed command but no handler processed the label
-		if(msg.tags.label in gateway.labelCallbacks){
-			gateway.labelCallbacks[msg.tags.label](label, msg);
+	'labelNotProcessed': function(label, msg, batch){ // we sent a @label-ed command but no handler processed the label
+		if(label in gateway.labelCallbacks){
+			gateway.labelCallbacks[label](label, msg, batch);
 		} else {
-			console.log('No handler for labeled-response (' + msg.command + ')');
+			console.log('No handler for labeled-response', label, msg, batch);
 		}
 	},
 	'msgNotDelivered': function(label, msg){ // called for unexpected replies when waiting for echo-message

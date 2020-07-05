@@ -51,6 +51,16 @@ function ircBatch(name, type, args, msg){
 	this.label = null;
 	this.parents = [];
 	
+	this.getLabel = function(){
+		if(this.label)
+			return this.label;
+		for(var i=0; i<parents.length; i++){
+			if(this.parents[i].label)
+				return this.parents[i].label;
+		}
+		return null;
+	};
+	
 	if(msg && msg.tags && 'batch' in msg.tags){ // nested batches - add parent
 		var parentBatch = gateway.batch[msg.tags.batch];
 		this.parents.push(parentBatch);
@@ -70,6 +80,11 @@ var batchBinds = {
 			/*var chan = gateway.findChannel(batch.args[0]);
 			var selector = '#' + chan.id + ' .getHistoryButton';
 			$(selector).remove();*/
+		}
+	],
+	'labeled-response': [
+		function(msg, batch){
+			
 		}
 	]
 };
@@ -121,8 +136,10 @@ var cmdBinds = {
 				if(batch.callback){
 					batch.callback(batch, msg);
 				}
-				delete gateway.batch[name];
+				setTimeout(function(){ delete gateway.batch[name]; }, 500);
 				console.log('Ending batch "' + name + '"');
+				msg.isBatchEnd = true;
+				msg.batch = batch;
 			} else if(msg.args[0].charAt(0) == '+'){
 				var batch = new ircBatch(name, type, msg.args.slice(2), msg);
 				gateway.batch[name] = batch;
@@ -136,6 +153,7 @@ var cmdBinds = {
 						batchBinds[type][i](msg, batch);
 					}
 				}
+				msg.isBatchStart = true;
 			} else {
 				console.error('Unknown batch argument!');
 				return;
@@ -264,7 +282,21 @@ var cmdBinds = {
 		}
 	],
 	'EXTJWT': [
-		function(msg){ // This is temporarily handled only by the label handler
+		function(msg){
+			if(!msg.batch){
+				return; // labelNotProcessed handler will take full care of that
+			}
+			if(msg.args[2] == '*'){
+				var tokenData = msg.args[3];
+			} else {
+				var tokenData = msg.args[2];
+			}
+			if(!('extjwtContent' in msg.batch)){
+				msg.batch.extjwtContent = tokenData;
+			} else {
+				msg.batch.extjwtContent += tokenData;
+			}
+			// Actual batch output data is handled by the labelNotProcessed handler too
 		}
 	],
 	'INVITE': [
