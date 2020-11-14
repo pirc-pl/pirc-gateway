@@ -600,6 +600,10 @@ var gateway = {
 				$$.alert(language.mustGiveChannel);
 				return false;
 			}
+			if(chanInput.charAt(0) != '#'){
+				chanInput = '#' + chanInput;
+				$('#nschan').val(chanInput);
+			}
 			if(!nickInput.match(/^[\^\|0-9a-z_`\{\}\[\]\-]+$/i)) {
 				$$.alert(language.badCharsInNick);
 				return false;

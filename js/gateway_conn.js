@@ -71,10 +71,10 @@ function parsePath(){
 		var path = window.location.pathname;
 	}
 	var params = path.substring(1).split('/');
-	if(params.length > 1){
+	if(params.length > 1 && params[1] != 'Anonymous'){
 		guser.nick = params[1];
 	}
-	if(params.length > 0){
+	if(params.length > 0 && params[0].length > 0){
 		guser.channels.push('#' + params[0]);
 	}
 }
@@ -89,11 +89,15 @@ var conn = {
 			$('.not-connected-text > p').html(language.connectingForTooLong + mainSettings.oldGatewayHtml);
 	},
 	'dispConnectDialog': function(){
-		reqChannel = guser.channels[0];
+		if(guser.channels.length > 0){
+			var reqChannel = guser.channels[0];
+		} else {
+			var reqChannel = '';
+		}
 		conn.my_nick = dnick;
 
 		try {
-			if(reqChannel == '#'){
+			if(reqChannel == ''){
 				if(localStorage.getItem('channel')){
 					reqChannel = localStorage.getItem('channel');
 				}
@@ -110,7 +114,7 @@ var conn = {
 			}
 		} catch(e) {}
 		conn.my_reqChannel = reqChannel;
-		
+
 		if($('#automLogIn').is(':checked')){
 			var auto_initialized = false;
 			if(gateway.initialize()){
