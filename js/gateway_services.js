@@ -106,15 +106,20 @@ var services = {
 	'ignoreNextAccessDenial': false,
 	'badNickString': function(){
 		return '<div class="table">'+
-			'<form class="tr" onsubmit="services.logIn();$$.closeDialog(\'error\', \'nickserv\')" action="javascript:void(0);">'+
+			'<form class="trgr" onsubmit="services.logIn();$$.closeDialog(\'error\', \'nickserv\')" action="javascript:void(0);">'+
+				'<div class="tr">' +
 				'<span class="td_right">' + language.yourPassword + '</span>'+
-				'<span class="td"><input type="password" id="nspass" /></span>'+
-				'<span class="td"><input type="submit" value="' + language.logIn + '" /></span>'+
-				'<span class="td"><input type="checkbox" id="saveNewPassword" checked="checked" />  ' + language.saveThisPassword + '</span>'+
+				'<span class="td"><input type="password" id="nspass"></span>'+
+				'<span class="td"><input type="submit" value="' + language.logIn + '"></span>'+
+				'</div><div class="tr">'+
+				'<span class="td_right"><input type="checkbox" id="notConfirmedAccount"></span><span class="td">' + language.accountIsNotConfirmed + '</span><br>'+
+				'</div><div class="tr">'+
+				'<span class="td_right"><input type="checkbox" id="saveNewPassword" checked="checked"></span><span class="td">' + language.saveThisPassword + '</span>'+
+				'</div>'+
 			'</form>'+
 			'<form class="tr" onsubmit="services.changeNick();$$.closeDialog(\'error\', \'nickserv\')" action="javascript:void(0);">'+
 				'<span class="td_right">' + language.newNick + '</span>'+
-				'<span class="td"><input type="text" id="nnick" /></span>'+
+				'<span class="td"><input type="text" id="nnick"></span>'+
 				'<span class="td"><input type="submit" value="' + language.changeNick + '" /></span>'+
 			'</form>'+
 		'</div>';
@@ -247,6 +252,9 @@ var services = {
 			try {
 				localStorage.setItem('password', btoa(guser.nickservpass));
 			} catch(e) {}
+		}
+		if($('#notConfirmedAccount').is(':checked')){
+			gateway.changeCapSupport('sasl', false); // sasl login is not allowed for unconfirmed accounts
 		}
 		gateway.connectStatus = 'reIdentify';
 		gateway.setConnectedWhenIdentified = 1;

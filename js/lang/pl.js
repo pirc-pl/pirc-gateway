@@ -565,6 +565,7 @@ lang.pl = {
 	'to': ' do ',
 	'isTyping': 'pisze…',
 	'areTyping': 'piszą…',
+	'accountIsNotConfirmed': 'Konto nie jest jeszcze potwierdzone',
 	'chStatusInfo': [ 'Niezarejestrowany', 'Prawo głosu', 'Pół-operator', 'Operator', 'Admin', 'Właściciel', 'Zarejestrowany' ],
 	'modes': {
 		/* unrealircd mode comments */

@@ -564,6 +564,7 @@ lang.en = {
 	'to': ' to ',
 	'isTyping': 'is typing…',
 	'areTyping': 'are typing…',
+	'accountIsNotConfirmed': 'Account not yet confirmed',
 	'chStatusInfo': [ 'Unregistered', 'Voice', 'Half-op', 'Operator', 'Admin', 'Owner', 'Registered' ],
 	'modes': {
 		/* unrealircd mode comments */

@@ -72,7 +72,7 @@ var ircCommand = {
 		}
 		gateway.send(cmdString); // TODO przenieść buforowanie tutaj
 	},
-	'sendMessage': function(dest, text, notice, slow){
+	'sendMessage': function(dest, text, notice, slow, hide=false){
 		if(notice){
 			var cmd = 'NOTICE';
 		} else {
@@ -85,7 +85,11 @@ var ircCommand = {
 		} else {
 			ircCommand.perform(cmd, [dest], text, {'label': label});
 		}
-		gateway.insertMessage(cmd, dest, text, true, label);
+		if(hide){
+			gateway.hideMessageWithLabel(label);
+		} else {
+			gateway.insertMessage(cmd, dest, text, true, label);
+		}			
 	},
 	'sendAction': function(dest, text){
 		var ctcp = '\001' + 'ACTION ' + text + '\001';
@@ -177,7 +181,7 @@ var ircCommand = {
 	'sendCtcpReply': function(dest, text){
 		ircCommand.sendMessage(dest, '\001'+text+'\001', true, true);
 	},
-	'serviceCommand': function(service, command, args){
+	'serviceCommand': function(service, command, args, hide=false){
 		if(args.constructor !== Array){
 			var args = [args];
 		}
@@ -185,10 +189,10 @@ var ircCommand = {
 		for(var i=0; i<args.length; i++){
 			commandString += ' '+args[i];
 		}
-		ircCommand.sendMessage(service, commandString, false, false);
+		ircCommand.sendMessage(service, commandString, false, false, true);
 	},
-	'NickServ': function(command, args){
-		ircCommand.serviceCommand('NickServ', command, args);
+	'NickServ': function(command, args, hide=false){
+		ircCommand.serviceCommand('NickServ', command, args, true);
 	},
 	'ChanServ': function(command, args){
 		ircCommand.serviceCommand('ChanServ', command, args);

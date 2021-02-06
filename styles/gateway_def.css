@@ -859,16 +859,22 @@ span.uiclick:hover {
 	text-decoration: underline;
 }
 
-DIV.table  {
+div.table  {
 	display:table;
 }
-FORM.tr, DIV.tr {
+
+form.tr, div.tr {
 	display:table-row;
 }
-SPAN.td, span.td_right {
+
+form.trgr {
+	display: table-row-group;
+}
+
+span.td, span.td_right {
 	display:table-cell;
 	margin: 4px;
-	padding: 4px;
+	padding: 0px 4px 0px 4px;
 }
 
 span.td_right {

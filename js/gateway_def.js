@@ -271,6 +271,7 @@ var gateway = {
 	'labelProcessed': false,
 	'labelCallbacks': {},
 	'labelInfo': {},
+	'labelsToHide': [],
 	'batch': {},
 	'chanPassword': function(chan) {
 		if($('#chpass').val() == ''){
@@ -443,6 +444,10 @@ var gateway = {
 				if(label in gateway.labelInfo){
 					delete gateway.labelInfo[label];
 				}
+				var index = gateway.labelsToHide.indexOf(label);
+				if(index >= 0){
+					gateway.labelsToHide.splice(index, 1);
+				}
 			}
 		}
 		gateway.commandProcessing = false;
@@ -491,18 +496,18 @@ var gateway = {
 			if(gateway.connectStatus == '001') {
 				if(guser.nick != guser.nickservnick) { //auto-ghost
 					gateway.connectStatus = 'ghostSent';
-					ircCommand.NickServ('RECOVER', [guser.nickservnick, guser.nickservpass]);
+					ircCommand.NickServ('RECOVER', [guser.nickservnick, guser.nickservpass], true);
 					gatewayStatus = 'ghostSent';
 				} else gateway.connectStatus = 'identified';
 			}
 			if(gateway.connectStatus == 'reIdentify'){
 				if(guser.nick != guser.nickservnick){
 					gateway.connectStatus = 'ghostSent';
-					ircCommand.NickServ('RECOVER', [guser.nickservnick, guser.nickservpass]);
+					ircCommand.NickServ('RECOVER', [guser.nickservnick, guser.nickservpass], true);
 				} else {
 					gateway.connectStatus = 'identified';
 					if(!('sasl' in activeCaps)){
-						ircCommand.NickServ('IDENTIFY', guser.nickservpass);
+						ircCommand.NickServ('IDENTIFY', guser.nickservpass, true);
 					} else {
 						gateway.retrySasl = true;
 						ircCommand.performQuick('AUTHENTICATE', ['PLAIN']);
@@ -2272,6 +2277,10 @@ var gateway = {
 		return gateway.label.toString();
 	},
 	'insertMessage': function(cmd, dest, text, ownMsg, label, tags, sender, time){
+		if('label' in tags && gateway.labelsToHide.indexOf(tags.label) >= 0){
+			gateway.labelProcessed = true;
+			return; // hidden message, likely contains a password
+		}
 		if(!time)
 			time = new Date();
 		var attrs = 'data-time="' + time.getTime() + '"';
@@ -2639,6 +2648,30 @@ var gateway = {
 				tab.typing.stop(user);
 				break;
 		}
+	},
+	'changeCapSupport': function(cap, enable){
+		if(enable){
+			if(cap in supportedCaps){
+				return;
+			}
+			supportedCaps.push(cap);
+			if(cap in serverCaps){
+				ircCommand.performQuick('CAP', ['REQ'], [cap]);
+			}
+		} else {
+			console.log('Removing cap', cap);
+			var index = supportedCaps.indexOf(cap);
+			if(index >= 0){
+				supportedCaps.splice(index, 1);
+			}
+			if(cap in activeCaps){
+				ircCommand.performQuick('CAP', ['REQ'], ['-'+cap]);
+				delete activeCaps[cap];
+			}
+		}
+	},
+	'hideMessageWithLabel': function(label){
+		gateway.labelsToHide.push(label);
 	}
 }
 
