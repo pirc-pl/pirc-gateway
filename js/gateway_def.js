@@ -2277,7 +2277,7 @@ var gateway = {
 		return gateway.label.toString();
 	},
 	'insertMessage': function(cmd, dest, text, ownMsg, label, tags, sender, time){
-		if('label' in tags && gateway.labelsToHide.indexOf(tags.label) >= 0){
+		if(tags && 'label' in tags && gateway.labelsToHide.indexOf(tags.label) >= 0){
 			gateway.labelProcessed = true;
 			return; // hidden message, likely contains a password
 		}
