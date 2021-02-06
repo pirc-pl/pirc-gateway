@@ -248,7 +248,7 @@ lang.en = {
 	'reconnectingWait': 'Reconnecting, please wait...',
 	'connecting': 'Connecting',
 	'pingTimeout': 'Connecting timeout',
-	'nickNoLongerInUse': 'And now it\'s not: i\'ve cleared it using your password :)',
+	'nickNoLongerInUse': 'Your nick has been automatically recovered with RECOVERY command.',
 	'connectingTooLong': 'Connecting takes too long. You can wait or try again.',
 	'connectingTookTooLong': 'Connecting took too long',
 	'connectingWaitHtml': 'Connecting, please wait...<br />Don\'t use the "Back" or "Refresh" options now.',

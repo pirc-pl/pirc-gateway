@@ -249,7 +249,7 @@ lang.pl = {
 	'reconnectingWait': 'Ponowne łączenie, czekaj...',
 	'connecting': 'Łączenie',
 	'pingTimeout': 'Przekroczony czas odpowiedzi serwera',
-	'nickNoLongerInUse': 'I już nie jest: usunąłem go używając Twojego hasła :)',
+	'nickNoLongerInUse': 'Nick został automatycznie odzyskany za pomocą komendy RECOVER.',
 	'connectingTooLong': 'Łączenie trwa zbyt długo. Możesz poczekać lub spróbować jeszcze raz.',
 	'connectingTookTooLong': 'Zbyt długi czas łączenia',
 	'connectingWaitHtml': 'Poczekaj, trwa łączenie...<br />Nie używaj teraz przycisku "Wstecz" ani "Odśwież".',
