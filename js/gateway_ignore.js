@@ -183,8 +183,8 @@ var ignore = {
 		ignore.showIgnoreManagement();
 	},
 	'ignoreClick': function(nick) {
-		ignore.changeIgnoreList('query', nick, $('#'+nick+'_ignore_query').prop('checked'));
-		ignore.changeIgnoreList('channel', nick, $('#'+nick+'_ignore_channel').prop('checked'));
+		ignore.changeIgnoreList('query', nick, $('#'+md5(nick)+'_ignore_query').prop('checked'));
+		ignore.changeIgnoreList('channel', nick, $('#'+md5(nick)+'_ignore_channel').prop('checked'));
 	},
 	'askIgnore': function(nick) {
 		if(nick.isInList(servicesNicks)){
@@ -200,8 +200,8 @@ var ignore = {
 			}
 		}
 		var html =
-			'<p><input type="checkbox" id="'+nick+'_ignore_query"> ' + language.ignorePMs + '</p>' +
-			'<p><input type="checkbox" id="'+nick+'_ignore_channel"> ' + language.ignoreChanMsgs + '</p>';
+			'<p><input type="checkbox" id="'+md5(nick)+'_ignore_query"> ' + language.ignorePMs + '</p>' +
+			'<p><input type="checkbox" id="'+md5(nick)+'_ignore_channel"> ' + language.ignoreChanMsgs + '</p>';
 		if(ignoredByWildcard){
 			html += '<p>' + language.isIgnoredByWildcards + '</p>';
 		}
@@ -223,10 +223,10 @@ var ignore = {
 		];
 		$$.displayDialog('ignore', 'ignore', language.ignoreUserNick+nick, html, button);
 		if(chanExplIgnored){
-			$('#'+nick+'_ignore_channel').prop('checked', true);
+			$('#'+md5(nick)+'_ignore_channel').prop('checked', true);
 		}
 		if(queryExplIgnored){
-			$('#'+nick+'_ignore_query').prop('checked', true);
+			$('#'+md5(nick)+'_ignore_query').prop('checked', true);
 		}
 	}
 }
