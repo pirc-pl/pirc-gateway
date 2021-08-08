@@ -191,9 +191,13 @@ function NicklistUser(user, chan) {
 				'</li>'+
 				'<li class="' + gateway.findChannel(this.channel).id + '-operActions" style="display:none;"><div style="width:100%;" onClick="gateway.toggleNickOptAdmin(\''+this.id+'\')">' + language.channelAdministration + '</div>'+
 					'<ul class="suboptions" id="'+this.id+'-opt-admin'+'">'+
-						'<li onClick="gateway.showKick(\''+this.channel+'\', \''+this.user.nick+'\')">' + language.kickFromChannel + '</li>'+
-						'<li onClick="services.showCSBan(\''+this.channel+'\', \''+this.user.nick+'\')">' + language.banUsingChanserv + '</li>'+
-						'<li onClick="gateway.showStatus(\''+this.channel+'\', \''+this.user.nick+'\')">' + language.givePrivileges + '</li>'+
+						'<li onClick="gateway.showKick(\''+this.channel+'\', \''+this.user.nick+'\')">' + language.kickFromChannel + '</li>';
+		if(mainSettings.timedBanMethod == '~t:minutes:'){
+			html +=		'<li onClick="services.showBan(\''+this.channel+'\', \''+this.user.nick+'\')">' + language.banUser + '</li>';
+		} else if(mainSettings.timedBanMethod == 'ChanServ'){
+			html +=		'<li onClick="services.showBan(\''+this.channel+'\', \''+this.user.nick+'\')">' + language.banUsingChanserv + '</li>';
+		}		
+		html += 		'<li onClick="gateway.showStatus(\''+this.channel+'\', \''+this.user.nick+'\')">' + language.givePrivileges + '</li>'+
 						'<li onClick="gateway.showStatusAnti(\''+this.channel+'\', \''+this.user.nick+'\')">' + language.takePrivileges + '</li>'+
 					/*	'<li onClick="gateway.showBan(\''+this.channel+'\', \''+this.user.nick+'\')">Banuj</li>'+*/
 					'</ul>'+

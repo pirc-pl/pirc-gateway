@@ -405,15 +405,19 @@ var services = {
 		}
 		return cmdString;
 	},
-	'showCSBan': function(channel, nick) {
+	'showBan': function(channel, nick) {
 		var html = '<p>'+language.banAndKickUserFrom +he(nick)+language.fromChannel+he(channel)+'. '+ language.giveKickReason +'</p>' +
 			'<input type="text" id="kbinput" maxlength="307" /><br>' +
 			'<select id="kbtime">' +
 				'<option value=" ">' + language.noAutoUnban + '</option>' +
-				'<option value="+1d">' + language.unban1Day + '</option>' +
-				'<option value="+1h">' + language.unban1Hour + '</option>' +
-				'<option value="+30d">' + language.unban1Month + '</option>' +
-			'</select>';
+				'<option value="1d">' + language.unban1Day + '</option>' +
+				'<option value="1h">' + language.unban1Hour + '</option>';
+		if(mainSettings.timedBanMethod == 'ChanServ'){
+			html += '<option value="30d">' + language.unban1Month + '</option>';
+		} else {
+			html += '<option value="7d">' + language.unban1Week + '</option>';
+		}
+		html += '</select>';
 		var button = [ {
 			text: language.cancel,
 			click: function(){
@@ -422,18 +426,54 @@ var services = {
 		}, {
 			text: language.doBan,
 			click: function(){
-				services.processCSBan(channel, nick);
+				services.processBan(channel, nick);
 				$(this).dialog('close');
 			}
 		} ];
 		$$.displayDialog('admin', 'kb-'+channel, 'BAN', html, button);
 		$('#kbtime > option:eq(1)').prop('selected', true);
 	},
-	'processCSBan': function(channel, nick) {
-		var banString = 'CS BAN '+channel;
-		banString += ' '+$('#kbtime').val()+' '+nick;
-		if ($("#kbinput").val() != "") {
-			banString += ' '+$("#kbinput").val();
+	'processBan': function(channel, nick) {
+		var reason = $("#kbinput").val();
+		var banTime = $('#kbtime').val();
+		if(mainSettings.timedBanMethod == '~t:minutes:'){
+			var user = users.getUser(nick);
+			if(!user)
+				return; // TODO ban even if the user already quit
+			banMask = user.host;
+			var banString = 'MODE '+channel+' +b ';
+			if(banTime != ' '){
+				var modifier = banTime.slice(-1);
+				var multiplier = null;
+				switch(modifier){
+					default:
+						break;
+					case 'd':
+						multiplier = 1440;
+						break;
+					case 'h':
+						multiplier = 60;
+						break;
+				}
+				if(multiplier){
+					banTime = parseInt(banTime, 10);
+					banTime *= multiplier;
+					if(banTime > 9999)
+						banTime = 9999;
+				}
+				banString += '~t:'+banTime+':';
+			}
+			banString += '*!*@' + banMask;
+			ircCommand.channelKick(channel, nick, reason);
+		} else if(mainSettings.timedBanMethod == 'ChanServ'){
+			var banString = 'CS BAN '+channel;
+			if(banTime != ' '){
+				banTime = '+' + banTime;
+			}
+			banString += ' '+banTime+' '+nick;
+			if(reason != ''){
+				banString += ' '+$("#kbinput").val();
+			}
 		}
 		gateway.performCommand(banString);
 	},

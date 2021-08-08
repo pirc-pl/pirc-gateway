@@ -105,7 +105,7 @@ var ircCommand = {
 		ircCommand.perform('INVITE', [user, channel]);
 	},
 	'channelKick': function(channel, user, reason){
-		if(!reason){
+		if(!reason || reason == ''){
 			ircCommand.performQuick('KICK', [channel, user]);
 		} else {
 			ircCommand.performQuick('KICK', [channel, user], reason);

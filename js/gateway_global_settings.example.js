@@ -11,6 +11,7 @@ var mainSettings = {
 	'version': 'GIT',
 	'oldGatewayHtml': '<a href=\"https://widget01.mibbit.com/?promptPass=true&settings=10db5282f0641bc847a88fc71f2bc200&server=irc.pirc.pl&autoConnect=true&charset=UTF-8\">innej bramki</a> (Mibbit).', // TODO insert nick&channel
 	'language': 'en',
+	'timedBanMethod': '~t:minutes:', // set either '~t:minutes:' for UnrealIRCd style bans or 'ChanServ' for using /CS BAN
 	'modules': [
 		'mcolor' // enable only when the server supports metadata, this is not checked!
 	]
