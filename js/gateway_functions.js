@@ -208,8 +208,11 @@ function he(text) { //HTML Escape
 	return $('<div/>').text(text).html().replace(/"/g, '&quot;');
 }
 
-function bsEscape(text) { // escapowanie beksleszy
-	return text.replace(/\\/g, '\\\\');
+function bsEscape(text) { // escapowanie beksleszy i zakończeń stringa
+	text = text.replace(/\\/g, '\\\\');
+	text = text.replace(/'/g, '\\\'');
+	text = text.replace(/"/g, '\\\"');
+	return text;
 }
 
 function rxEscape(text) { //backupowanie regex
@@ -1286,7 +1289,7 @@ var $$ = {
 		}
 		if(state == stateChannel){
 			var link = $$.correctLink(currLink);
-			newText += '<a href="javascript:gateway.send(\'JOIN '+link.link+'\')"' + confirmChan + '>'+link.text+'</a>' + link.append;
+			newText += '<a href="javascript:gateway.send(\'JOIN '+bsEscape(link.link)+'\')"' + confirmChan + '>'+link.text+'</a>' + link.append;
 		}
 		return newText;
 	},

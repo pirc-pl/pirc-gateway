@@ -553,7 +553,9 @@ function Channel(chan) {
 	}
 	this.markBold = function() {
 		if(!this.hilight2 && !this.hilight) {
-			this.hilight2 = window.setInterval('gateway.findChannel(\''+bsEscape(this.name)+'\').toggleClassMsg();', 500);
+			this.hilight2 = window.setInterval(function(){
+				gateway.findChannel(this.name).toggleClassMsg();
+			}.bind(this), 500);
 		}
 	}
 	this.markRead = function() {
@@ -589,7 +591,6 @@ function Channel(chan) {
 		if(!this.left) {
 			this.part();
 			gateway.send("PART "+this.name+" :" + language.leftChannel);
-			gateway.statusWindow.appendMessage(language.messagePatterns.partOwn, [$$.niceTime(), this.name, bsEscape(this.name)]);
 		}
 		this.nicklist.remove();
 		$('#'+this.id+'-tab').remove();
@@ -657,17 +658,17 @@ function Channel(chan) {
 	$('<span/>').attr('id', this.id+'-topic').hide().appendTo('#info');
 	$('<span/>').attr('id', this.id+'-tab-info').hide().appendTo('#tab-info');
 	$('#'+this.id+'-topic').html('<h1>'+he(this.name)+'</h1><h2></h2>');
-	$('<li/>').attr('id', this.id+'-tab').html('<a href="javascript:void(0);" onclick="gateway.switchTab(\''+bsEscape(this.name)+'\')" class="switchTab">'+he(this.name)+'</a>'+
-		'<a href="javascript:void(0);" onclick="gateway.removeChannel(\''+bsEscape(this.name)+'\')"><div class="close" title="' + language.leaveChannel + '"></div></a>').appendTo('#tabs');
+	$('<li/>').attr('id', this.id+'-tab').html('<a href="javascript:void(0);" id="' + this.id + '-channelSwitchButton" class="switchTab">'+he(this.name)+'</a>'+
+		'<a href="javascript:void(0);" id="' + this.id + '-channelPartButton"><div class="close" title="' + language.leaveChannel + '"></div></a>').appendTo('#tabs');
 	$('#chstats').append('<div class="chstatswrapper" id="'+this.id+'-chstats"><span class="chstats-text symbolFont">'+he(this.name)+'</span>'+
-		'<span class="chstats-button" onclick="gateway.toggleChannelOpts(\''+bsEscape(this.name)+'\')">' +language.channelOptions+ '</span>'+
+		'<span class="chstats-button" id="'+this.id+'-toggleChannelOpts">' +language.channelOptions+ '</span>'+
 		'<div id="'+this.id+'-channelOptions" class="channelAdmin"><ul class="channelOptions">' +
 			'<div class="nickRegistered"><span>' + language.autoJoinThisChannel + '</span>'+
-				'<li onclick="services.perform(\'NickServ\', \'AJOIN\', [\'ADD\', \''+bsEscape(this.name)+'\'], true)">' + language.enable + '</li>' +
-				'<li onclick="services.perform(\'NickServ\', \'AJOIN\', [\'DEL\', \''+bsEscape(this.name)+'\'], true)">' + language.disable + '</li>' +
+				'<li id="'+this.id+'-aJoinEnable">' + language.enable + '</li>' +
+				'<li id="'+this.id+'-aJoinDisable">' + language.disable + '</li>' +
 			'</div>'+
-			'<li onclick="gateway.findChannel(\''+bsEscape(this.name)+'\').clearWindow()">' + language.clearMessageWindow + '</li>' +
-			'<li onclick="ircCommand.channelRedoNames(\''+bsEscape(this.name)+'\')">' + language.refreshNickList + '</li>' +
+			'<li id="'+this.id+'-clearWindow">' + language.clearMessageWindow + '</li>' +
+			'<li id="'+this.id+'-redoNames">' + language.refreshNickList + '</li>' +
 			/*'<li onclick="gateway.send(\'MODE '+bsEscape(this.name)+' I\')" title="Znajdujący się na liście nie potrzebują zaproszenia, gdy jest ustawiony tryb +i">Lista wyjątków i (I)</li>' +
 			'<li onclick="gateway.showChannelModes(\''+bsEscape(this.name)+'\')">Tryby kanału</li>' +
 			'<li onclick="gateway.showInvitePrompt(\''+bsEscape(this.name)+'\')">Zaproś na kanał</li>' +
@@ -676,18 +677,33 @@ function Channel(chan) {
 		'</ul></div>');
 	var operHtml = '<div id="'+this.id+'-operActions" class="'+this.id+'-operActions channelAdmin" style="display:none">' +
 		//'<div class="channelOperActionsButton" onclick="gateway.toggleChannelOpts(\''+bsEscape(this.name)+'\')">Akcje administracyjne</div>'+
-		'<span class="chstats-button" onclick="gateway.toggleChannelOperOpts(\''+bsEscape(this.name)+'\')">' + language.administrativeActions + '</span>'+
+		'<span class="chstats-button" id="'+this.id+'-openOperActions">' + language.administrativeActions + '</span>'+
 		'<ul class="channelOperActions">' +
-			'<li onclick="gateway.send(\'MODE '+bsEscape(this.name)+' b\')">' + language.banList + '</li>' +
-			'<li onclick="gateway.send(\'MODE '+bsEscape(this.name)+' e\')" title="' + language.exceptListHint + '">' + language.exceptList + '</li>' +
-			'<li onclick="gateway.send(\'MODE '+bsEscape(this.name)+' I\')" title="' + language.invexListHint + '">' + language.invexList + '</li>' +
-			'<li onclick="gateway.showChannelModes(\''+bsEscape(this.name)+'\')">' + language.channelModes + '</li>' +
-			'<li onclick="gateway.showInvitePrompt(\''+bsEscape(this.name)+'\')">' + language.inviteToChannel + '</li>' +
-			'<li onclick="services.showChanServCmds(\''+bsEscape(this.name)+'\')">' + language.chanservCommands + '</li>' +
-			'<li onclick="services.showBotServCmds(\''+bsEscape(this.name)+'\')">' + language.botservCommands + '</li>' +
+			'<li id="'+this.id+'-openBanList">' + language.banList + '</li>' +
+			'<li id="'+this.id+'-openExceptList" title="' + language.exceptListHint + '">' + language.exceptList + '</li>' +
+			'<li id="'+this.id+'-openInvexList" title="' + language.invexListHint + '">' + language.invexList + '</li>' +
+			'<li id="'+this.id+'-openChannelModes">' + language.channelModes + '</li>' +
+			'<li id="'+this.id+'-showInvitePrompt">' + language.inviteToChannel + '</li>' +
+			'<li id="'+this.id+'-showChanservCommands">' + language.chanservCommands + '</li>' +
+			'<li id="'+this.id+'-showBotservCommands">' + language.botservCommands + '</li>' +
 		'</ul>' +
 		'</div></div>';
 	$('#'+this.id+'-chstats').append(operHtml);
+	$('#'+this.id+'-channelSwitchButton').click(function(){ gateway.switchTab(this.name); }.bind(this));
+	$('#'+this.id+'-channelPartButton').click(function(){ gateway.removeChannel(this.name); }.bind(this));
+	$('#'+this.id+'-toggleChannelOpts').click(function(){ gateway.toggleChannelOpts(this.name); }.bind(this));
+	$('#'+this.id+'-aJoinEnable').click(function(){ services.perform('NickServ', 'AJOIN', ['ADD', this.name], true); }.bind(this));
+	$('#'+this.id+'-aJoinDisable').click(function(){ services.perform('NickServ', 'AJOIN', ['DEL', this.name], true); }.bind(this));
+	$('#'+this.id+'-clearWindow').click(this.clearWindow.bind(this));
+	$('#'+this.id+'-redoNames').click(function(){ ircCommand.channelRedoNames(this.name); }.bind(this));
+	$('#'+this.id+'-openOperActions').click(function(){ gateway.toggleChannelOperOpts(this.name); }.bind(this));
+	$('#'+this.id+'-openBanList').click(function(){ gateway.send('MODE '+this.name+' b'); }.bind(this));
+	$('#'+this.id+'-openExceptList').click(function(){ gateway.send('MODE '+this.name+' e'); }.bind(this));
+	$('#'+this.id+'-openInvexList').click(function(){ gateway.send('MODE '+this.name+' I'); }.bind(this));
+	$('#'+this.id+'-openChannelModes').click(function(){ gateway.showChannelModes(this.name); }.bind(this));
+	$('#'+this.id+'-showInvitePrompt').click(function(){ gateway.showInvitePrompt(this.name); }.bind(this));
+	$('#'+this.id+'-showChanservCommands').click(function(){ services.showChanServCmds(this.name); }.bind(this));
+	$('#'+this.id+'-showBotservCommands').click(function(){ services.showBotServCmds(this.name); }.bind(this));
 	this.setTopic('');
 	guser.setUmode(false);
 	try {

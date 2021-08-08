@@ -485,16 +485,22 @@ var cmdBinds = {
 	],
 	'PART': [
 		function(msg) {
-			if(gateway.findChannel(msg.args[0])) {
-				if(msg.sender.nick != guser.nick) {
+			var channel = msg.args[0];
+			var channelTab = gateway.findChannel(channel);
+			if(msg.sender.nick != guser.nick) {
+				if(channelTab){
 					if (!$('#showPartQuit').is(':checked')) {
-						gateway.findChannel(msg.args[0]).appendMessage(language.messagePatterns.part, [$$.niceTime(msg.time), he(msg.sender.nick), he(msg.sender.ident), he(msg.sender.host), msg.args[0], $$.colorize(msg.text)]);
+						channelTab.appendMessage(language.messagePatterns.part, [$$.niceTime(msg.time), he(msg.sender.nick), he(msg.sender.ident), he(msg.sender.host), channel, $$.colorize(msg.text)]);
 					}
-					gateway.findChannel(msg.args[0]).nicklist.removeNick(msg.sender.nick);
-				} else {
-					gateway.findChannel(msg.args[0]).appendMessage(language.messagePatterns.partOwn, [$$.niceTime(msg.time), msg.args[0], msg.args[0]]);
-					gateway.findChannel(msg.args[0]).part();
+					channelTab.nicklist.removeNick(msg.sender.nick);
 				}
+			} else {
+				if(channelTab)
+					channelTab.appendMessage(language.messagePatterns.partOwn, [$$.niceTime(msg.time), channel, md5(channel)]);
+				gateway.statusWindow.appendMessage(language.messagePatterns.partOwn, [$$.niceTime(msg.time), channel, md5(channel)]);
+				$('.channelRejoin-'+md5(channel)).click(function(){ gateway.send('JOIN ' + channel); });
+				if(channelTab)
+					channelTab.part();
 			}
 		}
 	],
