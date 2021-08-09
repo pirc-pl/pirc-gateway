@@ -63,7 +63,7 @@ function Nicklist(chan, id) {
 		this.sort();
 		for(var i=0; i<this.list.length; i++){
 			if(this.sortFunc(this.list[i], nickListItem) > 0){
-				$('#'+this.id+' .'+md5(this.list[i].user.nick)).before(userHTML);
+				$('#'+this.id+' .'+this.list[i].user.id).before(userHTML);
 				userHTML = false;
 				break;
 			}
@@ -71,6 +71,7 @@ function Nicklist(chan, id) {
 		if(userHTML){
 			$('#'+this.id+' .nicklist').append(userHTML);
 		}
+		nickListItem.setActions();
 		if(nickListItem.user.host && nickListItem.user.ident){
 			$('#'+nickListItem.id).attr('title', nickListItem.user.nick+'!'+nickListItem.user.ident+'@'+nickListItem.user.host);
 		}
@@ -164,11 +165,11 @@ function NicklistUser(user, chan) {
 	/*	if(this.level == 0 && this.isRegistered){
 			index = 6;
 		}*/
-		var html = '<li id="'+this.id+'" class="'+md5(this.user.nick)+'">'+
-			'<table><tr onclick="gateway.toggleNickOpt(\''+this.id+'\')">'+
+		var html = '<li id="'+this.id+'" class="'+this.user.id+'">'+
+			'<table><tr id="'+this.id+'-toggleNickOpt">'+
 				'<td valign="top">'+
 					'<img class="chavatar" alt="' + (this.user.registered?language.registered:language.unRegistered) + '" src="'+disp.getAvatarIcon(this.user.nick, this.user.registered)+'" title="' + (this.user.registered?language.registered:language.unRegistered) + '" '+
-					'onerror="users.disableAutoAvatar(\'' + this.user.nick + '\')">'+
+					'id="'+this.id+'-avatarField">'+
 				'</td><td valign="top">';
 		if(index > 0){
 			html += '<img class="chrank" alt="'+alt[index]+'" src="'+(index>0?icons[index]:'')+'" title="'+(index?chStatusInfo[index]:'')+'" />';
@@ -180,31 +181,58 @@ function NicklistUser(user, chan) {
 			'</tr></table>'+
 			'<ul class="options" id="'+this.id+'-opt">'+
 				'<li class="nicklistAvatar"></li>'+
-				'<li onClick="gateway.openQuery(\''+this.user.nick+'\', \''+this.id+'\')" class="switchTab">' + language.query + '</li>'+
-				((this.user == guser.me)?'':'<li onClick="ignore.askIgnore(\''+this.user.nick+'\');">' + language.ignoreThis + '</li>')+
-				'<li><div style="width:100%;" onClick="gateway.toggleNickOptInfo(\''+this.id+'\')">' + language.informations + '</div>'+
+				'<li id="' + this.id + '-openQuery" class="switchTab">' + language.query + '</li>'+
+				((this.user == guser.me)?'':'<li id="'+this.id+'-askIgnore">' + language.ignoreThis + '</li>')+
+				'<li><div style="width:100%;" id="'+this.id+'-toggleNickInfo">' + language.informations + '</div>'+
 					'<ul class="suboptions" id="'+this.id+'-opt-info'+'">'+
-						'<li onClick="' + ((this.user == guser.me)?'gateway.displayOwnWhois = true; ':'') + 'gateway.send(\'WHOIS '+$$.sescape(this.user.nick)+' '+$$.sescape(this.user.nick)+'\');gateway.toggleNickOpt(\''+this.id+'\');">WHOIS</li>'+
-						'<li onClick="services.nickInfo(\''+this.user.nick+'\');gateway.toggleNickOpt(\''+this.id+'\');">NickServ</li>'+
-						((this.user == guser.me)?'':'<li onClick="gateway.ctcp(\''+this.user.nick+'\', \'VERSION\');gateway.toggleNickOpt(\''+this.id+'\');">' + language.softwareVersion + '</li>')+
+						'<li id="'+this.id+'-doWhois">WHOIS</li>'+
+						'<li id="'+this.id+'-doNickservInfo">NickServ</li>'+
+						((this.user == guser.me)?'':'<li id="'+this.id+'-doCtcpVersion">' + language.softwareVersion + '</li>')+
 					'</ul>'+
 				'</li>'+
-				'<li class="' + gateway.findChannel(this.channel).id + '-operActions" style="display:none;"><div style="width:100%;" onClick="gateway.toggleNickOptAdmin(\''+this.id+'\')">' + language.channelAdministration + '</div>'+
+				'<li class="' + gateway.findChannel(this.channel).id + '-operActions" style="display:none;"><div style="width:100%;" id="'+this.id+'-toggleNickOptAdmin">' + language.channelAdministration + '</div>'+
 					'<ul class="suboptions" id="'+this.id+'-opt-admin'+'">'+
-						'<li onClick="gateway.showKick(\''+this.channel+'\', \''+this.user.nick+'\')">' + language.kickFromChannel + '</li>';
+						'<li id="'+this.id+'-showKick">' + language.kickFromChannel + '</li>';
 		if(mainSettings.timedBanMethod == '~t:minutes:'){
-			html +=		'<li onClick="services.showBan(\''+this.channel+'\', \''+this.user.nick+'\')">' + language.banUser + '</li>';
+			html +=		'<li id="'+this.id+'-showBan">' + language.banUser + '</li>';
 		} else if(mainSettings.timedBanMethod == 'ChanServ'){
-			html +=		'<li onClick="services.showBan(\''+this.channel+'\', \''+this.user.nick+'\')">' + language.banUsingChanserv + '</li>';
+			html +=		'<li id="'+this.id+'-showBan">' + language.banUsingChanserv + '</li>';
 		}		
-		html += 		'<li onClick="gateway.showStatus(\''+this.channel+'\', \''+this.user.nick+'\')">' + language.givePrivileges + '</li>'+
-						'<li onClick="gateway.showStatusAnti(\''+this.channel+'\', \''+this.user.nick+'\')">' + language.takePrivileges + '</li>'+
-					/*	'<li onClick="gateway.showBan(\''+this.channel+'\', \''+this.user.nick+'\')">Banuj</li>'+*/
+		html += 		'<li id="'+this.id+'-givePrivileges">' + language.givePrivileges + '</li>'+
+						'<li id="'+this.id+'-takePrivileges">' + language.takePrivileges + '</li>'+
+					/*	'<li id="'+this.id+'-showBanUni">Banuj</li>'+*/
 					'</ul>'+
 				'</li>'+
 			'</ul>';
 		return html;
 		//}
+	}
+	this.setActions = function() {
+		$('#'+this.id+'-toggleNickOpt').click(function(){ gateway.toggleNickOpt(this.id); }.bind(this));
+		$('#'+this.id+'-openQuery').click(function(){ gateway.openQuery(this.user.nick, this.user.id) }.bind(this));
+		$('#'+this.id+'-askIgnore').click(function(){ ignore.askIgnore(this.user.nick); }.bind(this));
+		$('#'+this.id+'-doWhois').click(function(){
+			if(this.user == guser.me)
+				gateway.displayOwnWhois = true;
+			 gateway.send('WHOIS '+this.user.nick+' '+this.user.nick);
+			 gateway.toggleNickOpt(this.id);
+		}.bind(this));
+		$('#'+this.id+'-toggleNickInfo').click(function(){ gateway.toggleNickOptInfo(this.id); }.bind(this));
+		$('#'+this.id+'-doNickservInfo').click(function(){
+			services.nickInfo(this.user.nick);
+			gateway.toggleNickOpt(this.id);
+		}.bind(this));
+		$('#'+this.id+'-doCtcpVersion').click(function(){
+			gateway.ctcp(this.user.nick, 'VERSION');
+			gateway.toggleNickOpt(this.id);
+		}.bind(this));
+		$('#'+this.id+'-toggleNickOptAdmin').click(function(){ gateway.toggleNickOptAdmin(this.id); }.bind(this));
+		$('#'+this.id+'-showKick').click(function(){ gateway.showKick(this.channel, this.user.nick); }.bind(this));
+		$('#'+this.id+'-showBan').click(function(){ services.showBan(this.channel, this.user.nick); }.bind(this));
+		$('#'+this.id+'-givePrivileges').click(function(){ gateway.showStatus(this.channel, this.user.nick); }.bind(this));
+		$('#'+this.id+'-takePrivileges').click(function(){ gateway.showStatusAnti(this.channel, this.user.nick); }.bind(this));
+		/*$('#'+this.id+'-showBanUni').click(function(){ gateway.showBan(this.channel, this.user.nick); }.bind(this));*/
+		$('#'+this.id+'-avatarField').error(function(){ users.disableAutoAvatar(this.user.nick); }.bind(this));
 	}
 	this.setMode = function(mode, setting) {
 		var oldLevel = this.level;
@@ -236,7 +264,7 @@ function NicklistUser(user, chan) {
 		}
 		if(this.level != oldLevel){
 			var nicklist = gateway.findChannel(this.channel).nicklist;
-			var nickListElement = $('#'+nicklist.id+' .'+md5(this.user.nick));
+			var nickListElement = $('#'+nicklist.id+' .'+this.user.id);
 			if(nickListElement.length){
 				nickListElement.remove();
 				nicklist.insertNick(this);

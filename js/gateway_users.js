@@ -30,6 +30,7 @@ var users = {
 	},
 	'user': function(nick){
 		this.nick = nick;
+		this.id = nick.replace(/^#/g,'').replace(/[^a-zA-Z0-9]+/g, '-').toLowerCase()+Math.round(Math.random()*10000);
 		this.ident = false;
 		this.host = false;
 		this.realname = false;
