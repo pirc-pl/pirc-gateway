@@ -21,53 +21,109 @@
  */
 
 var ignoreData = {
-	'full': {
+	'realname': {
 		'channel': [],
 		'query': []
 	},
-	'wildcard': {
+	'account': {
+		'channel': [],
+		'query': []
+	},
+	'userhost': {
 		'channel': [],
 		'query': []
 	}
 };
 
 var ignore = {
-	'ignoring': function(nick, type, dontProcessWildcard) {
-		if(nick.isInList(servicesNicks)){
+	'loadList': function(){
+		try {
+			var ignoreList = localStorage.getItem('ignore');
+			if(ignoreList){
+				ignoreData = JSON.parse(ignoreList);
+				/* convert old style ignore - remove this in 2023 :) */
+				if('full' in ignoreData){
+					for(var i=0; i<ignoreData.full.channel.length; i++){
+						ignoreData.userhost.channel.push($$.wildcardToRegex(ignoreData.full.channel[i]+'!*@*'));
+					}
+					for(var i=0; i<ignoreData.full.query.length; i++){
+						ignoreData.userhost.query.push($$.wildcardToRegex(ignoreData.query.channel[i]+'!*@*'));
+					}
+					delete ignoreData.full;
+				}
+				if('wildcard' in ignoreData){
+					for(var i=0; i<ignoreData.wildcard.channel.length; i++){
+						ignoreData.userhost.channel.push($$.wildcardToRegex(ignoreData.wildcard.channel[i]+'!*@*'));
+					}
+					for(var i=0; i<ignoreData.wildcard.query.length; i++){
+						ignoreData.userhost.query.push($$.wildcardToRegex(ignoreData.wildcard.channel[i]+'!*@*'));
+					}
+					delete ignoreData.wildcard;
+				}
+				localStorage.setItem('ignore', JSON.stringify(ignoreData));
+			}
+		} catch(e){
+			console.error(e);
+		}
+	},
+	'wildcardChecker': function(array, input){
+		if(!input)
 			return false;
-		}
-		if($.inArray(nick, ignoreData.full[type]) >= 0){
-			return true;
-		}
-		if(dontProcessWildcard){
-			if($.inArray($$.wildcardToRegex(nick), ignoreData.wildcard[type]) >= 0){
+		for(var i = 0; i < array.length; i++){
+			var regex = array[i];
+			if(input.match(new RegExp(regex))){
 				return true;
 			}
+		}
+		return false;
+	},
+	'ignoring': function(user, type) {
+		if(!user)
+			return false;
+		if(typeof user === 'string' || user instanceof String){
+			var nick = user;
+			user = users.getExistingUser(nick);
 		} else {
-			for(var i = 0; i < ignoreData.wildcard[type].length; i++){
-				var regex = ignoreData.wildcard[type][i];
-				console.log(nick);
-				console.log(regex);
-				if(nick.match(new RegExp(regex))){
-					return true;
-				}
-			}
+			var nick = user.nick;
+		}
+		if(nick.isInList(servicesNicks))
+			return false;
+
+		if(!user)
+			return false;
+
+		if(user.realname && ignore.wildcardChecker(ignoreData.realname[type], user.realname.replace(/ /g, '_')))
+			return true;
+		if(user.account && ignore.wildcardChecker(ignoreData.account[type], user.account))
+			return true;
+		if(user.host && user.ident){
+			if(ignore.wildcardChecker(ignoreData.userhost[type], nick+'!'+user.ident+'@'+user.host))
+				return true;
+		} else {
+			if(ignore.wildcardChecker(ignoreData.userhost[type], nick+'!*@*'))
+				return true;
 		}
 		return false;
 	},
 	'getIgnoreList': function() {
 		var data = [];
-		for(var i=0; i < ignoreData.full.channel.length; i++){
-			data.push(['channel', ignoreData.full.channel[i]]);
+		for(var i=0; i < ignoreData.realname.channel.length; i++){
+			data.push(['channel', '~r:' + $$.regexToWildcard(ignoreData.realname.channel[i])]);
 		}
-		for(var i=0; i < ignoreData.full.query.length; i++){
-			data.push(['query', ignoreData.full.query[i]]);
+		for(var i=0; i < ignoreData.realname.query.length; i++){
+			data.push(['query', '~r:' + $$.regexToWildcard(ignoreData.realname.query[i])]);
 		}
-		for(var i=0; i < ignoreData.wildcard.channel.length; i++){
-			data.push(['channel', $$.regexToWildcard(ignoreData.wildcard.channel[i])]);
+		for(var i=0; i < ignoreData.account.channel.length; i++){
+			data.push(['channel', '~a:' + $$.regexToWildcard(ignoreData.account.channel[i])]);
 		}
-		for(var i=0; i < ignoreData.wildcard.query.length; i++){
-			data.push(['query', $$.regexToWildcard(ignoreData.wildcard.query[i])]);
+		for(var i=0; i < ignoreData.account.query.length; i++){
+			data.push(['query', '~a:' + $$.regexToWildcard(ignoreData.account.query[i])]);
+		}
+		for(var i=0; i < ignoreData.userhost.channel.length; i++){
+			data.push(['channel', $$.regexToWildcard(ignoreData.userhost.channel[i])]);
+		}
+		for(var i=0; i < ignoreData.userhost.query.length; i++){
+			data.push(['query', $$.regexToWildcard(ignoreData.userhost.query[i])]);
 		}
 		return data;
 	},
@@ -79,7 +135,7 @@ var ignore = {
 		if(data.length == 0){
 			var html = language.listIsEmpty;
 		} else {
-			var html = '<div class="beIListContents"><table><tr><th>' + language.appliesTo + '</th><th>Maska</th></tr></table></div>';
+			var html = '<div class="beIListContents"><table><tr><th>' + language.appliesTo + '</th><th>' + language.mask + '</th></tr></table></div>';
 		}
 		$$.displayDialog('ignore', 'ignorelist', language.listOfIgnoredUsers, html);
 		for(var i=0; i<data.length; i++){
@@ -105,24 +161,49 @@ var ignore = {
 			'<p><input type="button" value="' + language.add + '" onclick="ignore.ignoreClickInput();"></p>';
 		$$.getDialogSelector('ignore', 'ignorelist').append(html);
 	},
+	'isInList': function(type, maskType, regex){
+		if(ignoreData[maskType][type].indexOf(regex) >= 0)
+			return true;
+		return false;
+	},
 	'unIgnore': function(type, mask){
 		ignore.changeIgnoreList(type, mask, false);
 	},
 	'changeIgnoreList': function(type, mask, add) {
-		var wildcard = false;
-		if(mask.indexOf('?') >= 0 || mask.indexOf('*') >= 0){
-			var wildcard = true;
-			var regex = $$.wildcardToRegex(mask);
+		var maskType = 'userhost';
+		var infoText = mask;
+		if(mask.indexOf('~r:') == 0){
+			maskType = 'realname';
+			mask = mask.substring(3);
+		} else if(mask.indexOf('~a:') == 0){
+			maskType = 'account';
+			mask = mask.substring(3);
 		}
+		if(maskType == 'userhost' && mask.indexOf('@') < 0){
+			mask += '!*@*';
+			infoText = mask;
+		}
+		if(maskType == 'userhost' && mask.indexOf('!') < 0){
+			mask = '*!' + mask;
+			infoText = mask;
+		}
+		
+		var regex = $$.wildcardToRegex(mask);
 		try {
 			if(add){
-				if(ignore.ignoring(mask, type, true)){
+				if(ignore.isInList(type, maskType, regex)){ // TODO handle new types
 					return; //już jest
 				}
-				if(wildcard){
-					ignoreData.wildcard[type].push(regex);
-				} else {
-					ignoreData.full[type].push(mask);
+				switch(maskType){
+					case 'realname':
+						ignoreData.realname[type].push(regex);
+						break;
+					case 'account':
+						ignoreData.account[type].push(regex);
+						break;
+					case 'userhost':
+						ignoreData.userhost[type].push(regex);
+						break;
 				}
 				if(type == 'channel'){
 					var pattern = language.messagePatterns.channelIgnoreAdded;
@@ -130,24 +211,27 @@ var ignore = {
 					var pattern = language.messagePatterns.queryIgnoreAdded;
 				}
 			} else {
-				if(!ignore.ignoring(mask, type, true)){
+				if(!ignore.isInList(type, maskType, regex)){ // TODO handle new types
 					return; //nie ma czego usuwać
 				}
-				//try {
-					if(wildcard){
-						ignoreData.wildcard[type].splice(ignoreData.wildcard[type].indexOf(regex), 1);
-					} else {
-						ignoreData.full[type].splice(ignoreData.full[type].indexOf(mask), 1);
-					}
-			//	} catch (e) {
-			//	}
+				switch(maskType){
+					case 'realname':
+						ignoreData.realname[type].splice(ignoreData.realname[type].indexOf(regex), 1);
+						break;
+					case 'account':
+						ignoreData.account[type].splice(ignoreData.account[type].indexOf(regex), 1);
+						break;
+					case 'userhost':
+						ignoreData.userhost[type].splice(ignoreData.userhost[type].indexOf(regex), 1);
+						break;
+				}
 				if(type == 'channel'){
 					var pattern = language.messagePatterns.channelIgnoreRemoved;
 				} else {
 					var pattern = language.messagePatterns.queryIgnoreRemoved;
 				}
 			}
-			gateway.statusWindow.appendMessage(pattern, [$$.niceTime(), he(mask)]);
+			gateway.statusWindow.appendMessage(pattern, [$$.niceTime(), he(infoText)]);
 			gateway.statusWindow.markBold();
 			localStorage.setItem('ignore', JSON.stringify(ignoreData));
 		} catch(e){
@@ -170,7 +254,7 @@ var ignore = {
 			$$.alert(language.neitherChannelNorQuerySelected);
 			return;
 		}
-		if(channel && mask == '*'){
+		if(channel && (mask == '*' || mask == '*!*@*')){
 			$$.alert(language.cantIgnoreAllInChannels);
 			return;
 		}
@@ -182,28 +266,69 @@ var ignore = {
 		}
 		ignore.showIgnoreManagement();
 	},
-	'ignoreClick': function(nick) {
-		ignore.changeIgnoreList('query', nick, $('#'+md5(nick)+'_ignore_query').prop('checked'));
-		ignore.changeIgnoreList('channel', nick, $('#'+md5(nick)+'_ignore_channel').prop('checked'));
+	'ignoreClick': function(user, nick) {
+		if(!$('#'+user.id+'_was_ignored').prop('checked') && !$('#'+user.id+'_ignore_query').prop('checked') && !$('#'+user.id+'_ignore_channel').prop('checked')){
+			$$.alert(language.neitherChannelNorQuerySelected);
+			return false;
+		}
+		var ignoreType = $('#'+user.id+'_ignore_type option:selected').val();
+		switch(ignoreType){
+			case 'nick':
+				ignore.changeIgnoreList('query', nick+'!*@*', $('#'+user.id+'_ignore_query').prop('checked'));
+				ignore.changeIgnoreList('channel', nick+'!*@*', $('#'+user.id+'_ignore_channel').prop('checked'));
+				break;
+			case 'host':
+				ignore.changeIgnoreList('query', '*!*@'+user.host, $('#'+user.id+'_ignore_query').prop('checked'));
+				ignore.changeIgnoreList('channel', '*!*@'+user.host, $('#'+user.id+'_ignore_channel').prop('checked'));
+				break;
+			case 'realname':
+				ignore.changeIgnoreList('query', '~r:'+user.realname.replace(/ /g, '_'), $('#'+user.id+'_ignore_query').prop('checked'));
+				ignore.changeIgnoreList('channel', '~r:'+user.realname.replace(/ /g, '_'), $('#'+user.id+'_ignore_channel').prop('checked'));
+				break;
+			case 'account':
+				ignore.changeIgnoreList('query', '~a:'+user.account, $('#'+user.id+'_ignore_query').prop('checked'));
+				ignore.changeIgnoreList('channel', '~a:'+user.account, $('#'+user.id+'_ignore_channel').prop('checked'));
+				break;
+		}
+		return true;
 	},
-	'askIgnore': function(nick) {
+	'askIgnore': function(user) {
+		if(!user){
+			console.error('askIgnore called with invalid argument');
+			return;
+		}
+		if(typeof user === 'string' || user instanceof String){
+			var nick = user;
+			user = users.getExistingUser(nick);
+		} else {
+			var nick = user.nick;
+		}
+		if(!user){
+			console.error('askIgnore called with non-existing nick');
+			return;
+		}
+
 		if(nick.isInList(servicesNicks)){
 			$$.displayDialog('error', 'ignore', language.error, language.cantIgnoreNetworkService, 'OK');
 			return;
 		}
-		var chanExplIgnored = ignore.ignoring(nick, 'channel', true);
-		var queryExplIgnored = ignore.ignoring(nick, 'query', true);
-		var ignoredByWildcard = false;
-		if(!chanExplIgnored && !queryExplIgnored){
-			if(ignore.ignoring(nick, 'channel') || ignore.ignoring(nick, 'query')){
-				ignoredByWildcard = true;
-			}
-		}
+		var chanNickIgnored = ignore.isInList('channel', 'userhost', $$.wildcardToRegex(nick+'!*@*'));
+		var queryNickIgnored = ignore.isInList('query', 'userhost', $$.wildcardToRegex(nick+'!*@*'));
+		var chanIgnored = ignore.ignoring(nick, 'channel');
+		var queryIgnored = ignore.ignoring(nick, 'query');
 		var html =
-			'<p><input type="checkbox" id="'+md5(nick)+'_ignore_query"> ' + language.ignorePMs + '</p>' +
-			'<p><input type="checkbox" id="'+md5(nick)+'_ignore_channel"> ' + language.ignoreChanMsgs + '</p>';
-		if(ignoredByWildcard){
-			html += '<p>' + language.isIgnoredByWildcards + '</p>';
+			'<p><select id="'+user.id+'_ignore_type">' +
+				'<option value="nick">(' + language.nicknameSmall + ') ' + he(user.nick) + '!*@*</option>' +
+				'<option value="host">(' + language.hostnameSmall + ') *!*@' + he(user.host) + '</option>' +
+				'<option value="realname">(' + language.realnameSmall + ') ~r:' + he(user.realname.replace(/ /g, '_')) + '</option>';
+		if(user.account)
+			html += '<option value="account">(' + language.accountNameSmall + ') ~a:' + he(user.account) + '</option>';
+		html += '</select></p>' +
+			'<p><input type="checkbox" id="'+user.id+'_ignore_query"> ' + language.ignorePMs + '</p>' +
+			'<p><input type="checkbox" id="'+user.id+'_ignore_channel"> ' + language.ignoreChanMsgs + '</p>' +
+			'<input type="checkbox" style="display:none;" id="'+user.id+'_was_ignored">';
+		if(chanIgnored || queryIgnored){
+			html += '<p>' + language.mayBeAlreadyIgnored + '</p>';
 		}
 		html += '<p><a href="javascript:ignore.showIgnoreManagement();">' + language.manageIgnored + '</a></p>';
 		var button = [
@@ -216,17 +341,23 @@ var ignore = {
 			{
 				text: language.applySetting,
 				click: function(){
-					ignore.ignoreClick(nick);
-					$(this).dialog('close');
+					if(ignore.ignoreClick(user, nick))
+						$(this).dialog('close');
 				}
 			}
 		];
-		$$.displayDialog('ignore', 'ignore', language.ignoreUserNick+nick, html, button);
-		if(chanExplIgnored){
-			$('#'+md5(nick)+'_ignore_channel').prop('checked', true);
+		$$.displayDialog('ignore', 'ignore'+user.id, language.ignoreUserNick+nick, html, button);
+		if(chanNickIgnored){
+			$('#'+user.id+'_ignore_channel').prop('checked', true);
+			$('#'+user.id+'_was_ignored').prop('checked', true);
 		}
-		if(queryExplIgnored){
-			$('#'+md5(nick)+'_ignore_query').prop('checked', true);
+		if(queryNickIgnored){
+			$('#'+user.id+'_ignore_query').prop('checked', true);
+			$('#'+user.id+'_was_ignored').prop('checked', true);
+		}
+		if(!chanNickIgnored && !queryNickIgnored){ // checked by default
+			$('#'+user.id+'_ignore_channel').prop('checked', true);
+			$('#'+user.id+'_ignore_query').prop('checked', true);
 		}
 	}
 }

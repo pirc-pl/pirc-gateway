@@ -181,11 +181,9 @@ var conn = {
 				}
 			});
 			disp.setSize(localStorage.getItem('tsize'));
-			var ignoreList = localStorage.getItem('ignore');
-			if(ignoreList){
-				ignoreData = JSON.parse(ignoreList);
-			}
+			ignore.loadList();
 		} catch(e){
+			console.error(e);
 			//za mało miejsca na dysku?
 		}
 		disp.changeSettings();

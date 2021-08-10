@@ -435,12 +435,12 @@ var cmdBinds = {
 				msg.text = " ";
 			}
 			if(msg.args[0].indexOf('#') == 0) { // wiadomość kanałowa
-				if(ignore.ignoring(msg.sender.nick, 'channel')){
+				if(ignore.ignoring(msg.user, 'channel')){
 					console.log('Ignoring message on '+msg.args[0]+' by '+msg.sender.nick);
 					return;
 				}
 			} else { //prywatna
-				if(ignore.ignoring(msg.sender.nick, 'query')){
+				if(ignore.ignoring(msg.user, 'query')){
 					console.log('Ignoring private message by '+msg.sender.nick);
 					return;
 				}
@@ -511,12 +511,12 @@ var cmdBinds = {
 			}
 			
 			if(msg.args[0].indexOf('#') == 0) { // wiadomość kanałowa
-				if(ignore.ignoring(msg.sender.nick, 'channel')){
+				if(ignore.ignoring(msg.user, 'channel')){
 					console.log('Ignoring message on '+msg.args[0]+' by '+msg.sender.nick);
 					return;
 				}
 			} else { //prywatna
-				if(ignore.ignoring(msg.sender.nick, 'query')){
+				if(ignore.ignoring(msg.user, 'query')){
 					console.log('Ignoring private message by '+msg.sender.nick);
 					return;
 				}

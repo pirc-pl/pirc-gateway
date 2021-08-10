@@ -210,7 +210,7 @@ function NicklistUser(user, chan) {
 	this.setActions = function() {
 		$('#'+this.id+'-toggleNickOpt').click(function(){ gateway.toggleNickOpt(this.id); }.bind(this));
 		$('#'+this.id+'-openQuery').click(function(){ gateway.openQuery(this.user.nick, this.user.id) }.bind(this));
-		$('#'+this.id+'-askIgnore').click(function(){ ignore.askIgnore(this.user.nick); }.bind(this));
+		$('#'+this.id+'-askIgnore').click(function(){ ignore.askIgnore(this.user); }.bind(this));
 		$('#'+this.id+'-doWhois').click(function(){
 			if(this.user == guser.me)
 				gateway.displayOwnWhois = true;

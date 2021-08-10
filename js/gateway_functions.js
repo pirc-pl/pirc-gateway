@@ -1407,6 +1407,7 @@ var $$ = {
 		regex = regex.replace(/\.\*/g, "*");
 		regex = regex.replace(/\.\?/g, "?");
 		regex = regex.replace(/\\\./g, ".");
+		regex = regex.replace(/\\/g, "");
 		return regex.slice(1, -1);
 	},
 	'textToEmoji': function(text){

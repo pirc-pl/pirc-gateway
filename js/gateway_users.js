@@ -143,6 +143,10 @@ var users = {
 	'getUser': function(nick){
 		return users.addUser(nick);
 	},
+	'getExistingUser': function(nick){
+		if(nick in users.list) return users.list[nick];
+		return null;
+	},
 	'clear': function(){
 		users.list = {};
 		users.addUser('*');
