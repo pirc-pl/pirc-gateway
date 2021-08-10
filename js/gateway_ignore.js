@@ -40,25 +40,30 @@ var ignore = {
 		try {
 			var ignoreList = localStorage.getItem('ignore');
 			if(ignoreList){
-				ignoreData = JSON.parse(ignoreList);
+				newIgnoreData = JSON.parse(ignoreList);
 				/* convert old style ignore - remove this in 2023 :) */
-				if('full' in ignoreData){
-					for(var i=0; i<ignoreData.full.channel.length; i++){
-						ignoreData.userhost.channel.push($$.wildcardToRegex(ignoreData.full.channel[i]+'!*@*'));
+				if('full' in newIgnoreData){
+					for(var i=0; i<newIgnoreData.full.channel.length; i++){
+						ignoreData.userhost.channel.push($$.wildcardToRegex(newIgnoreData.full.channel[i]+'!*@*'));
 					}
-					for(var i=0; i<ignoreData.full.query.length; i++){
-						ignoreData.userhost.query.push($$.wildcardToRegex(ignoreData.query.channel[i]+'!*@*'));
+					for(var i=0; i<newIgnoreData.full.query.length; i++){
+						ignoreData.userhost.query.push($$.wildcardToRegex(newIgnoreData.full.query[i]+'!*@*'));
 					}
-					delete ignoreData.full;
+					delete newIgnoreData.full;
 				}
-				if('wildcard' in ignoreData){
-					for(var i=0; i<ignoreData.wildcard.channel.length; i++){
-						ignoreData.userhost.channel.push($$.wildcardToRegex(ignoreData.wildcard.channel[i]+'!*@*'));
+				if('wildcard' in newIgnoreData){
+					for(var i=0; i<newIgnoreData.wildcard.channel.length; i++){
+						ignoreData.userhost.channel.push($$.wildcardToRegex(newIgnoreData.wildcard.channel[i]+'!*@*'));
 					}
-					for(var i=0; i<ignoreData.wildcard.query.length; i++){
-						ignoreData.userhost.query.push($$.wildcardToRegex(ignoreData.wildcard.channel[i]+'!*@*'));
+					for(var i=0; i<newIgnoreData.wildcard.query.length; i++){
+						ignoreData.userhost.query.push($$.wildcardToRegex(newIgnoreData.wildcard.query[i]+'!*@*'));
 					}
-					delete ignoreData.wildcard;
+					delete newIgnoreData.wildcard;
+				}
+				for(var key in newIgnoreData){
+					for(var key2 in newIgnoreData[key]){
+						ignoreData[key][key2] = ignoreData[key][key2].concat(newIgnoreData[key][key2]);
+					}
 				}
 				localStorage.setItem('ignore', JSON.stringify(ignoreData));
 			}
