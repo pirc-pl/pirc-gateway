@@ -87,7 +87,7 @@ lang.en = {
 		'channelIgnoreAdded': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">✯</span> Added <b>%s</b> to channel ignore list.</span></div>',
 		'channelIgnoreRemoved': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">✯</span> Removed <b>%s</b> from channel ignore list.</span></div>',
 		'queryIgnoreAdded': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">✯</span> Added <b>%s</b> to private message ignore list.</span></div>',
-		'queryIgnoreRemoved': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">✯</span> Removed <b>%s</b> from private message infore list.</span></div>',
+		'queryIgnoreRemoved': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">✯</span> Removed <b>%s</b> from private message ignore list.</span></div>',
 		'ignoreListStart': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">✯</span> Ignore list:</span></div>',
 		'ignoreListEnd': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">✯</span> End of list.</span></div>',
 		'ignoreListEmpty': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">✯</span> Ignore list is empty.</span></div>',
