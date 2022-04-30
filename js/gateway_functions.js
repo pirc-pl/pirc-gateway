@@ -1183,7 +1183,7 @@ var $$ = {
 			rmatch.forEach(function(arg){
 				var rand = Math.floor(Math.random() * 10000).toString();
 				var imgurl = encodeURI(arg);
-				html += '<a onclick="disp.toggleImageView(\''+rand+'\', \''+decodeURIComponent(imgurl)+'\')"'+
+				html += '<a onclick="disp.toggleImageView(\''+rand+'\', \''+imgurl.replace(/'/g, "\\'")+'\')"'+
 					' class="image_link"'+attrs+'><span id="show-'+rand+'" style="display:inline;">' + language.show + '</span><span id="hide-'+rand+'" style="display:none;">' + language.hide + '</span>' + language.aPicture + '</a>'+
 					'<div style="display:none;" id="img-'+rand+'"><img id="imgc-'+rand+'" style="max-width:100%;" /></div>';
 			});
