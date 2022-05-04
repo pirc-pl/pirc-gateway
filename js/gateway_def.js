@@ -2306,7 +2306,7 @@ var gateway = {
 		if(sender == guser.me && text.charAt(0) == '\001') return; // don't display own ctcp requests/replies, this is confirmed to be called when sending requests and NOT for actions
 		
 		var meta = gateway.getMeta(sender.nick, 100);
-		var html = $$.parseImages(text, attrs);
+		var images = $$.parseImages(text, attrs);
 		var message = $$.colorize(text);
 		var nickComments = '';
 		var nick = sender.nick;
@@ -2443,7 +2443,8 @@ var gateway = {
 				}
 			}
 
-			tab.appendMessage('%s', [html], time);
+			tab.appendMessage('%s', [images.html], time);
+			$$.applyCallbacks(images.callbacks);
 			return;
 		}
 		if(cmd == 'NOTICE'){ // private notice

@@ -1179,13 +1179,17 @@ var $$ = {
 			attrs = '';
 		var rmatch = text.match(/(https?:\/\/[^ ]+\.(png|jpeg|jpg|gif)(\?[^ ]+)?)/gi);
 		var html = '';
+		var callbacks = {};
 		if(rmatch){
 			rmatch.forEach(function(arg){
 				var rand = Math.floor(Math.random() * 10000).toString();
 				var imgurl = encodeURI(arg);
-				html += '<a onclick="disp.toggleImageView(\''+rand+'\', \''+imgurl.replace(/'/g, "\\'")+'\')"'+
+				html += '<a id="a-img-' + rand + '"'+
 					' class="image_link"'+attrs+'><span id="show-'+rand+'" style="display:inline;">' + language.show + '</span><span id="hide-'+rand+'" style="display:none;">' + language.hide + '</span>' + language.aPicture + '</a>'+
 					'<div style="display:none;" id="img-'+rand+'"><img id="imgc-'+rand+'" style="max-width:100%;" /></div>';
+				callbacks['a-img-' + rand] = function() {
+					disp.toggleImageView(rand, imgurl);
+				};
 			});
 		}
 		var rexpr = /https?:\/\/(?:(?:www|m)\.youtube\.com\/watch\?[^ ]*v=|youtu\.be\/)([^ ]+)/i;
@@ -1196,13 +1200,21 @@ var $$ = {
 				if(rmatch[1]){
 					var rand = Math.floor(Math.random() * 10000).toString();
 					var imgurl = encodeURI(rmatch[1]);
-					html += '<a onclick="disp.toggleVideoView(\''+rand+'\', \''+imgurl+'\')"'+
+					html += '<a id="a-video-' + rand + '"'+
 						' class="image_link"'+attrs+'><span id="show-'+rand+'" style="display:inline;">' + language.show + '</span><span id="hide-'+rand+'" style="display:none;">' + language.hide + '</span>' + language.aVideo + '</a>'+
 						'<div style="display:none;" id="img-'+rand+'"><iframe width="560" height="315" id="vid-'+rand+'" frameborder="0" allowfullscreen></iframe></div>';
+					callbacks['a-video-' + rand] = function() {
+						disp.toggleVideoView(rand, imgurl);
+					};
 				}
 			});
 		}
-		return html;
+		return { 'html': html, 'callbacks': callbacks };
+	},
+	'applyCallbacks': function(callbacks){
+		for(var key in callbacks) {
+			$('#' + key).click(callbacks[key]);
+		}
 	},
 	'checkLinkStart': function(text, stubs){
 		var ret = { 'found' : false, 'linkBegin' : '', 'beginLength' : 0 };
