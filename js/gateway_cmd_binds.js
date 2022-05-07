@@ -943,6 +943,23 @@ var cmdBinds = {
 	],
 	'342': [	// RPL_SUMMONING
 	],
+	'344': [	// RPL_WHOISCOUNTRY
+		function(msg) {
+			var cc = msg.args[2];
+			var expr = /is connecting from (.*)/;
+			var match = expr.exec(msg.text);
+			if (!match)
+				return;
+			var cname = geoip.getName(cc);
+			var html = language.isConnectingFrom;
+			if(!cname){
+				html += match[1] + ' (' + cc + ')';
+			} else {
+				html += geoip.flag(cc)+' '+cname;
+			}
+			$$.displayDialog('whois', msg.args[1], false, "<p class='whois'><span class='info'><br /></span><span class='data'>"+html+"</span></p>");
+		}
+	],
 	'346': [	// RPL_INVITELIST
 		function(msg) {
 			disp.insertLinebeI('I', msg.args);
