@@ -566,11 +566,11 @@ var disp = {
 						'<span class="avatar letterAvatar" id="letterAvatarExample"><span role="presentation" id="letterAvatarExampleContent"></span></span>' +
 					'</div>' +
 					'<img id="current-avatar-image" src="/styles/img/noavatar.png" alt="' + language.noAvatarSet + '"><br>' +
-					'<span id="current-avatar-info">' + language.noAvatarSet + '</span> <button type="button" value="" id="delete-avatar" onClick="disp.deleteAvatar()">' + language.remove + '</button>' +
+					'<span id="current-avatar-info">' + language.noAvatarSet + '</span> <button type="button" value="" id="delete-avatar">' + language.remove + '</button>' +
 				'</div>' +
 				'<div id="set-avatar">' +
-					language.enterUrl + ' <input type="text" id="avatar-url" name="avatar-url" autocomplete="photo"> <button type="button" value="" onClick="disp.checkAvatarUrl()">' + language.check +  '</button><br>' +
-					'<button type="button" value="" id="submit-avatar" onClick="disp.submitAvatar()">' + language.applySetting + '</button><br>' +
+					language.enterUrl + ' <input type="text" id="avatar-url" name="avatar-url" autocomplete="photo"> <button type="button" id="check-avatar-button" value="">' + language.check +  '</button><br>' +
+					'<button type="button" value="" id="submit-avatar">' + language.applySetting + '</button><br>' +
 					language.avatarFileInfo + '<br>';
 				if(window.FormData === undefined){
 					html += language.browserTooOldForAvatars;
@@ -579,6 +579,9 @@ var disp = {
 				}
 				html += '</div>';
 			$('#avatar-dialog').html(html);
+			$('#delete-avatar').click(disp.deleteAvatar);
+			$('#submit-avatar').click(disp.submitAvatar);
+			$('#check-avatar-button').click(disp.checkAvatarUrl);
 			if(!textSettingsValues['avatar']){
 				$('#letterAvatarExample').css('background-color',$$.nickColor(guser.nick, true));
 				$('#letterAvatarExampleContent').text(guser.nick.charAt(0));
@@ -603,14 +606,16 @@ var disp = {
 						'<span class="avatar letterAvatar" id="letterAvatarExample"><span role="presentation" id="letterAvatarExampleContent"></span></span>' +
 					'</div>' +
 					'<img id="current-avatar-image" src="/styles/img/noavatar.png" alt="' + language.noAvatarSet + '"><br>' +
-					'<span id="current-avatar-info">' + language.noAvatarSet + '</span> <button type="button" value="" id="delete-avatar" onClick="disp.deleteAvatar()">' + language.remove + '</button>' +
+					'<span id="current-avatar-info">' + language.noAvatarSet + '</span> <button type="button" value="" id="delete-avatar">' + language.remove + '</button>' +
 				'</div>' +
 				'<div id="set-avatar">' +
 					language.selectAnImage + ' <input type="file" name="avatarFileToUpload" id="avatarFileToUpload"><br>' +
-					'<button type="submit" value="" id="submit-avatar" name="submit" onClick="disp.submitAvatar()">' + language.applySetting + '</button><br>' +
+					'<button type="submit" value="" id="submit-avatar" name="submit">' + language.applySetting + '</button><br>' +
 					language.youAcceptToStoreTheData + mainSettings.networkName + '.' +
 				'</div>';
 			$('#avatar-dialog').html(html);
+			$('#delete-avatar').click(disp.deleteAvatar);
+			$('#submit-avatar').click(disp.submitAvatar);
 			if(!textSettingsValues['avatar']){
 				$('#letterAvatarExample').css('background-color',$$.nickColor(guser.nick, true));
 				$('#letterAvatarExampleContent').text(guser.nick.charAt(0));
@@ -787,11 +792,14 @@ var disp = {
 		var html = topic +
 			'<p class="' + channel.id + '-operActions" style="display:none;">' +
 				'<b>' + language.changeChannelTopic + '</b><textarea name="topicEdit" id="topicEdit">'+channel.topic+'</textarea>' +
-				'<button onclick="gateway.changeTopic(\''+channel.name+'\');">' + language.changeTopicSubmit + '</button><br>' +
+				'<button id="topic-change-button-' + channel.id + '">' + language.changeTopicSubmit + '</button><br>' +
 				language.youCanCopyCodesToTopic +
 			'</p>';
 		$$.closeDialog('confirm', 'topic');
 		$$.displayDialog('confirm', 'topic', language.topicOfChannel + channel.name, html);
+		$('#topic-change-button-' + channel.id).click(function(){
+			gateway.changeTopic(channel.name);
+		});
 	},
 	'playSound': function() {
 		if ( ! $('#newMsgSound').is(':checked')) {
@@ -1341,6 +1349,7 @@ var $$ = {
 			if(!title){
 				title = type;
 			}
+			title = he(title);
 			var additionalClasses = '';
 			if(type == 'notice' && sender.toLowerCase() == 'memoserv'){ // specjalny styl dla MemoServ
 				additionalClasses += 'notice-dialog-memoserv';

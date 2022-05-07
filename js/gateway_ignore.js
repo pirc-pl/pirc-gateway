@@ -163,8 +163,9 @@ var ignore = {
 		var html = '<hr style="margin-top:5px;margin-bottom:5px;"><strong>' + language.addListEntry + '</strong><br>'+
 			'<p><input type="text" id="new_ignore_mask"></p>' +
 			'<p><input type="checkbox" id="new_ignore_query"> ' + language.privateMessages + '<br><input type="checkbox" id="new_ignore_channel"> ' + language.channelMessages + '</p>' +
-			'<p><input type="button" value="' + language.add + '" onclick="ignore.ignoreClickInput();"></p>';
+			'<p><input type="button" id="ignore-add-button" value="' + language.add + '"></p>';
 		$$.getDialogSelector('ignore', 'ignorelist').append(html);
+		$('#ignore-add-button').click(ignore.ignoreClickInput);
 	},
 	'isInList': function(type, maskType, regex){
 		if(ignoreData[maskType][type].indexOf(regex) >= 0)

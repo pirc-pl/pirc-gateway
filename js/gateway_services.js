@@ -284,15 +284,33 @@ var services = {
 		if(!services.requireRegisteredNick()) return;
 		html = language.eachFunctionNeedsPermissions + '<br>' +
 			'<table>'+
-			'<tr><td><button onclick="services.clickChanServ(\'ban\', \''+bsEscape(chan)+'\');">BAN</button></td><td>' + language.nickOrMask + ': <input type="text" id="cs-ban-'+md5(chan)+'"></td><td>' + language.reason + ': <input type="text" id="cs-banreason-'+md5(chan)+'"></td><td>' + language.banUser + '</td></tr>'+
-			'<tr><td><button onclick="services.clickChanServ(\'kick\', \''+bsEscape(chan)+'\');">KICK</button></td><td>' + language.nickOrMask + ': <input type="text" id="cs-kick-'+md5(chan)+'"></td><td>' + language.reason + ': <input type="text" id="cs-kickreason-'+md5(chan)+'"></td><td>' + language.kickUser + '</td></tr>'+
-			'<tr><td><button onclick="services.clickChanServ(\'register\', \''+bsEscape(chan)+'\');">REGISTER</button></td><td>' + language.channelDescription + ': <input type="text" id="cs-register-'+md5(chan)+'"></td><td></td><td>' + language.registerChannel + '</td></tr>'+
-			'<tr><td><button onclick="services.clickChanServ(\'status\', \''+bsEscape(chan)+'\');">STATUS</button></td><td>' + language.nickname + ': <input type="text" id="cs-status-'+md5(chan)+'"></td><td></td><td>' + language.checkUserChanservStatus + '</td></tr>'+
-			'<tr><td><button onclick="services.clickChanServ(\'access list\', \''+bsEscape(chan)+'\');">ACCESS LIST</button></td><td></td><td></td><td>' + language.displayAccessList + '</td></tr>'+
-			'<tr><td><button onclick="services.clickChanServ(\'access del\', \''+bsEscape(chan)+'\');">ACCESS DEL</button></td><td>' + language.nickname + ': <input type="text" id="cs-acc-del-'+md5(chan)+'"></td><td></td><td>' + language.deleteUserFromAccessList + '</td></tr>'+
+			'<tr><td><button id="cs-ban-' + md5(chan) + '-button">BAN</button></td><td>' + language.nickOrMask + ': <input type="text" id="cs-ban-'+md5(chan)+'"></td><td>' + language.reason + ': <input type="text" id="cs-banreason-'+md5(chan)+'"></td><td>' + language.banUser + '</td></tr>'+
+			'<tr><td><button id="cs-kick-' + md5(chan) + '-button">KICK</button></td><td>' + language.nickOrMask + ': <input type="text" id="cs-kick-'+md5(chan)+'"></td><td>' + language.reason + ': <input type="text" id="cs-kickreason-'+md5(chan)+'"></td><td>' + language.kickUser + '</td></tr>'+
+			'<tr><td><button id="cs-register-' + md5(chan) + '-button">REGISTER</button></td><td>' + language.channelDescription + ': <input type="text" id="cs-register-'+md5(chan)+'"></td><td></td><td>' + language.registerChannel + '</td></tr>'+
+			'<tr><td><button id="cs-status-' + md5(chan) + '-button">STATUS</button></td><td>' + language.nickname + ': <input type="text" id="cs-status-'+md5(chan)+'"></td><td></td><td>' + language.checkUserChanservStatus + '</td></tr>'+
+			'<tr><td><button id="cs-accesslist-' + md5(chan) + '-button">ACCESS LIST</button></td><td></td><td></td><td>' + language.displayAccessList + '</td></tr>'+
+			'<tr><td><button id="cs-accessdel-' + md5(chan) + '-button">ACCESS DEL</button></td><td>' + language.nickname + ': <input type="text" id="cs-acc-del-'+md5(chan)+'"></td><td></td><td>' + language.deleteUserFromAccessList + '</td></tr>'+
 		'</table>';
 		$$.displayDialog('admin', 'cs-'+chan, language.chanservCommandsOn+he(chan), html);
 		$$.alert(language.workInProgress);
+		$('#cs-ban-' + md5(chan) + '-button').click(function(){
+			services.clickChanServ('ban', chan);
+		});
+		$('#cs-kick-' + md5(chan) + '-button').click(function(){
+			services.clickChanServ('kick', chan);
+		});
+		$('#cs-register-' + md5(chan) + '-button').click(function(){
+			services.clickChanServ('register', chan);
+		});
+		$('#cs-status-' + md5(chan) + '-button').click(function(){
+			services.clickChanServ('status', chan);
+		});
+		$('#cs-accesslist-' + md5(chan) + '-button').click(function(){
+			services.clickChanServ('access list', chan);
+		});
+		$('#cs-accessdel-' + md5(chan) + '-button').click(function(){
+			services.clickChanServ('access del', chan);
+		});
 	},
 	'clickChanServ': function(cmd, chan){
 		var opts = {
@@ -343,14 +361,29 @@ var services = {
 		if(!services.requireRegisteredNick()) return;
 		html = language.eachFunctionNeedsPermissions + '<br>' +
 			'<table>'+
-			'<tr><td><button onclick="services.clickBotServ(\'botlist\', \'\');">BOTLIST</button></td><td></td><td></td><td>' + language.showBotList + '</td></tr>'+
-			'<tr><td><button onclick="services.clickBotServ(\'assign\', \''+bsEscape(chan)+'\');">ASSIGN</button></td><td>' + language.nickChosenFromBotList + ': <input type="text" id="bs-assign-'+md5(chan)+'"></td><td></td><td>' + language.assignBotToChan + '</td></tr>'+
-			'<tr><td><button onclick="services.clickBotServ(\'unassign\', \''+bsEscape(chan)+'\');">UNASSIGN</button></td><td></td><td></td><td>' + language.removeBotFromChan + '</td></tr>'+
-			'<tr><td><button onclick="services.clickBotServ(\'act\', \''+bsEscape(chan)+'\');">ACT</button></td><td>' + language.message + ': <input type="text" id="bs-act-'+md5(chan)+'"></td><td></td><td>' + language.sendActionToChan + '</td></tr>'+
-			'<tr><td><button onclick="services.clickBotServ(\'say\', \''+bsEscape(chan)+'\');">SAY</button></td><td>' + language.message + ': <input type="text" id="bs-say-'+md5(chan)+'"></td><td></td><td>' + language.sendMessageToChan + '</td></tr>'+
+			'<tr><td><button id="bs-botlist-' + md5(chan) + '-button">BOTLIST</button></td><td></td><td></td><td>' + language.showBotList + '</td></tr>'+
+			'<tr><td><button id="bs-assign-' + md5(chan) + '-button">ASSIGN</button></td><td>' + language.nickChosenFromBotList + ': <input type="text" id="bs-assign-'+md5(chan)+'"></td><td></td><td>' + language.assignBotToChan + '</td></tr>'+
+			'<tr><td><button id="bs-unassign-' + md5(chan) + '-button">UNASSIGN</button></td><td></td><td></td><td>' + language.removeBotFromChan + '</td></tr>'+
+			'<tr><td><button id="bs-act-' + md5(chan) + '-button">ACT</button></td><td>' + language.message + ': <input type="text" id="bs-act-'+md5(chan)+'"></td><td></td><td>' + language.sendActionToChan + '</td></tr>'+
+			'<tr><td><button id="bs-say-' + md5(chan) + '-button">SAY</button></td><td>' + language.message + ': <input type="text" id="bs-say-'+md5(chan)+'"></td><td></td><td>' + language.sendMessageToChan + '</td></tr>'+
 		'</table>';
 		$$.displayDialog('admin', 'bs-'+chan, language.botservCommandsOn+he(chan), html);
 		$$.alert(language.workInProgress);
+		$('#bs-botlist-' + md5(chan) + '-button').click(function(){
+			services.clickBotServ('botlist', '');
+		});
+		$('#bs-assign-' + md5(chan) + '-button').click(function(){
+			services.clickBotServ('assign', chan);
+		});
+		$('#bs-unassign-' + md5(chan) + '-button').click(function(){
+			services.clickBotServ('unassign', chan);
+		});
+		$('#bs-act-' + md5(chan) + '-button').click(function(){
+			services.clickBotServ('act', chan);
+		});
+		$('#bs-say-' + md5(chan) + '-button').click(function(){
+			services.clickBotServ('say', chan);
+		});
 	},
 	'clickBotServ': function(cmd, chan){
 		var opts = {

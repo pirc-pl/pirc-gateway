@@ -439,7 +439,9 @@ function Query(nick) {
 		var oldName = this.name.toLowerCase();
 		$('#'+this.id+'-window').vprintf(language.messagePatterns.nickChange, [$$.niceTime(), he(this.name), he(newnick)]);
 		$('#'+this.id+'-topic').html('<h1>'+he(newnick)+'</h1><h2></h2>');
-		$("#"+this.id+'-tab').html('<a href="javascript:void(0);" class="switchTab" onclick="gateway.switchTab(\''+newnick+'\')">'+he(newnick)+'</a><a href="javascript:void(0);" onclick="gateway.removeQuery(\''+newnick+'\')"><div class="close"></div></a>');
+		$("#"+this.id+'-tab').html('<a href="javascript:void(0);" class="switchTab" id="' + this.id + '-tab-switch">'+he(newnick)+'</a><a href="javascript:void(0);" id="' + this.id + '-tab-close"><div class="close"></div></a>');
+		$("#"+this.id+'-tab-switch').click(function(){ gateway.switchTab(newnick); });
+		$("#"+this.id+'-tab-close').click(function(){ gateway.removeQuery(newnick); });
 		this.name = newnick;
 		if(oldName == gateway.active.toLowerCase()) {
 			gateway.switchTab(newnick);
@@ -474,7 +476,9 @@ function Query(nick) {
 	$('<span/>').attr('id', this.id+'-topic').hide().appendTo('#info');
 	$('<span/>').attr('id', this.id+'-tab-info').hide().appendTo('#tab-info');
 	$('#'+this.id+'-topic').html('<h1>'+this.name+'</h1><h2></h2>');
-	$('<li/>').attr('id', this.id+'-tab').html('<a href="javascript:void(0);" class="switchTab" onclick="gateway.switchTab(\''+this.name+'\')">'+he(this.name)+'</a><a href="javascript:void(0);" onclick="gateway.removeQuery(\''+this.name+'\')"><div class="close" title="' + language.closeQuery + '"></div></a>').appendTo('#tabs');
+	$('<li/>').attr('id', this.id+'-tab').html('<a href="javascript:void(0);" class="switchTab" id="' + this.id + '-tab-switch">'+he(this.name)+'</a><a href="javascript:void(0);" id="' + this.id + '-tab-close"><div class="close" title="' + language.closeQuery + '"></div></a>').appendTo('#tabs');
+	$("#"+this.id+'-tab-switch').click(function(){ gateway.switchTab(this.name); }.bind(this));
+	$("#"+this.id+'-tab-close').click(function(){ gateway.removeQuery(this.name); }.bind(this));
 	$('#chstats').append('<div class="chstatswrapper" id="'+this.id+'-chstats"><span class="chstats-text symbolFont">' + language.query + '</span></div>');
 	try {
 		var qCookie = localStorage.getItem('query'+md5(this.name));
