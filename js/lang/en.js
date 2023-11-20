@@ -477,7 +477,7 @@ lang.en = {
 	'darkTheme': 'Dark theme (experimental)',
 	'colorNicks': 'Color nicks in message window',
 	'newMsgSound': 'Enable sound alert for new messages',
-	'showEmoji': 'Replace text emoticons with emoji (for example "<g-emoji fallback-src="/styles/emoji/1f642.png">🙂</g-emoji>" for ":)")',
+	'showEmoji': 'Replace text emoticons with emoji (for example "<g-emoji fallback-src="/styles/emoji/1F642.png">🙂</g-emoji>" for ":)")',
 	'sendEmoji': 'Send above emoji to IRC',
 	'monospaceFont': 'Display message window contents with a monospace font',
 	'autoDisconnect': 'Automatically disconnect upon page close',

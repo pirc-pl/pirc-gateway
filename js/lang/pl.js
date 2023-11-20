@@ -478,7 +478,7 @@ lang.pl = {
 	'darkTheme': 'Ciemny motyw bramki (eksperymentalny)',
 	'colorNicks': 'Koloruj nicki w oknie rozmowy',
 	'newMsgSound': 'Informuj dźwiękiem o nowej wiadomości',
-	'showEmoji': 'Wyświetlaj emoji w miejsce emotikon tekstowych (na przykład "<g-emoji fallback-src="/styles/emoji/1f642.png">🙂</g-emoji>" w miejsce ":)")',
+	'showEmoji': 'Wyświetlaj emoji w miejsce emotikon tekstowych (na przykład "<g-emoji fallback-src="/styles/emoji/1F642.png">🙂</g-emoji>" w miejsce ":)")',
 	'sendEmoji': 'Wysyłaj powyższe emoji na IRC',
 	'monospaceFont': 'Wyświetlaj treść rozmowy fontem o stałej szerokości',
 	'autoDisconnect': 'Automatycznie rozłączaj przy zamykaniu strony',
