@@ -823,7 +823,22 @@ var gateway = {
 		var oldText = input.val();
 		input.focus();
 		input.val(oldText + text);
-	}, 
+	},
+	'insertEmoji': function(e) {
+		gateway.insert(e);
+		var index = emoji.selectable.indexOf(e);
+		if (index >= 0) {
+			emoji.selectable.splice(index, 1);
+			$('#emoticon-symbols span:nth-child(' + (index+1) + ')').remove();
+		}
+		emoji.selectable.unshift(e);
+		if (emoji.selectable.length > 80) {
+			emoji.selectable.splice(-1);
+			$('#emoticon-symbols span:last').remove();
+		}
+		$('#emoticon-symbols').prepend(makeEmojiSelector(e));
+		saveSelectableEmoji();
+	},
 	'insertColor': function(color) {
 		gateway.insert(String.fromCharCode(3) + (color<10?'0':'') + color.toString());
 	},

@@ -77,6 +77,7 @@ function setLanguage(slang){
 	$('.language-monospaceFont').html(language.monospaceFont);
 	$('.language-autoDisconnect').html(language.autoDisconnect);
 	$('.language-autoConnect').html(language.autoConnect);
+	$('.language-biggerEmoji').html(language.biggerEmoji);
 	$('.language-backlogCount').html(language.backlogCount);
 	$('.language-popupWindow').html(language.popupWindow);
 	$('.language-query').html(language.query);

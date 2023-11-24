@@ -1411,3 +1411,14 @@ img.emoji {
     bottom: 3.2em;
 }
 
+:root {
+	--emoji-scale: 1.8;
+}
+
+.emoji-wrapper:hover {
+    display: inline-block;
+    transform:scale(var(--emoji-scale));
+    z-index: 1000;
+    position: relative;
+}
+

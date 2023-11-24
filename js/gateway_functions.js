@@ -37,7 +37,7 @@ function setEnvironment(){
 
 		window.reqChannel = '';
 
-		window.booleanSettings = [ 'showPartQuit', 'showNickChanges', 'tabsListBottom', 'showUserHostnames', 'autoReconnect', 'displayLinkWarning', 'blackTheme', 'newMsgSound', 'autoDisconnect', 'coloredNicks', 'showMode', 'dispEmoji', 'sendEmoji', 'monoSpaceFont', 'automLogIn', 'setUmodeD', 'setUmodeR', 'noAvatars' ];
+		window.booleanSettings = [ 'showPartQuit', 'showNickChanges', 'tabsListBottom', 'showUserHostnames', 'autoReconnect', 'displayLinkWarning', 'blackTheme', 'newMsgSound', 'autoDisconnect', 'coloredNicks', 'showMode', 'dispEmoji', 'sendEmoji', 'monoSpaceFont', 'automLogIn', 'setUmodeD', 'setUmodeR', 'noAvatars', 'biggerEmoji' ];
 		window.comboSettings = [ 'noticeDisplay', 'setLanguage' ];
 		window.numberSettings = [ 'backlogCount' ];
 		window.numberSettingsMinMax = {
@@ -261,18 +261,33 @@ function fillColorSelector(){
 }
 
 function fillEmoticonSelector(){
-	var emojiSelectable = [
-		'☺', '😀', '😁', '😂', '😃', '😄', '😅', '😅', '😇', '😈', '😉', '😊', '😋', '😌', '😍', '😎', '😏', '😐', '😑', '😒',
-		'😓', '😔', '😕', '😖', '😗', '😘', '😙', '😚', '😛', '😜', '😝', '😞', '😟', '😠', '😡', '😢', '😣', '😤', '😥', '😦',
-		'😧', '😨', '😩', '😪', '😫', '😬', '😭', '😮', '😯', '😰', '😱', '😲', '😳', '😴', '😵', '😶', '😷', '😸', '😹', '😽',
-		'😿', '😘', '😙', '😚', '😛', '😜', '😝', '🙁', '🙂', '🙃', '💀'
-	];
+	if (emoji.selectable.length == 0) {
+		var read = localStorage.getItem('selectableEmojiStore');
+		if (read)
+			emoji.selectable = JSON.parse(read);
+		else
+			emoji.selectable = [
+				'☺', '😀', '😁', '😂', '😃', '😄', '😅', '😅', '😇', '😈', '😉', '😊', '😋', '😌', '😍', '😎', '😏', '😐', '😑', '😒',
+				'😓', '😔', '😕', '😖', '😗', '😘', '😙', '😚', '😛', '😜', '😝', '😞', '😟', '😠', '😡', '😢', '😣', '😤', '😥', '😦',
+				'😧', '😨', '😩', '😪', '😫', '😬', '😭', '😮', '😯', '😰', '😱', '😲', '😳', '😴', '😵', '😶', '😷', '😸', '😹', '😽',
+				'😿', '😘', '😙', '😚', '😛', '😜', '😝', '🙁', '🙂', '🙃', '💀'
+			];
+	}
 	var html = '';
-	for(var i=0; i<emojiSelectable.length; i++){
-		var c = emojiSelectable[i];
-		html += '<a class="charSelect" onclick="gateway.insert(\'' + c + '\')">' + emoji.addTags(c) + '</a> ';
+	for(var i=0; i<emoji.selectable.length; i++){
+		var c = emoji.selectable[i];
+		html += makeEmojiSelector(c);
 	}
 	$('#emoticon-symbols').html(html);
+	saveSelectableEmoji();
+}
+
+function makeEmojiSelector(c){
+	return '<span><a class="charSelect" onclick="gateway.insertEmoji(\'' + c + '\')">' + emoji.addTags(c) + '</a> </span>';
+}
+
+function saveSelectableEmoji(){
+	localStorage.setItem('selectableEmojiStore', JSON.stringify(emoji.selectable));
 }
 
 var geoip = {
@@ -504,6 +519,11 @@ var disp = {
 			$('#automLogIn').parent().parent().css('display', '');
 		} else {
 			$('#automLogIn').parent().parent().css('display', 'none');
+		}
+		if($('#biggerEmoji').is(':checked')){
+			document.documentElement.style.setProperty('--emoji-scale', '3');
+		} else {
+			document.documentElement.style.setProperty('--emoji-scale', '1.8');
 		}
 		for(i in settingProcessors){
 			settingProcessors[i]();
@@ -858,7 +878,7 @@ var disp = {
 		var html = '<div class="emojiSelector">';
 		var data = emoji.getAll();
 		for(var i=0; i<data.length; i++){
-			html += '<a class="charSelect" onclick="gateway.insert(\'' + data[i].text + '\')"><g-emoji fallback-src="/styles/emoji/' + data[i].code + '.png">' + data[i].text + '</g-emoji></a> ';
+			html += '<a class="charSelect" onclick="gateway.insertEmoji(\'' + data[i].text + '\')"><g-emoji fallback-src="/styles/emoji/' + data[i].code + '.png" class="emoji-wrapper">' + data[i].text + '</g-emoji></a> ';
 		}
 		html += '</div>';
 		$$.displayDialog('emoticons', 'allEmoticons', language.allEmoticons, html);

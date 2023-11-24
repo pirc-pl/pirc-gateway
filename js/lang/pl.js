@@ -480,6 +480,7 @@ lang.pl = {
 	'newMsgSound': 'Informuj dźwiękiem o nowej wiadomości',
 	'showEmoji': 'Wyświetlaj emoji w miejsce emotikon tekstowych (na przykład "<g-emoji fallback-src="/styles/emoji/1F642.png">🙂</g-emoji>" w miejsce ":)")',
 	'sendEmoji': 'Wysyłaj powyższe emoji na IRC',
+	'biggerEmoji': 'Bardziej powiększaj emoji',
 	'monospaceFont': 'Wyświetlaj treść rozmowy fontem o stałej szerokości',
 	'autoDisconnect': 'Automatycznie rozłączaj przy zamykaniu strony',
 	'autoConnect': 'Automatyczne łączenie (bez podawania nicka i hasła)',

@@ -112,7 +112,7 @@ var emoji = {
 				}
 			} while(e);
 			if(foundEmoji == 'this'){
-				output += '<g-emoji fallback-src="/styles/emoji/' + foundPath + '.png">' + foundText + '</g-emoji>';
+				output += '<g-emoji fallback-src="/styles/emoji/' + foundPath + '.png" class="emoji-wrapper">' + foundText + '</g-emoji>';
 			} else {
 				i = currI;
 				output += chars[i];
@@ -159,7 +159,8 @@ var emoji = {
 			output.push({ 'code': name, 'text': text });
 		}
 		return output;
-	}
+	},
+	'selectable': []
 };
 
 var emojiList = [
