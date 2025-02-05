@@ -374,10 +374,10 @@ var cmdBinds = {
 		function(msg) {
 			if(gateway.findChannel(msg.args[0])) {
 				if(msg.args[1] != guser.nick) {
-					gateway.findChannel(msg.args[0]).appendMessage(language.messagePatterns.kick, [$$.niceTime(msg.time), he(msg.sender.nick), msg.args[1], msg.args[0], $$.colorize(msg.text)]);
+					gateway.findChannel(msg.args[0]).appendMessage(language.messagePatterns.kick, [$$.niceTime(msg.time), he(msg.sender.nick), he(msg.args[1]), he(msg.args[0]), $$.colorize(msg.text)]);
 					gateway.findChannel(msg.args[0]).nicklist.removeNick(msg.args[1]);
 				} else {
-					gateway.findChannel(msg.args[0]).appendMessage(language.messagePatterns.kickOwn, [$$.niceTime(msg.time), he(msg.sender.nick), msg.args[0], $$.colorize(msg.text)]);
+					gateway.findChannel(msg.args[0]).appendMessage(language.messagePatterns.kickOwn, [$$.niceTime(msg.time), he(msg.sender.nick), he(msg.args[0]), $$.colorize(msg.text)]);
 					gateway.findChannel(msg.args[0]).part();
 				}
 			}
@@ -687,7 +687,7 @@ var cmdBinds = {
 	],
 	'311': [	// RPL_WHOISUSER
 		function(msg) {
-			var html = "<p class='whois'><span class='info'>" + language.fullMask + ":</span><span class='data'> " + he(msg.args[1]) + "!" + msg.args[2] + "@" + msg.args[3] + "</span></p>" +
+			var html = "<p class='whois'><span class='info'>" + language.fullMask + ":</span><span class='data'> " + he(msg.args[1]) + "!" + he(msg.args[2]) + "@" + he(msg.args[3]) + "</span></p>" +
 				"<p class='whois'><span class='info'>" + language.realname + ":</span><span class='data'> " + he(msg.text) + "</span></p>";
 			$$.displayDialog('whois', msg.args[1], language.userInformation + he(msg.args[1]), html);
 		}
@@ -695,11 +695,11 @@ var cmdBinds = {
 	'312': [	// RPL_WHOISSERVER
 		function(msg) {
 			if(!gateway.whowasExpect312){
-				var html = "<p class='whois'><span class='info'>" + language.server + ":</span><span class='data'>" + msg.args[2] + " "+ he(msg.text) + "</span></p>";
+				var html = "<p class='whois'><span class='info'>" + language.server + ":</span><span class='data'>" + he(msg.args[2]) + " "+ he(msg.text) + "</span></p>";
 			} else {
 				gateway.whowasExpect312 = false;
-				var html = "<p class='whois'><span class='info'>" + language.server + ":</span><span class='data'>" + msg.args[2] + "</span></p>" +
-					"<p class='whois'><span class='info'>" + language.seen + ":</span><span class='data'>" + msg.text + "</span></p>";
+				var html = "<p class='whois'><span class='info'>" + language.server + ":</span><span class='data'>" + he(msg.args[2]) + "</span></p>" +
+					"<p class='whois'><span class='info'>" + language.seen + ":</span><span class='data'>" + he(msg.text) + "</span></p>";
 			}
 			$$.displayDialog('whois', msg.args[1], false, html);
 		}
@@ -722,7 +722,7 @@ var cmdBinds = {
 	],
 	'314': [	// RPL_WHOWASUSER
 		function(msg){
-			var html = "<p class='whois'><span class='info'>" + language.fullMask + ":</span><span class='data'> " + msg.args[1] + '!' + msg.args[2] + '@' + msg.args[3] + '</span></p>' +
+			var html = "<p class='whois'><span class='info'>" + language.fullMask + ":</span><span class='data'> " + msg.args[1] + '!' + he(msg.args[2]) + '@' + he(msg.args[3]) + '</span></p>' +
 				"<p class='whois'><span class='info'>" + language.realname + ":</span><span class='data'> " + he(msg.text) + "</span></p>";
 			$$.displayDialog('whois', msg.args[1], language.previousVisitsBy + he(msg.args[1]), html);
 			gateway.whowasExpect312 = true;
@@ -804,10 +804,10 @@ var cmdBinds = {
 			} else {
 				var sel = $$.getDialogSelector('whois', msg.args[1]).find('span.admin');
 				if(sel.length){
-					sel.append(' ('+msg.text+')');
+					sel.append(' ('+he(msg.text)+')');
 					return;
 				}
-				var html = msg.text;
+				var html = he(msg.text);
 			}
 			$$.displayDialog('whois', msg.args[1], false, "<p class='whois'><span class='info'><br /></span><span class='data'>"+html+"</span></p>");
 		}
@@ -829,9 +829,9 @@ var cmdBinds = {
 				var outtext = $$.colorize(msg.text);
 			}
 			if(msg.args[1] == '*'){
-				gateway.statusWindow.appendMessage(language.messagePatterns.chanListElementHidden, [$$.niceTime(msg.time), msg.args[2]]);
+				gateway.statusWindow.appendMessage(language.messagePatterns.chanListElementHidden, [$$.niceTime(msg.time), he(msg.args[2])]);
 			} else {
-				gateway.statusWindow.appendMessage(language.messagePatterns.chanListElement, [$$.niceTime(msg.time), msg.args[1], msg.args[1], msg.args[2], outtext]);
+				gateway.statusWindow.appendMessage(language.messagePatterns.chanListElement, [$$.niceTime(msg.time), he(msg.args[1]), he(msg.args[1]), he(msg.args[2]), outtext]);
 			}
 			gateway.statusWindow.markBold();
 		}
@@ -888,7 +888,7 @@ var cmdBinds = {
 	],
 	'330': [	// RPL_WHOISLOGGEDIN
 		function(msg) {
-			$$.displayDialog('whois', msg.args[1], false, "<p class='whois'><span class='info'>" + language.accountName + ":</span><span class='data'>" + msg.args[2] + "</span></p>");
+			$$.displayDialog('whois', msg.args[1], false, "<p class='whois'><span class='info'>" + language.accountName + ":</span><span class='data'>" + he(msg.args[2]) + "</span></p>");
 		}
 	],
 	'331': [	// RPL_NOTOPIC
@@ -904,17 +904,17 @@ var cmdBinds = {
 			}
 			if(msg.text) {
 				if(chanFound) chan.setTopic(msg.text);
-				chan.appendMessage(language.messagePatterns.topic, [$$.niceTime(msg.time), msg.args[1], $$.colorize(msg.text)]);
+				chan.appendMessage(language.messagePatterns.topic, [$$.niceTime(msg.time), he(msg.args[1]), $$.colorize(msg.text)]);
 			} else {
 				if(chanFound) chan.setTopic('');
-				chan.appendMessage(language.messagePatterns.topicNotSet, [$$.niceTime(msg.time), msg.args[1]]);
+				chan.appendMessage(language.messagePatterns.topicNotSet, [$$.niceTime(msg.time), he(msg.args[1])]);
 			}
 		}
 	],
 	'333': [	// RPL_TOPICWHOTIME
 		function(msg) {
 			if(gateway.findChannel(msg.args[1])) {
-				gateway.findChannel(msg.args[1]).appendMessage(language.messagePatterns.topicTime, [$$.niceTime(msg.time), msg.args[2], $$.parseTime(msg.args[3])]);
+				gateway.findChannel(msg.args[1]).appendMessage(language.messagePatterns.topicTime, [$$.niceTime(msg.time), he(msg.args[2]), $$.parseTime(msg.args[3])]);
 			}
 		}
 	],
@@ -1089,7 +1089,7 @@ var cmdBinds = {
 					html += '</td></tr>';
 				}
 				html += '</table>';
-				$$.displayDialog('names', msg.args[2], language.nickListFor + msg.args[2], html);
+				$$.displayDialog('names', msg.args[2], language.nickListFor + he(msg.args[2]), html);
 				return;
 			}
 			for(userId in newUsers){
@@ -1235,20 +1235,20 @@ var cmdBinds = {
 	'401': [	// ERR_NOSUCHNICK
 		function(msg) {
 			if(msg.args[1] != irc.lastNick){
-				$$.displayDialog('error', 'error', language.error, '<p>' + language.noSuchNickChannel + ': <b>'+msg.args[1]+'</b></p>');
+				$$.displayDialog('error', 'error', language.error, '<p>' + language.noSuchNickChannel + ': <b>'+he(msg.args[1])+'</b></p>');
 			}
 			gateway.statusWindow.appendMessage(language.messagePatterns.noSuchNick, [$$.niceTime(msg.time), he(msg.args[1])]);
 		}
 	],
 	'402': [	// ERR_NOSUCHSERVER
 		function(msg) {
-			$$.displayDialog('error', 'error', language.error, '<p>' + language.noSuchObject + ': <b>'+msg.args[1]+'</b></p>');
+			$$.displayDialog('error', 'error', language.error, '<p>' + language.noSuchObject + ': <b>'+he(msg.args[1])+'</b></p>');
 			gateway.statusWindow.appendMessage(language.messagePatterns.noSuchNick, [$$.niceTime(msg.time), he(msg.args[1])]);
 		}
 	],
 	'403': [	// ERR_NOSUCHCHANNEL
 		function(msg) {
-			$$.displayDialog('error', 'error', language.error, '<p>' + language.noSuchChannel + ': <b>'+msg.args[1]+'</b></p>');
+			$$.displayDialog('error', 'error', language.error, '<p>' + language.noSuchChannel + ': <b>'+he(msg.args[1])+'</b></p>');
 			gateway.statusWindow.appendMessage(language.messagePatterns.noSuchChannel, [$$.niceTime(msg.time), he(msg.args[1])]);
 		}
 	],
@@ -1287,7 +1287,7 @@ var cmdBinds = {
 	],
 	'406': [	// ERR_WASNOSUCHNICK
 		function(msg) {
-			$$.displayDialog('error', 'error', 'Błąd', '<p>' + language.recentVisitsForNickNotFound + '<b>'+msg.args[1]+'</b></p>');
+			$$.displayDialog('error', 'error', 'Błąd', '<p>' + language.recentVisitsForNickNotFound + '<b>'+he(msg.args[1])+'</b></p>');
 			gateway.statusWindow.appendMessage(language.messagePatterns.noSuchNickHistory, [$$.niceTime(msg.time), he(msg.args[1])]);
 		}
 	],
@@ -1604,9 +1604,9 @@ var cmdBinds = {
 			if(match){
 				var query = gateway.findQuery(msg.args[1]);
 				if(query){
-					query.appendMessage(language.messagePatterns.cannotSendToUser, [$$.niceTime(msg.time), msg.args[1], language.yourNickMustBeRegistered]);
+					query.appendMessage(language.messagePatterns.cannotSendToUser, [$$.niceTime(msg.time), he(msg.args[1]), language.yourNickMustBeRegistered]);
 				}
-				$$.displayDialog('error', 'error', 'Błąd', '<p>' + language.cantSendPMTo + ' <b>'+msg.args[1]+'</b></p><p>' + language.userAcceptsPMsOnlyFromRegistered + '</p>');
+				$$.displayDialog('error', 'error', 'Błąd', '<p>' + language.cantSendPMTo + ' <b>'+he(msg.args[1])+'</b></p><p>' + language.userAcceptsPMsOnlyFromRegistered + '</p>');
 			} else {
 				$$.displayDialog('error', 'error', 'Błąd', '<p>' + language.cantSendPM + '.</p><p>' + language.serverMessageIs + he(msg.text)+'</p>');
 			}
@@ -1703,7 +1703,7 @@ var cmdBinds = {
 		function(msg) {
 			gateway.showPermError(msg.text);
 			if(gateway.getActive()) {
-				gateway.getActive().appendMessage(language.messagePatterns.noPerms, [$$.niceTime(msg.time), msg.args[1]]);
+				gateway.getActive().appendMessage(language.messagePatterns.noPerms, [$$.niceTime(msg.time), he(msg.args[1])]);
 			}
 		}
 	],
@@ -1711,7 +1711,7 @@ var cmdBinds = {
 		function(msg) {
 			gateway.showPermError(msg.text);
 			if(gateway.getActive()) {
-				gateway.getActive().appendMessage(language.messagePatterns.noPerms, [$$.niceTime(msg.time), msg.args[1]]);
+				gateway.getActive().appendMessage(language.messagePatterns.noPerms, [$$.niceTime(msg.time), he(msg.args[1])]);
 			}
 		}
 	]
