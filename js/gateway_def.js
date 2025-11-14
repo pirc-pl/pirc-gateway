@@ -2359,7 +2359,7 @@ var gateway = {
 			nick = '<span title="' + nickInfo + '">' + nick + '</span>';
 		if('display-name' in sender.metadata){
 			nick = user.metadata['display-name'];
-			nickComments = ' <span class="realNick" title="' + language.realNickname + '">(' + msg.sender.nick + ')</span>';
+			nickComments = ' <span class="realNick" title="' + language.realNickname + '">(' + he(msg.sender.nick) + ')</span>';
 		}
 		for(f in messageProcessors){
 			message = messageProcessors[f](sender.nick, dest, message);

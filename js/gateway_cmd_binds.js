@@ -271,7 +271,7 @@ var cmdBinds = {
 				$$.displayDialog('error', 'herror', language.error, html);
 			} else {
 				var html = '<h3>' + language.serverClosedConnection + '</h3>' +
-					'<p>' + language.informations + ': '+msg.text+'</p>';
+					'<p>' + language.informations + ': '+he(msg.text)+'</p>';
 				$$.displayDialog('error', 'error', language.error, html);
 				if($('#autoReconnect').is(':checked')){
 					gateway.reconnect();
@@ -456,7 +456,7 @@ var cmdBinds = {
 					gateway.statusWindow.appendMessage(language.messagePatterns.ctcpReply, [$$.niceTime(msg.time), he(msg.sender.nick), $$.colorize(acttext)]);
 				}
 				if(ctcp.toLowerCase() == 'version'){
-					$$.displayDialog('whois', msg.sender.nick, language.userInformation + he(msg.sender.nick), language.userSoftware + '<b>'+msg.sender.nick+'</b>:<br>'+he(text));
+					$$.displayDialog('whois', msg.sender.nick, language.userInformation + he(msg.sender.nick), language.userSoftware + '<b>'+he(msg.sender.nick)+'</b>:<br>'+he(text));
 				}
 			} else { // nie-ctcp
 				if(msg.sender.nick.toLowerCase() == 'nickserv'){
@@ -765,7 +765,7 @@ var cmdBinds = {
 						}
 					}
 					chanName = he(chanName);
-					chanHtml += chanPrefix + '<a href="javascript:ircCommand.channelJoin(\'' + chanName + '\')" title="' + language.joinChannel + ' ' + chanName + '">' + chanName + '</a> ';
+					chanHtml += he(chanPrefix) + '<a href="javascript:ircCommand.channelJoin(\'' + chanName + '\')" title="' + language.joinChannel + ' ' + chanName + '">' + chanName + '</a> ';
 				});
 				$$.displayDialog('whois', msg.args[1], false, "<p class='whois'><span class='info'>" + language.channels + ":</span><span class='data'> "+ chanHtml + "</span></p>");
 			} else {	// sprawdzam, na jakich kanałach sam jestem
@@ -1267,7 +1267,7 @@ var cmdBinds = {
 				} else if(msg.text.match(/You must have a registered nick \(\+r\) to talk on this channel \(.*\)/)){
 					reason = language.registeredNickRequired;
 				} else {
-					reason = language.serverMessageIs + msg.text;
+					reason = language.serverMessageIs + he(msg.text);
 				}
 				if(gateway.findChannel(msg.args[1])){
 					gateway.findChannel(msg.args[1]).appendMessage(language.messagePatterns.cannotSendToChan, [$$.niceTime(msg.time), msg.args[1], reason]);
@@ -1276,10 +1276,10 @@ var cmdBinds = {
 					gateway.statusWindow.appendMessage(language.messagePatterns.cannotSendToChan, [$$.niceTime(msg.time), msg.args[1], reason]);
 				}
 			} else if(gateway.findQuery(msg.args[1])){
-				reason = msg.text;
+				reason = he(msg.text);
 				gateway.findQuery(msg.args[1]).appendMessage(language.messagePatterns.cannotSendToUser, [$$.niceTime(msg.time), msg.args[1], reason]);
 			} else {
-				$$.displayDialog('error', 'error', 'Błąd', '<p>' + language.cantSendMessageTo + ' '+he(msg.args[1])+'</p><p>' + language.serverMessageIs + msg.text+'</p>');
+				$$.displayDialog('error', 'error', 'Błąd', '<p>' + language.cantSendMessageTo + ' '+he(msg.args[1])+'</p><p>' + language.serverMessageIs + he(msg.text)+'</p>');
 			}
 		}
 	],
