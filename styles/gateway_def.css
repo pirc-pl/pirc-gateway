@@ -1422,3 +1422,12 @@ img.emoji {
     position: relative;
 }
 
+/* Automatically enlarge emoji in emoji-only messages (≤5 emoji) */
+.emoji-large {
+    display: inline-block;
+    transform: scale(var(--emoji-scale));
+    /* No position: relative to avoid overlapping other messages */
+    /* Inline-block with scale creates natural spacing */
+    line-height: 1.5;
+}
+

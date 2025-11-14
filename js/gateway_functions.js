@@ -517,7 +517,7 @@ function fillEmoticonSelector(){
 }
 
 function makeEmojiSelector(c){
-	return '<span><a class="charSelect" onclick="gateway.insertEmoji(\'' + c + '\')">' + emoji.addTags(c) + '</a> </span>';
+	return '<span><a class="charSelect" onclick="gateway.insertEmoji(\'' + c + '\')">' + emoji.addTags(c).text + '</a> </span>';
 }
 
 function saveSelectableEmoji(){
@@ -536,7 +536,7 @@ var geoip = {
 		for(var i=0; i<code.length; i++){
 			out += String.fromCodePoint(code.codePointAt(i) + 0x1F1A5);
 		}
-		return emoji.addTags(out);
+		return emoji.addTags(out).text;
 	}
 };
 
@@ -1197,7 +1197,11 @@ var $$ = {
 			message = he(message);
 			message = $$.parseLinks(message);
 			if($('#dispEmoji').is(':checked')){
-				message = emoji.addTags(message);
+				// Check if message is emoji-only with ≤5 emoji for auto-enlargement
+			var enlargeEmoji = emoji.isTextEmojiOnly(message);
+			var emojiResult = emoji.addTags(message, enlargeEmoji);
+			message = emojiResult.text;
+			// Note: enlargeEmoji already applied during addTags if ≤5
 			}
 		}
 		var length = message.length;
