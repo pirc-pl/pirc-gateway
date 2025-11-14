@@ -124,7 +124,14 @@ var colorMessage = function(src, dst, text){
 	}
 	var color = getColor(src);
 	if(color){
-		text = '<span style="color:'+color+'">'+text+'</span>';
+		// Sanitize color to prevent XSS
+		color = sanitizeColor(color);
+		if(color){
+			// Adjust color for contrast with current theme background
+			var backgroundColor = getThemeBackgroundColor();
+			color = adjustColorContrast(color, backgroundColor, 4.5);
+			text = '<span style="color:'+color+'">'+text+'</span>';
+		}
 	}
 	return text;
 }

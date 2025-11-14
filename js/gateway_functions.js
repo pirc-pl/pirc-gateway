@@ -316,6 +316,139 @@ function decryptPassword(encryptedPassword) {
 	return decrypted;
 }
 
+// Color validation and sanitization
+function isValidColor(color) {
+	if (!color || typeof color !== 'string') return false;
+	// Valid hex color: #RGB or #RRGGBB
+	return /^#[0-9A-Fa-f]{3}$|^#[0-9A-Fa-f]{6}$/.test(color);
+}
+
+function sanitizeColor(color) {
+	if (!color) return '';
+	// Remove any whitespace
+	color = color.trim();
+	// Only allow valid hex colors
+	if (isValidColor(color)) {
+		return color;
+	}
+	// Return empty string if invalid (will use default color)
+	return '';
+}
+
+// Color contrast functions for accessibility
+// Convert hex color to RGB
+function hexToRgb(hex) {
+	// Remove # if present
+	hex = hex.replace(/^#/, '');
+
+	// Handle 3-digit hex codes
+	if (hex.length === 3) {
+		hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+	}
+
+	var r = parseInt(hex.substr(0, 2), 16);
+	var g = parseInt(hex.substr(2, 2), 16);
+	var b = parseInt(hex.substr(4, 2), 16);
+
+	return { r: r, g: g, b: b };
+}
+
+// Convert RGB to hex
+function rgbToHex(r, g, b) {
+	var toHex = function(n) {
+		n = Math.round(Math.max(0, Math.min(255, n)));
+		var hex = n.toString(16);
+		return hex.length === 1 ? '0' + hex : hex;
+	};
+	return '#' + toHex(r) + toHex(g) + toHex(b);
+}
+
+// Calculate relative luminance (WCAG formula)
+function getRelativeLuminance(rgb) {
+	var rsRGB = rgb.r / 255;
+	var gsRGB = rgb.g / 255;
+	var bsRGB = rgb.b / 255;
+
+	var r = rsRGB <= 0.03928 ? rsRGB / 12.92 : Math.pow((rsRGB + 0.055) / 1.055, 2.4);
+	var g = gsRGB <= 0.03928 ? gsRGB / 12.92 : Math.pow((gsRGB + 0.055) / 1.055, 2.4);
+	var b = bsRGB <= 0.03928 ? bsRGB / 12.92 : Math.pow((bsRGB + 0.055) / 1.055, 2.4);
+
+	return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+// Calculate contrast ratio between two colors (WCAG formula)
+function getContrastRatio(color1, color2) {
+	var lum1 = getRelativeLuminance(hexToRgb(color1));
+	var lum2 = getRelativeLuminance(hexToRgb(color2));
+
+	var lighter = Math.max(lum1, lum2);
+	var darker = Math.min(lum1, lum2);
+
+	return (lighter + 0.05) / (darker + 0.05);
+}
+
+// Get current theme background color
+function getThemeBackgroundColor() {
+	// Check which stylesheet is active by looking at the chat-wrapper background
+	var chatWrapper = document.getElementById('chat-wrapper');
+	if (!chatWrapper) {
+		return '#FFFFFF'; // Default to white
+	}
+
+	var bgColor = window.getComputedStyle(chatWrapper).backgroundColor;
+
+	// Convert rgb/rgba to hex
+	if (bgColor.indexOf('rgb') === 0) {
+		var matches = bgColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+		if (matches) {
+			return rgbToHex(parseInt(matches[1]), parseInt(matches[2]), parseInt(matches[3]));
+		}
+	}
+
+	return bgColor || '#FFFFFF';
+}
+
+// Adjust color to meet minimum contrast ratio
+function adjustColorContrast(color, backgroundColor, minRatio) {
+	if (!color || color === '') return color;
+
+	minRatio = minRatio || 4.5; // WCAG AA standard for normal text
+
+	var currentRatio = getContrastRatio(color, backgroundColor);
+	if (currentRatio >= minRatio) {
+		return color; // Already has good contrast
+	}
+
+	var rgb = hexToRgb(color);
+	var bgRgb = hexToRgb(backgroundColor);
+	var bgLum = getRelativeLuminance(bgRgb);
+
+	// Determine if we need to make the color lighter or darker
+	var makeLighter = bgLum > 0.5;
+
+	// Binary search for the right adjustment
+	var step = makeLighter ? 10 : -10;
+	var maxIterations = 30;
+	var iterations = 0;
+
+	while (getContrastRatio(rgbToHex(rgb.r, rgb.g, rgb.b), backgroundColor) < minRatio && iterations < maxIterations) {
+		if (makeLighter) {
+			// Lighten: move towards white
+			rgb.r = Math.min(255, rgb.r + Math.abs(step));
+			rgb.g = Math.min(255, rgb.g + Math.abs(step));
+			rgb.b = Math.min(255, rgb.b + Math.abs(step));
+		} else {
+			// Darken: move towards black
+			rgb.r = Math.max(0, rgb.r + step);
+			rgb.g = Math.max(0, rgb.g + step);
+			rgb.b = Math.max(0, rgb.b + step);
+		}
+		iterations++;
+	}
+
+	return rgbToHex(rgb.r, rgb.g, rgb.b);
+}
+
 function rxEscape(text) { //backupowanie regex
 	return text.replace(/[.^$*+?()[{\\|]/g, '\\$&');
 }
@@ -1029,6 +1162,16 @@ var $$ = {
 				color = ret;
 			}
 		}
+
+	// Sanitize and adjust color for contrast with current theme background
+	if(color){
+		color = sanitizeColor(color);
+		if(color){
+			var backgroundColor = getThemeBackgroundColor();
+			color = adjustColorContrast(color, backgroundColor, 4.5);
+		}
+	}
+
 		if(codeOnly){
 			return color;
 		} else {
