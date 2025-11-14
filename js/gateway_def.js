@@ -2248,12 +2248,12 @@ var gateway = {
 	'getMeta': function(nick, size){
 		var avatar = gateway.getAvatarUrl(nick, size);
 		if(avatar) {
-			meta = '<img src="' + avatar + '" alt="'+nick+'" onerror="this.src=\'/styles/img/noavatar.png\';">';
+			meta = '<img src="' + he(avatar) + '" alt="'+he(nick)+'" onerror="this.src=\'/styles/img/noavatar.png\';">';
 		} else {
 			if('display-name' in users.getUser(nick).metadata){
-				var dispNick = users.getUser(nick).metadata['display-name'];
+				var dispNick = he(users.getUser(nick).metadata['display-name']);
 			} else {
-				var dispNick = nick;
+				var dispNick = he(nick);
 			}
 			meta = '<span class="avatar letterAvatar" style="background-color:'+$$.nickColor(nick, true)+';"><span role="presentation">'+dispNick.charAt(0)+'</span></span>';
 		}
@@ -2358,7 +2358,7 @@ var gateway = {
 		if(nickInfo.length > 0)
 			nick = '<span title="' + nickInfo + '">' + nick + '</span>';
 		if('display-name' in sender.metadata){
-			nick = user.metadata['display-name'];
+			nick = he(user.metadata['display-name']);
 			nickComments = ' <span class="realNick" title="' + language.realNickname + '">(' + he(msg.sender.nick) + ')</span>';
 		}
 		for(f in messageProcessors){
