@@ -215,6 +215,107 @@ function bsEscape(text) { // escapowanie beksleszy i zakończeń stringa
 	return text;
 }
 
+// Password encryption functions
+// Generates or retrieves browser-specific encryption key
+function getEncryptionKey() {
+	var keyName = 'pirc_ek';
+	var key = localStorage.getItem(keyName);
+	if (!key) {
+		// Generate new random key (256 bits / 64 hex chars)
+		key = '';
+		for (var i = 0; i < 64; i++) {
+			key += '0123456789abcdef'.charAt(Math.floor(Math.random() * 16));
+		}
+		try {
+			localStorage.setItem(keyName, key);
+		} catch(e) {
+			// If localStorage fails, use session-based key
+			if (!window.sessionEncryptionKey) {
+				window.sessionEncryptionKey = key;
+			}
+			return window.sessionEncryptionKey;
+		}
+	}
+	return key;
+}
+
+// Encrypt password with XOR cipher and key stretching
+function encryptPassword(password) {
+	if (!password) return '';
+
+	var key = getEncryptionKey();
+	// Key stretching: hash key multiple times for better security
+	var stretchedKey = key;
+	for (var i = 0; i < 1000; i++) {
+		stretchedKey = md5(stretchedKey + key);
+	}
+
+	// Convert password to array of char codes
+	var encrypted = [];
+	for (var i = 0; i < password.length; i++) {
+		var keyChar = stretchedKey.charCodeAt(i % stretchedKey.length);
+		var passChar = password.charCodeAt(i);
+		// XOR encryption
+		encrypted.push(passChar ^ keyChar);
+	}
+
+	// Convert to hex string
+	var hexResult = '';
+	for (var i = 0; i < encrypted.length; i++) {
+		var hex = encrypted[i].toString(16);
+		hexResult += (hex.length === 1 ? '0' : '') + hex;
+	}
+
+	// Prefix with version identifier for future compatibility
+	return 'v1:' + hexResult;
+}
+
+// Decrypt password
+function decryptPassword(encryptedPassword) {
+	if (!encryptedPassword) return '';
+
+	// Check if it's old base64 format (backward compatibility)
+	if (encryptedPassword.indexOf('v1:') !== 0) {
+		// Old format - decode with atob and migrate
+		try {
+			var decoded = atob(encryptedPassword);
+			// Re-encrypt with new method
+			var newEncrypted = encryptPassword(decoded);
+			try {
+				localStorage.setItem('password', newEncrypted);
+			} catch(e) {}
+			return decoded;
+		} catch(e) {
+			return '';
+		}
+	}
+
+	// New format - decrypt
+	var hexData = encryptedPassword.substring(3); // Remove 'v1:' prefix
+	var key = getEncryptionKey();
+
+	// Key stretching (same as encryption)
+	var stretchedKey = key;
+	for (var i = 0; i < 1000; i++) {
+		stretchedKey = md5(stretchedKey + key);
+	}
+
+	// Convert hex to array
+	var encrypted = [];
+	for (var i = 0; i < hexData.length; i += 2) {
+		encrypted.push(parseInt(hexData.substr(i, 2), 16));
+	}
+
+	// XOR decryption
+	var decrypted = '';
+	for (var i = 0; i < encrypted.length; i++) {
+		var keyChar = stretchedKey.charCodeAt(i % stretchedKey.length);
+		decrypted += String.fromCharCode(encrypted[i] ^ keyChar);
+	}
+
+	return decrypted;
+}
+
 function rxEscape(text) { //backupowanie regex
 	return text.replace(/[.^$*+?()[{\\|]/g, '\\$&');
 }

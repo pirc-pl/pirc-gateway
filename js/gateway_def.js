@@ -654,7 +654,7 @@ var gateway = {
 			}
 			if($('#save_password').is(":checked")){
 				if(guser.nickservnick && guser.nickservpass){
-					localStorage.setItem('password', btoa(guser.nickservpass));
+					localStorage.setItem('password', encryptPassword(guser.nickservpass));
 				}
 			}
 		} catch(e) {}

@@ -109,7 +109,7 @@ var conn = {
 			}
 			if(conn.my_nick == localStorage.getItem('nick')){
 				if(localStorage.getItem('password')){
-					conn.my_pass = atob(localStorage.getItem('password'));
+					conn.my_pass = decryptPassword(localStorage.getItem('password'));
 				}
 			}
 		} catch(e) {}

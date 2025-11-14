@@ -250,7 +250,7 @@ var services = {
 		guser.nickservpass = $('#nspass').val();
 		if($('#saveNewPassword').is(':checked')){
 			try {
-				localStorage.setItem('password', btoa(guser.nickservpass));
+				localStorage.setItem('password', encryptPassword(guser.nickservpass));
 			} catch(e) {}
 		}
 		if($('#notConfirmedAccount').is(':checked')){
