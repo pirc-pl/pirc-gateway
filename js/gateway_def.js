@@ -2594,6 +2594,64 @@ var gateway = {
 			}
 		}
 		return false;
+	},
+	'loadOlderHistory': function(channel){
+		if(!('draft/chathistory' in activeCaps)){
+			console.log('CHATHISTORY not available');
+			return;
+		}
+
+		var chan = gateway.findChannel(channel);
+		if(!chan){
+			console.log('Channel not found:', channel);
+			return;
+		}
+
+		// Remove the "load older" button
+		$('#' + chan.id + '-window .loadOlderButton').remove();
+
+		// Find the oldest message with msgid or timestamp
+		var oldestMsgDiv = $('#' + chan.id + '-window .messageDiv[data-msgid]').first();
+		var reference = null;
+
+		if(oldestMsgDiv.length){
+			// Prefer msgid if available
+			var msgid = oldestMsgDiv.attr('data-msgid');
+			if(msgid){
+				reference = 'msgid=' + msgid;
+			}
+		}
+
+		// Fallback to timestamp if no msgid
+		if(!reference){
+			oldestMsgDiv = $('#' + chan.id + '-window .messageDiv[data-time]').first();
+			if(oldestMsgDiv.length){
+				var timestamp = oldestMsgDiv.attr('data-time');
+				if(timestamp){
+					// Convert milliseconds timestamp to ISO format
+					var date = new Date(parseInt(timestamp));
+					var isoStr = date.toISOString().replace('Z', '000Z'); // Ensure 3 decimal places
+					reference = 'timestamp=' + isoStr;
+				}
+			}
+		}
+
+		if(!reference){
+			console.log('No reference point found for loading older history');
+			return;
+		}
+
+		// Determine the limit
+		var limit = 50;
+		if('CHATHISTORY' in isupport){
+			var isupportLimit = isupport['CHATHISTORY'];
+			if(isupportLimit != 0 && isupportLimit < 50){
+				limit = isupportLimit;
+			}
+		}
+
+		console.log('Requesting history BEFORE', reference, 'limit', limit);
+		ircCommand.chathistory('BEFORE', channel, reference, undefined, limit);
 	}/*,
 	'endOfJoinHistory': function(batch, msg){
 		console.log('endOfJoinHistory called', batch);
@@ -2605,7 +2663,7 @@ var gateway = {
 	//	if(hcount > 15){
 			var html = '<div class="getHistoryButton"><a href="javascript:void(0)" onclick="gateway.getMoreHistory(\'' + channel.name + '\')">' + language.getMoreHistory + '</a></div>';
 			channel.appendMessage('%s', [html]);
-	//	}			
+	//	}
 	},
 	'getMoreHistory': function(channel){
 		ircCommand.channelHistory(channel);

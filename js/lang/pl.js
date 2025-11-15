@@ -569,6 +569,7 @@ lang.pl = {
 	'messageNotDelivered': 'Ta wiadomość nie została dostarczona',
 	'historyEntry': 'Historia rozmowy',
 	'getMoreHistory': 'Pobierz więcej historii…',
+	'loadOlderHistory': 'załaduj starsze',
 	'to': ' do ',
 	'isTyping': 'pisze…',
 	'areTyping': 'piszą…',

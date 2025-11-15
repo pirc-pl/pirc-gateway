@@ -120,6 +120,20 @@ var ircCommand = {
 		var tags = false;
 		ircCommand.send('HISTORY', args, false, tags);
 	},
+	'chathistory': function(subcommand, target, param1, param2, limit){
+		// CHATHISTORY <subcommand> <target> <timestamp | msgid> [<timestamp | msgid>] <limit>
+		var args = [subcommand, target];
+		if(param2 !== undefined){ // BETWEEN subcommand
+			args.push(param1);
+			args.push(param2);
+		} else if(param1 !== undefined){
+			args.push(param1);
+		}
+		if(limit !== undefined){
+			args.push(limit.toString());
+		}
+		ircCommand.perform('CHATHISTORY', args);
+	},
 	'channelJoin': function(channels, passwords){ // TODO obsługa haseł jeśli tablice
 		if(Array.isArray(channels)){
 			var channelString = '';

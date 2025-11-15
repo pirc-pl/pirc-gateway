@@ -39,7 +39,8 @@ var supportedCaps = [
 	'sasl',
 	'cap-notify',
 	'batch',
-	'labeled-response'
+	'labeled-response',
+	'draft/chathistory'
 ];
 var serverCaps = {};
 
@@ -72,14 +73,42 @@ var batchBinds = {
 	'chathistory': [
 		function(msg, batch){
 			console.log('chathistory batch handler called');
-			if(!batch.label || gateway.labelInfo[batch.label].command != 'HISTORY'){ // caused by join
-//				batch.callback = gateway.endOfJoinHistory;
-				return;
-			}
-			gateway.labelProcessed = true;
-			/*var chan = gateway.findChannel(batch.args[0]);
-			var selector = '#' + chan.id + ' .getHistoryButton';
-			$(selector).remove();*/
+			batch.receivedMessages = 0; // Track how many messages we received
+		},
+		function(msg, batch){
+			// This will be called when the batch ends (msg.isBatchEnd is true)
+			// We need to set a callback to add the "load older" link
+			batch.callback = function(batch, msg){
+				console.log('chathistory batch ended, received', batch.receivedMessages, 'messages');
+				var chan = gateway.findChannel(batch.args[0]);
+				if(!chan) return;
+
+				// Check if we should show "load older" link
+				// We show it if we received the full requested amount (meaning there might be more)
+				var limit = 50; // default
+				if('CHATHISTORY' in isupport){
+					var isupportLimit = isupport['CHATHISTORY'];
+					if(isupportLimit != 0 && isupportLimit < 50){
+						limit = isupportLimit;
+					}
+				}
+
+				// Only show "load older" if we received a full page (meaning there might be more)
+				if(batch.receivedMessages >= limit || batch.receivedMessages >= 10){
+					// Find the oldest received message in this batch to get its msgid/timestamp
+					var oldestMsgDiv = $('#' + chan.id + '-window .messageDiv[data-msgid]').first();
+					if(!oldestMsgDiv.length){
+						// Try with timestamp if no msgid
+						oldestMsgDiv = $('#' + chan.id + '-window .messageDiv[data-time]').first();
+					}
+
+					if(oldestMsgDiv.length){
+						var html = '<div class="loadOlderButton" data-channel="' + chan.name + '"><a href="javascript:gateway.loadOlderHistory(\'' + chan.name.replace(/'/g, "\\'") + '\')">' + language.loadOlderHistory + '</a></div>';
+						// Insert above the oldest message
+						oldestMsgDiv.before(html);
+					}
+				}
+			};
 		}
 	],
 	'labeled-response': [
@@ -338,6 +367,14 @@ var cmdBinds = {
 				} else {
 					ircCommand.who(channame);
 				}
+				// Request chat history if the capability is available
+				if('draft/chathistory' in activeCaps && 'CHATHISTORY' in isupport){
+					var limit = isupport['CHATHISTORY'];
+					if(limit == 0 || limit > 50){
+						limit = 50; // default to 50 messages
+					}
+					ircCommand.chathistory('LATEST', channame, '*', undefined, limit);
+				}
 			}
 		},
 		function(msg) { // wszystkie
@@ -434,6 +471,15 @@ var cmdBinds = {
 			if (msg.text == false) {
 				msg.text = " ";
 			}
+
+			// Track messages in chathistory batch
+			if(msg.tags && 'batch' in msg.tags){
+				var batch = gateway.batch[msg.tags.batch];
+				if(batch && batch.type == 'chathistory'){
+					batch.receivedMessages = (batch.receivedMessages || 0) + 1;
+				}
+			}
+
 			if(msg.args[0].indexOf('#') == 0) { // wiadomość kanałowa
 				if(ignore.ignoring(msg.user, 'channel')){
 					console.log('Ignoring message on '+msg.args[0]+' by '+msg.sender.nick);
@@ -509,7 +555,15 @@ var cmdBinds = {
 			if (msg.text === false) {
 				msg.text = " ";
 			}
-			
+
+			// Track messages in chathistory batch
+			if(msg.tags && 'batch' in msg.tags){
+				var batch = gateway.batch[msg.tags.batch];
+				if(batch && batch.type == 'chathistory'){
+					batch.receivedMessages = (batch.receivedMessages || 0) + 1;
+				}
+			}
+
 			if(msg.args[0].indexOf('#') == 0) { // wiadomość kanałowa
 				if(ignore.ignoring(msg.user, 'channel')){
 					console.log('Ignoring message on '+msg.args[0]+' by '+msg.sender.nick);
@@ -521,7 +575,7 @@ var cmdBinds = {
 					return;
 				}
 			}
-			
+
 			if(msg.text.match(/^\001.*\001$/i)) { //CTCP
 				var space = msg.text.indexOf(' ');
 				if(space > -1){

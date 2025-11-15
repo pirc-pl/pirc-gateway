@@ -568,6 +568,7 @@ lang.en = {
 	'messageNotDelivered': 'This message was not delivered',
 	'historyEntry': 'Message history entry',
 	'getMoreHistory': 'Get more history…',
+	'loadOlderHistory': 'load older',
 	'to': ' to ',
 	'isTyping': 'is typing…',
 	'areTyping': 'are typing…',
