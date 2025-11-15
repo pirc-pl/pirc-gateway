@@ -653,11 +653,13 @@ function Channel(chan) {
 		if(this.name.toLowerCase() == gateway.active.toLowerCase() && currHeight > fullHeight-200) {
 			rescroll = true;
 		}
-		
+
 		var appended = false;
 		if(gateway.historyBatchActive(this.name)){ // history entries may arrive out of order, we handle this here
 			var newElement = $(messageData);
 			var windowElements = $('#'+this.id+'-window .messageDiv');
+
+			// First pass: try to insert in chronological order among timestamped messages
 			for(var i=0; i<windowElements.length; i++){
 				var element = windowElements[i];
 				var elTime = element.getAttribute('data-time');
@@ -666,6 +668,34 @@ function Channel(chan) {
 					newElement.insertBefore(element);
 					appended = true;
 					break;
+				}
+			}
+
+			// Second pass: if not inserted yet, find the first non-timestamped message
+			// from the end (most recent channel join info) and insert before it
+			if(!appended){
+				for(var i=windowElements.length-1; i>=0; i--){
+					var element = windowElements[i];
+					var elTime = element.getAttribute('data-time');
+					var elMsgid = element.getAttribute('data-msgid');
+					// Find the first message (from end) without timestamp/msgid
+					if(!elTime && !elMsgid){
+						// Found a non-timestamped message, but check if there are any
+						// timestamped messages after it - if not, this is current join info
+						var hasTimestampedAfter = false;
+						for(var j=i+1; j<windowElements.length; j++){
+							if(windowElements[j].getAttribute('data-time')){
+								hasTimestampedAfter = true;
+								break;
+							}
+						}
+						// If no timestamped messages after this, it's the current join info
+						if(!hasTimestampedAfter){
+							newElement.insertBefore(element);
+							appended = true;
+							break;
+						}
+					}
 				}
 			}
 		}
