@@ -424,7 +424,9 @@ function adjustColorContrast(color, backgroundColor, minRatio) {
 	var bgLum = getRelativeLuminance(bgRgb);
 
 	// Determine if we need to make the color lighter or darker
-	var makeLighter = bgLum > 0.5;
+	// If background is light, we need to darken the text for contrast
+	// If background is dark, we need to lighten the text for contrast
+	var makeLighter = bgLum < 0.5;
 
 	// Binary search for the right adjustment
 	var step = makeLighter ? 10 : -10;
