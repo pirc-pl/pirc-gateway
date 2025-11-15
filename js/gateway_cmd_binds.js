@@ -83,8 +83,12 @@ var batchBinds = {
 				var chan = gateway.findChannel(batch.args[0]);
 				if(!chan) return;
 
+				// Remove any existing "load older" button first
+				$('#' + chan.id + '-window .loadOlderButton').remove();
+
 				// Check if we should show "load older" link
-				// We show it if we received the full requested amount (meaning there might be more)
+				// According to the spec, an empty batch means no more history available
+				// Only show the link if we received a full page (indicating there might be more)
 				var limit = 50; // default
 				if('CHATHISTORY' in isupport){
 					var isupportLimit = isupport['CHATHISTORY'];
@@ -93,8 +97,10 @@ var batchBinds = {
 					}
 				}
 
-				// Only show "load older" if we received a full page (meaning there might be more)
-				if(batch.receivedMessages >= limit || batch.receivedMessages >= 10){
+				// Show "load older" only if:
+				// 1. We received at least some messages (not an empty batch)
+				// 2. We received a full page (>= limit), indicating there might be more
+				if(batch.receivedMessages > 0 && batch.receivedMessages >= limit){
 					// Find the oldest received message in this batch to get its msgid/timestamp
 					var oldestMsgDiv = $('#' + chan.id + '-window .messageDiv[data-msgid]').first();
 					if(!oldestMsgDiv.length){
