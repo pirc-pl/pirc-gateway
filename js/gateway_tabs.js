@@ -674,14 +674,15 @@ function Channel(chan) {
 			// Second pass: if not inserted yet, find the first non-timestamped message
 			// from the end (most recent channel join info) and insert before it
 			if(!appended){
+				// Search backwards to find the start of non-timestamped message sequence at the end
+				var channelInfoStart = -1;
 				for(var i=windowElements.length-1; i>=0; i--){
 					var element = windowElements[i];
 					var elTime = element.getAttribute('data-time');
 					var elMsgid = element.getAttribute('data-msgid');
-					// Find the first message (from end) without timestamp/msgid
+
 					if(!elTime && !elMsgid){
-						// Found a non-timestamped message, but check if there are any
-						// timestamped messages after it - if not, this is current join info
+						// Check if there are any timestamped messages after this
 						var hasTimestampedAfter = false;
 						for(var j=i+1; j<windowElements.length; j++){
 							if(windowElements[j].getAttribute('data-time')){
@@ -689,13 +690,21 @@ function Channel(chan) {
 								break;
 							}
 						}
-						// If no timestamped messages after this, it's the current join info
+						// If no timestamped messages after, this is part of current join info
 						if(!hasTimestampedAfter){
-							newElement.insertBefore(element);
-							appended = true;
-							break;
+							channelInfoStart = i;
+							// Continue searching backwards to find the start of the sequence
 						}
+					} else if(channelInfoStart !== -1){
+						// We found a timestamped message, and we've already found
+						// the end of the sequence, so channelInfoStart is the first message
+						break;
 					}
+				}
+
+				if(channelInfoStart !== -1){
+					newElement.insertBefore(windowElements[channelInfoStart]);
+					appended = true;
 				}
 			}
 		}
