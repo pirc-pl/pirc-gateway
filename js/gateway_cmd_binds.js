@@ -74,6 +74,8 @@ var batchBinds = {
 		function(msg, batch){
 			console.log('chathistory batch handler called');
 			batch.receivedMessages = 0; // Track how many messages we received
+			batch.oldestMsgid = null; // Track oldest message msgid
+			batch.oldestTimestamp = null; // Track oldest message timestamp
 		},
 		function(msg, batch){
 			// This will be called when the batch ends (msg.isBatchEnd is true)
@@ -101,17 +103,27 @@ var batchBinds = {
 				// 1. We received at least some messages (not an empty batch)
 				// 2. We received a full page (>= limit), indicating there might be more
 				if(batch.receivedMessages > 0 && batch.receivedMessages >= limit){
-					// Find the oldest received message in this batch to get its msgid/timestamp
-					var oldestMsgDiv = $('#' + chan.id + '-window .messageDiv[data-msgid]').first();
-					if(!oldestMsgDiv.length){
-						// Try with timestamp if no msgid
-						oldestMsgDiv = $('#' + chan.id + '-window .messageDiv[data-time]').first();
+					// Use the tracked oldest message from this batch (not from DOM which might
+					// include older messages from localStorage)
+					var reference = null;
+					if(batch.oldestMsgid){
+						reference = 'msgid=' + batch.oldestMsgid;
+					} else if(batch.oldestTimestamp){
+						reference = 'timestamp=' + batch.oldestTimestamp;
 					}
 
-					if(oldestMsgDiv.length){
-						var html = '<div class="loadOlderButton" data-channel="' + chan.name + '"><a href="javascript:gateway.loadOlderHistory(\'' + chan.name.replace(/'/g, "\\'") + '\')">' + language.loadOlderHistory + '</a></div>';
-						// Insert above the oldest message
-						oldestMsgDiv.before(html);
+					if(reference){
+						// Find a message from this batch to insert the button before
+						var selector = batch.oldestMsgid
+							? '[data-msgid="' + batch.oldestMsgid + '"]'
+							: '[data-time="' + batch.oldestTimestamp + '"]';
+						var targetMsg = $('#' + chan.id + '-window .messageDiv' + selector).first();
+
+						if(targetMsg.length){
+							var html = '<div class="loadOlderButton" data-channel="' + chan.name + '"><a href="javascript:gateway.loadOlderHistory(\'' + chan.name.replace(/'/g, "\\'") + '\')">' + language.loadOlderHistory + '</a></div>';
+							// Insert above the oldest message from this batch
+							targetMsg.before(html);
+						}
 					}
 				}
 			};
@@ -492,6 +504,14 @@ var cmdBinds = {
 				var batch = gateway.batch[msg.tags.batch];
 				if(batch && batch.type == 'chathistory'){
 					batch.receivedMessages = (batch.receivedMessages || 0) + 1;
+					// Track the oldest message reference for "load older" functionality
+					// Note: spec says order SHOULD be ascending but is implementation-defined,
+					// so we need to actually compare to find the oldest
+					var msgTime = msg.time ? msg.time.getTime() : null;
+					if(msgTime && (!batch.oldestTimestamp || msgTime < batch.oldestTimestamp)){
+						batch.oldestTimestamp = msgTime;
+						batch.oldestMsgid = ('msgid' in msg.tags) ? msg.tags.msgid : null;
+					}
 				}
 			}
 
@@ -576,6 +596,14 @@ var cmdBinds = {
 				var batch = gateway.batch[msg.tags.batch];
 				if(batch && batch.type == 'chathistory'){
 					batch.receivedMessages = (batch.receivedMessages || 0) + 1;
+					// Track the oldest message reference for "load older" functionality
+					// Note: spec says order SHOULD be ascending but is implementation-defined,
+					// so we need to actually compare to find the oldest
+					var msgTime = msg.time ? msg.time.getTime() : null;
+					if(msgTime && (!batch.oldestTimestamp || msgTime < batch.oldestTimestamp)){
+						batch.oldestTimestamp = msgTime;
+						batch.oldestMsgid = ('msgid' in msg.tags) ? msg.tags.msgid : null;
+					}
 				}
 			}
 
