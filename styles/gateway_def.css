@@ -1426,8 +1426,9 @@ img.emoji {
 .emoji-large {
     display: inline-block;
     transform: scale(var(--emoji-scale));
-    /* No position: relative to avoid overlapping other messages */
-    /* Inline-block with scale creates natural spacing */
-    line-height: 1.5;
+    /* Prevent horizontal overlap by constraining width */
+    width: calc(2em * var(--emoji-scale));
+    /* Increase line height to match the scaled emoji height and prevent vertical overlap */
+    line-height: calc(2em * var(--emoji-scale));
 }
 
