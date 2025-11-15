@@ -146,12 +146,30 @@ var ircCommand = {
 				if(i>0) channelString += ',';
 				channelString += channel;
 			}
-			ircCommand.perform('JOIN', [channelString]);
-		} else {
-			if(passwords){
-				ircCommand.perform('JOIN', [channels, passwords]);
+			// Add label if labeled-response is available, for history timing
+			if('labeled-response' in activeCaps){
+				var label = gateway.makeLabel();
+				gateway.labelInfo[label] = {'cmd': 'JOIN', 'channels': channelString.split(',')};
+				ircCommand.perform('JOIN', [channelString], false, {'label': label});
 			} else {
-				ircCommand.perform('JOIN', [channels]);
+				ircCommand.perform('JOIN', [channelString]);
+			}
+		} else {
+			// Add label if labeled-response is available, for history timing
+			if('labeled-response' in activeCaps){
+				var label = gateway.makeLabel();
+				gateway.labelInfo[label] = {'cmd': 'JOIN', 'channels': [channels]};
+				if(passwords){
+					ircCommand.perform('JOIN', [channels, passwords], false, {'label': label});
+				} else {
+					ircCommand.perform('JOIN', [channels], false, {'label': label});
+				}
+			} else {
+				if(passwords){
+					ircCommand.perform('JOIN', [channels, passwords]);
+				} else {
+					ircCommand.perform('JOIN', [channels]);
+				}
 			}
 		}
 	},
