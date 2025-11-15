@@ -135,6 +135,17 @@ var ircCommand = {
 		ircCommand.perform('CHATHISTORY', args);
 	},
 	'channelJoin': function(channels, passwords){ // TODO obsługa haseł jeśli tablice
+		// Helper to request chat history for a channel
+		var requestHistoryForChannel = function(channame){
+			if('draft/chathistory' in activeCaps && 'CHATHISTORY' in isupport){
+				var limit = isupport['CHATHISTORY'];
+				if(limit == 0 || limit > 50){
+					limit = 50; // default to 50 messages
+				}
+				ircCommand.chathistory('LATEST', channame, '*', undefined, limit);
+			}
+		};
+
 		if(Array.isArray(channels)){
 			var channelString = '';
 			if(channels.length == 0) return;
@@ -149,7 +160,15 @@ var ircCommand = {
 			// Add label if labeled-response is available, for history timing
 			if('labeled-response' in activeCaps){
 				var label = gateway.makeLabel();
-				gateway.labelInfo[label] = {'cmd': 'JOIN', 'channels': channelString.split(',')};
+				var channelList = channelString.split(',');
+				gateway.labelInfo[label] = {'cmd': 'JOIN', 'channels': channelList};
+				// Set up callback BEFORE sending the command
+				gateway.labelCallbacks[label] = function(label, msg, batch){
+					// Request history for all joined channels
+					for(var i=0; i<channelList.length; i++){
+						requestHistoryForChannel(channelList[i]);
+					}
+				};
 				ircCommand.perform('JOIN', [channelString], false, {'label': label});
 			} else {
 				ircCommand.perform('JOIN', [channelString]);
@@ -159,6 +178,10 @@ var ircCommand = {
 			if('labeled-response' in activeCaps){
 				var label = gateway.makeLabel();
 				gateway.labelInfo[label] = {'cmd': 'JOIN', 'channels': [channels]};
+				// Set up callback BEFORE sending the command
+				gateway.labelCallbacks[label] = function(label, msg, batch){
+					requestHistoryForChannel(channels);
+				};
 				if(passwords){
 					ircCommand.perform('JOIN', [channels, passwords], false, {'label': label});
 				} else {

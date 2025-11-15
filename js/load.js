@@ -43,56 +43,96 @@ var languageFiles = [
 	'en',
 	'pl'
 ];
+
+// Cache-busting random ID (same for all files in this session)
 var ranid = Math.floor(Math.random() * 10000);
-for(var lit=0; lit<scriptFiles.length; lit++){
-	try {
-		var s = document.createElement('script');
-		s.type = 'text/javascript';
-		s.src = scriptFiles[lit] + '?' + ranid;
-		$('head').append(s);
-	} catch(e){
-		console.error('Error loading main JS '+scriptFiles[lit]);
-		console.error(e);
-	}
-}
-for(var lit=0; lit<languageFiles.length; lit++){
-	try {
-		var modname = languageFiles[lit];
-		var s = document.createElement('script');
-		s.type = 'text/javascript';
-		s.src = '/js/lang/' + modname + '.js?' + ranid;
-		$('head').append(s);
-	} catch(e){
-		console.error('Error loading language JS '+modname);
-		console.error(e);
-	}
-}
-for(var lit=0; lit<styleFiles.length; lit++){
-	try {
-		var s = document.createElement('link');
-		s.rel = 'stylesheet';
-		s.href = styleFiles[lit] + '?' + ranid;
-		$('head').append(s);
-	} catch(e){
-		console.error('Error loading style '+styleFiles[lit]);
-		console.error(e);
-	}
-}
-try {
-	for(var lit=0; lit<mainSettings.modules.length; lit++){
-		try {
-			var modname = mainSettings.modules[lit];
-			var s = document.createElement('script');
-			s.type = 'text/javascript';
-			s.src = '/js/addons/addon_' + modname + '.js?' + ranid;
-			$('head').append(s);
-		} catch(e){
-			console.error('Error loading addon JS '+modname);
-			console.error(e);
+
+/**
+ * Helper function to load a script file with proper error tracking
+ * @param {string} src - The script source URL
+ * @param {string} description - Human-readable description for error messages
+ * @param {Function} onLoadCallback - Optional callback when script loads successfully
+ * @returns {HTMLScriptElement} The created script element
+ */
+function loadScript(src, description, onLoadCallback) {
+	var script = document.createElement('script');
+	script.type = 'text/javascript';
+	script.src = src + '?' + ranid;
+
+	// Track load failures for better debugging
+	script.onerror = function() {
+		console.error('[load.js] Failed to load: ' + description + ' (' + src + ')');
+	};
+
+	script.onload = function() {
+		console.log('[load.js] Loaded: ' + description);
+		if (onLoadCallback) {
+			onLoadCallback();
 		}
-	}
-} catch(e){
-	console.error('Addons loading failed: ', e);
+	};
+
+	$('head').append(script);
+	return script;
 }
+
+/**
+ * Helper function to load a stylesheet with proper error tracking
+ * @param {string} href - The stylesheet URL
+ * @param {string} description - Human-readable description for error messages
+ */
+function loadStylesheet(href, description) {
+	var link = document.createElement('link');
+	link.rel = 'stylesheet';
+	link.href = href + '?' + ranid;
+
+	link.onerror = function() {
+		console.error('[load.js] Failed to load: ' + description + ' (' + href + ')');
+	};
+
+	link.onload = function() {
+		console.log('[load.js] Loaded: ' + description);
+	};
+
+	$('head').append(link);
+}
+
+/**
+ * Load addon modules after mainSettings is available
+ */
+function loadAddons() {
+	try {
+		if (typeof mainSettings === 'undefined' || !mainSettings.modules) {
+			console.warn('[load.js] mainSettings.modules not available, skipping addons');
+			return;
+		}
+
+		mainSettings.modules.forEach(function(modname) {
+			var src = '/js/addons/addon_' + modname + '.js';
+			loadScript(src, 'Addon: ' + modname);
+		});
+	} catch(e) {
+		console.error('[load.js] Error loading addons:', e);
+	}
+}
+
+// Load gateway_global_settings.js first, then load addons when it's ready
+loadScript(scriptFiles[0], 'Main: ' + scriptFiles[0], loadAddons);
+
+// Load remaining main scripts
+for (var i = 1; i < scriptFiles.length; i++) {
+	loadScript(scriptFiles[i], 'Main: ' + scriptFiles[i]);
+}
+
+// Load language files
+languageFiles.forEach(function(lang) {
+	var src = '/js/lang/' + lang + '.js';
+	loadScript(src, 'Language: ' + lang);
+});
+
+// Load stylesheets
+styleFiles.forEach(function(file) {
+	loadStylesheet(file, 'Stylesheet: ' + file);
+});
+
 $('#defaultStyle').remove(); // we can remove the default style now
 

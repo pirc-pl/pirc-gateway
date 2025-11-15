@@ -368,31 +368,22 @@ var cmdBinds = {
 					ircCommand.who(channame);
 				}
 
-				// Request chat history after JOIN data is received
-				var requestHistory = function(){
-					if('draft/chathistory' in activeCaps && 'CHATHISTORY' in isupport){
-						var limit = isupport['CHATHISTORY'];
-						if(limit == 0 || limit > 50){
-							limit = 50; // default to 50 messages
-						}
-						ircCommand.chathistory('LATEST', channame, '*', undefined, limit);
-					}
-				};
-
-				// Check if this JOIN has a label (user-initiated)
+				// For server-triggered JOINs (no label), request history after delay
 				var label = msg.getLabel ? msg.getLabel() : (msg.tags && msg.tags.label);
-				if(label && label in gateway.labelInfo && gateway.labelInfo[label].cmd == 'JOIN'){
-					// User-initiated JOIN with labeled-response support
-					// Set callback to request history when labeled-response batch ends
-					gateway.labelCallbacks[label] = function(label, msg, batch){
-						// All JOIN data (including metadata) has been received
-						requestHistory();
-					};
-				} else {
+				if(!label || !(label in gateway.labelInfo) || gateway.labelInfo[label].cmd != 'JOIN'){
 					// Server-triggered JOIN or no labeled-response capability
-					// Use 500ms timeout fallback
-					setTimeout(requestHistory, 500);
+					// Use 500ms timeout fallback to allow JOIN data to arrive
+					setTimeout(function(){
+						if('draft/chathistory' in activeCaps && 'CHATHISTORY' in isupport){
+							var limit = isupport['CHATHISTORY'];
+							if(limit == 0 || limit > 50){
+								limit = 50; // default to 50 messages
+							}
+							ircCommand.chathistory('LATEST', channame, '*', undefined, limit);
+						}
+					}, 500);
 				}
+				// For user-initiated JOINs, history is requested by the callback set in channelJoin()
 			}
 		},
 		function(msg) { // wszystkie
