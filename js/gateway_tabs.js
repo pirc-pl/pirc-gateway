@@ -655,7 +655,17 @@ function Channel(chan) {
 		}
 
 		var appended = false;
-		if(gateway.historyBatchActive(this.name)){ // history entries may arrive out of order, we handle this here
+		var isHistoryBatch = gateway.historyBatchActive(this.name);
+
+		// Save scroll position before inserting history (to maintain visible messages' position)
+		var oldScrollHeight = 0;
+		var oldScrollTop = 0;
+		if(isHistoryBatch && this.name.toLowerCase() == gateway.active.toLowerCase()){
+			oldScrollHeight = document.getElementById('chat-wrapper').scrollHeight;
+			oldScrollTop = $('#chat-wrapper').scrollTop();
+		}
+
+		if(isHistoryBatch){ // history entries may arrive out of order, we handle this here
 			var newElement = $(messageData);
 			var windowElements = $('#'+this.id+'-window .messageDiv');
 
@@ -710,9 +720,19 @@ function Channel(chan) {
 		}
 		if(!appended)
 			$('#'+this.id+'-window').append(messageData);
-		if(rescroll && this.name.toLowerCase() == gateway.active.toLowerCase()) {
+
+		// Restore scroll position after inserting history to keep visible messages stationary
+		if(isHistoryBatch && this.name.toLowerCase() == gateway.active.toLowerCase() && appended){
+			var newScrollHeight = document.getElementById('chat-wrapper').scrollHeight;
+			var heightDiff = newScrollHeight - oldScrollHeight;
+			if(heightDiff > 0){
+				// Adjust scroll position to compensate for added content above
+				$('#chat-wrapper').scrollTop(oldScrollTop + heightDiff);
+			}
+		} else if(rescroll && this.name.toLowerCase() == gateway.active.toLowerCase()) {
 			$('#chat-wrapper').scrollTop(document.getElementById('chat-wrapper').scrollHeight);
 		}
+
 		updateHistory(this.name, this.id);
 		this.newLines = true;
 	}

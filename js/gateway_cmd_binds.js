@@ -90,19 +90,10 @@ var batchBinds = {
 
 				// Check if we should show "load older" link
 				// According to the spec, an empty batch means no more history available
-				// Only show the link if we received a full page (indicating there might be more)
-				var limit = gateway.calculateHistoryLimit();
-				if('CHATHISTORY' in isupport){
-					var isupportLimit = isupport['CHATHISTORY'];
-					if(isupportLimit != 0 && isupportLimit < limit){
-						limit = isupportLimit;
-					}
-				}
-
-				// Show "load older" only if:
-				// 1. We received at least some messages (not an empty batch)
-				// 2. We received a full page (>= limit), indicating there might be more
-				if(batch.receivedMessages > 0 && batch.receivedMessages >= limit){
+				// Show the link unless we receive an empty batch (server will send empty when done)
+				// Note: Don't compare to recalculated limit as it may differ from what was requested
+				// (screen size/content may have changed between request and batch end)
+				if(batch.receivedMessages > 0){
 					// Use the tracked oldest message from this batch (not from DOM which might
 					// include older messages from localStorage)
 					var reference = null;
