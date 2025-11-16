@@ -34,13 +34,13 @@ var supportedCaps = [
 	'server-time',
 	'echo-message',
 	'draft/metadata',
-	'draft/setname',
-	'setname',
 	'sasl',
 	'cap-notify',
 	'batch',
 	'labeled-response',
-	'draft/chathistory'
+	'draft/chathistory',
+	// Mutually exclusive capabilities (in order of preference)
+	['setname', 'draft/setname']
 ];
 var serverCaps = {};
 
@@ -208,8 +208,8 @@ var cmdBinds = {
 		function(msg) {
 			switch(msg.args[1]){
 				case 'LS': case 'NEW':
+					// Parse available capabilities from server
 					var availableCaps = msg.text.split(' ');
-					var useCaps = '';
 					for(var i=0; i<availableCaps.length; i++){
 						var capString = availableCaps[i];
 						var value = true;
@@ -221,11 +221,33 @@ var cmdBinds = {
 						} else {
 							cap = capString;
 						}
-						
 						serverCaps[cap] = value;
-						if(supportedCaps.indexOf(cap) >= 0){
+					}
+
+					// Build list of capabilities to request
+					var useCaps = '';
+					for(var i=0; i<supportedCaps.length; i++){
+						var capSpec = supportedCaps[i];
+						var selectedCap = null;
+
+						if(Array.isArray(capSpec)){
+							// Mutually exclusive capabilities - pick first available
+							for(var j=0; j<capSpec.length; j++){
+								if(capSpec[j] in serverCaps){
+									selectedCap = capSpec[j];
+									break;
+								}
+							}
+						} else {
+							// Single capability
+							if(capSpec in serverCaps){
+								selectedCap = capSpec;
+							}
+						}
+
+						if(selectedCap){
 							if(useCaps.length > 0) useCaps += ' ';
-							useCaps += cap;
+							useCaps += selectedCap;
 						}
 					}
 					ircCommand.performQuick('CAP', ['REQ'], useCaps);
