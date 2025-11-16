@@ -2304,24 +2304,41 @@ var gateway = {
 			return 50; // Fallback if height seems wrong
 		}
 
-		// Try to measure actual message height from existing messages
-		var messageDiv = chatWrapper.find('.messageDiv').first();
-		var avgMessageHeight = 40; // Default estimate in pixels
+		// Find the currently active channel/window to measure messages from
+		var activeWindow = null;
+		if(gateway.active){
+			var activeTab = gateway.find(gateway.active);
+			if(activeTab){
+				activeWindow = $('#' + activeTab.id + '-window');
+			}
+		}
 
-		if(messageDiv.length){
-			// Measure a few messages and average them
-			var heights = [];
-			chatWrapper.find('.messageDiv').slice(0, 10).each(function(){
-				heights.push($(this).outerHeight(true));
-			});
-			if(heights.length > 0){
-				var sum = heights.reduce(function(a, b){ return a + b; }, 0);
-				avgMessageHeight = sum / heights.length;
+		// If no active window, try to find any window with messages
+		if(!activeWindow || !activeWindow.length){
+			activeWindow = chatWrapper.find('span[id$="-window"]').filter(function(){
+				return $(this).find('.messageDiv').length > 0;
+			}).first();
+		}
+
+		var avgMessageHeight = 50; // Default estimate in pixels
+
+		// Try to measure actual message height from existing messages in the active window
+		if(activeWindow && activeWindow.length){
+			var messages = activeWindow.find('.messageDiv').slice(0, 10);
+			if(messages.length > 0){
+				var heights = [];
+				messages.each(function(){
+					heights.push($(this).outerHeight(true));
+				});
+				if(heights.length > 0){
+					var sum = heights.reduce(function(a, b){ return a + b; }, 0);
+					avgMessageHeight = sum / heights.length;
+				}
 			}
 		}
 
 		// Calculate how many messages would fit, with some padding
-		var estimatedCount = Math.floor(availableHeight / avgMessageHeight * 1.2); // 1.2x for some buffer
+		var estimatedCount = Math.floor(availableHeight / avgMessageHeight * 1.5); // 1.5x for some buffer
 
 		// Clamp to reasonable bounds
 		var limit = Math.max(10, Math.min(estimatedCount, 200));
