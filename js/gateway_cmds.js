@@ -138,9 +138,10 @@ var ircCommand = {
 		// Helper to request chat history for a channel
 		var requestHistoryForChannel = function(channame){
 			if('draft/chathistory' in activeCaps && 'CHATHISTORY' in isupport){
-				var limit = isupport['CHATHISTORY'];
-				if(limit == 0 || limit > 50){
-					limit = 50; // default to 50 messages
+				var limit = gateway.calculateHistoryLimit();
+				var isupportLimit = isupport['CHATHISTORY'];
+				if(isupportLimit != 0 && isupportLimit < limit){
+					limit = isupportLimit;
 				}
 				ircCommand.chathistory('LATEST', channame, '*', undefined, limit);
 			}

@@ -91,10 +91,10 @@ var batchBinds = {
 				// Check if we should show "load older" link
 				// According to the spec, an empty batch means no more history available
 				// Only show the link if we received a full page (indicating there might be more)
-				var limit = 50; // default
+				var limit = gateway.calculateHistoryLimit();
 				if('CHATHISTORY' in isupport){
 					var isupportLimit = isupport['CHATHISTORY'];
-					if(isupportLimit != 0 && isupportLimit < 50){
+					if(isupportLimit != 0 && isupportLimit < limit){
 						limit = isupportLimit;
 					}
 				}
@@ -393,9 +393,10 @@ var cmdBinds = {
 					// Use 500ms timeout fallback to allow JOIN data to arrive
 					setTimeout(function(){
 						if('draft/chathistory' in activeCaps && 'CHATHISTORY' in isupport){
-							var limit = isupport['CHATHISTORY'];
-							if(limit == 0 || limit > 50){
-								limit = 50; // default to 50 messages
+							var limit = gateway.calculateHistoryLimit();
+							var isupportLimit = isupport['CHATHISTORY'];
+							if(isupportLimit != 0 && isupportLimit < limit){
+								limit = isupportLimit;
 							}
 							ircCommand.chathistory('LATEST', channame, '*', undefined, limit);
 						}

@@ -2291,6 +2291,44 @@ var gateway = {
 		gateway.label++;
 		return gateway.label.toString();
 	},
+	'calculateHistoryLimit': function(){
+		// Calculate how many messages would fit on screen
+		// This provides a better UX than always requesting 50 messages
+		var chatWrapper = $('#chat-wrapper');
+		if(!chatWrapper.length){
+			return 50; // Fallback to default if wrapper not found
+		}
+
+		var availableHeight = chatWrapper.innerHeight();
+		if(!availableHeight || availableHeight < 100){
+			return 50; // Fallback if height seems wrong
+		}
+
+		// Try to measure actual message height from existing messages
+		var messageDiv = chatWrapper.find('.messageDiv').first();
+		var avgMessageHeight = 40; // Default estimate in pixels
+
+		if(messageDiv.length){
+			// Measure a few messages and average them
+			var heights = [];
+			chatWrapper.find('.messageDiv').slice(0, 10).each(function(){
+				heights.push($(this).outerHeight(true));
+			});
+			if(heights.length > 0){
+				var sum = heights.reduce(function(a, b){ return a + b; }, 0);
+				avgMessageHeight = sum / heights.length;
+			}
+		}
+
+		// Calculate how many messages would fit, with some padding
+		var estimatedCount = Math.floor(availableHeight / avgMessageHeight * 1.2); // 1.2x for some buffer
+
+		// Clamp to reasonable bounds
+		var limit = Math.max(10, Math.min(estimatedCount, 200));
+
+		console.log('Calculated history limit:', limit, 'based on height:', availableHeight, 'avg msg height:', avgMessageHeight);
+		return limit;
+	},
 	'insertMessage': function(cmd, dest, text, ownMsg, label, tags, sender, time){
 		if(tags && 'label' in tags && gateway.labelsToHide.indexOf(tags.label) >= 0){
 			gateway.labelProcessed = true;
@@ -2642,10 +2680,10 @@ var gateway = {
 		}
 
 		// Determine the limit
-		var limit = 50;
+		var limit = gateway.calculateHistoryLimit();
 		if('CHATHISTORY' in isupport){
 			var isupportLimit = isupport['CHATHISTORY'];
-			if(isupportLimit != 0 && isupportLimit < 50){
+			if(isupportLimit != 0 && isupportLimit < limit){
 				limit = isupportLimit;
 			}
 		}
