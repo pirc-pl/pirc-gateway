@@ -722,6 +722,11 @@ var cmdBinds = {
 	'005': [	// RPL_ISUPPORT
 		function(msg){
 			for(var i=1; i<msg.args.length; i++){
+				// Skip the trailing text message (e.g., "are supported by this server")
+				// which contains spaces and is not an actual ISUPPORT token
+				if(msg.args[i].indexOf(' ') !== -1){
+					continue;
+				}
 				var data = msg.args[i].split("=");
 				if(data.length < 2){
 					isupport[data[0]] = true;
