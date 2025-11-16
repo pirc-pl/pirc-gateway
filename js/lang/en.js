@@ -569,6 +569,7 @@ lang.en = {
 	'historyEntry': 'Message history entry',
 	'getMoreHistory': 'Get more history…',
 	'loadOlderHistory': 'load older',
+	'noOlderHistory': 'No older messages available',
 	'to': ' to ',
 	'isTyping': 'is typing…',
 	'areTyping': 'are typing…',

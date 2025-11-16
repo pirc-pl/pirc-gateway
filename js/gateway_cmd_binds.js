@@ -87,12 +87,10 @@ var batchBinds = {
 
 				// Remove any existing "load older" button first
 				$('#' + chan.id + '-window .loadOlderButton').remove();
+				$('#' + chan.id + '-window .noOlderHistory').remove();
 
-				// Check if we should show "load older" link
+				// Check if we should show "load older" link or end-of-history message
 				// According to the spec, an empty batch means no more history available
-				// Show the link unless we receive an empty batch (server will send empty when done)
-				// Note: Don't compare to recalculated limit as it may differ from what was requested
-				// (screen size/content may have changed between request and batch end)
 				if(batch.receivedMessages > 0){
 					// Use the tracked oldest message from this batch (not from DOM which might
 					// include older messages from localStorage)
@@ -115,6 +113,14 @@ var batchBinds = {
 							// Insert above the oldest message from this batch
 							targetMsg.before(html);
 						}
+					}
+				} else {
+					// Empty batch - show "no older messages" message
+					// Insert above the oldest timestamped message in the window
+					var oldestMsg = $('#' + chan.id + '-window .messageDiv[data-time]').first();
+					if(oldestMsg.length){
+						var html = '<div class="noOlderHistory">' + language.noOlderHistory + '</div>';
+						oldestMsg.before(html);
 					}
 				}
 			};

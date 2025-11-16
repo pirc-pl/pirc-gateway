@@ -570,6 +570,7 @@ lang.pl = {
 	'historyEntry': 'Historia rozmowy',
 	'getMoreHistory': 'Pobierz więcej historii…',
 	'loadOlderHistory': 'załaduj starsze',
+	'noOlderHistory': 'Brak starszych wiadomości',
 	'to': ' do ',
 	'isTyping': 'pisze…',
 	'areTyping': 'piszą…',
