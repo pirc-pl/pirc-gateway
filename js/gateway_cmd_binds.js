@@ -33,13 +33,13 @@ var supportedCaps = [
 	'message-tags',
 	'server-time',
 	'echo-message',
-	'draft/metadata',
 	'sasl',
 	'cap-notify',
 	'batch',
 	'labeled-response',
 	'draft/chathistory',
 	// Mutually exclusive capabilities (in order of preference)
+	['draft/metadata-2', 'draft/metadata-notify-2', 'draft/metadata'],
 	['setname', 'draft/setname']
 ];
 var serverCaps = {};
@@ -128,7 +128,19 @@ var batchBinds = {
 	],
 	'labeled-response': [
 		function(msg, batch){
-			
+
+		}
+	],
+	'metadata': [
+		function(msg, batch){
+			// Batch for metadata responses (draft/metadata-2)
+			// Contains RPL_KEYVALUE, RPL_KEYNOTSET, or METADATA messages
+		}
+	],
+	'metadata-subs': [
+		function(msg, batch){
+			// Batch for subscription list responses (draft/metadata-2)
+			// Contains RPL_METADATASUBS numerics
 		}
 	]
 };
@@ -272,7 +284,8 @@ var cmdBinds = {
 						}
 					}
 					console.log(newCapsParsed);
-					if('draft/metadata' in newCapsParsed){
+					// Check for any metadata capability (draft/metadata-2, draft/metadata-notify-2, or draft/metadata)
+					if('draft/metadata-2' in newCapsParsed || 'draft/metadata-notify-2' in newCapsParsed || 'draft/metadata' in newCapsParsed){
 						ircCommand.metadata('SUB', '*', ['avatar', 'status', 'bot', 'homepage', 'display-name', 'bot-url', 'color']); // subscribing to the metadata
 						if(textSettingsValues['avatar']){
 							disp.avatarChanged();
@@ -307,7 +320,25 @@ var cmdBinds = {
 			msg.user.setHost(msg.args[1]);
 		}
 	],
-	'ERROR' : [
+	'FAIL': [
+		function(msg) {
+			// Standard replies (https://ircv3.net/specs/extensions/standard-replies)
+			// Format: FAIL <command> <code> [<context>...] :<description>
+			var command = msg.args[0];
+			var code = msg.args[1];
+			var description = msg.text;
+
+			console.log('FAIL', command, code, description);
+
+			// Handle specific FAIL types
+			if(command == 'METADATA'){
+				// FAIL METADATA responses for draft/metadata-2
+				// Examples: KEY_INVALID, KEY_NO_PERMISSION, TOO_MANY_SUBS, etc.
+				// These are informational - the batch will complete normally
+			}
+		}
+	],
+	'ERROR': [
 		function(msg) {
 			gateway.lasterror = msg.text;
 
@@ -1772,6 +1803,12 @@ var cmdBinds = {
 	],
 	'762': [	// RPL_METADATAEND
 		function(msg){ }
+	],
+	'766': [	// RPL_KEYNOTSET (draft/metadata-2)
+		function(msg){
+			// Indicates a key is not set (replaces ERR_NOMATCHINGKEY in new spec)
+			// Format: 766 <client> <target> <key> :key not set
+		}
 	],
 	'770': [	// RPL_METADATASUBOK
 		function(msg){ }
