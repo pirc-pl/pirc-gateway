@@ -1461,7 +1461,7 @@ var $$ = {
 		if(rmatch){
 			rmatch.forEach(function(arg){
 				var rand = Math.floor(Math.random() * 10000).toString();
-				var imgurl = encodeURI(arg);
+				var imgurl = arg;
 				html += '<a id="a-img-' + rand + '"'+
 					' class="image_link"'+attrs+'><span id="show-'+rand+'" style="display:inline;">' + language.show + '</span><span id="hide-'+rand+'" style="display:none;">' + language.hide + '</span>' + language.aPicture + '</a>'+
 					'<div style="display:none;" id="img-'+rand+'"><img id="imgc-'+rand+'" style="max-width:100%;" /></div>';
@@ -1477,7 +1477,7 @@ var $$ = {
 				var rmatch = rexpr.exec(arg);
 				if(rmatch[1]){
 					var rand = Math.floor(Math.random() * 10000).toString();
-					var imgurl = encodeURI(rmatch[1]);
+					var imgurl = rmatch[1];
 					html += '<a id="a-video-' + rand + '"'+
 						' class="image_link"'+attrs+'><span id="show-'+rand+'" style="display:inline;">' + language.show + '</span><span id="hide-'+rand+'" style="display:none;">' + language.hide + '</span>' + language.aVideo + '</a>'+
 						'<div style="display:none;" id="img-'+rand+'"><iframe width="560" height="315" id="vid-'+rand+'" frameborder="0" allowfullscreen></iframe></div>';
