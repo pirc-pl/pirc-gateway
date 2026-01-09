@@ -2413,8 +2413,8 @@ var gateway = {
 		if(nickInfo.length > 0)
 			nick = '<span title="' + nickInfo + '">' + nick + '</span>';
 		if('display-name' in sender.metadata){
-			nick = he(user.metadata['display-name']);
-			nickComments = ' <span class="realNick" title="' + language.realNickname + '">(' + he(msg.sender.nick) + ')</span>';
+			nick = he(sender.metadata['display-name']);
+			nickComments = ' <span class="realNick" title="' + language.realNickname + '">(' + he(sender.nick) + ')</span>';
 		}
 		for(f in messageProcessors){
 			message = messageProcessors[f](sender.nick, dest, message);
