@@ -2410,12 +2410,12 @@ var gateway = {
 				nickInfo += language.historyEntry;
 			}
 		}
-		if(nickInfo.length > 0)
-			nick = '<span title="' + nickInfo + '">' + nick + '</span>';
 		if('display-name' in sender.metadata){
 			nick = he(sender.metadata['display-name']);
 			nickComments = ' <span class="realNick" title="' + language.realNickname + '">(' + he(sender.nick) + ')</span>';
 		}
+		if(nickInfo.length > 0)
+			nick = '<span title="' + nickInfo + '">' + nick + '</span>';
 		for(f in messageProcessors){
 			message = messageProcessors[f](sender.nick, dest, message);
 		}
