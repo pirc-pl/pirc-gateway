@@ -20,10 +20,12 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-// Update loading message immediately (before scripts load)
+// Update loading message as soon as DOM is ready (before scripts load)
 // This will be replaced with proper translation once language files are loaded
-$('.not-connected-text > h3').html('Ładowanie / Loading');
-$('.not-connected-text > p').html('Ładowanie, proszę czekać... / Loading, please wait...');
+$(document).ready(function() {
+	$('.not-connected-text > h3').html('Ładowanie / Loading');
+	$('.not-connected-text > p').html('Ładowanie, proszę czekać... / Loading, please wait...');
+});
 
 /**
  * Script files to load in order.
