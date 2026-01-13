@@ -20,6 +20,11 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+// Update loading message immediately (before scripts load)
+// This will be replaced with proper translation once language files are loaded
+$('.not-connected-text > h3').html('Ładowanie / Loading');
+$('.not-connected-text > p').html('Ładowanie, proszę czekać... / Loading, please wait...');
+
 /**
  * Script files to load in order.
  * IMPORTANT: Order matters for dependencies!
@@ -213,11 +218,6 @@ function executeReadyFunctions() {
 		}
 	}, 50);
 }
-
-// Update loading message immediately (before scripts load)
-// This will be replaced with proper translation once language files are loaded
-$('.not-connected-text > h3').html('Ładowanie / Loading');
-$('.not-connected-text > p').html('Ładowanie, proszę czekać... / Loading, please wait...');
 
 // Load stylesheets (these can load in parallel)
 styleFiles.forEach(function(file) {
