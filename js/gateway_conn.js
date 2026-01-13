@@ -393,3 +393,7 @@ var conn = {
 	}
 }
 
+// Register initialization function for this module
+// readyFunctions array is defined in load.js
+readyFunctions.push(conn.gatewayInit);
+

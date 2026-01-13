@@ -20,18 +20,24 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+/**
+ * Script files to load in order.
+ * IMPORTANT: Order matters for dependencies!
+ * - gateway_functions.js must load before gateway_conn.js (provides decryptPassword/encryptPassword)
+ * - gateway_conn.js must load before gateway_def.js (defines conn object)
+ */
 var scriptFiles = [
 	'/js/gateway_global_settings.js',
 	'/js/language.js',
-	'/js/gateway_functions.js',
-	'/js/gateway_conn.js',
+	'/js/gateway_functions.js',  // Provides: decryptPassword, encryptPassword, readyFunc; Pushes: setEnvironment, fillEmoticonSelector, fillColorSelector
+	'/js/gateway_conn.js',        // Uses: decryptPassword (line 112); Provides: conn object; Pushes: conn.gatewayInit
 	'/js/gateway_ignore.js',
-	'/js/gateway_services.js',
+	'/js/gateway_services.js',    // Uses: encryptPassword (line 253)
 	'/js/gateway_cmd_binds.js',
 	'/js/gateway_user_commands.js',
 	'/js/gateway_tabs.js',
 	'/js/gateway_cmds.js',
-	'/js/gateway_def.js',
+	'/js/gateway_def.js',          // Uses: encryptPassword (line 657)
 	'/js/gateway_users.js',
 	'/js/emoji.js',
 	'/js/g-emoji-element.js'
@@ -48,13 +54,21 @@ var languageFiles = [
 var ranid = Math.floor(Math.random() * 10000);
 
 /**
- * Helper function to load a script file with proper error tracking
+ * readyFunctions: Array of functions to execute when all scripts are loaded.
+ * Each script file pushes its initialization functions to this array.
+ * All functions are executed by readyFunc() after all scripts load.
+ * Example: readyFunctions.push(myInitFunction);
+ */
+var readyFunctions = [];
+
+/**
+ * Helper function to load a script file sequentially with proper error tracking
  * @param {string} src - The script source URL
  * @param {string} description - Human-readable description for error messages
- * @param {Function} onLoadCallback - Optional callback when script loads successfully
- * @returns {HTMLScriptElement} The created script element
+ * @param {Function} onLoadCallback - Callback when script loads successfully
+ * @param {Function} onErrorCallback - Callback when script fails to load
  */
-function loadScript(src, description, onLoadCallback) {
+function loadScript(src, description, onLoadCallback, onErrorCallback) {
 	var script = document.createElement('script');
 	script.type = 'text/javascript';
 	script.src = src + '?' + ranid;
@@ -62,6 +76,9 @@ function loadScript(src, description, onLoadCallback) {
 	// Track load failures for better debugging
 	script.onerror = function() {
 		console.error('[load.js] Failed to load: ' + description + ' (' + src + ')');
+		if (onErrorCallback) {
+			onErrorCallback();
+		}
 	};
 
 	script.onload = function() {
@@ -71,8 +88,7 @@ function loadScript(src, description, onLoadCallback) {
 		}
 	};
 
-	$('head').append(script);
-	return script;
+	document.head.appendChild(script);
 }
 
 /**
@@ -97,7 +113,9 @@ function loadStylesheet(href, description) {
 }
 
 /**
- * Load addon modules after mainSettings is available
+ * Load addon modules after mainSettings is available.
+ * Addons can push their initialization functions to the readyFunctions array
+ * (defined in load.js), which will be executed after all scripts load.
  */
 function loadAddons() {
 	try {
@@ -106,33 +124,99 @@ function loadAddons() {
 			return;
 		}
 
-		mainSettings.modules.forEach(function(modname) {
+		// Load addons sequentially
+		var addonIndex = 0;
+		function loadNextAddon() {
+			if (addonIndex >= mainSettings.modules.length) {
+				return; // All addons loaded
+			}
+			var modname = mainSettings.modules[addonIndex];
 			var src = '/js/addons/addon_' + modname + '.js';
-			loadScript(src, 'Addon: ' + modname);
-		});
+			addonIndex++;
+			loadScript(src, 'Addon: ' + modname, loadNextAddon);
+		}
+		loadNextAddon();
 	} catch(e) {
 		console.error('[load.js] Error loading addons:', e);
 	}
 }
 
-// Load gateway_global_settings.js first, then load addons when it's ready
-loadScript(scriptFiles[0], 'Main: ' + scriptFiles[0], loadAddons);
+/**
+ * Load scripts sequentially to guarantee execution order
+ */
+function loadScriptsSequentially() {
+	var scriptIndex = 0;
 
-// Load remaining main scripts
-for (var i = 1; i < scriptFiles.length; i++) {
-	loadScript(scriptFiles[i], 'Main: ' + scriptFiles[i]);
+	function loadNextScript() {
+		if (scriptIndex >= scriptFiles.length) {
+			// All main scripts loaded, now load language files
+			loadLanguageFiles();
+			return;
+		}
+
+		var src = scriptFiles[scriptIndex];
+		var description = 'Main: ' + src;
+		scriptIndex++;
+
+		// Special handling for first script (global settings) - load addons after it
+		if (scriptIndex === 1) {
+			loadScript(src, description, function() {
+				loadAddons();
+				loadNextScript();
+			});
+		} else {
+			loadScript(src, description, loadNextScript);
+		}
+	}
+
+	loadNextScript();
 }
 
-// Load language files
-languageFiles.forEach(function(lang) {
-	var src = '/js/lang/' + lang + '.js';
-	loadScript(src, 'Language: ' + lang);
-});
+/**
+ * Load language files sequentially
+ */
+function loadLanguageFiles() {
+	var langIndex = 0;
 
-// Load stylesheets
+	function loadNextLang() {
+		if (langIndex >= languageFiles.length) {
+			// All language files loaded - now execute ready functions
+			executeReadyFunctions();
+			return;
+		}
+		var lang = languageFiles[langIndex];
+		var src = '/js/lang/' + lang + '.js';
+		langIndex++;
+		loadScript(src, 'Language: ' + lang, loadNextLang);
+	}
+
+	loadNextLang();
+}
+
+/**
+ * Execute all ready functions after scripts are loaded
+ * This replaces the jQuery $(document).ready() approach
+ */
+function executeReadyFunctions() {
+	console.log('[load.js] All scripts loaded, executing ready functions');
+
+	// Wait a short moment to ensure all script execution contexts are complete
+	setTimeout(function() {
+		if (typeof readyFunc === 'function') {
+			readyFunc();
+		} else {
+			console.error('[load.js] readyFunc is not defined');
+		}
+	}, 50);
+}
+
+// Load stylesheets (these can load in parallel)
 styleFiles.forEach(function(file) {
 	loadStylesheet(file, 'Stylesheet: ' + file);
 });
 
 $('#defaultStyle').remove(); // we can remove the default style now
+
+// Start loading scripts
+loadScriptsSequentially();
 

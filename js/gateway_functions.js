@@ -144,7 +144,11 @@ window.metadataBinds = {};
 window.addons = [];
 var loaded = false;
 
-var readyFunctions = [ setEnvironment, conn.gatewayInit, fillEmoticonSelector, fillColorSelector ];
+// Register initialization functions defined in this file
+// readyFunctions array is defined in load.js
+readyFunctions.push(setEnvironment);
+readyFunctions.push(fillEmoticonSelector);
+readyFunctions.push(fillColorSelector);
 
 var readyFunc = function(){
 	if(loaded) return;
@@ -173,7 +177,7 @@ var readyFunc = function(){
 	}
 }
 
-$('document').ready(function(){setTimeout(readyFunc, 100);});
+// readyFunc is now called from load.js after all scripts are loaded
 
 function ChannelModes() {
 	modes.single.forEach(function(mode){
