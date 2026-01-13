@@ -23,8 +23,15 @@
 /**
  * Script files to load in order.
  * IMPORTANT: Order matters for dependencies!
+ * - language.js must load before addons (provides lang object)
  * - gateway_functions.js must load before gateway_conn.js (provides decryptPassword/encryptPassword)
  * - gateway_conn.js must load before gateway_def.js (defines conn object)
+ *
+ * Load order:
+ * 1. Main scripts (scriptFiles array) - loaded sequentially
+ * 2. Addons (mainSettings.modules) - loaded after all main scripts
+ * 3. Language files (languageFiles array) - loaded after addons
+ * 4. Ready functions executed (readyFunctions array)
  */
 var scriptFiles = [
 	'/js/gateway_global_settings.js',
@@ -121,6 +128,7 @@ function loadAddons() {
 	try {
 		if (typeof mainSettings === 'undefined' || !mainSettings.modules) {
 			console.warn('[load.js] mainSettings.modules not available, skipping addons');
+			loadLanguageFiles();
 			return;
 		}
 
@@ -128,7 +136,9 @@ function loadAddons() {
 		var addonIndex = 0;
 		function loadNextAddon() {
 			if (addonIndex >= mainSettings.modules.length) {
-				return; // All addons loaded
+				// All addons loaded, now load language files
+				loadLanguageFiles();
+				return;
 			}
 			var modname = mainSettings.modules[addonIndex];
 			var src = '/js/addons/addon_' + modname + '.js';
@@ -149,8 +159,8 @@ function loadScriptsSequentially() {
 
 	function loadNextScript() {
 		if (scriptIndex >= scriptFiles.length) {
-			// All main scripts loaded, now load language files
-			loadLanguageFiles();
+			// All main scripts loaded, now load addons
+			loadAddons();
 			return;
 		}
 
@@ -158,15 +168,7 @@ function loadScriptsSequentially() {
 		var description = 'Main: ' + src;
 		scriptIndex++;
 
-		// Special handling for first script (global settings) - load addons after it
-		if (scriptIndex === 1) {
-			loadScript(src, description, function() {
-				loadAddons();
-				loadNextScript();
-			});
-		} else {
-			loadScript(src, description, loadNextScript);
-		}
+		loadScript(src, description, loadNextScript);
 	}
 
 	loadNextScript();

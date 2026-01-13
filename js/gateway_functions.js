@@ -158,6 +158,7 @@ var readyFunc = function(){
 		return;
 	}
 	setDefaultLanguage();
+	$('.gateway-version').html(mainSettings.version);
 	$('.not-connected-text > h3').html(language.loading);
 	$('.not-connected-text > p').html(language.loadingWait);
 	if($.browser.msie && parseInt($.browser.version, 10) < 9) {
