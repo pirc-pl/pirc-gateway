@@ -227,6 +227,112 @@ var conn = {
 			}
 		});
 
+		// Helper function to get tab name by display index (1-based)
+		function getTabNameByIndex(index) {
+			if(index < 1) return null;
+			var tabElements = $('#tabs > li');
+			if(index > tabElements.length) return null;
+
+			var targetTab = tabElements.eq(index - 1);
+			var tabId = targetTab.attr('id');
+
+			if(tabId === '--status-tab') {
+				return '--status';
+			}
+
+			// Find matching channel or query by ID
+			for(var i = 0; i < gateway.channels.length; i++) {
+				if(gateway.channels[i].id + '-tab' === tabId) {
+					return gateway.channels[i].name;
+				}
+			}
+			for(var i = 0; i < gateway.queries.length; i++) {
+				if(gateway.queries[i].id + '-tab' === tabId) {
+					return gateway.queries[i].name;
+				}
+			}
+
+			return null;
+		}
+
+		// Document-level keyboard shortcuts for tab switching
+		$(document).keydown(function(e) {
+			// Only handle Alt key (not AltGr which is Alt+Ctrl)
+			if(!e.altKey || e.ctrlKey || e.metaKey) {
+				return;
+			}
+
+			var handled = false;
+			var tabName = null;
+
+			// Alt+1 through Alt+9 → tabs 1-9
+			if(e.which >= 49 && e.which <= 57) {
+				var tabIndex = e.which - 48;
+				tabName = getTabNameByIndex(tabIndex);
+				handled = true;
+			}
+			// Alt+0 → tab 10
+			else if(e.which === 48) {
+				tabName = getTabNameByIndex(10);
+				handled = true;
+			}
+			// Alt+Q through Alt+O → tabs 11-19
+			else if(e.which === 81) { // Q
+				tabName = getTabNameByIndex(11);
+				handled = true;
+			}
+			else if(e.which === 87) { // W
+				tabName = getTabNameByIndex(12);
+				handled = true;
+			}
+			else if(e.which === 69) { // E
+				tabName = getTabNameByIndex(13);
+				handled = true;
+			}
+			else if(e.which === 82) { // R
+				tabName = getTabNameByIndex(14);
+				handled = true;
+			}
+			else if(e.which === 84) { // T
+				tabName = getTabNameByIndex(15);
+				handled = true;
+			}
+			else if(e.which === 89) { // Y
+				tabName = getTabNameByIndex(16);
+				handled = true;
+			}
+			else if(e.which === 85) { // U
+				tabName = getTabNameByIndex(17);
+				handled = true;
+			}
+			else if(e.which === 73) { // I
+				tabName = getTabNameByIndex(18);
+				handled = true;
+			}
+			else if(e.which === 79) { // O
+				tabName = getTabNameByIndex(19);
+				handled = true;
+			}
+			// Alt+Left Arrow → previous tab
+			else if(e.which === 37) {
+				gateway.prevTab();
+				handled = true;
+			}
+			// Alt+Right Arrow → next tab
+			else if(e.which === 39) {
+				gateway.nextTab();
+				handled = true;
+			}
+
+			// Switch to tab if we found one
+			if(handled) {
+				e.preventDefault();
+				if(tabName) {
+					gateway.switchTab(tabName);
+				}
+			}
+		});
+
 		try {
 			$('#not_connected_wrapper').fadeIn(200);
 		} catch(e) {
