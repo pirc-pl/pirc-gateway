@@ -23,8 +23,8 @@
 var scriptFiles = [
 	'/js/gateway_global_settings.js',
 	'/js/language.js',
-	'/js/gateway_conn.js',
 	'/js/gateway_functions.js',
+	'/js/gateway_conn.js',
 	'/js/gateway_ignore.js',
 	'/js/gateway_services.js',
 	'/js/gateway_cmd_binds.js',
