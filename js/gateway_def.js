@@ -40,7 +40,7 @@ var irc = {
 			if('label' in this.tags)
 				return this.tags.label;
 			if('batch' in this.tags){
-				var batch = gateway.batch[tags.batch];
+				var batch = gateway.batch[this.tags.batch];
 				if(!batch)
 					return null;
 				if(batch.label)
