@@ -24,13 +24,14 @@
  * Script files to load in order.
  * IMPORTANT: Order matters for dependencies!
  * - language.js must load before addons (provides lang object)
+ * - Language files must load before addons (provides lang.pl and lang.en objects that addons extend)
  * - gateway_functions.js must load before gateway_conn.js (provides decryptPassword/encryptPassword)
  * - gateway_conn.js must load before gateway_def.js (defines conn object)
  *
  * Load order:
  * 1. Main scripts (scriptFiles array) - loaded sequentially
- * 2. Addons (mainSettings.modules) - loaded after all main scripts
- * 3. Language files (languageFiles array) - loaded after addons
+ * 2. Language files (languageFiles array) - loaded after main scripts, provides base translations
+ * 3. Addons (mainSettings.modules) - loaded after language files, can extend translations
  * 4. Ready functions executed (readyFunctions array)
  */
 var scriptFiles = [
@@ -120,7 +121,8 @@ function loadStylesheet(href, description) {
 }
 
 /**
- * Load addon modules after mainSettings is available.
+ * Load addon modules after language files are loaded.
+ * Addons can extend language objects (lang.pl, lang.en) with their own translations.
  * Addons can push their initialization functions to the readyFunctions array
  * (defined in load.js), which will be executed after all scripts load.
  */
@@ -128,7 +130,7 @@ function loadAddons() {
 	try {
 		if (typeof mainSettings === 'undefined' || !mainSettings.modules) {
 			console.warn('[load.js] mainSettings.modules not available, skipping addons');
-			loadLanguageFiles();
+			executeReadyFunctions();
 			return;
 		}
 
@@ -136,8 +138,8 @@ function loadAddons() {
 		var addonIndex = 0;
 		function loadNextAddon() {
 			if (addonIndex >= mainSettings.modules.length) {
-				// All addons loaded, now load language files
-				loadLanguageFiles();
+				// All addons loaded, now execute ready functions
+				executeReadyFunctions();
 				return;
 			}
 			var modname = mainSettings.modules[addonIndex];
@@ -159,8 +161,8 @@ function loadScriptsSequentially() {
 
 	function loadNextScript() {
 		if (scriptIndex >= scriptFiles.length) {
-			// All main scripts loaded, now load addons
-			loadAddons();
+			// All main scripts loaded, now load language files
+			loadLanguageFiles();
 			return;
 		}
 
@@ -182,8 +184,8 @@ function loadLanguageFiles() {
 
 	function loadNextLang() {
 		if (langIndex >= languageFiles.length) {
-			// All language files loaded - now execute ready functions
-			executeReadyFunctions();
+			// All language files loaded - now load addons
+			loadAddons();
 			return;
 		}
 		var lang = languageFiles[langIndex];
