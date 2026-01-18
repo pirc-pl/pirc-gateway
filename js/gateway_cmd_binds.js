@@ -43,6 +43,7 @@ var supportedCaps = [
 	['setname', 'draft/setname']
 ];
 var serverCaps = {};
+var capInProgress = false;
 
 function ircBatch(name, type, args, msg){
 	this.name = name;
@@ -221,6 +222,10 @@ var cmdBinds = {
 			switch(msg.args[1]){
 				case 'LS': case 'NEW':
 					// Parse available capabilities from server
+					if (msg.args[2] == '*')
+						capInProgress = true;
+					else
+						capInProgress = false;
 					var availableCaps = msg.text.split(' ');
 					for(var i=0; i<availableCaps.length; i++){
 						var capString = availableCaps[i];
@@ -296,7 +301,8 @@ var cmdBinds = {
 						ircCommand.performQuick('AUTHENTICATE', ['PLAIN']);
 						gateway.statusWindow.appendMessage(language.messagePatterns.SaslAuthenticate, [$$.niceTime(msg.time), language.SASLLoginAttempt]);
 					} else {
-						ircCommand.performQuick('CAP', ['END']);
+						if (!capInProgress)
+							ircCommand.performQuick('CAP', ['END']);
 					}
 					break;
 				case 'DEL':
