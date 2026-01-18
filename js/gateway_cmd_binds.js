@@ -166,11 +166,13 @@ var cmdBinds = {
 			if(msg.args[0] == '+'){
 				ircCommand.performQuick('AUTHENTICATE', [Base64.encode(guser.nickservnick + '\0' + guser.nickservnick + '\0' + guser.nickservpass)]);
 				gateway.statusWindow.appendMessage(language.messagePatterns.SaslAuthenticate, [$$.niceTime(msg.time), language.SASLLogin+he(guser.nickservnick)]);
+				gateway.connectStatus = 'identified';
 			} else {
-				saslInProgress = false;
-				ircCommand.performQuick('CAP', ['END']);
+				// Server sent unexpected AUTHENTICATE response (not '+')
+				// For PLAIN mechanism, server should only send '+' to request credentials
+				// Ignore and wait for 903/904/906 numerics to complete authentication
+				console.log('Unexpected AUTHENTICATE response:', msg.args[0]);
 			}
-			gateway.connectStatus = 'identified';
 		}
 	],
 	'AWAY': [
@@ -228,6 +230,9 @@ var cmdBinds = {
 						capInProgress = true;
 					else
 						capInProgress = false;
+
+					// Parse capabilities from THIS line only (before adding to accumulated serverCaps)
+					var thisLineCaps = {};
 					var availableCaps = msg.text.split(' ');
 					for(var i=0; i<availableCaps.length; i++){
 						var capString = availableCaps[i];
@@ -240,10 +245,10 @@ var cmdBinds = {
 						} else {
 							cap = capString;
 						}
-						serverCaps[cap] = value;
+						thisLineCaps[cap] = value;
 					}
 
-					// Build list of capabilities to request
+					// Build list of capabilities to request from THIS line only
 					var useCaps = '';
 					for(var i=0; i<supportedCaps.length; i++){
 						var capSpec = supportedCaps[i];
@@ -252,14 +257,14 @@ var cmdBinds = {
 						if(Array.isArray(capSpec)){
 							// Mutually exclusive capabilities - pick first available
 							for(var j=0; j<capSpec.length; j++){
-								if(capSpec[j] in serverCaps){
+								if(capSpec[j] in thisLineCaps){
 									selectedCap = capSpec[j];
 									break;
 								}
 							}
 						} else {
 							// Single capability
-							if(capSpec in serverCaps){
+							if(capSpec in thisLineCaps){
 								selectedCap = capSpec;
 							}
 						}
@@ -269,7 +274,16 @@ var cmdBinds = {
 							useCaps += selectedCap;
 						}
 					}
-					ircCommand.performQuick('CAP', ['REQ'], useCaps);
+
+					// Send CAP REQ for capabilities from this line
+					if(useCaps.length > 0){
+						ircCommand.performQuick('CAP', ['REQ'], useCaps);
+					}
+
+					// Now add this line's capabilities to accumulated serverCaps
+					for(var cap in thisLineCaps){
+						serverCaps[cap] = thisLineCaps[cap];
+					}
 					break;
 				case 'ACK':
 					var newCapsParsed = {};
@@ -1834,6 +1848,7 @@ var cmdBinds = {
 	],
 	'900': [	// RPL_LOGGEDIN
 		function(msg) {
+			saslInProgress = false;
 			ircCommand.performQuick('CAP', ['END']);
 			gateway.statusWindow.appendMessage(language.messagePatterns.SaslAuthenticate, [$$.niceTime(msg.time), language.weAreLoggedInAs + he(msg.args[2])]);
 			if(msg.args[2] != '0'){
@@ -1847,12 +1862,18 @@ var cmdBinds = {
 	// TODO RPL_LOGGEDOUT
 	'903': [	// RPL_SASLSUCCESS
 		function(msg) {
+			saslInProgress = false;
 			gateway.statusWindow.appendMessage(language.messagePatterns.SaslAuthenticate, [$$.niceTime(msg.time), language.SASLLoginSuccess]);
 			gateway.retrySasl = false;
+			// Some servers send only 903, not 900, so send CAP END here too
+			if(!capInProgress){
+				ircCommand.performQuick('CAP', ['END']);
+			}
 		}
 	],
 	'904': [	// ERR_SASLFAIL
 		function(msg) {
+			saslInProgress = false;
 			ircCommand.performQuick('CAP', ['END']);
 			gateway.statusWindow.appendMessage(language.messagePatterns.SaslAuthenticate, [$$.niceTime(msg.time), language.SASLLoginFail]);
 			if(gateway.retrySasl){
@@ -1864,7 +1885,11 @@ var cmdBinds = {
 	],
 	'906': [	// ERR_SASLABORTED
 		function(msg) {
+			saslInProgress = false;
+			ircCommand.performQuick('CAP', ['END']);
 			gateway.statusWindow.appendMessage(language.messagePatterns.SaslAuthenticate, [$$.niceTime(msg.time), language.SASLNotLoggedIn]);
+			// 906 means authentication was aborted (client or server initiated)
+			// Do NOT retry - this is an abort, not a failure
 		}
 	],
 	'972': [	// ERR_CANNOTDOCOMMAND

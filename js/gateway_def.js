@@ -389,9 +389,13 @@ var gateway = {
 					username += ' "'+ckNick+'"';
 				}
 			} catch(e) {}
-			ircCommand.performQuick('CAP', ['LS', '302']);
-			ircCommand.performQuick('USER', ['pirc', '*', '*'], username);
-			ircCommand.changeNick(guser.nick);
+			// Defer registration commands by one event loop tick to ensure
+			// websocket is fully ready to send (prevents lost commands on first connect)
+			setTimeout(function() {
+				ircCommand.performQuick('CAP', ['LS', '302']);
+				ircCommand.performQuick('USER', ['pirc', '*', '*'], username);
+				ircCommand.changeNick(guser.nick);
+			}, 0);
 			guser.clear();
 			gateway.connectTime = (+new Date)/1000;
 		}

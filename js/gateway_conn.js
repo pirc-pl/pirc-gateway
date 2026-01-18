@@ -59,6 +59,9 @@ var guser = {
 		serverCaps = {};
 		$('.setAvatar').hide();
 		isupport = [];
+		capInProgress = false;
+		saslInProgress = false;
+		gateway.batch = {};
 	}
 };
 
