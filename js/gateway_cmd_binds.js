@@ -44,6 +44,7 @@ var supportedCaps = [
 ];
 var serverCaps = {};
 var capInProgress = false;
+var saslInProgress = false;
 
 function ircBatch(name, type, args, msg){
 	this.name = name;
@@ -166,6 +167,7 @@ var cmdBinds = {
 				ircCommand.performQuick('AUTHENTICATE', [Base64.encode(guser.nickservnick + '\0' + guser.nickservnick + '\0' + guser.nickservpass)]);
 				gateway.statusWindow.appendMessage(language.messagePatterns.SaslAuthenticate, [$$.niceTime(msg.time), language.SASLLogin+he(guser.nickservnick)]);
 			} else {
+				saslInProgress = false;
 				ircCommand.performQuick('CAP', ['END']);
 			}
 			gateway.connectStatus = 'identified';
@@ -300,8 +302,9 @@ var cmdBinds = {
 					if(guser.nickservpass != '' && guser.nickservnick != '' && 'sasl' in newCapsParsed){
 						ircCommand.performQuick('AUTHENTICATE', ['PLAIN']);
 						gateway.statusWindow.appendMessage(language.messagePatterns.SaslAuthenticate, [$$.niceTime(msg.time), language.SASLLoginAttempt]);
+						saslInProgress = true;
 					} else {
-						if (!capInProgress)
+						if (!capInProgress && !saslInProgress)
 							ircCommand.performQuick('CAP', ['END']);
 					}
 					break;
