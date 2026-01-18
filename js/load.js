@@ -221,6 +221,29 @@ function executeReadyFunctions() {
 	}, 50);
 }
 
+/**
+ * Add preload hints for parallel script downloading
+ * Browser will download scripts in parallel while maintaining
+ * sequential execution order when script tags are created
+ */
+function addPreloadHints() {
+	var allScripts = scriptFiles.concat(
+		languageFiles.map(function(lang) {
+			return '/js/lang/' + lang + '.js';
+		})
+	);
+
+	allScripts.forEach(function(src) {
+		var link = document.createElement('link');
+		link.rel = 'preload';
+		link.as = 'script';
+		link.href = src + '?' + ranid;  // Use same cache-busting param
+		document.head.appendChild(link);
+	});
+
+	console.log('[load.js] Added preload hints for ' + allScripts.length + ' scripts');
+}
+
 // Load stylesheets (these can load in parallel)
 styleFiles.forEach(function(file) {
 	loadStylesheet(file, 'Stylesheet: ' + file);
@@ -228,6 +251,7 @@ styleFiles.forEach(function(file) {
 
 $('#defaultStyle').remove(); // we can remove the default style now
 
-// Start loading scripts
+// Add preload hints for parallel downloading, then start loading scripts
+addPreloadHints();
 loadScriptsSequentially();
 
