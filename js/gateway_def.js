@@ -1,5 +1,5 @@
 /* Copyright (c) 2020 k4be and the PIRC.pl Team
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
  * "Software"), to deal in the Software without restriction, including
@@ -19,6 +19,58 @@
  * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
+
+var ircLog = {
+	'channelPrefixes': '#&',
+	'privateCommands': ['PRIVMSG', 'NOTICE', 'TAGMSG'],
+	'authCommands': ['PASS', 'AUTHENTICATE', 'OPER'],
+	'isChannel': function(target) {
+		if (!target || target.length === 0) return false;
+		return this.channelPrefixes.indexOf(target.charAt(0)) !== -1;
+	},
+	'filterIncoming': function(msg) {
+		if (!msg) return msg;
+		if (this.authCommands.indexOf(msg.command) !== -1) {
+			var filtered = JSON.parse(JSON.stringify(msg));
+			filtered.args = ['[hidden]'];
+			filtered.text = '';
+			return filtered;
+		}
+		if (this.privateCommands.indexOf(msg.command) === -1) {
+			return msg;
+		}
+		var filtered = JSON.parse(JSON.stringify(msg));
+		var target = filtered.args && filtered.args[0];
+		if (this.isChannel(target)) {
+			filtered.text = '[hidden]';
+		} else {
+			filtered.text = '[hidden]';
+			filtered.args = ['[hidden]'];
+			filtered.sender = {nick: '[hidden]', ident: '[hidden]', host: '[hidden]', server: false, user: true};
+		}
+		return filtered;
+	},
+	'filterOutgoing': function(line) {
+		var parts = line.split(' ');
+		var cmd = parts[0].toUpperCase();
+		if (this.authCommands.indexOf(cmd) !== -1) {
+			return cmd + ' [hidden]';
+		}
+		if (this.privateCommands.indexOf(cmd) === -1) {
+			return line;
+		}
+		var target = parts[1];
+		var colonIdx = line.indexOf(' :');
+		if (this.isChannel(target)) {
+			if (colonIdx !== -1) {
+				return line.substring(0, colonIdx) + ' :[hidden]';
+			}
+			return parts.slice(0, 2).join(' ') + ' [hidden]';
+		} else {
+			return cmd + ' [hidden] :[hidden]';
+		}
+	}
+};
 
 var irc = {
 	'lastNick': '',
@@ -123,7 +175,6 @@ var irc = {
 		var currArg = '';
 		var tags = '';
 		var haveText = false;
-		console.log(line);
 
 		for(var i = 0; i < msglen; i++){
 			var cchar = line.charAt(i);
@@ -408,7 +459,7 @@ var gateway = {
 			gateway.labelProcessed = false;
 			try {
 				var msg = data.packets[i];
-				console.log(msg);
+				console.log('→', ircLog.filterIncoming(msg));
 				if('batch' in msg.tags && msg.tags.batch in gateway.batch){
 					msg.batch = gateway.batch[msg.tags.batch];
 				}
@@ -687,12 +738,12 @@ var gateway = {
 	},
 	'forceSend': function(data){
 		if(gateway.websock.readyState === gateway.websock.OPEN){
-			console.log('← '+data);
+			console.log('← '+ircLog.filterOutgoing(data));
 			//sdata = Base64.encode(data+'\r\n');
 			sdata = data + '\r\n';
 			gateway.websock.send(sdata);
 		} else {
-			console.log('Outmsg delayed: '+data);
+			console.log('Outmsg delayed: '+ircLog.filterOutgoing(data));
 			gateway.toSend.push(data);
 		}
 	},
