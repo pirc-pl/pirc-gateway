@@ -301,6 +301,23 @@ span.netjoin {
 	color: #11aa11;
 }
 
+.event-group-summary {
+	background-color: #f0f8ff;
+	border-left: 3px solid #007D89;
+	padding-left: 5px;
+}
+
+.event-group-toggle {
+	color: #0066cc;
+	cursor: pointer;
+	text-decoration: none;
+	font-size: 0.9em;
+}
+
+.event-group-toggle:hover {
+	text-decoration: underline;
+}
+
 span.join a {
 	color: #000055;
 	cursor: pointer;

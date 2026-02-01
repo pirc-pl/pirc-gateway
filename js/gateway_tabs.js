@@ -735,6 +735,13 @@ function Channel(chan) {
 
 		updateHistory(this.name, this.id);
 		this.newLines = true;
+
+		// Trigger event grouping when a non-event message arrives
+		// (this finalizes any pending group of events above it)
+		var $newMsg = $(messageData);
+		if(!$newMsg.hasClass('event-message')){
+			disp.groupEvents('#'+this.id+'-window');
+		}
 	}
 	this.setTopic = function(topic) {
 		$('#'+this.id+'-topic > h2').html($$.colorize(topic));
