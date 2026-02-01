@@ -2273,9 +2273,7 @@ var gateway = {
 		gateway.connectStatus = 'banned';
 	},
 	'inputPaste': function(e){ // TODO
-		console.log(e);
 		var items = (e.clipboardData || e.originalEvent.clipboardData).items;
-		console.log(items);
 	},
 	'inputKeypress': function(e){
 		if(!('message-tags' in activeCaps)) return;
@@ -2483,7 +2481,6 @@ var gateway = {
 			var pattern = "\\b"+escapeRegExp(guser.nick)+"\\b";
 			var re = new RegExp(pattern);
 			var hlmatch = re.test(message);
-			console.log("highlight pattern="+pattern+", returned="+hlmatch);
 		} else {
 			var hlmatch = false;
 		}
@@ -2842,7 +2839,6 @@ var gateway = {
 				ircCommand.performQuick('CAP', ['REQ'], [cap]);
 			}
 		} else {
-			console.log('Removing cap', cap);
 			var index = supportedCaps.indexOf(cap);
 			if(index >= 0){
 				supportedCaps.splice(index, 1);

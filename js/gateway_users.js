@@ -126,7 +126,6 @@ var users = {
 			} else {
 				users.list['*'] = new users.user('*');
 				guser.me = users.list['*'];
-				console.log('added own user');
 				return users.list['*'];
 			}
 		}
