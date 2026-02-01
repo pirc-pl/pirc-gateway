@@ -100,7 +100,9 @@ var batchBinds = {
 					if(batch.oldestMsgid){
 						reference = 'msgid=' + batch.oldestMsgid;
 					} else if(batch.oldestTimestamp){
-						reference = 'timestamp=' + batch.oldestTimestamp;
+						// Convert milliseconds timestamp to ISO format for chathistory protocol
+						var isoStr = new Date(batch.oldestTimestamp).toISOString();
+						reference = 'timestamp=' + isoStr;
 					}
 
 					if(reference){
@@ -111,7 +113,7 @@ var batchBinds = {
 						var targetMsg = $('#' + chan.id + '-window .messageDiv' + selector).first();
 
 						if(targetMsg.length){
-							var html = '<div class="loadOlderButton" data-channel="' + chan.name + '"><a href="javascript:gateway.loadOlderHistory(\'' + chan.name.replace(/'/g, "\\'") + '\')">' + language.loadOlderHistory + '</a></div>';
+							var html = '<div class="loadOlderButton" data-channel="' + chan.name + '" data-reference="' + reference + '"><a href="javascript:gateway.loadOlderHistory(\'' + chan.name.replace(/'/g, "\\'") + '\')">' + language.loadOlderHistory + '</a></div>';
 							// Insert above the oldest message from this batch
 							targetMsg.before(html);
 						}
