@@ -2472,9 +2472,28 @@ var gateway = {
 				var qname = dest;
 			}
 			if(cmd != 'ACTION'){
-				var messageDiv = $('#'+tab.id+'-window div.messageDiv:not(".msgRepeat"):last');
+				var messageDiv;
+				var isHistoryBatch = gateway.isHistoryBatch(tags);
+				if(isHistoryBatch){
+					// For history messages, find the message immediately BEFORE this one chronologically
+					// (not the last one in DOM order, which would be a newer message)
+					var allMessages = $('#'+tab.id+'-window div.messageDiv:not(".msgRepeat")');
+					var prevMessage = null;
+					var currentTime = time.getTime();
+					for(var i = 0; i < allMessages.length; i++){
+						var msgTime = allMessages[i].getAttribute('data-time');
+						if(msgTime && parseInt(msgTime) < currentTime){
+							prevMessage = allMessages[i];
+						} else if(msgTime && parseInt(msgTime) >= currentTime){
+							break; // Messages are in chronological order, no need to continue
+						}
+					}
+					messageDiv = prevMessage ? $(prevMessage) : $();
+				} else {
+					messageDiv = $('#'+tab.id+'-window div.messageDiv:not(".msgRepeat"):last');
+				}
 				var messageClass = 'msgNormal';
-				if(messageDiv.hasClass('sender'+md5(sender.nick)) && messageDiv[0].getAttribute('data-time') <= time.getTime()){ // last message was by the same sender and is not newer that the received one
+				if(messageDiv.length && messageDiv.hasClass('sender'+md5(sender.nick)) && messageDiv[0].getAttribute('data-time') <= time.getTime()){ // last message was by the same sender and is not newer that the received one
 					messageDiv.find('span.msgText').append('<span class="msgRepeatBlock ' + addClass + '" ' + attrs + '><br><span class="time">'+$$.niceTime(time)+'</span> &nbsp;'+message+'</span>');
 					messageClass = 'msgRepeat';
 				} else {
@@ -2668,34 +2687,12 @@ var gateway = {
 			return;
 		}
 
+		// Get the reference from the button (set when chathistory batch ended)
+		var loadOlderButton = $('#' + chan.id + '-window .loadOlderButton');
+		var reference = loadOlderButton.attr('data-reference');
+
 		// Remove the "load older" button
-		$('#' + chan.id + '-window .loadOlderButton').remove();
-
-		// Find the oldest message with msgid or timestamp
-		var oldestMsgDiv = $('#' + chan.id + '-window .messageDiv[data-msgid]').first();
-		var reference = null;
-
-		if(oldestMsgDiv.length){
-			// Prefer msgid if available
-			var msgid = oldestMsgDiv.attr('data-msgid');
-			if(msgid){
-				reference = 'msgid=' + msgid;
-			}
-		}
-
-		// Fallback to timestamp if no msgid
-		if(!reference){
-			oldestMsgDiv = $('#' + chan.id + '-window .messageDiv[data-time]').first();
-			if(oldestMsgDiv.length){
-				var timestamp = oldestMsgDiv.attr('data-time');
-				if(timestamp){
-					// Convert milliseconds timestamp to ISO format
-					var date = new Date(parseInt(timestamp));
-					var isoStr = date.toISOString().replace('Z', '000Z'); // Ensure 3 decimal places
-					reference = 'timestamp=' + isoStr;
-				}
-			}
-		}
+		loadOlderButton.remove();
 
 		if(!reference){
 			console.log('No reference point found for loading older history');
