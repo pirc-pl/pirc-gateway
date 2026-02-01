@@ -27,14 +27,64 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-function isEmojiSupported() {
-  const onWindows7 = /\bWindows NT 6.1\b/.test(navigator.userAgent)
-  const onWindows8 = /\bWindows NT 6.2\b/.test(navigator.userAgent)
-  const onWindows81 = /\bWindows NT 6.3\b/.test(navigator.userAgent)
-  const onFreeBSD = /\bFreeBSD\b/.test(navigator.userAgent)
-  const onLinux = /\bLinux\b/.test(navigator.userAgent)
+// Cache the result since it won't change during page lifetime
+let emojiSupportCached = null;
 
-  return !(onWindows7 || onWindows8 || onWindows81 || onLinux || onFreeBSD)
+function isEmojiSupported() {
+  if (emojiSupportCached !== null) {
+    return emojiSupportCached;
+  }
+
+  // Use canvas-based feature detection instead of user agent sniffing
+  const canvas = document.createElement('canvas');
+  if (!canvas.getContext) {
+    emojiSupportCached = false;
+    return false;
+  }
+
+  const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    emojiSupportCached = false;
+    return false;
+  }
+
+  // Test with a color emoji that should render distinctly if supported
+  // Using grinning face (U+1F600) - a common, well-supported emoji
+  const testEmoji = '\u{1F600}';
+
+  ctx.textBaseline = 'top';
+  ctx.font = '32px Arial';
+  ctx.fillText(testEmoji, 0, 0);
+
+  // Check if the emoji rendered with color (not just a monochrome glyph or tofu box)
+  // Color emoji will have pixels with different RGB values
+  // Monochrome fallback or missing glyph will be grayscale or empty
+  const imageData = ctx.getImageData(0, 0, 32, 32).data;
+
+  let hasColor = false;
+  let hasPixels = false;
+
+  for (let i = 0; i < imageData.length; i += 4) {
+    const r = imageData[i];
+    const g = imageData[i + 1];
+    const b = imageData[i + 2];
+    const a = imageData[i + 3];
+
+    if (a > 0) {
+      hasPixels = true;
+      // Check if pixel has color variance (not grayscale)
+      // Grayscale has r===g===b, color emoji have variance
+      if (r !== g || g !== b) {
+        hasColor = true;
+        break;
+      }
+    }
+  }
+
+  // Emoji is supported if we have colored pixels (native color emoji)
+  // or at least some pixels (monochrome emoji font like Symbola)
+  emojiSupportCached = hasColor || hasPixels;
+  return emojiSupportCached;
 }
 
 const supported = new Set([
