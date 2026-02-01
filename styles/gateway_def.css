@@ -1443,6 +1443,7 @@ img.emoji {
 .emoji-large {
     display: inline-block;
     transform: scale(var(--emoji-scale));
+    transform-origin: left center;
     /* Prevent horizontal overlap by constraining width */
     width: calc(2em * var(--emoji-scale));
     /* Increase line height to match the scaled emoji height and prevent vertical overlap */
