@@ -950,7 +950,6 @@ var disp = {
 					var jwt = batch.extjwtContent;
 				}
 				fd.append('jwt', jwt);
-				console.log('jwt is: '+jwt);
 				$.ajax({
 					url: mainSettings.avatarUploadUrl,
 					dataType: 'json',
@@ -959,7 +958,6 @@ var disp = {
 					contentType: false,
 					data: fd,
 					success: function(data){
-						console.log(data);
 						if(data['result'] == 'ok'){
 							textSettingsValues['avatar'] = data['url'];
 							disp.showAvatarSetting();
@@ -999,7 +997,6 @@ var disp = {
 				} else {
 					var jwt = batch.extjwtContent;
 				}
-				console.log('jwt is: '+jwt);
 				$.ajax({
 					url: mainSettings.avatarDeleteUrl,
 					dataType: 'json',
@@ -1009,7 +1006,6 @@ var disp = {
 						'jwt': jwt
 					},
 					success: function(data){
-						console.log(data);
 						if(data['result'] == 'ok'){
 							textSettingsValues['avatar'] = false;
 							disp.showAvatarSetting();
@@ -1422,7 +1418,6 @@ var $$ = {
 						code += message.charAt(i);
 					}
 					i--;
-					console.log(code);
 					currFront = code;
 					formatWaiting = true;
 					break;

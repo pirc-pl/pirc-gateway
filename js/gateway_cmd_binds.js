@@ -74,7 +74,6 @@ function ircBatch(name, type, args, msg){
 var batchBinds = {
 	'chathistory': [
 		function(msg, batch){
-			console.log('chathistory batch handler called');
 			batch.receivedMessages = 0; // Track how many messages we received
 			batch.oldestMsgid = null; // Track oldest message msgid
 			batch.oldestTimestamp = null; // Track oldest message timestamp
@@ -200,7 +199,6 @@ var cmdBinds = {
 					batch.callback(batch, msg);
 				}
 				setTimeout(function(){ delete gateway.batch[name]; }, 500);
-				console.log('Ending batch "' + name + '"');
 				msg.isBatchEnd = true;
 				msg.batch = batch;
 			} else if(msg.args[0].charAt(0) == '+'){
@@ -209,8 +207,6 @@ var cmdBinds = {
 				if('label' in msg.tags){
 					batch.label = msg.tags.label;
 				}
-				console.log('Starting batch "' + name + '"');
-				console.log(batch);
 				if(type in batchBinds){
 					for(var i=0; i<batchBinds[type].length; i++){
 						batchBinds[type][i](msg, batch);
@@ -306,7 +302,6 @@ var cmdBinds = {
 							delete activeCaps[cap];
 						}
 					}
-					console.log(newCapsParsed);
 					// Check for any metadata capability (draft/metadata-2, draft/metadata-notify-2, or draft/metadata)
 					if('draft/metadata-2' in newCapsParsed || 'draft/metadata-notify-2' in newCapsParsed || 'draft/metadata' in newCapsParsed){
 						ircCommand.metadata('SUB', '*', ['avatar', 'status', 'bot', 'homepage', 'display-name', 'bot-url', 'color']); // subscribing to the metadata
@@ -372,7 +367,6 @@ var cmdBinds = {
 			var expr = /^Closing Link: [^ ]+\[([^ ]+)\] \(User has been banned from/;
 			var match = expr.exec(msg.text);
 			if(match){
-				console.log('IP: '+match[1]);
 				gateway.displayGlobalBanInfo(msg.text);
 				gateway.connectStatus = 'banned';
 			} 
@@ -1250,9 +1244,7 @@ var cmdBinds = {
 				}
 				newUsers.push(user);
 			}
-			
-			console.log(newUsers);
-			
+
 			if(!channel || channel.hasNames){ // manual NAMES request
 				var html = '<table><tr><th></th><th>Nick</th><th>ident@host</th></tr>';
 				var names = msg.text.split(' ');

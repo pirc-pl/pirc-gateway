@@ -488,7 +488,6 @@ var commands = {
 		'nicks': true,
 		'custom': [],
 		'callback': function(command, input) {
-			console.log(command);
 			if(!command[1]){ //brak argumentu - listuj wszystkie
 				var data = ignore.getIgnoreList();
 				if(data.length == 0){
