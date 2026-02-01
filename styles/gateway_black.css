@@ -249,3 +249,12 @@ span.data {
     background-color: #2D0101 !important;
 }
 
+.event-group-summary {
+    background-color: #1a2d42;
+    border-left: 3px solid #7BDFE8;
+}
+
+.event-group-toggle {
+    color: #B1CCEF;
+}
+

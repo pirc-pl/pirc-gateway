@@ -927,6 +927,8 @@ var gateway = {
 					gateway.findChannel(chan).restoreScroll();
 				}, 200);
 			}
+			// Group events when switching to this tab
+			disp.groupEvents('#'+id+'-window');
 		} else if(chan != "--status" && gateway.findQuery(chan)) {
 			var id = gateway.findQuery(chan).id;
 			$('#main-window > span').hide();

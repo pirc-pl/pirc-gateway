@@ -1332,6 +1332,8 @@ var cmdBinds = {
 				return;
 			}
 			channel.hasNames = true;
+			// Group events after channel finishes loading
+			disp.groupEvents('#'+channel.id+'-window');
 		}
 	],
 	'367': [	// RPL_BANLIST

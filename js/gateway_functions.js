@@ -37,7 +37,7 @@ function setEnvironment(){
 
 		window.reqChannel = '';
 
-		window.booleanSettings = [ 'showPartQuit', 'showNickChanges', 'tabsListBottom', 'showUserHostnames', 'autoReconnect', 'displayLinkWarning', 'blackTheme', 'newMsgSound', 'autoDisconnect', 'coloredNicks', 'showMode', 'dispEmoji', 'sendEmoji', 'monoSpaceFont', 'automLogIn', 'setUmodeD', 'setUmodeR', 'noAvatars', 'biggerEmoji' ];
+		window.booleanSettings = [ 'showPartQuit', 'showNickChanges', 'tabsListBottom', 'showUserHostnames', 'autoReconnect', 'displayLinkWarning', 'blackTheme', 'newMsgSound', 'autoDisconnect', 'coloredNicks', 'showMode', 'dispEmoji', 'sendEmoji', 'monoSpaceFont', 'automLogIn', 'setUmodeD', 'setUmodeR', 'noAvatars', 'biggerEmoji', 'groupEvents' ];
 		window.comboSettings = [ 'noticeDisplay', 'setLanguage' ];
 		window.numberSettings = [ 'backlogCount' ];
 		window.numberSettingsMinMax = {
@@ -808,6 +808,18 @@ var disp = {
 		} else if(e.currentTarget.id == 'setLanguage') {
 			var lang = $('#setLanguage').val();
 			setLanguage(lang);
+		} else if(e.currentTarget.id == 'showPartQuit'){
+			disp.updateEventVisibility();
+			if(!$('#showPartQuit').is(':checked')){
+				// Re-enable grouping when showing events again
+				disp.regroupAllEvents();
+			}
+		} else if(e.currentTarget.id == 'groupEvents'){
+			if($('#groupEvents').is(':checked')){
+				disp.regroupAllEvents();
+			} else {
+				disp.ungroupAllEvents();
+			}
 		}
 		$('#nicklist').removeAttr('style');
 		$('#chlist').removeAttr('style');
@@ -1123,6 +1135,157 @@ var disp = {
 		}
 		html += '</div>';
 		$$.displayDialog('emoticons', 'allEmoticons', language.allEmoticons, html);
+	},
+	'updateEventVisibility': function(){
+		// Hide or show event messages based on showPartQuit setting
+		var hideEvents = $('#showPartQuit').is(':checked');
+		var groupEnabled = $('#groupEvents').is(':checked');
+
+		$('.event-message').each(function(){
+			var $this = $(this);
+			var isInGroup = $this.hasClass('grouped-event');
+
+			if(hideEvents){
+				$this.hide();
+			} else if(isInGroup){
+				// Keep grouped events hidden, they're shown via expand
+				$this.hide();
+			} else {
+				$this.show();
+			}
+		});
+
+		// Also hide/show group summaries
+		$('.event-group-summary').each(function(){
+			if(hideEvents){
+				$(this).hide();
+			} else {
+				$(this).show();
+			}
+		});
+	},
+	'groupEvents': function(container){
+		// Group consecutive event messages (>2) into a collapsible summary
+		if($('#showPartQuit').is(':checked')) return; // Don't group when hiding all events
+		if(!$('#groupEvents').is(':checked')) return; // Grouping disabled
+
+		var $container = $(container);
+		var $messages = $container.children('.messageDiv');
+		var consecutiveEvents = [];
+		var lastWasEvent = false;
+
+		$messages.each(function(){
+			var $this = $(this);
+			var isEvent = $this.hasClass('event-message');
+			var isGroupSummary = $this.hasClass('event-group-summary');
+
+			if(isGroupSummary) return; // Skip existing summaries
+
+			if(isEvent && !$this.hasClass('grouped-event')){
+				consecutiveEvents.push($this);
+				lastWasEvent = true;
+			} else {
+				// Non-event message encountered, check if we should group previous events
+				if(consecutiveEvents.length > 2){
+					disp.createEventGroup(consecutiveEvents);
+				}
+				consecutiveEvents = [];
+				lastWasEvent = false;
+			}
+		});
+
+		// Handle trailing events at the end
+		if(consecutiveEvents.length > 2){
+			disp.createEventGroup(consecutiveEvents);
+		}
+	},
+	'createEventGroup': function(events){
+		if(events.length <= 2) return;
+
+		// Count event types
+		var counts = { join: 0, part: 0, quit: 0, kick: 0, mode: 0, nick: 0 };
+		events.forEach(function($el){
+			var type = $el.attr('data-event-type');
+			if(type in counts) counts[type]++;
+		});
+
+		// Combine part and quit for "left" count
+		var leftCount = counts.part + counts.quit;
+
+		// Build summary text
+		var summaryParts = [];
+		if(counts.join > 0){
+			var label = counts.join === 1 ? language.usersJoined[0] : language.usersJoined[1];
+			summaryParts.push(label.replace('%d', counts.join));
+		}
+		if(leftCount > 0){
+			var label = leftCount === 1 ? language.usersLeft[0] : language.usersLeft[1];
+			summaryParts.push(label.replace('%d', leftCount));
+		}
+		if(counts.kick > 0){
+			var label = counts.kick === 1 ? language.usersKicked[0] : language.usersKicked[1];
+			summaryParts.push(label.replace('%d', counts.kick));
+		}
+		if(counts.mode > 0){
+			var label = counts.mode === 1 ? language.modeChanges[0] : language.modeChanges[1];
+			summaryParts.push(label.replace('%d', counts.mode));
+		}
+		if(counts.nick > 0){
+			var label = counts.nick === 1 ? language.nickChanges[0] : language.nickChanges[1];
+			summaryParts.push(label.replace('%d', counts.nick));
+		}
+
+		var summaryText = summaryParts.join(', ');
+		var groupId = 'evtgrp-' + Math.random().toString(36).substr(2, 9);
+
+		// Create summary element
+		var $summary = $('<div class="messageDiv event-group-summary" data-group-id="' + groupId + '">' +
+			'<span class="time">' + $$.niceTime() + '</span> &nbsp; ' +
+			'<span class="mode"><span class="symbolFont">⋯</span> ' + summaryText + ' ' +
+			'<a href="javascript:void(0)" class="event-group-toggle" id="show-' + groupId + '" style="display:inline">[' + language.expand + ']</a>' +
+			'<a href="javascript:void(0)" class="event-group-toggle" id="hide-' + groupId + '" style="display:none">[' + language.collapse + ']</a>' +
+			'</span></div>');
+
+		// Insert summary before first event in group
+		events[0].before($summary);
+
+		// Mark events as grouped and hide them
+		events.forEach(function($el){
+			$el.addClass('grouped-event').attr('data-group-id', groupId).hide();
+		});
+
+		// Set up toggle handlers
+		$('#show-' + groupId).click(function(){
+			disp.expandEventGroup(groupId);
+		});
+		$('#hide-' + groupId).click(function(){
+			disp.collapseEventGroup(groupId);
+		});
+	},
+	'expandEventGroup': function(groupId){
+		$('.grouped-event[data-group-id="' + groupId + '"]').show();
+		$('#show-' + groupId).hide();
+		$('#hide-' + groupId).show();
+	},
+	'collapseEventGroup': function(groupId){
+		$('.grouped-event[data-group-id="' + groupId + '"]').hide();
+		$('#show-' + groupId).show();
+		$('#hide-' + groupId).hide();
+	},
+	'ungroupAllEvents': function(){
+		// Expand and remove all event groups
+		$('.event-group-summary').each(function(){
+			var groupId = $(this).attr('data-group-id');
+			$('.grouped-event[data-group-id="' + groupId + '"]').removeClass('grouped-event').removeAttr('data-group-id').show();
+			$(this).remove();
+		});
+	},
+	'regroupAllEvents': function(){
+		// First ungroup, then regroup all windows
+		disp.ungroupAllEvents();
+		$('#main-window > span').each(function(){
+			disp.groupEvents(this);
+		});
 	}
 };
 
