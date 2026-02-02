@@ -1259,9 +1259,23 @@ var disp = {
 		});
 	},
 	'expandEventGroup': function(groupId){
-		$('.grouped-event[data-group-id="' + groupId + '"]').show();
+		var $groupedEvents = $('.grouped-event[data-group-id="' + groupId + '"]');
+		$groupedEvents.show();
 		$('#show-' + groupId).hide();
 		$('#hide-' + groupId).show();
+
+		// Auto-scroll if expanded events would be below the viewport
+		var $lastEvent = $groupedEvents.last();
+		if($lastEvent.length){
+			var $chatWrapper = $('#chat-wrapper');
+			var wrapperTop = $chatWrapper.offset().top;
+			var wrapperVisibleBottom = wrapperTop + $chatWrapper.innerHeight();
+			var eventBottom = $lastEvent.offset().top + $lastEvent.outerHeight();
+			if(eventBottom > wrapperVisibleBottom){
+				// Scroll to make the last event visible
+				$chatWrapper.scrollTop($chatWrapper.scrollTop() + (eventBottom - wrapperVisibleBottom));
+			}
+		}
 	},
 	'collapseEventGroup': function(groupId){
 		$('.grouped-event[data-group-id="' + groupId + '"]').hide();
