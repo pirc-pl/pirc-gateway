@@ -1490,12 +1490,10 @@ img.emoji {
 }
 
 .listWindowUsers {
-    width: 8%;
     text-align: right;
 }
 
 .listWindowTopic {
-    width: 72%;
 }
 
 .listWindowLoading, .listWindowEmpty {
