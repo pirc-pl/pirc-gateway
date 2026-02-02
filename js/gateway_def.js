@@ -43,6 +43,9 @@ var ircLog = {
 		var target = filtered.args && filtered.args[0];
 		if (this.isChannel(target)) {
 			filtered.text = '[hidden]';
+			if (filtered.args.length > 1) {
+				filtered.args[filtered.args.length - 1] = '[hidden]';
+			}
 		} else {
 			filtered.text = '[hidden]';
 			filtered.args = ['[hidden]'];
