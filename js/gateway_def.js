@@ -2353,8 +2353,10 @@ var gateway = {
 	'inputKeypress': function(e){
 		if(!('message-tags' in activeCaps)) return;
 		if($('#input').val().length > 0 && $('#input').val().charAt(0) == '/') return; // typing a command
-		if(!gateway.getActive()) return;
-		if(gateway.lastKeypressWindow == gateway.getActive()){
+		var active = gateway.getActive();
+		if(!active) return;
+		if(gateway.listWindow && active.name == gateway.listWindow.name) return; // Do not send typing notifications for list window
+		if(gateway.lastKeypressWindow == active){
 			if($('#input').val() == ''){
 /*				if(gateway.keypressSuppress){
 					clearTimeout(gateway.keypressSuppress);
@@ -2372,8 +2374,8 @@ var gateway = {
 		gateway.keypressSuppress = setTimeout(function(){
 			gateway.keypressSuppress = false;
 		}, 5500);
-		gateway.lastKeypressWindow = gateway.getActive();
-		ircCommand.sendTags(gateway.getActive().name, ['+draft/typing', '+typing'], ['active', 'active']);
+		gateway.lastKeypressWindow = active;
+		ircCommand.sendTags(active.name, ['+draft/typing', '+typing'], ['active', 'active']);
 	},
 	'getMeta': function(nick, size){
 		var avatar = gateway.getAvatarUrl(nick, size);

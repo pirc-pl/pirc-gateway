@@ -220,7 +220,7 @@ var conn = {
 				gateway.doComplete();
 				e.preventDefault();
 				return false;
-			} else {
+			} else if (!e.altKey) {
 				gateway.inputKeypress();
 			}
 			if(e.which != 9) { // nie TAB
