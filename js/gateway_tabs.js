@@ -736,11 +736,18 @@ function Channel(chan) {
 		updateHistory(this.name, this.id);
 		this.newLines = true;
 
-		// Trigger event grouping when a non-event message arrives
-		// (this finalizes any pending group of events above it)
+		// Trigger event grouping
 		var $newMsg = $(messageData);
+		var channelWindow = '#'+this.id+'-window';
 		if(!$newMsg.hasClass('event-message')){
-			disp.groupEvents('#'+this.id+'-window');
+			// Non-event message: group immediately (finalizes pending events)
+			disp.groupEvents(channelWindow);
+		} else {
+			// Event message: debounce grouping to handle event-only streams
+			clearTimeout(this.groupEventsTimeout);
+			this.groupEventsTimeout = setTimeout(function(){
+				disp.groupEvents(channelWindow);
+			}, 1000);
 		}
 	}
 	this.setTopic = function(topic) {

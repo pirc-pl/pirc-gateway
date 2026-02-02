@@ -63,6 +63,7 @@ function setLanguage(slang){
 	$('.language-dontShowAvatars').html(language.dontShowAvatars);
 	$('.language-setOwnAvatar').html(language.setOwnAvatar);
 	$('.language-dontShowJoinsQuits').html(language.dontShowJoinsQuits);
+	$('.language-groupEvents').html(language.groupEvents);
 	$('.language-dontShowNickChanges').html(language.dontShowNickChanges);
 	$('.language-dontShowModes').html(language.dontShowModes);
 	$('.language-tabListOnBottom').html(language.tabListOnBottom);
