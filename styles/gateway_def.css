@@ -1484,8 +1484,9 @@ img.emoji {
 }
 
 .listWindowChannel {
-    width: 20%;
-    white-space: nowrap;
+  text-align: left;
+  white-space: nowrap;
+  width: 1px; /* Forces the column to shrink to content */
 }
 
 .listWindowUsers {
