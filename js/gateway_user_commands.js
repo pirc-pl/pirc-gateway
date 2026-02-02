@@ -309,7 +309,7 @@ var commands = {
 			}
 		}
 	},
-	'msg': {  /// TODO /msg #kanal
+	'msg': {
 		'channels': true,
 		'nicks': false,
 		'custom': [],

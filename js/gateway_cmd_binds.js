@@ -841,7 +841,7 @@ var cmdBinds = {
 	],
 	'306': [	// RPL_NOWAWAY
 		function(msg) {
-			guser.me.setAway(true); // FIXME add reason
+			guser.me.setAway(ircCommand.pendingAwayReason || true);
 			gateway.statusWindow.appendMessage(language.messagePatterns.yourAwayEnabled, [$$.niceTime(msg.time)]);
 			gateway.statusWindow.markBold();
 		}
@@ -1848,14 +1848,19 @@ var cmdBinds = {
 			ircCommand.performQuick('CAP', ['END']);
 			gateway.statusWindow.appendMessage(language.messagePatterns.SaslAuthenticate, [$$.niceTime(msg.time), language.weAreLoggedInAs + he(msg.args[2])]);
 			if(msg.args[2] != '0'){
-				guser.me.setAccount(msg.args[2]); // TODO use guser.me here
+				guser.me.setAccount(msg.args[2]);
 			} else {
 				guser.me.setAccount(false);
 			}
 			$$.closeDialog('error', 'nickserv'); // if we displayed login prompt, let's close it.
 		}
 	],
-	// TODO RPL_LOGGEDOUT
+	'901': [	// RPL_LOGGEDOUT
+		function(msg) {
+			guser.me.setAccount(false);
+			gateway.statusWindow.appendMessage(language.messagePatterns.SaslAuthenticate, [$$.niceTime(msg.time), he(msg.text)]);
+		}
+	],
 	'903': [	// RPL_SASLSUCCESS
 		function(msg) {
 			saslInProgress = false;

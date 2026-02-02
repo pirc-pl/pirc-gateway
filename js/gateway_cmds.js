@@ -21,6 +21,15 @@
  */
 
 var ircCommand = {
+	'escapeTagValue': function(value){
+		// IRC message-tags escaping per spec
+		return value
+			.replace(/\\/g, '\\\\')
+			.replace(/;/g, '\\:')
+			.replace(/ /g, '\\s')
+			.replace(/\r/g, '\\r')
+			.replace(/\n/g, '\\n');
+	},
 	'perform': function(command, args, text, tags){
 		ircCommand.send(command, args, text, tags);
 	},
@@ -32,7 +41,7 @@ var ircCommand = {
 	},
 	'flushCmdQueue': function(){ // TODO zrobić
 	},
-	'send': function(command, args, text, tags){ // TODO escape tags
+	'send': function(command, args, text, tags){
 		var cmdString = '';
 		if(tags && 'message-tags' in activeCaps){ // checking only for message-tags, ignoring other tag capabilities, we'll need to change this if problems appear
 			cmdString += '@';
@@ -44,7 +53,7 @@ var ircCommand = {
 				first = false;
 				cmdString += tagName;
 				if(tags[tagName]){
-					cmdString += '=' + tags[tagName];
+					cmdString += '=' + ircCommand.escapeTagValue(tags[tagName]);
 				}
 			}
 			cmdString += ' ';
@@ -268,10 +277,13 @@ var ircCommand = {
 		gateway.connectStatus = 'disconnected';
 		ircCommand.flushCmdQueue();
 	},
+	'pendingAwayReason': false,
 	'away': function(text){
 		if(text){
+			ircCommand.pendingAwayReason = text;
 			ircCommand.perform('AWAY', [], text);
 		} else {
+			ircCommand.pendingAwayReason = false;
 			ircCommand.perform('AWAY');
 		}
 	},
