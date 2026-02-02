@@ -479,6 +479,8 @@ lang.pl = {
 	'groupEvents': 'Grupuj kolejne wiadomości join/part/quit/kick/nick/mode',
 	'dontShowNickChanges': 'Nie pokazuj informacji o zmianach nicków',
 	'dontShowModes': 'Nie pokazuj wiadomości MODE (zmian trybów)',
+	'shortModeDisplay': 'Pokazuj tryby kanału jako litery',
+	'sortChannelsByJoinOrder': 'Sortuj zakładki kanałów według kolejności dołączenia (domyślnie: alfabetycznie)',
 	'tabListOnBottom': 'Listę zakładek pokazuj na dole strony',
 	'showHostnames': 'Pokazuj nazwy hosta użytkowników',
 	'autoReconnect': 'Automatycznie łącz ponownie po rozłączeniu',

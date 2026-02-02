@@ -37,7 +37,7 @@ function setEnvironment(){
 
 		window.reqChannel = '';
 
-		window.booleanSettings = [ 'showPartQuit', 'showNickChanges', 'tabsListBottom', 'showUserHostnames', 'autoReconnect', 'displayLinkWarning', 'blackTheme', 'newMsgSound', 'autoDisconnect', 'coloredNicks', 'showMode', 'dispEmoji', 'sendEmoji', 'monoSpaceFont', 'automLogIn', 'setUmodeD', 'setUmodeR', 'noAvatars', 'biggerEmoji', 'groupEvents' ];
+		window.booleanSettings = [ 'showPartQuit', 'showNickChanges', 'tabsListBottom', 'showUserHostnames', 'autoReconnect', 'displayLinkWarning', 'blackTheme', 'newMsgSound', 'autoDisconnect', 'coloredNicks', 'showMode', 'dispEmoji', 'sendEmoji', 'monoSpaceFont', 'automLogIn', 'setUmodeD', 'setUmodeR', 'noAvatars', 'biggerEmoji', 'groupEvents', 'shortModeDisplay', 'sortChannelsByJoinOrder' ];
 		window.comboSettings = [ 'noticeDisplay', 'setLanguage' ];
 		window.numberSettings = [ 'backlogCount' ];
 		window.numberSettingsMinMax = {
@@ -194,6 +194,9 @@ function ChannelModes() {
 function getModeInfo(letter, type){
 	if(!type){
 		type = 0;
+	}
+	if($('#shortModeDisplay').is(':checked')){
+		return letter;
 	}
 	if(!(letter in language.modes.chModeInfo)) return language.mode+' '+letter; // no text description for this mode char
 	var data = language.modes.chModeInfo[letter];
@@ -820,6 +823,8 @@ var disp = {
 			} else {
 				disp.ungroupAllEvents();
 			}
+		} else if(e.currentTarget.id == 'sortChannelsByJoinOrder'){
+			gateway.sortChannelTabs();
 		}
 		$('#nicklist').removeAttr('style');
 		$('#chlist').removeAttr('style');

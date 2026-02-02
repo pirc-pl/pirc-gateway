@@ -476,6 +476,8 @@ lang.en = {
 	'setOwnAvatar': 'Set own avatar',
 	'dontShowJoinsQuits': 'Don\'t display PART/JOIN/QUIT messages',
 	'groupEvents': 'Group consecutive join/part/quit/kick/nick/mode messages',
+	'shortModeDisplay': 'Show channel modes as letters',
+	'sortChannelsByJoinOrder': 'Sort channel tabs by join order (default: alphabetical)',
 	'dontShowNickChanges': 'Don\'t display nick changes',
 	'dontShowModes': 'Don\'t display mode changes',
 	'tabListOnBottom': 'Move tab list to the bottom',
