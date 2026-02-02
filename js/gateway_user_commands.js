@@ -134,10 +134,10 @@ var commands = {
 			} else {
 				ircCommand.listChannels(input.substring(input.indexOf(' ')+1));
 			}
-			if(gateway.active != '--status'){
+			// Only show status message if list window is not being used
+			if(!('labeled-response' in activeCaps) && gateway.active != '--status'){
 				gateway.getActive().appendMessage(language.messagePatterns.listShown, [$$.niceTime()]);
 			}
-		//	disp.listWindowShow();
 		}
 	},
 	'cs': {
