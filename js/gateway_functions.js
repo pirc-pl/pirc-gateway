@@ -784,25 +784,25 @@ var disp = {
 		if(e.currentTarget.id == 'setUmodeD') {
 			if($('#setUmodeD').is(':checked')){
 				$('#setUmodeR').prop('checked', true);
-				gateway.send('MODE '+guser.nick+' +R');
+				ircCommand.umode('+R');
 				if(!guser.umodes.D){
-					gateway.send('MODE '+guser.nick+' +D');
+					ircCommand.umode('+D');
 				}
 			} else {
 				if(guser.umodes.D){
-					gateway.send('MODE '+guser.nick+' -D');
+					ircCommand.umode('-D');
 				}
 			}
 		} else if(e.currentTarget.id == 'setUmodeR') {
 			if(!$('#setUmodeR').is(':checked')){
 				$('#setUmodeD').prop('checked', false);
-				gateway.send('MODE '+guser.nick+' -D');
+				ircCommand.umode('-D');
 				if(guser.umodes.R){
-					gateway.send('MODE '+guser.nick+' -R');
+					ircCommand.umode('-R');
 				}
 			} else {
 				if(!guser.umodes.R){
-					gateway.send('MODE '+guser.nick+' +R');
+					ircCommand.umode('+R');
 				}
 			}
 		} else if(e.currentTarget.id == 'setLanguage') {
@@ -1104,7 +1104,8 @@ var disp = {
 			'</td></tr>';
 		$('table', $$.getDialogSelector('list', 'list-'+mode+'-'+args[1])).append(html);
 		$('#un'+mode+'-'+chanId+'-'+md5(args[2])).click(function(){
-			gateway.send('MODE '+args[1]+' -'+mode+' '+args[2]+'\r\nMODE '+args[1]+' '+mode);
+			ircCommand.mode(args[1], '-'+mode+' '+args[2]);
+			ircCommand.mode(args[1], mode);
 			$$.closeDialog('list', 'list-'+mode+'-'+args[1]);
 		});
 	},
@@ -1733,7 +1734,7 @@ var $$ = {
 					} else {
 						var append = '';
 						var link = $$.correctLink(currLink);
-						newText += '<a href="javascript:gateway.send(\'JOIN '+bsEscape(link.link)+'\')"' + confirmChan + '>'+link.text+'</a>' + c + link.append;
+						newText += '<a href="javascript:ircCommand.channelJoin(\''+bsEscape(link.link)+'\')"' + confirmChan + '>'+link.text+'</a>' + c + link.append;
 						state = stateText;
 					}
 					break;
@@ -1756,7 +1757,7 @@ var $$ = {
 		}
 		if(state == stateChannel){
 			var link = $$.correctLink(currLink);
-			newText += '<a href="javascript:gateway.send(\'JOIN '+bsEscape(link.link)+'\')"' + confirmChan + '>'+link.text+'</a>' + link.append;
+			newText += '<a href="javascript:ircCommand.channelJoin(\''+bsEscape(link.link)+'\')"' + confirmChan + '>'+link.text+'</a>' + link.append;
 		}
 		return newText;
 	},

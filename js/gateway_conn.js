@@ -349,9 +349,8 @@ var conn = {
 		$(window).on('beforeunload', function() {
 			if (gateway.connectStatus != 'disconnected') {
 				if ($('#autoDisconnect').is(':checked')) {
-					gateway.send('QUIT :'+language.userClosedPage);
+					ircCommand.quit(language.userClosedPage);
 					gateway.userQuit = true;
-					gateway.connectStatus = 'disconnected';
 				} else {
 					gateway.clickQuit();
 					return language.youreStillConnected;

@@ -36,10 +36,11 @@ var commands = {
 				}
 			} ];
 			$$.displayDialog('connect', 'reconnect', language.disconnected, '<p>' + language.disconnectOnRequest + '<p>', button);
-			if (input.slice(1).substr(command[0].length+1) != "") {
-				gateway.send("QUIT :" + input.slice(1).substr(command[0].length+1));
+			var quitMessage = input.slice(1).substr(command[0].length+1);
+			if (quitMessage != "") {
+				ircCommand.quit(quitMessage);
 			} else {
-				gateway.send("\r\nQUIT");
+				ircCommand.quit();
 			}
 		}
 	},
@@ -60,9 +61,9 @@ var commands = {
 		'custom': [],
 		'callback': function(command, input) {
 			if(!command[1]){
-				gateway.send('AWAY');
+				ircCommand.away();
 			} else {
-				gateway.send('AWAY '+input.substring(input.indexOf(' ')));
+				ircCommand.away(input.substring(input.indexOf(' ')+1));
 			}
 		}
 	},
@@ -75,7 +76,7 @@ var commands = {
 		'custom': [],
 		'callback': function(command, input) {
 			if(command[1]) {
-				gateway.send("NICK "+command[1]);
+				ircCommand.changeNick(command[1]);
 			} else {
 				gateway.notEnoughParams("nick", language.youHaveToGiveNewNick);
 			}
@@ -129,9 +130,9 @@ var commands = {
 		'custom': [],
 		'callback': function(command, input) {
 			if(!command[1] || command[1] == '-YES'){
-				gateway.send('LIST');
+				ircCommand.listChannels();
 			} else {
-				gateway.send('LIST '+input.substring(input.indexOf(' ')));
+				ircCommand.listChannels(input.substring(input.indexOf(' ')+1));
 			}
 			if(gateway.active != '--status'){
 				gateway.getActive().appendMessage(language.messagePatterns.listShown, [$$.niceTime()]);
@@ -192,7 +193,7 @@ var commands = {
 			if (command[1]) {
 				if (command[1].indexOf('#') == 0) {
 					if(!command[2]) {
-						gateway.send("TOPIC "+command[1]);
+						ircCommand.channelTopic(command[1]);
 					} else {
 						var reason = '';
 						if(command[2]) {
@@ -203,11 +204,7 @@ var commands = {
 								reason += command[i];
 							}
 						}
-						if(reason) {
-							gateway.send("TOPIC "+command[1]+" :"+reason);
-						} else {
-							gateway.send("TOPIC "+command[1]);
-						}
+						ircCommand.channelTopic(command[1], reason);
 					}
 				} else {
 					if (gateway.getActive()) {
@@ -220,18 +217,14 @@ var commands = {
 								reason += command[i];
 							}
 						}
-						if(reason) {
-							gateway.send("TOPIC "+gateway.active+" :"+reason);
-						} else {
-							gateway.send("TOPIC "+gateway.active);
-						}
+						ircCommand.channelTopic(gateway.active, reason);
 					} else {
 						gateway.notEnoughParams("topic", language.youHaveToGiveChanFirstArg);
 					}
 				}
 			} else {
 				if (gateway.getActive()) {
-					gateway.send("TOPIC "+gateway.active);
+					ircCommand.channelTopic(gateway.active);
 				} else {
 					gateway.notEnoughParams("topic", language.youHaveToGiveChanFirstArg);
 				}
@@ -248,9 +241,9 @@ var commands = {
 		'callback': function(command, input) {
 			if (command[1] != "") {
 				if (command[2] && command[2] != '') {
-					gateway.send("JOIN "+command[1]+" "+command[2]);
+					ircCommand.channelJoin(command[1], command[2]);
 				} else {
-					gateway.send("JOIN "+command[1]);
+					ircCommand.channelJoin(command[1]);
 				}
 				if(gateway.findChannel(command[1].toLowerCase())) {
 					gateway.switchTab(command[1].toLowerCase());
@@ -270,9 +263,9 @@ var commands = {
 				return;
 			}
 			if(!command[2]){
-				gateway.send('INVITE '+command[1]+' '+gateway.active);
+				ircCommand.channelInvite(gateway.active, command[1]);
 			} else {
-				gateway.send('INVITE '+command[1]+' '+command[2]);
+				ircCommand.channelInvite(command[2], command[1]);
 			}
 		}
 	},
@@ -282,7 +275,7 @@ var commands = {
 		'custom': [],
 		'callback': function(command, input) {
 			if (command[1] != "") {
-				gateway.send("KNOCK "+command[1]);
+				ircCommand.channelKnock(command[1]);
 			} else {
 				gateway.notEnoughParams("knock", language.youHaveToGiveKnockChan);
 			}
@@ -349,7 +342,7 @@ var commands = {
 			if (command[1]) {
 				if (command[1].indexOf('#') == 0) {
 					if(!command[2]) {
-						gateway.send("PART "+command[1]);
+						ircCommand.channelPart(command[1]);
 					} else {
 						var reason = '';
 						if(command[2]) {
@@ -360,11 +353,7 @@ var commands = {
 								reason += command[i];
 							}
 						}
-						if(reason) {
-							gateway.send("PART "+command[1]+" :"+reason);
-						} else {
-							gateway.send("PART "+command[1]);
-						}
+						ircCommand.channelPart(command[1], reason);
 						gateway.removeChannel(command[1].toLowerCase())
 					}
 				} else {
@@ -378,11 +367,7 @@ var commands = {
 								reason += command[i];
 							}
 						}
-						if(reason) {
-							gateway.send("PART "+gateway.active+" :"+reason);
-						} else {
-							gateway.send("PART "+gateway.active);
-						}
+						ircCommand.channelPart(gateway.active, reason);
 						gateway.removeChannel(gateway.active.toLowerCase())
 					} else {
 						gateway.notEnoughParams("part", language.youHaveToGivePartChan);
@@ -390,7 +375,7 @@ var commands = {
 				}
 			} else {
 				if (gateway.getActive()) {
-					gateway.send("PART "+gateway.active);
+					ircCommand.channelPart(gateway.active);
 				} else {
 					gateway.notEnoughParams("part", language.youHaveToGivePartChan);
 				}
@@ -416,11 +401,7 @@ var commands = {
 								reason += command[i];
 							}
 						}
-						if(reason) {
-							gateway.send("KICK "+command[1]+" "+command[2]+" :"+reason);
-						} else {
-							gateway.send("KICK "+command[1]+" "+command[2]);
-						}
+						ircCommand.channelKick(command[1], command[2], reason);
 					}
 				} else {
 					if (gateway.getActive()) {
@@ -433,11 +414,7 @@ var commands = {
 								reason += command[i];
 							}
 						}
-						if(reason) {
-							gateway.send("KICK "+gateway.active+" "+command[1]+" :"+reason);
-						} else {
-							gateway.send("KICK "+gateway.active+" "+command[1]);
-						}
+						ircCommand.channelKick(gateway.active, command[1], reason);
 					} else {
 						gateway.notEnoughParams("kick", language.youHaveToGiveKickChan);
 					}
@@ -521,11 +498,11 @@ var commands = {
 			if(command[1]) {
 				if(command[2]) {
 					if (command[1].indexOf('#') == 0) {
-						gateway.send("MODE "+command[1]+" -a "+command[2]);
+						ircCommand.mode(command[1], '-a '+command[2]);
 					}
 				} else {
 					if(gateway.getActive()) {
-						gateway.send("MODE "+gateway.active+" -a "+command[1]);
+						ircCommand.mode(gateway.active, '-a '+command[1]);
 					} else {
 						gateway.notEnoughParams("deprotect", language.youHaveToGiveChannelToTakeGivePerms);
 					}
@@ -543,11 +520,11 @@ var commands = {
 			if(command[1]) {
 				if(command[2]) {
 					if (command[1].indexOf('#') == 0) {
-						gateway.send("MODE "+command[1]+" +a "+command[2]);
+						ircCommand.mode(command[1], '+a '+command[2]);
 					}
 				} else {
 					if(gateway.getActive()) {
-						gateway.send("MODE "+gateway.active+" +a "+command[1]);
+						ircCommand.mode(gateway.active, '+a '+command[1]);
 					} else {
 						gateway.notEnoughParams("protect", language.youHaveToGiveChannelToTakeGivePerms);
 					}
@@ -565,11 +542,11 @@ var commands = {
 			if(command[1]) {
 				if(command[2]) {
 					if (command[1].indexOf('#') == 0) {
-						gateway.send("MODE "+command[1]+" +o "+command[2]);
+						ircCommand.mode(command[1], '+o '+command[2]);
 					}
 				} else {
 					if(gateway.getActive()) {
-						gateway.send("MODE "+gateway.active+" +o "+command[1]);
+						ircCommand.mode(gateway.active, '+o '+command[1]);
 					} else {
 						gateway.notEnoughParams("op", language.youHaveToGiveChannelToTakeGivePerms);
 					}
@@ -587,11 +564,11 @@ var commands = {
 			if(command[1]) {
 				if(command[2]) {
 					if (command[1].indexOf('#') == 0) {
-						gateway.send("MODE "+command[1]+" -o "+command[2]);
+						ircCommand.mode(command[1], '-o '+command[2]);
 					}
 				} else {
 					if(gateway.getActive()) {
-						gateway.send("MODE "+gateway.active+" -o "+command[1]);
+						ircCommand.mode(gateway.active, '-o '+command[1]);
 					} else {
 						gateway.notEnoughParams("deop", language.youHaveToGiveChannelToTakeGivePerms);
 					}
@@ -609,11 +586,11 @@ var commands = {
 			if(command[1]) {
 				if(command[2]) {
 					if (command[1].indexOf('#') == 0) {
-						gateway.send("MODE "+command[1]+" +v "+command[2]);
+						ircCommand.mode(command[1], '+v '+command[2]);
 					}
 				} else {
 					if(gateway.getActive()) {
-						gateway.send("MODE "+gateway.active+" +v "+command[1]);
+						ircCommand.mode(gateway.active, '+v '+command[1]);
 					} else {
 						gateway.notEnoughParams("voice", language.youHaveToGiveChannelToTakeGivePerms);
 					}
@@ -631,11 +608,11 @@ var commands = {
 			if(command[1]) {
 				if(command[2]) {
 					if (command[1].indexOf('#') == 0) {
-						gateway.send("MODE "+command[1]+" -v "+command[2]);
+						ircCommand.mode(command[1], '-v '+command[2]);
 					}
 				} else {
 					if(gateway.getActive()) {
-						gateway.send("MODE "+gateway.active+" -v "+command[1]);
+						ircCommand.mode(gateway.active, '-v '+command[1]);
 					} else {
 						gateway.notEnoughParams("devoice", language.youHaveToGiveChannelToTakeGivePerms);
 					}
@@ -652,10 +629,10 @@ var commands = {
 		'callback': function(command, input) {
 			if(command[1]) {
 				if (!command[1].indexOf('-') == 0 && !command[1].indexOf('+') == 0) {
-					gateway.send("MODE " + input.slice(1).substr(command[0].length+1));
+					ircCommand.mode(command[1], input.slice(1).substr(command[0].length+1+command[1].length+1));
 				} else {
 					if (gateway.findChannel(gateway.active)) {
-						 gateway.send("MODE " + gateway.active + " " + input.slice(1).substr(command[0].length+1));
+						ircCommand.mode(gateway.active, input.slice(1).substr(command[0].length+1));
 					} else {
 						gateway.notEnoughParams("mode", language.youHaveToGiveChanOrNick);
 					}

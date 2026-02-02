@@ -260,9 +260,27 @@ var ircCommand = {
 		ircCommand.mode(guser.nick, args);
 	},
 	'quit': function(text){
-		ircCommand.performQuick('QUIT', [], text);
+		if(text){
+			ircCommand.performQuick('QUIT', [], text);
+		} else {
+			ircCommand.performQuick('QUIT');
+		}
 		gateway.connectStatus = 'disconnected';
 		ircCommand.flushCmdQueue();
+	},
+	'away': function(text){
+		if(text){
+			ircCommand.perform('AWAY', [], text);
+		} else {
+			ircCommand.perform('AWAY');
+		}
+	},
+	'channelPart': function(channel, reason){
+		if(reason){
+			ircCommand.perform('PART', [channel], reason);
+		} else {
+			ircCommand.perform('PART', [channel]);
+		}
 	},
 	'whois': function(nick){
 		ircCommand.perform('WHOIS', [nick, nick]);
