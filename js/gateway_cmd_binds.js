@@ -995,6 +995,12 @@ var cmdBinds = {
 				gateway.smallListData.push([msg.args[1], msg.args[2], $$.colorize(msg.text, true)]);
 				return;
 			}
+			// Check if this belongs to a list window (labeled-response)
+			if(gateway.listWindow && gateway.listWindow.loading){
+				gateway.listWindow.addEntry(msg.args[1], msg.args[2], msg.text || '');
+				return;
+			}
+			// Fallback to status window display
 			if (!msg.text) {
 				var outtext = '<i>(' + language.noTopic + ')</i>'; // Na wypadek jakby topic nie był ustawiony.
 			} else {
@@ -1010,6 +1016,12 @@ var cmdBinds = {
 	],
 	'323': [	// RPL_ENDOFLIST
 		function(msg){
+			// Check if this belongs to a list window
+			if(gateway.listWindow && gateway.listWindow.loading){
+				gateway.listWindow.render();
+				gateway.listWindowLabel = null;
+				return;
+			}
 			if(!gateway.smallListLoading){
 				return;
 			}

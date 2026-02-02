@@ -1038,3 +1038,153 @@ function typingHandler(tab){
 	};
 }
 
+function ListWindow() {
+	this.name = "--list";
+	this.id = "--list-" + Math.round(Math.random()*100);
+	this.hilight = false;
+	this.classAdded = false;
+	this.scrollPos = 0;
+	this.scrollSaved = false;
+	this.data = [];
+	this.loading = false;
+	this.sortColumn = 1; // Default sort by user count
+	this.sortAsc = false; // Default descending
+
+	this.toggleClass = function() {
+		if(this.ClassAdded) {
+			$('#'+this.id+'-tab').removeClass('newmsg');
+			this.ClassAdded = false;
+		} else if(this.hilight) {
+			$('#'+this.id+'-tab').addClass('newmsg');
+			this.ClassAdded = true;
+		}
+	};
+	this.markNew = function() {
+		if(!this.hilight) {
+			this.hilight = window.setInterval(function(){ gateway.listWindow.toggleClass(); }, 500);
+		}
+	};
+	this.markRead = function() {
+		if(this.hilight) {
+			window.clearInterval(this.hilight);
+			this.hilight = false;
+		}
+		if(this.classAdded) {
+			this.toggleClass();
+		}
+		$('#'+this.id+'-tab > a').css('font-weight', 'normal');
+		setTimeout("$('#"+this.id+"-tab').removeClass('newmsg')", 100);
+	};
+	this.restoreScroll = function() {
+		if(gateway.active != this.name) return;
+		if(this.scrollSaved) {
+			$('#chat-wrapper').scrollTop(this.scrollPos);
+		} else {
+			$('#chat-wrapper').scrollTop(0);
+		}
+	};
+	this.saveScroll = function() {
+		if($('#chat-wrapper').scrollTop() < 150) {
+			this.scrollSaved = false;
+			this.scrollPos = 0;
+		} else {
+			this.scrollSaved = true;
+			this.scrollPos = $('#chat-wrapper').scrollTop();
+		}
+	};
+	this.setMark = function() {
+		// List window doesn't need read marks
+	};
+	this.close = function() {
+		$('#'+this.id+'-tab').remove();
+		$('#'+this.id+'-window').remove();
+		$('#'+this.id+'-topic').remove();
+		$('#'+this.id+'-chstats').remove();
+		$('#'+this.id+'-tab-info').remove();
+		if(this.name == gateway.active) {
+			gateway.switchTab(gateway.tabHistoryLast(this.name));
+		}
+		gateway.listWindow = null;
+	};
+	this.clearData = function() {
+		this.data = [];
+		this.loading = true;
+		$('#'+this.id+'-window').html('<div class="listWindowLoading">' + language.loadingWait + '</div>');
+	};
+	this.addEntry = function(channel, users, topic) {
+		this.data.push([channel, parseInt(users), topic]);
+	};
+	this.render = function() {
+		this.loading = false;
+		if(this.data.length == 0) {
+			$('#'+this.id+'-window').html('<div class="listWindowEmpty">' + language.noChannelsFound + '</div>');
+			return;
+		}
+		this.sortData();
+		var html = '<table class="listWindowTable">';
+		html += '<thead><tr>';
+		html += '<th class="listWindowChannel" data-col="0">' + language.channelListChannel + ' ' + this.getSortIndicator(0) + '</th>';
+		html += '<th class="listWindowUsers" data-col="1">' + language.channelListUsers + ' ' + this.getSortIndicator(1) + '</th>';
+		html += '<th class="listWindowTopic" data-col="2">' + language.channelListTopic + ' ' + this.getSortIndicator(2) + '</th>';
+		html += '</tr></thead><tbody>';
+		for(var i = 0; i < this.data.length; i++) {
+			var item = this.data[i];
+			var channelName = item[0];
+			var userCount = item[1];
+			var topic = item[2];
+			if(channelName == '*') {
+				html += '<tr><td class="listWindowChannel"><i>(' + language.channelHidden + ')</i></td>';
+				html += '<td class="listWindowUsers">' + he(userCount) + '</td>';
+				html += '<td class="listWindowTopic"><i>(' + language.topicHidden + ')</i></td></tr>';
+			} else {
+				html += '<tr><td class="listWindowChannel"><a href="javascript:ircCommand.channelJoin(\'' + bsEscape(channelName) + '\')">' + he(channelName) + '</a></td>';
+				html += '<td class="listWindowUsers">' + he(userCount) + '</td>';
+				html += '<td class="listWindowTopic">' + $$.colorize(topic) + '</td></tr>';
+			}
+		}
+		html += '</tbody></table>';
+		$('#'+this.id+'-window').html(html);
+		// Bind header click events for sorting
+		var self = this;
+		$('#'+this.id+'-window .listWindowTable thead th').click(function() {
+			var col = parseInt($(this).attr('data-col'));
+			if(self.sortColumn == col) {
+				self.sortAsc = !self.sortAsc;
+			} else {
+				self.sortColumn = col;
+				self.sortAsc = (col == 0); // Asc for channel name, desc for others
+			}
+			self.render();
+		});
+	};
+	this.sortData = function() {
+		var col = this.sortColumn;
+		var asc = this.sortAsc;
+		this.data.sort(function(a, b) {
+			var valA = a[col];
+			var valB = b[col];
+			if(typeof valA === 'string') {
+				valA = valA.toLowerCase();
+				valB = valB.toLowerCase();
+			}
+			if(valA < valB) return asc ? -1 : 1;
+			if(valA > valB) return asc ? 1 : -1;
+			return 0;
+		});
+	};
+	this.getSortIndicator = function(col) {
+		if(this.sortColumn != col) return '';
+		return this.sortAsc ? '▲' : '▼';
+	};
+
+	// Create DOM elements
+	$('<span/>').attr('id', this.id+'-window').addClass('listWindowContent').hide().appendTo('#main-window');
+	$('<span/>').attr('id', this.id+'-topic').hide().appendTo('#info');
+	$('<span/>').attr('id', this.id+'-tab-info').hide().appendTo('#tab-info');
+	$('#'+this.id+'-topic').html('<h1>' + language.channelListTitle + '</h1><h2></h2>');
+	$('<li/>').attr('id', this.id+'-tab').html('<a href="javascript:void(0);" class="switchTab" id="' + this.id + '-tab-switch">' + language.channelListTitle + '</a><a href="javascript:void(0);" id="' + this.id + '-tab-close"><div class="close" title="' + language.close + '"></div></a>').appendTo('#tabs');
+	$('#'+this.id+'-tab-switch').click(function(){ gateway.switchTab(this.name); }.bind(this));
+	$('#'+this.id+'-tab-close').click(function(){ this.close(); }.bind(this));
+	$('#chstats').append('<div class="chstatswrapper" id="'+this.id+'-chstats"><span class="chstats-text symbolFont">' + language.channelListTitle + '</span></div>');
+}
+

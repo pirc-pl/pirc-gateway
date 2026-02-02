@@ -1046,6 +1046,44 @@ var gateway = {
 				}, 200);
 			}
 			gateway.findQuery(chan).markRead();
+		} else if(gateway.listWindow && chan == gateway.listWindow.name) {
+			var id = gateway.listWindow.id;
+			$('#main-window > span').hide();
+			$('#tab-info > span').hide();
+			$('#nicklist-main > span').hide();
+			$('#info > span').hide();
+			$('#chstats > div').hide();
+			$('#--status-nicklist').show();
+			$('#tabs > li').removeClass("activeWindow");
+			$('#'+id+'-tab').addClass("activeWindow");
+			$('#'+id+'-window').show();
+			$('#'+id+'-topic').show();
+			$('#'+id+'-chstats').show();
+			$('#'+id+'-tab-info').show();
+			gateway.listWindow.markRead();
+			gateway.active = chan;
+			gateway.tabHistory.push(chan);
+			$('#input').focus();
+			if($("#nicklist").width() > 40) {
+				$("#nicklist").animate({
+					"opacity": "toggle",
+					"width":	"40px"
+				}, 1);
+				$("#chstats").animate({
+					"opacity": "toggle",
+					"width":	"40px"
+				}, 1);
+				$("#chatbox").animate({
+					"width":	"97%"
+				}, 1, function () {
+					$("#nicklist-closed").fadeIn(1);
+					gateway.listWindow.restoreScroll();
+					$('#nickopts').css('display', 'none');
+					$('#chlist').css('display', 'none');
+				});
+			} else {
+				gateway.listWindow.restoreScroll();
+			}
 		} else if(chan == "--status") {
 			$('#main-window > span').hide();
 			$('#tab-info > span').hide();
@@ -1095,8 +1133,11 @@ var gateway = {
 	'tabHistoryLast': function(ignore) {
 		var ignorec = ignore.toLowerCase();
 		for(var i=gateway.tabHistory.length; i > 0; i--) {
-			if(gateway.tabHistory[i] && ((gateway.findChannel(gateway.tabHistory[i]) || gateway.findChannel(gateway.tabHistory[i])) && (!ignorec || ignorec != gateway.tabHistory[i]))) {
-				return gateway.tabHistory[i];
+			var tabName = gateway.tabHistory[i];
+			if(tabName && (!ignorec || ignorec != tabName)) {
+				if(gateway.findChannel(tabName) || gateway.findQuery(tabName) || (gateway.listWindow && tabName == gateway.listWindow.name)) {
+					return tabName;
+				}
 			}
 		}
 		return '--status';
@@ -1636,6 +1677,8 @@ var gateway = {
 			return gateway.findChannel(gateway.active);
 		} else if(gateway.findQuery(gateway.active)) {
 			return gateway.findQuery(gateway.active);
+		} else if(gateway.listWindow && gateway.active == gateway.listWindow.name) {
+			return gateway.listWindow;
 		} else {
 			return false;
 		}
@@ -2174,6 +2217,16 @@ var gateway = {
 	},
 	'smallListLoading': false,
 	'smallListData': [],
+	'listWindow': null,
+	'listWindowLabel': null,
+	'getOrOpenListWindow': function() {
+		if(!gateway.listWindow) {
+			gateway.listWindow = new ListWindow();
+		}
+		gateway.listWindow.clearData();
+		gateway.switchTab(gateway.listWindow.name);
+		return gateway.listWindow;
+	},
 	'toggleChanList': function() {
 		if($('#chlist-body').is(':visible')){
 			$('#chlist-body').css('display', '');

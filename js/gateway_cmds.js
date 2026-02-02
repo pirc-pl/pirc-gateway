@@ -231,10 +231,15 @@ var ircCommand = {
 		ircCommand.perform('NAMES', [chan]);
 	},
 	'listChannels': function(text){
-		if(text){
-			ircCommand.perform('LIST', [text]);
+		var args = text ? [text] : [];
+		if(!gateway.smallListLoading && 'labeled-response' in activeCaps) {
+			// Use labeled-response for full list window
+			var label = gateway.makeLabel();
+			gateway.listWindowLabel = label;
+			gateway.getOrOpenListWindow();
+			ircCommand.perform('LIST', args, false, {'label': label});
 		} else {
-			ircCommand.perform('LIST');
+			ircCommand.perform('LIST', args);
 		}
 	},
 	'changeNick': function(nick){
