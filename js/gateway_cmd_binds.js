@@ -649,7 +649,7 @@ var cmdBinds = {
 				if(channelTab)
 					channelTab.appendMessage(language.messagePatterns.partOwn, [$$.niceTime(msg.time), channel, md5(channel)]);
 				gateway.statusWindow.appendMessage(language.messagePatterns.partOwn, [$$.niceTime(msg.time), channel, md5(channel)]);
-				$('.channelRejoin-'+md5(channel)).click(function(){ gateway.send('JOIN ' + channel); });
+				$('.channelRejoin-'+md5(channel)).click(function(){ ircCommand.channelJoin(channel); });
 				if(channelTab)
 					channelTab.part();
 			}

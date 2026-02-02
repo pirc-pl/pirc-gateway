@@ -143,7 +143,7 @@ function Nicklist(chan, id) {
 		$('<span id="'+this.id+'"></span>').hide().appendTo('#nicklist-main');
 		$('<ul/>').addClass('nicklist').appendTo('#'+this.id);
 	} catch(e) { // FIXME better handling of this exception
-		gateway.send('QUIT :' + language.browserTooOldQuit);
+		ircCommand.quit(language.browserTooOldQuit);
 		$('.not-connected-text > h3').html(language.outdatedBrowser);
 		$('.not-connected-text > p').html(language.outdatedBrowserInfo);
 	}
@@ -214,8 +214,8 @@ function NicklistUser(user, chan) {
 		$('#'+this.id+'-doWhois').click(function(){
 			if(this.user == guser.me)
 				gateway.displayOwnWhois = true;
-			 gateway.send('WHOIS '+this.user.nick+' '+this.user.nick);
-			 gateway.toggleNickOpt(this.id);
+			ircCommand.whois(this.user.nick);
+			gateway.toggleNickOpt(this.id);
 		}.bind(this));
 		$('#'+this.id+'-toggleNickInfo').click(function(){ gateway.toggleNickOptInfo(this.id); }.bind(this));
 		$('#'+this.id+'-doNickservInfo').click(function(){
@@ -622,7 +622,7 @@ function Channel(chan) {
 	this.close = function() {
 		if(!this.left) {
 			this.part();
-			gateway.send("PART "+this.name+" :" + language.leftChannel);
+			ircCommand.channelPart(this.name, language.leftChannel);
 		}
 		this.nicklist.remove();
 		$('#'+this.id+'-tab').remove();
@@ -802,9 +802,9 @@ function Channel(chan) {
 	$('#'+this.id+'-clearWindow').click(this.clearWindow.bind(this));
 	$('#'+this.id+'-redoNames').click(function(){ ircCommand.channelRedoNames(this.name); }.bind(this));
 	$('#'+this.id+'-openOperActions').click(function(){ gateway.toggleChannelOperOpts(this.name); }.bind(this));
-	$('#'+this.id+'-openBanList').click(function(){ gateway.send('MODE '+this.name+' b'); }.bind(this));
-	$('#'+this.id+'-openExceptList').click(function(){ gateway.send('MODE '+this.name+' e'); }.bind(this));
-	$('#'+this.id+'-openInvexList').click(function(){ gateway.send('MODE '+this.name+' I'); }.bind(this));
+	$('#'+this.id+'-openBanList').click(function(){ ircCommand.mode(this.name, 'b'); }.bind(this));
+	$('#'+this.id+'-openExceptList').click(function(){ ircCommand.mode(this.name, 'e'); }.bind(this));
+	$('#'+this.id+'-openInvexList').click(function(){ ircCommand.mode(this.name, 'I'); }.bind(this));
 	$('#'+this.id+'-openChannelModes').click(function(){ gateway.showChannelModes(this.name); }.bind(this));
 	$('#'+this.id+'-showInvitePrompt').click(function(){ gateway.showInvitePrompt(this.name); }.bind(this));
 	$('#'+this.id+'-showChanservCommands').click(function(){ services.showChanServCmds(this.name); }.bind(this));

@@ -177,7 +177,7 @@ var services = {
 		}
 		if(maskMatch(msg.text, 'registeredProtectedNick')){
 			if(gateway.connectStatus == 'ghostAndNickSent'){
-				gateway.send('PRIVMSG NickServ :IDENTIFY '+guser.nickservpass); // TODO sasl?
+				ircCommand.NickServ('IDENTIFY', [guser.nickservpass]); // TODO sasl?
 				gateway.connectStatus = 'identified';
 				return true;
 			}
@@ -595,8 +595,8 @@ var services = {
 			$$.alert(language.youHaveToWaitAnother + timeDiff + language.secondsToRegisterNick);
 			return false;
 		}
-		gateway.send('NS REGISTER '+password+' '+email);
-		gateway.send('NS SET KILL QUICK');
+		ircCommand.NickServ('REGISTER', [password, email]);
+		ircCommand.NickServ('SET', ['KILL', 'QUICK']);
 		return true;
 	},
 	/*'setCloak': function(){
@@ -627,7 +627,7 @@ var services = {
 		}, {
 			text: language.proceed,
 			click: function(){
-				gateway.send('HS REQUEST '+$('#newVhost').val());
+				ircCommand.serviceCommand('HostServ', 'REQUEST', [$('#newVhost').val()]);
 				$(this).dialog('close');
 			}
 		} ];

@@ -74,7 +74,7 @@ lang.en = {
 		'SaslAuthenticate': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="sinfo"><span class="symbolFont">🔧</span> %s</span></div>',
 		'ctcpRequest': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">✯</span> <span class="modeinfo">%s</span> is sending CTCP REQUEST: %s</span></div>',
 		'ctcpReply': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="notice"><span class="symbolFont">✯</span> <b>CTCP REPLY from %s:</b> %s</span></div>',
-		'chanListElement': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="notice"><span class="symbolFont">✯</span> <b><a href="#" onClick="gateway.send(\'JOIN %s\')">%s</a></b> (%s) - %s </span> </div>',
+		'chanListElement': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="notice"><span class="symbolFont">✯</span> <b><a href="#" onClick="ircCommand.channelJoin(\'%s\')">%s</a></b> (%s) - %s </span> </div>',
 		'chanListElementHidden': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="notice"><span class="symbolFont">✯</span> <b>(channel hidden)</b> (%s) - (topic hidden) </span> </div>',
 		'error': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"> <span class="symbolFont">⮿</span> Disconnected from server: %s</span></div>',
 		'existingConnection': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">✯</span> Connection already exists, joining it.</span></div>',
