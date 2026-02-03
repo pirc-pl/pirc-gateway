@@ -152,13 +152,13 @@ var colorSettingsChange = function(){
 	}
 }
 
-var mcolorMetadataChanged = function(user, key, value){
-	if(user == guser.me)
-		setMyColor(value, true);
+var mcolorMetadataChanged = function(data){
+	if(data.user == guser.me)
+		setMyColor(data.value, true);
 }
 
-insertBinding(cmdBinds, '001', mcolorMetadataSet);
-insertBinding(metadataBinds, 'color', mcolorMetadataChanged);
+ircEvents.on('cmd:001', mcolorMetadataSet);
+ircEvents.on('metadata:color', mcolorMetadataChanged);
 messageProcessors.push(colorMessage);
 nickColorProcessors.push(colorNick);
 settingProcessors.push(colorSettingsChange);

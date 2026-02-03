@@ -3092,9 +3092,7 @@ var hooks = {
 	 * @returns {function} Unsubscribe function
 	 */
 	onCommand: function(command, handler, options) {
-		var unsub = ircEvents.on('cmd:' + command, handler, options);
-		insertBinding(cmdBinds, command, handler);
-		return unsub;
+		return ircEvents.on('cmd:' + command, handler, options);
 	},
 	/**
 	 * Register metadata change handler
@@ -3104,9 +3102,7 @@ var hooks = {
 	 * @returns {function} Unsubscribe function
 	 */
 	onMetadata: function(key, handler, options) {
-		var unsub = ircEvents.on('metadata:' + key, handler, options);
-		insertBinding(metadataBinds, key, handler);
-		return unsub;
+		return ircEvents.on('metadata:' + key, handler, options);
 	},
 	/**
 	 * Add message text processor
@@ -3123,9 +3119,7 @@ var hooks = {
 	 * @returns {function} Unsubscribe function
 	 */
 	onCtcp: function(ctcp, handler, options) {
-		var unsub = ircEvents.on('ctcp:' + ctcp, handler, options);
-		insertBinding(ctcpBinds, ctcp, handler);
-		return unsub;
+		return ircEvents.on('ctcp:' + ctcp, handler, options);
 	},
 	/**
 	 * Register batch handler
@@ -3135,9 +3129,7 @@ var hooks = {
 	 * @returns {function} Unsubscribe function
 	 */
 	onBatch: function(type, handler, options) {
-		var unsub = ircEvents.on('batch:' + type, handler, options);
-		insertBinding(batchBinds, type, handler);
-		return unsub;
+		return ircEvents.on('batch:' + type, handler, options);
 	},
 	/**
 	 * Direct event registration (for custom events)
