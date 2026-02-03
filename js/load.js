@@ -69,14 +69,6 @@ var languageFiles = [
 var ranid = Math.floor(Math.random() * 10000);
 
 /**
- * readyFunctions: Array of functions to execute when all scripts are loaded.
- * Each script file pushes its initialization functions to this array.
- * All functions are executed by readyFunc() after all scripts load.
- * Example: readyFunctions.push(myInitFunction);
- */
-var readyFunctions = [];
-
-/**
  * Helper function to load a script file sequentially with proper error tracking
  * @param {string} src - The script source URL
  * @param {string} description - Human-readable description for error messages
@@ -130,14 +122,12 @@ function loadStylesheet(href, description) {
 /**
  * Load addon modules after language files are loaded.
  * Addons can extend language objects (lang.pl, lang.en) with their own translations.
- * Addons can push their initialization functions to the readyFunctions array
- * (defined in load.js), which will be executed after all scripts load.
  */
 function loadAddons() {
 	try {
 		if (typeof mainSettings === 'undefined' || !mainSettings.modules) {
 			console.warn('[load.js] mainSettings.modules not available, skipping addons');
-			executeReadyFunctions();
+			readyFunc(); // No addons, proceed to ready state
 			return;
 		}
 
@@ -145,8 +135,8 @@ function loadAddons() {
 		var addonIndex = 0;
 		function loadNextAddon() {
 			if (addonIndex >= mainSettings.modules.length) {
-				// All addons loaded, now execute ready functions
-				executeReadyFunctions();
+				// All addons loaded, now execute ready function
+				readyFunc();
 				return;
 			}
 			var modname = mainSettings.modules[addonIndex];
@@ -202,23 +192,6 @@ function loadLanguageFiles() {
 	}
 
 	loadNextLang();
-}
-
-/**
- * Execute all ready functions after scripts are loaded
- * This replaces the jQuery $(document).ready() approach
- */
-function executeReadyFunctions() {
-	console.log('[load.js] All scripts loaded, executing ready functions');
-
-	// Wait a short moment to ensure all script execution contexts are complete
-	setTimeout(function() {
-		if (typeof readyFunc === 'function') {
-			readyFunc();
-		} else {
-			console.error('[load.js] readyFunc is not defined');
-		}
-	}, 50);
 }
 
 /**

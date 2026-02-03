@@ -71,11 +71,6 @@ function ircBatch(name, type, args, msg){
 	}
 }
 
-// Legacy bind objects - kept empty for backward compatibility
-var batchBinds = {};
-var cmdBinds = {};
-var ctcpBinds = {};
-
 // ============================================================================
 // BATCH HANDLERS
 // ============================================================================

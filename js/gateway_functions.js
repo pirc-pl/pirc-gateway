@@ -137,10 +137,7 @@ function setEnvironment(){
 	}
 }
 
-window.messageProcessors = []; //function (src, dst, text) returns new_text
-window.nickColorProcessors = []; //function (nick)
-window.settingProcessors = []; //function ()
-window.metadataBinds = {};
+
 window.addons = [];
 var loaded = false;
 
@@ -260,10 +257,9 @@ var ircEvents = new IRCEventEmitter();
 window.ircEvents = ircEvents;
 
 // Register initialization functions defined in this file
-// readyFunctions array is defined in load.js
-readyFunctions.push(setEnvironment);
-readyFunctions.push(fillEmoticonSelector);
-readyFunctions.push(fillColorSelector);
+ircEvents.on('system:ready', setEnvironment);
+ircEvents.on('system:ready', fillEmoticonSelector);
+ircEvents.on('system:ready', fillColorSelector);
 
 var readyFunc = function(){
 	if(loaded) return;
@@ -285,11 +281,8 @@ var readyFunc = function(){
 		$('div#wrapper').html('');
 	} else {
 		loaded = true;
-		for(f in readyFunctions){
-			try {
-				readyFunctions[f]();
-			} catch(e) {}
-		}
+		console.log('[gateway_functions.js] Emitting system:ready');
+		ircEvents.emit('system:ready');
 	}
 }
 
@@ -884,9 +877,7 @@ var disp = {
 		} else {
 			document.documentElement.style.setProperty('--emoji-scale', '1.8');
 		}
-		for(i in settingProcessors){
-			settingProcessors[i]();
-		}
+		ircEvents.emit('settings:changed');
 		if(!e){
 			return;
 		}
@@ -1488,12 +1479,10 @@ var $$ = {
 			case 13: color = '#008100'; break;
 			case 14: color = '#959595'; break;
 		}
-		for(a in nickColorProcessors){
-			var ret = nickColorProcessors[a](nick);
-			if(ret){
-				color = ret;
-			}
-		}
+		// Emit event for nick color processing
+		var colorData = { nick: nick, color: color };
+		ircEvents.emit('nick:color', colorData);
+		color = colorData.color;
 
 	// Sanitize and adjust color for contrast with current theme background
 	if(color){

@@ -136,12 +136,15 @@ var colorMessage = function(src, dst, text){
 	return text;
 }
 
-var colorNick = function(nick){
+var colorNick = function(colorData){
 	if(!$('#mcolorEnable').is(':checked')){
 		return false;
 	}
-	return getColor(nick);
-}
+	var color = getColor(colorData.nick);
+	if(color){
+		colorData.color = color;
+	}
+};
 
 var colorSettingsChange = function(){
 	var checked = $('#mcolorEnable').is(':checked');
@@ -159,9 +162,9 @@ var mcolorMetadataChanged = function(data){
 
 ircEvents.on('cmd:001', mcolorMetadataSet);
 ircEvents.on('metadata:color', mcolorMetadataChanged);
-messageProcessors.push(colorMessage);
-nickColorProcessors.push(colorNick);
-settingProcessors.push(colorSettingsChange);
+hooks.addMessageProcessor(colorMessage);
+ircEvents.on('nick:color', colorNick);
+ircEvents.on('settings:changed', colorSettingsChange);
 commands['mycolor'] = {
 	'channels': false,
 	'nicks': false,
@@ -231,6 +234,6 @@ var mcolorInit = function(){
 	});*/
 }
 
-readyFunctions.push(mcolorInit);
+ircEvents.on('system:ready', mcolorInit);
 addons.push('mcolor');
 

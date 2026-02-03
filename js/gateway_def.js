@@ -472,24 +472,9 @@ var gateway = {
 				// Emit to new event system first
 				var continueProcessing = ircEvents.emit('cmd:' + command, msg);
 
-				// Continue with legacy handlers if not stopped
-				if(continueProcessing) {
-					if(command in cmdBinds) {
-						if(cmdBinds[command].length == 0){ // implementation empty
-							cmdNotImplemented(msg);
-						} else {
-							for(func in cmdBinds[command]) {
-								try {
-									cmdBinds[command][func](msg);
-								} catch(handlerError) {
-									console.error('Error in handler for ' + command + '[' + func + ']:', handlerError);
-								}
-							}
-						}
-					} else if(!ircEvents.hasListeners('cmd:' + command)) {
-						// Only show not implemented if no handlers at all
-						cmdNotImplemented(msg);
-					}
+				if(!ircEvents.hasListeners('cmd:' + command)) {
+					// Only show not implemented if no handlers at all
+					cmdNotImplemented(msg);
 				}
 			} catch(error) {
 				console.error('Error processing message!', msg, error);
@@ -2559,13 +2544,11 @@ var gateway = {
 		}
 		if(nickInfo.length > 0)
 			nick = '<span title="' + nickInfo + '">' + nick + '</span>';
-		for(f in messageProcessors){
-			try {
-				message = messageProcessors[f](sender.nick, dest, message);
-			} catch(e) {
-				console.error('Error in message processor:', e);
-			}
-		}
+
+		// Process message through event handlers
+		var messageData = { sender: sender.nick, dest: dest, message: message };
+		ircEvents.emit('message:process', messageData);
+		message = messageData.message;
 
 //		$('[data-msgid="'+msgid+'"]').remove(); // drop the message from backlog field
 
@@ -2960,13 +2943,6 @@ var gateway = {
 	}
 }
 
-var insertBinding = function(list, item, handler){
-	if(list[item]){
-		list[item].push(handler);
-	} else {
-		list[item] = [ handler ];
-	}
-}
 
 // IRCEventEmitter class and ircEvents instance are defined in gateway_functions.js
 // (must be available before gateway_cmd_binds.js loads)
@@ -2997,8 +2973,12 @@ var hooks = {
 	 * Add message text processor
 	 * @param {function} processor - Function(senderNick, dest, message) returns modified message
 	 */
-	addMessageProcessor: function(processor) {
-		messageProcessors.push(processor);
+	addMessageProcessor: function(processor, options) {
+		// Wrapper to adapt old processor signature to new event data object
+		var handler = function(data) {
+			data.message = processor(data.sender, data.dest, data.message);
+		};
+		return ircEvents.on('message:process', handler, options);
 	},
 	/**
 	 * Register CTCP handler
