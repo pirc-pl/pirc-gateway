@@ -1800,8 +1800,8 @@ function cmdNotImplemented(msg){
 	}
 
 	if(msg.command.charAt(0) == '4'){
-		tab.appendMessage(language.messagePatterns.error, [$$.niceTime(msg.time), text]);
+		tab.appendMessage(language.messagePatterns.unimplementedError, [$$.niceTime(msg.time), text]);
 	} else {
-		tab.appendMessage(language.messagePatterns.unknown, [$$.niceTime(msg.time), text]);
+		tab.appendMessage(language.messagePatterns.unimplemented, [$$.niceTime(msg.time), text]);
 	}
 }
