@@ -1281,6 +1281,34 @@ var disp = {
 			}
 		});
 	},
+	'extendEventGroup': function($summary, newEvents) {
+		var groupId = $summary.data('group-id');
+		if (!groupId) return;
+
+		var isExpanded = $('#hide-' + groupId).is(':visible');
+
+		var oldEvents = [];
+		$('.grouped-event[data-group-id="' + groupId + '"]').each(function(){
+			oldEvents.push($(this));
+		});
+
+		var allEvents = oldEvents.concat(newEvents);
+
+		// Clean up old group
+		$summary.remove();
+		oldEvents.forEach(function($el){
+			$el.removeClass('grouped-event').removeAttr('data-group-id');
+		});
+
+		// Create a new group with all events
+		disp.createEventGroup(allEvents);
+
+		// Restore expanded state if needed
+		var newGroupId = allEvents[0].attr('data-group-id');
+		if(isExpanded && newGroupId){
+			disp.expandEventGroup(newGroupId);
+		}
+	},
 	'groupEvents': function(container){
 		// Group consecutive event messages (>2) into a collapsible summary
 		if($('#showPartQuit').is(':checked')) return; // Don't group when hiding all events
@@ -1289,31 +1317,34 @@ var disp = {
 		var $container = $(container);
 		var $messages = $container.children('.messageDiv');
 		var consecutiveEvents = [];
-		var lastWasEvent = false;
 
 		$messages.each(function(){
 			var $this = $(this);
 			var isEvent = $this.hasClass('event-message');
-			var isGroupSummary = $this.hasClass('event-group-summary');
 
-			if(isGroupSummary) return; // Skip existing summaries
-
-			if(isEvent && !$this.hasClass('grouped-event')){
+			if (isEvent && !$this.hasClass('grouped-event')) {
 				consecutiveEvents.push($this);
-				lastWasEvent = true;
-			} else {
-				// Non-event message encountered, check if we should group previous events
-				if(consecutiveEvents.length > 2){
-					disp.createEventGroup(consecutiveEvents);
+			} else { // Not an event, or a summary, or already grouped
+				if (consecutiveEvents.length > 0) {
+					var prevEl = consecutiveEvents[0].prev();
+					if (prevEl.hasClass('event-group-summary')) {
+						disp.extendEventGroup(prevEl, consecutiveEvents);
+					} else if (consecutiveEvents.length > 2) {
+						disp.createEventGroup(consecutiveEvents);
+					}
 				}
 				consecutiveEvents = [];
-				lastWasEvent = false;
 			}
 		});
 
-		// Handle trailing events at the end
-		if(consecutiveEvents.length > 2){
-			disp.createEventGroup(consecutiveEvents);
+		// After the loop, handle any trailing events
+		if (consecutiveEvents.length > 0) {
+			var prevEl = consecutiveEvents[0].prev();
+			if (prevEl.hasClass('event-group-summary')) {
+				disp.extendEventGroup(prevEl, consecutiveEvents);
+			} else if (consecutiveEvents.length > 2) {
+				disp.createEventGroup(consecutiveEvents);
+			}
 		}
 	},
 	'createEventGroup': function(events){

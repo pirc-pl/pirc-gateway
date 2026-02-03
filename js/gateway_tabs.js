@@ -1051,12 +1051,12 @@ function ListWindow() {
 	this.sortAsc = false; // Default descending
 
 	this.toggleClass = function() {
-		if(this.ClassAdded) {
+		if(this.classAdded) {
 			$('#'+this.id+'-tab').removeClass('newmsg');
-			this.ClassAdded = false;
+			this.classAdded = false;
 		} else if(this.hilight) {
 			$('#'+this.id+'-tab').addClass('newmsg');
-			this.ClassAdded = true;
+			this.classAdded = true;
 		}
 	};
 	this.markNew = function() {
@@ -1073,7 +1073,8 @@ function ListWindow() {
 			this.toggleClass();
 		}
 		$('#'+this.id+'-tab > a').css('font-weight', 'normal');
-		setTimeout("$('#"+this.id+"-tab').removeClass('newmsg')", 100);
+		var tabId = this.id;
+		setTimeout(function(){ $('#'+tabId+'-tab').removeClass('newmsg'); }, 100);
 	};
 	this.restoreScroll = function() {
 		if(gateway.active != this.name) return;
