@@ -1,5 +1,5 @@
-/* Copyright (c) 2020 k4be and the PIRC.pl Team
- * 
+/* Copyright (c) 2020-2026 k4be and the PIRC.pl Team
+ *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
  * "Software"), to deal in the Software without restriction, including
@@ -22,9 +22,14 @@
 
 // Update loading message as soon as DOM is ready (before scripts load)
 // This will be replaced with proper translation once language files are loaded
-$(document).ready(function() {
-	$('.not-connected-text > h3').html('Ładowanie / Loading');
-	$('.not-connected-text > p').html('Ładowanie, proszę czekać... / Loading, please wait...');
+document.addEventListener('DOMContentLoaded', () => {
+	if (!window.WebSocket) {
+		document.querySelector('.not-connected-text > h3').textContent = 'WebSocket not supported';
+		document.querySelector('.not-connected-text > p').textContent = 'Twoja przeglądarka nie obsługuje WebSocket. Użyj nowszej przeglądarki. / Your browser does not support WebSocket. Please use a modern browser.';
+		return;
+	}
+	document.querySelector('.not-connected-text > h3').textContent = 'Ładowanie / Loading';
+	document.querySelector('.not-connected-text > p').textContent = 'Ładowanie, proszę czekać... / Loading, please wait...';
 });
 
 /**
@@ -33,7 +38,7 @@ $(document).ready(function() {
  * - language.js must load before addons (provides lang object)
  * - Language files must load before addons (provides lang.pl and lang.en objects that addons extend)
  * - gateway_functions.js must load before gateway_conn.js (provides decryptPassword/encryptPassword)
- * - gateway_conn.js must load before gateway_def.js (defines conn object)
+ * - gateway_conn.js must load before chat_integrator.js (defines conn object)
  *
  * Load order:
  * 1. Main scripts (scriptFiles array) - loaded sequentially
@@ -41,40 +46,37 @@ $(document).ready(function() {
  * 3. Addons (mainSettings.modules) - loaded after language files, can extend translations
  * 4. Ready functions executed (readyFunctions array)
  */
-var scriptFiles = [
+const scriptFiles = [
 	'/js/gateway_global_settings.js',
 	'/js/language.js',
-	'/js/gateway_functions.js',  // Provides: decryptPassword, encryptPassword, readyFunc; Pushes: setEnvironment, fillEmoticonSelector, fillColorSelector
-	'/js/gateway_conn.js',        // Uses: decryptPassword (line 112); Provides: conn object; Pushes: conn.gatewayInit
-	'/js/gateway_ignore.js',
-	'/js/gateway_services.js',    // Uses: encryptPassword (line 253)
-	'/js/gateway_cmd_binds.js',
-	'/js/gateway_user_commands.js',
-	'/js/gateway_tabs.js',
-	'/js/gateway_cmds.js',
-	'/js/gateway_def.js',          // Uses: encryptPassword (line 657)
-	'/js/gateway_users.js',
-	'/js/emoji.js',
-	'/js/g-emoji-element.js'
+	'/js/settings.js',
+	'/js/gateway_functions.js',  // Provides: decryptPassword, encryptPassword, readyFunc, IRCEventEmitter; Pushes: setEnvironment, fillEmoticonSelector, fillColorSelector
+	'/js/irc_events.js',          // Provides: IrcEventEmitter (connection-scoped event bus, extends IRCEventEmitter)
+	'/js/gateway_conn.js',        // Uses: decryptPassword; Provides: conn object; Pushes: conn.gatewayInit
+	'/js/integrator/ignore.js',
+	'/js/integrator/services.js',
+	'/js/protocol/irc_transport.js',
+	'/js/protocol/irc_protocol.js',
+	'/js/integrator/user_commands.js',
+	'/js/ui/gateway_tabs.js',
+	'/js/integrator/chat_integrator.js',
+	'/js/ui/gateway_display.js',
+	'/js/integrator/channel_state.js',
+	'/js/integrator/users.js',
+	'/js/gateway_main.js',
+	'/js/ui/emoji.js',
+	'/js/ui/g-emoji-element.js'
 ];
-var styleFiles = [
+const styleFiles = [
 	'/styles/gateway_def.css'
 ];
-var languageFiles = [
+const languageFiles = [
 	'en',
 	'pl'
 ];
 
 // Cache-busting random ID (same for all files in this session)
-var ranid = Math.floor(Math.random() * 10000);
-
-/**
- * readyFunctions: Array of functions to execute when all scripts are loaded.
- * Each script file pushes its initialization functions to this array.
- * All functions are executed by readyFunc() after all scripts load.
- * Example: readyFunctions.push(myInitFunction);
- */
-var readyFunctions = [];
+const ranid = Math.floor(Math.random() * 10000);
 
 /**
  * Helper function to load a script file sequentially with proper error tracking
@@ -84,20 +86,20 @@ var readyFunctions = [];
  * @param {Function} onErrorCallback - Callback when script fails to load
  */
 function loadScript(src, description, onLoadCallback, onErrorCallback) {
-	var script = document.createElement('script');
+	const script = document.createElement('script');
 	script.type = 'text/javascript';
-	script.src = src + '?' + ranid;
+	script.src = `${src  }?${  ranid}`;
 
 	// Track load failures for better debugging
 	script.onerror = function() {
-		console.error('[load.js] Failed to load: ' + description + ' (' + src + ')');
+		console.error(`[load.js] Failed to load: ${  description  } (${  src  })`);
 		if (onErrorCallback) {
 			onErrorCallback();
 		}
 	};
 
 	script.onload = function() {
-		console.log('[load.js] Loaded: ' + description);
+		console.log(`[load.js] Loaded: ${  description}`);
 		if (onLoadCallback) {
 			onLoadCallback();
 		}
@@ -112,16 +114,16 @@ function loadScript(src, description, onLoadCallback, onErrorCallback) {
  * @param {string} description - Human-readable description for error messages
  */
 function loadStylesheet(href, description) {
-	var link = document.createElement('link');
+	const link = document.createElement('link');
 	link.rel = 'stylesheet';
-	link.href = href + '?' + ranid;
+	link.href = `${href  }?${  ranid}`;
 
 	link.onerror = function() {
-		console.error('[load.js] Failed to load: ' + description + ' (' + href + ')');
+		console.error(`[load.js] Failed to load: ${  description  } (${  href  })`);
 	};
 
 	link.onload = function() {
-		console.log('[load.js] Loaded: ' + description);
+		console.log(`[load.js] Loaded: ${  description}`);
 	};
 
 	$('head').append(link);
@@ -130,32 +132,30 @@ function loadStylesheet(href, description) {
 /**
  * Load addon modules after language files are loaded.
  * Addons can extend language objects (lang.pl, lang.en) with their own translations.
- * Addons can push their initialization functions to the readyFunctions array
- * (defined in load.js), which will be executed after all scripts load.
  */
 function loadAddons() {
 	try {
 		if (typeof mainSettings === 'undefined' || !mainSettings.modules) {
 			console.warn('[load.js] mainSettings.modules not available, skipping addons');
-			executeReadyFunctions();
+			readyFunc(); // No addons, proceed to ready state
 			return;
 		}
 
 		// Load addons sequentially
-		var addonIndex = 0;
+		let addonIndex = 0;
 		function loadNextAddon() {
 			if (addonIndex >= mainSettings.modules.length) {
-				// All addons loaded, now execute ready functions
-				executeReadyFunctions();
+				// All addons loaded, now execute ready function
+				readyFunc();
 				return;
 			}
-			var modname = mainSettings.modules[addonIndex];
-			var src = '/js/addons/addon_' + modname + '.js';
+			const modname = mainSettings.modules[addonIndex];
+			const src = `/js/addons/addon_${  modname  }.js`;
 			addonIndex++;
-			loadScript(src, 'Addon: ' + modname, loadNextAddon);
+			loadScript(src, `Addon: ${  modname}`, loadNextAddon);
 		}
 		loadNextAddon();
-	} catch(e) {
+	} catch (e) {
 		console.error('[load.js] Error loading addons:', e);
 	}
 }
@@ -164,7 +164,7 @@ function loadAddons() {
  * Load scripts sequentially to guarantee execution order
  */
 function loadScriptsSequentially() {
-	var scriptIndex = 0;
+	let scriptIndex = 0;
 
 	function loadNextScript() {
 		if (scriptIndex >= scriptFiles.length) {
@@ -173,8 +173,8 @@ function loadScriptsSequentially() {
 			return;
 		}
 
-		var src = scriptFiles[scriptIndex];
-		var description = 'Main: ' + src;
+		const src = scriptFiles[scriptIndex];
+		const description = `Main: ${  src}`;
 		scriptIndex++;
 
 		loadScript(src, description, loadNextScript);
@@ -187,7 +187,7 @@ function loadScriptsSequentially() {
  * Load language files sequentially
  */
 function loadLanguageFiles() {
-	var langIndex = 0;
+	let langIndex = 0;
 
 	function loadNextLang() {
 		if (langIndex >= languageFiles.length) {
@@ -195,30 +195,13 @@ function loadLanguageFiles() {
 			loadAddons();
 			return;
 		}
-		var lang = languageFiles[langIndex];
-		var src = '/js/lang/' + lang + '.js';
+		const lang = languageFiles[langIndex];
+		const src = `/js/lang/${  lang  }.js`;
 		langIndex++;
-		loadScript(src, 'Language: ' + lang, loadNextLang);
+		loadScript(src, `Language: ${  lang}`, loadNextLang);
 	}
 
 	loadNextLang();
-}
-
-/**
- * Execute all ready functions after scripts are loaded
- * This replaces the jQuery $(document).ready() approach
- */
-function executeReadyFunctions() {
-	console.log('[load.js] All scripts loaded, executing ready functions');
-
-	// Wait a short moment to ensure all script execution contexts are complete
-	setTimeout(function() {
-		if (typeof readyFunc === 'function') {
-			readyFunc();
-		} else {
-			console.error('[load.js] readyFunc is not defined');
-		}
-	}, 50);
 }
 
 /**
@@ -227,26 +210,26 @@ function executeReadyFunctions() {
  * sequential execution order when script tags are created
  */
 function addPreloadHints() {
-	var allScripts = scriptFiles.concat(
-		languageFiles.map(function(lang) {
-			return '/js/lang/' + lang + '.js';
+	const allScripts = scriptFiles.concat(
+		languageFiles.map((lang) => {
+			return `/js/lang/${  lang  }.js`;
 		})
 	);
 
-	allScripts.forEach(function(src) {
-		var link = document.createElement('link');
+	allScripts.forEach((src) => {
+		const link = document.createElement('link');
 		link.rel = 'preload';
 		link.as = 'script';
-		link.href = src + '?' + ranid;  // Use same cache-busting param
+		link.href = `${src  }?${  ranid}`;  // Use same cache-busting param
 		document.head.appendChild(link);
 	});
 
-	console.log('[load.js] Added preload hints for ' + allScripts.length + ' scripts');
+	console.log(`[load.js] Added preload hints for ${  allScripts.length  } scripts`);
 }
 
 // Load stylesheets (these can load in parallel)
-styleFiles.forEach(function(file) {
-	loadStylesheet(file, 'Stylesheet: ' + file);
+styleFiles.forEach((file) => {
+	loadStylesheet(file, `Stylesheet: ${  file}`);
 });
 
 $('#defaultStyle').remove(); // we can remove the default style now
@@ -254,4 +237,3 @@ $('#defaultStyle').remove(); // we can remove the default style now
 // Add preload hints for parallel downloading, then start loading scripts
 addPreloadHints();
 loadScriptsSequentially();
-

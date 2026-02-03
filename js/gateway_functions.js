@@ -1,5 +1,5 @@
-/* Copyright (c) 2020 k4be and the PIRC.pl Team
- * 
+/* Copyright (c) 2020-2026 k4be and the PIRC.pl Team
+ *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
  * "Software"), to deal in the Software without restriction, including
@@ -21,7 +21,7 @@
  */
 
 // definicje stałych globalnych
-function setEnvironment(){
+function setEnvironment() {
 	try {
 		window.icons = [
 			'/styles/img/users.png',
@@ -32,28 +32,22 @@ function setEnvironment(){
 			'/styles/img/owner.png',
 			'/styles/img/user-registered.png'
 		];
-		window.alt = [	'', '+', '%', '@', '&', '~', '' ];
+		window.alt = [ 	'', '+', '%', '@', '&', '~', '' ];
 		window.chStatusInfo = language.chStatusInfo;
 
 		window.reqChannel = '';
 
-		window.booleanSettings = [ 'showPartQuit', 'showNickChanges', 'tabsListBottom', 'showUserHostnames', 'autoReconnect', 'displayLinkWarning', 'blackTheme', 'newMsgSound', 'autoDisconnect', 'coloredNicks', 'showMode', 'dispEmoji', 'sendEmoji', 'monoSpaceFont', 'automLogIn', 'setUmodeD', 'setUmodeR', 'noAvatars', 'biggerEmoji', 'groupEvents', 'shortModeDisplay', 'sortChannelsByJoinOrder' ];
-		window.comboSettings = [ 'noticeDisplay', 'setLanguage' ];
-		window.numberSettings = [ 'backlogCount' ];
-		window.numberSettingsMinMax = {
-			'backlogCount' : { 'min' : 0, 'max' : 500, 'deflt' : 15 }
-		};
-		window.textSettings = [ 'avatar' ];
-		window.textSettingsValues = {};
 
+
+		// banData should be managed by the ChatIntegrator Layer, but its structure is defined here
 		window.banData = {
-			'nick' : '',
-			'channel' : '',
-			'noIdent' : false,
-			'ident' : '',
-			'hostElements' : [],
-			'hostElementSeparators' : [],
-			'clear' : function(){
+			'nick': '',
+			'channel': '',
+			'noIdent': false,
+			'ident': '',
+			'hostElements': [],
+			'hostElementSeparators': [],
+			'clear': function() {
 				banData.nick = '';
 				banData.channel = '';
 				banData.noIdent = false;
@@ -61,33 +55,20 @@ function setEnvironment(){
 				banData.hostElements = [];
 				banData.hostElementSeparators = [];
 			}
-		}
-
-		window.modes = {
-			/* default modes from rfc1459, we're overwriting it with ISUPPORT data later */
-			'single': ['p', 's', 'i', 't', 'n', 'm'],
-			'argBoth': ['k'],
-			'argAdd': ['l'],
-			'list': ['b'],
-			'user': ['o', 'v'],
-			'changeableSingle': language.modes.changeableSingle,
-			'changeableArg': language.modes.changeableArg,
-			/* again defaults from rfc1459 */
-			'prefixes': {
-				'o': '@',
-				'v': '+'
-			},
-			'reversePrefixes': {
-				'@': 'o',
-				'+': 'v'
-			}
 		};
+
+		// modes now lives in chat (chat_integrator.js ChatIntegrator constructor).
+		// Set language-dependent fields here, after language is loaded.
+		if (connection.chat.modes) {
+			connection.chat.modes.changeableSingle = language.modes.changeableSingle;
+			connection.chat.modes.changeableArg    = language.modes.changeableArg;
+		}
 
 		window.servicesNicks = ['NickServ', 'ChanServ', 'HostServ', 'OperServ', 'Global', 'BotServ'];
 
 		window.newMessage = language.newMessage;
 
-		var emoji = {
+		const emoji = {
 			':D':	'😃',
 			'O:->':	'😇',
 			']:->': '😈',
@@ -98,7 +79,7 @@ function setEnvironment(){
 			':>':	'😏',
 			':|':	'😐',
 			':<':	'😒',
-			':((':	'😓',
+			':((': '😓',
 			':/':	'😕',
 			':c':	'😕',
 			':o':	'😕',
@@ -108,99 +89,428 @@ function setEnvironment(){
 			';*':	'😙',
 			':P':	'😛',
 			';p':	'😜',
-			':(':	'🙁',
+			':(': '🙁',
 			':)':	'🙂',
 			'(:':	'🙃',
 			'<3':	'💗',
 			'-_-':	'😑',
-			';(':	'😢',
+			';(': '😢',
 			';)':	'😉'
 		};
 
 		window.emojiRegex = [];
 
-		var out1 = '';
-		var out2 = '';
-		for(i in emoji){
-			var expr = rxEscape(i)+'(($)|(\\s))';
-			var regex = new RegExp(expr, 'g');
-			emojiRegex.push([regex, emoji[i]]);
-			out1 += emoji[i] + ' ';
-			out2 += i + ' ';
+		let out1 = '';
+		let out2 = '';
+		for (const [i, emojiChar] of Object.entries(emoji)) {
+			const expr = `${rxEscape(i)  }(($)|(\s))`;
+			const regex = new RegExp(expr, 'g');
+			emojiRegex.push([regex, emojiChar]);
+			out1 += `${emojiChar  } `;
+			out2 += `${i  } `;
 		}
 
-		window.settings = {
-			'backlogLength': 15
-		}
-	} catch(e){
-		console.error('Failed to set up environment:', e)
+		// New event listeners for settings changes
+		ircEvents.on('settings:changed:tabsListBottom', (data) => {
+			if (data.newValue) {
+				$('#top_menu').detach().insertAfter('#inputbox');
+				if ($('#tabsDownCss').length == 0) {
+					$('head').append('<link rel="stylesheet" type="text/css" href="/styles/gateway_tabs_down.css" id="tabsDownCss">');
+				}
+			} else {
+				$('#top_menu').detach().insertAfter('#options-box');
+				$('#tabsDownCss').remove();
+			}
+		});
+
+		ircEvents.on('settings:changed:blackTheme', (data) => {
+			if (data.newValue) {
+				if ($('#blackCss').length == 0) {
+					$('head').append('<link rel="stylesheet" type="text/css" href="/styles/gateway_black.css" id="blackCss">');
+				}
+			} else {
+				$('#blackCss').remove();
+			}
+		});
+
+		ircEvents.on('settings:changed:monoSpaceFont', (data) => {
+			if (data.newValue) {
+				if ($('#monospace_font').length == 0) {
+					const style = $('<style id="monospace_font">#chat-wrapper { font-family: DejaVu Sans Mono, Consolas, monospace, Symbola; } </style>');
+					$('html > head').append(style);
+				}
+			} else {
+				$('#monospace_font').remove();
+			}
+		});
+
+		ircEvents.on('settings:changed:noAvatars', (data) => {
+			let style;
+			if (data.newValue) {
+				$('#avatars-style').remove();
+				if ($('#no_avatars').length == 0) {
+					style = $('<style id="no_avatars">.msgRepeat { display: block; } .msgRepeatBlock { display: none; } .messageDiv { padding-bottom: unset; } .messageMeta { display: none; } .messageHeader { display: inline; } .messageHeader::after { content: " "; } .messageHeader .time { display: inline; } .evenMessage { background: none !important; } .oddMessage { background: none !important; }</style>');
+					$('html > head').append(style);
+				}
+			} else {
+				$('#no_avatars').remove();
+				if ($('#avatars-style').length == 0) {
+					style = $('<style id="avatars-style">span.repeat-hilight, span.repeat-hilight span { color: #1F29D3 !important; font-weight: bold; }</style>');
+					$('html > head').append(style);
+				}
+			}
+		});
+
+		ircEvents.on('settings:changed:showUserHostnames', (data) => {
+			if (data.newValue) {
+				$('#userhost_hidden').remove();
+			} else {
+				if ($('#userhost_hidden').length == 0) {
+					const style = $('<style id="userhost_hidden">.userhost { display:none; }</style>');
+					$('html > head').append(style);
+				}
+			}
+		});
+
+		ircEvents.on('settings:changed:automLogIn', (data) => {
+			if (data.newValue) {
+				$('#automLogIn').parent().parent().css('display', '');
+			} else {
+				$('#automLogIn').parent().parent().css('display', 'none');
+			}
+		});
+
+		ircEvents.on('settings:changed:enableautomLogIn', (data) => {
+			if (data.newValue) { // If enableautomLogIn is checked
+				$('#save_password').prop('checked', true); // Check save_password
+				// Note: save_password needs to be added to settings definition for its value to persist
+			}
+		});
+
+		ircEvents.on('settings:changed:biggerEmoji', (data) => {
+			if (data.newValue) {
+				document.documentElement.style.setProperty('--emoji-scale', '3');
+			} else {
+				document.documentElement.style.setProperty('--emoji-scale', '1.8');
+			}
+		});
+
+		ircEvents.on('settings:changed:dispEmoji', (data) => {
+			if (!data.newValue) { // If dispEmoji is turned off
+				settings.set('sendEmoji', false); // Update related setting in UI and localStorage
+			}
+		});
+
+		ircEvents.on('settings:changed:sendEmoji', (data) => {
+			if (data.newValue) { // If sendEmoji is turned on
+				settings.set('dispEmoji', true); // Update related setting in UI and localStorage
+			}
+		});
+
+		ircEvents.on('settings:changed:setUmodeD', (data) => {
+			if (data.newValue) { // If setUmodeD is turned on
+				settings.set('setUmodeR', true); // Update related setting in UI and localStorage
+				commandBus.emit('chat:requestUmodeChange', { mode: '+D' }); // Request chat action
+				commandBus.emit('chat:requestUmodeChange', { mode: '+R' }); // Request chat action
+			} else { // If setUmodeD is turned off
+				commandBus.emit('chat:requestUmodeChange', { mode: '-D' }); // Request chat action
+			}
+		});
+
+		ircEvents.on('settings:changed:setUmodeR', (data) => {
+			if (!data.newValue) { // If setUmodeR is turned off
+				settings.set('setUmodeD', false); // Update related setting in UI and localStorage
+				commandBus.emit('chat:requestUmodeChange', { mode: '-R' }); // Request chat action
+			} else { // If setUmodeR is turned on
+				commandBus.emit('chat:requestUmodeChange', { mode: '+R' }); // Request chat action
+			}
+		});
+
+		ircEvents.on('settings:changed:setLanguage', (data) => {
+			setLanguage(data.newValue);
+		});
+
+		ircEvents.on('settings:changed:showPartQuit', (data) => {
+			disp.updateEventVisibility();
+			if (!data.newValue) { // If showPartQuit is turned off (meaning events are shown)
+				disp.regroupAllEvents();
+			}
+		});
+
+		ircEvents.on('settings:changed:groupEvents', (data) => {
+			if (data.newValue) {
+				disp.regroupAllEvents();
+			} else {
+				disp.ungroupAllEvents();
+			}
+		});
+
+		ircEvents.on('settings:changed:sortChannelsByJoinOrder', (data) => {
+			uiTabs.sortChannelTabs();
+		});
+
+		ircEvents.on('settings:changed', () => { // General listener for other UI updates
+			$('#nicklist').removeAttr('style');
+			$('#chlist').removeAttr('style');
+			if ($('#chlist-body').is(':visible')) {
+				uiTabs.toggleChanList();
+			}
+		});
+
+	} catch (e) {
+		console.error('Failed to set up environment:', e);
 	}
 }
 
-window.messageProcessors = []; //function (src, dst, text) returns new_text
-window.nickColorProcessors = []; //function (nick)
-window.settingProcessors = []; //function ()
-window.metadataBinds = {};
+
 window.addons = [];
-var loaded = false;
+let loaded = false;
 
-// Register initialization functions defined in this file
-// readyFunctions array is defined in load.js
-readyFunctions.push(setEnvironment);
-readyFunctions.push(fillEmoticonSelector);
-readyFunctions.push(fillColorSelector);
+/**
+ * Event emitter with priority support for IRC handlers
+ * Must be defined here (before irc_protocol.js loads)
+ * @constructor
+ */
+class IRCEventEmitter {
+	constructor() {
+		this._handlers = {};
+	}
 
-var readyFunc = function(){
-	if(loaded) return;
-	if(!('mainSettings' in window)){ // someone forgot to load settings
+	/**
+	 * Register event handler with optional priority
+	 * @param {string} event - Event name (e.g., 'cmd:PRIVMSG', 'batch:chathistory')
+	 * @param {function} handler - Handler function
+	 * @param {object} options - { priority: 0-100 (default 50), once: false }
+	 * @returns {function} Unsubscribe function
+	 */
+	on(event, handler, options) {
+		options = options || {};
+		const priority = options.priority !== undefined ? options.priority : 50;
+		const once = options.once || false;
+
+		if (!this._handlers[event]) {
+			this._handlers[event] = [];
+		}
+
+		const entry = {
+			handler: handler,
+			priority: priority,
+			once: once
+		};
+
+		this._handlers[event].push(entry);
+		// Sort by priority (higher first)
+		this._handlers[event].sort((a, b) => {
+			return b.priority - a.priority;
+		});
+
+		// Return unsubscribe function
+		return () => {
+			this.off(event, handler);
+		};
+	}
+
+	/**
+	 * Register one-time event handler
+	 */
+	once(event, handler, options) {
+		options = options || {};
+		options.once = true;
+		return this.on(event, handler, options);
+	}
+
+	/**
+	 * Unregister event handler
+	 */
+	off(event, handler) {
+		if (!this._handlers[event]) return;
+		this._handlers[event] = this._handlers[event].filter((entry) => {
+			return entry.handler !== handler;
+		});
+	}
+
+	/**
+	 * Emit event to all registered handlers
+	 * @param {string} event - Event name
+	 * @param {*} data - Data to pass to handlers
+	 * @returns {boolean} false if propagation was stopped, true otherwise
+	 */
+	emit(event, data) {
+		if (!this._handlers[event]) return true;
+
+		const toRemove = [];
+		let stopped = false;
+
+		for (const entry of this._handlers[event]) {
+			try {
+				const result = entry.handler(data);
+				if (result === false) {
+					stopped = true;
+				}
+			} catch (e) {
+				console.error(`Event handler error [${  event  }]:`, e);
+			}
+
+			if (entry.once) {
+				toRemove.push(entry);
+			}
+
+			if (stopped) break;
+		}
+
+		// Remove once handlers
+		for (const entry of toRemove) {
+			this.off(event, entry.handler);
+		}
+
+		return !stopped;
+	}
+
+	/**
+	 * Check if any handlers exist for event
+	 */
+	hasListeners(event) {
+		return this._handlers[event] && this._handlers[event].length > 0;
+	}
+}
+
+// Global IRC event emitter instance
+const ircEvents = new IRCEventEmitter();
+window.ircEvents = ircEvents;
+
+let commandBus = ircEvents; // initialized to connection.events by initCommandBus() in gateway_main.js
+
+function initCommandBus(bus) {
+	commandBus = bus;
+}
+
+// Formal hook registration API for addons
+const hooks = {
+	/**
+	 * Register command handler
+	 * @param {string} command - IRC command (e.g., 'PRIVMSG')
+	 * @param {function} handler - Handler function(msg)
+	 * @param {object} options - { priority: 0-100, once: boolean }
+	 * @returns {function} Unsubscribe function
+	 */
+	onCommand: function(command, handler, options) {
+		return ircEvents.on(`cmd:${  command}`, handler, options);
+	},
+	/**
+	 * Register metadata change handler
+	 * @param {string} key - Metadata key (e.g., 'avatar')
+	 * @param {function} handler - Handler function(data) where data = {user, key, value}
+	 * @param {object} options - { priority: 0-100, once: boolean }
+	 * @returns {function} Unsubscribe function
+	 */
+	onMetadata: function(key, handler, options) {
+		const wrappedHandler = function(data) {
+			if (data.key === key) handler(data);
+		};
+		return ircEvents.on('metadata:updated', wrappedHandler, options);
+	},
+	/**
+	 * Add message text processor
+	 * @param {function} processor - Function(senderNick, dest, message) returns modified message
+	 */
+	addMessageProcessor: function(processor, options) {
+		// Wrapper to adapt old processor signature to new event data object
+		const handler = function(data) {
+			data.message = processor(data.sender, data.dest, data.message);
+		};
+		return ircEvents.on('message:process', handler, options);
+	},
+	/**
+	 * Register CTCP handler
+	 * @param {string} ctcp - CTCP type (e.g., 'VERSION')
+	 * @param {function} handler - Handler function(msg)
+	 * @param {object} options - { priority: 0-100, once: boolean }
+	 * @returns {function} Unsubscribe function
+	 */
+	onCtcp: function(ctcp, handler, options) {
+		return ircEvents.on(`ctcp:${  ctcp}`, handler, options);
+	},
+	/**
+	 * Register batch handler
+	 * @param {string} type - Batch type (e.g., 'chathistory')
+	 * @param {function} handler - Handler function(data) where data = {msg, batch}
+	 * @param {object} options - { priority: 0-100, once: boolean }
+	 * @returns {function} Unsubscribe function
+	 */
+	onBatch: function(type, handler, options) {
+		return ircEvents.on(`batch:${  type}`, handler, options);
+	},
+	/**
+	 * Direct event registration (for custom events)
+	 */
+	on: function(event, handler, options) {
+		return ircEvents.on(event, handler, options);
+	},
+	once: function(event, handler, options) {
+		return ircEvents.once(event, handler, options);
+	},
+	off: function(event, handler) {
+		ircEvents.off(event, handler);
+	},
+	emit: function(event, data) {
+		return ircEvents.emit(event, data);
+	}
+};
+window.hooks = hooks;
+
+const readyFunc = function() {
+	if (loaded) return;
+	if (!('mainSettings' in window)) {
 		$('.not-connected-text > h3').html('Błąd / Error');
 		$('.not-connected-text > p').html('Niepoprawna konfiguracja aplikacji. Proszę skontaktować się z administratorem.<br>Invalid application configuration. Please contact administrator.');
 		return;
 	}
-	setDefaultLanguage();
+
+	settings.load();
+	ignore.loadList();
+	let slang = settings.get('setLanguage');
+	if (!slang) slang = mainSettings.language;
+	setLanguage(slang);
+	$('#setLanguage').val(slang);
 	$('.gateway-version').html(mainSettings.version);
 	$('.not-connected-text > h3').html(language.loading);
 	$('.not-connected-text > p').html(language.loadingWait);
-	if($.browser.msie && parseInt($.browser.version, 10) < 9) {
+	if ($.browser.msie && parseInt($.browser.version, 10) < 9) {
 		$('.not-connected-text > h3').html(language.outdatedBrowser);
 		$('.not-connected-text > p').html(language.outdatedBrowserInfo);
-		gateway = 0;
-		guser = 0;
-		cmd_binds = 0;
+		// cmd_binds = 0; // cmd_binds is now decoupled
 		$('div#wrapper').html('');
 	} else {
 		loaded = true;
-		for(f in readyFunctions){
-			try {
-				readyFunctions[f]();
-			} catch(e) {}
-		}
+		// system:ready: all scripts have loaded; listeners must be registered before this point.
+		// Handlers receive no data. After this event, chat/UI setup may begin.
+		ircEvents.emit('system:ready');
 	}
-}
+};
 
 // readyFunc is now called from load.js after all scripts are loaded
 
 function ChannelModes() {
-	modes.single.forEach(function(mode){
+	connection.chat.modes.single.forEach((mode) => {
 		this[mode] =  false;
-	}, this);
-	modes.argAdd.forEach(function(mode){
+	});
+	connection.chat.modes.argAdd.forEach((mode) => {
 		this[mode] = false;
-	}, this);
+	});
 	this['k'] = false;
 	this['f'] = false;
 }
 
-function getModeInfo(letter, type){
-	if(!type){
+function getModeInfo(letter, type) {
+	if (!type) {
 		type = 0;
 	}
-	if($('#shortModeDisplay').is(':checked')){
+	if (settings.get('shortModeDisplay')) {
 		return letter;
 	}
-	if(!(letter in language.modes.chModeInfo)) return language.mode+' '+letter; // no text description for this mode char
-	var data = language.modes.chModeInfo[letter];
-	if(data.constructor === Array){
+	if (!(letter in language.modes.chModeInfo)) return `${language.mode  } ${  letter}`; // no text description for this mode char
+	const data = language.modes.chModeInfo[letter];
+	if (data.constructor === Array) {
 		return data[type];
 	} else {
 		return data;
@@ -208,35 +518,30 @@ function getModeInfo(letter, type){
 }
 
 // pomocnicze funkcje globalne
-function str2bool(b){
+function str2bool(b) {
 	return (b === 'true');
 }
 
 function he(text) { //HTML Escape
-	return $('<div/>').text(text).html().replace(/"/g, '&quot;');
-}
-
-function bsEscape(text) { // escapowanie beksleszy i zakończeń stringa
-	text = text.replace(/\\/g, '\\\\');
-	text = text.replace(/'/g, '\\\'');
-	text = text.replace(/"/g, '\\\"');
-	return text;
+	const div = document.createElement('div');
+	div.textContent = text;
+	return div.innerHTML.replace(/"/g, '&quot;');
 }
 
 // Password encryption functions
 // Generates or retrieves browser-specific encryption key
 function getEncryptionKey() {
-	var keyName = 'pirc_ek';
-	var key = localStorage.getItem(keyName);
+	const keyName = 'pirc_ek';
+	let key = localStorage.getItem(keyName);
 	if (!key) {
 		// Generate new random key (256 bits / 64 hex chars)
 		key = '';
-		for (var i = 0; i < 64; i++) {
+		for (let i = 0; i < 64; i++) {
 			key += '0123456789abcdef'.charAt(Math.floor(Math.random() * 16));
 		}
 		try {
 			localStorage.setItem(keyName, key);
-		} catch(e) {
+		} catch (e) {
 			// If localStorage fails, use session-based key
 			if (!window.sessionEncryptionKey) {
 				window.sessionEncryptionKey = key;
@@ -251,31 +556,31 @@ function getEncryptionKey() {
 function encryptPassword(password) {
 	if (!password) return '';
 
-	var key = getEncryptionKey();
+	const key = getEncryptionKey();
 	// Key stretching: hash key multiple times for better security
-	var stretchedKey = key;
-	for (var i = 0; i < 1000; i++) {
+	let stretchedKey = key;
+	for (let i = 0; i < 1000; i++) {
 		stretchedKey = md5(stretchedKey + key);
 	}
 
 	// Convert password to array of char codes
-	var encrypted = [];
-	for (var i = 0; i < password.length; i++) {
-		var keyChar = stretchedKey.charCodeAt(i % stretchedKey.length);
-		var passChar = password.charCodeAt(i);
+	const encrypted = [];
+	for (let i = 0; i < password.length; i++) {
+		const keyChar = stretchedKey.charCodeAt(i % stretchedKey.length);
+		const passChar = password.charCodeAt(i);
 		// XOR encryption
 		encrypted.push(passChar ^ keyChar);
 	}
 
 	// Convert to hex string
-	var hexResult = '';
-	for (var i = 0; i < encrypted.length; i++) {
-		var hex = encrypted[i].toString(16);
+	let hexResult = '';
+	for (const byte of encrypted) {
+		const hex = byte.toString(16);
 		hexResult += (hex.length === 1 ? '0' : '') + hex;
 	}
 
 	// Prefix with version identifier for future compatibility
-	return 'v1:' + hexResult;
+	return `v1:${  hexResult}`;
 }
 
 // Decrypt password
@@ -286,38 +591,38 @@ function decryptPassword(encryptedPassword) {
 	if (encryptedPassword.indexOf('v1:') !== 0) {
 		// Old format - decode with atob and migrate
 		try {
-			var decoded = atob(encryptedPassword);
+			const decoded = atob(encryptedPassword);
 			// Re-encrypt with new method
-			var newEncrypted = encryptPassword(decoded);
+			const newEncrypted = encryptPassword(decoded);
 			try {
 				localStorage.setItem('password', newEncrypted);
-			} catch(e) {}
+			} catch (e) {}
 			return decoded;
-		} catch(e) {
+		} catch (e) {
 			return '';
 		}
 	}
 
 	// New format - decrypt
-	var hexData = encryptedPassword.substring(3); // Remove 'v1:' prefix
-	var key = getEncryptionKey();
+	const hexData = encryptedPassword.substring(3); // Remove 'v1:' prefix
+	const key = getEncryptionKey();
 
 	// Key stretching (same as encryption)
-	var stretchedKey = key;
-	for (var i = 0; i < 1000; i++) {
+	let stretchedKey = key;
+	for (let i = 0; i < 1000; i++) {
 		stretchedKey = md5(stretchedKey + key);
 	}
 
 	// Convert hex to array
-	var encrypted = [];
-	for (var i = 0; i < hexData.length; i += 2) {
+	const encrypted = [];
+	for (let i = 0; i < hexData.length; i += 2) {
 		encrypted.push(parseInt(hexData.substr(i, 2), 16));
 	}
 
 	// XOR decryption
-	var decrypted = '';
-	for (var i = 0; i < encrypted.length; i++) {
-		var keyChar = stretchedKey.charCodeAt(i % stretchedKey.length);
+	let decrypted = '';
+	for (let i = 0; i < encrypted.length; i++) {
+		const keyChar = stretchedKey.charCodeAt(i % stretchedKey.length);
 		decrypted += String.fromCharCode(encrypted[i] ^ keyChar);
 	}
 
@@ -354,43 +659,43 @@ function hexToRgb(hex) {
 		hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
 	}
 
-	var r = parseInt(hex.substr(0, 2), 16);
-	var g = parseInt(hex.substr(2, 2), 16);
-	var b = parseInt(hex.substr(4, 2), 16);
+	const r = parseInt(hex.substr(0, 2), 16);
+	const g = parseInt(hex.substr(2, 2), 16);
+	const b = parseInt(hex.substr(4, 2), 16);
 
-	return { r: r, g: g, b: b };
+	return { r, g, b };
 }
 
 // Convert RGB to hex
 function rgbToHex(r, g, b) {
-	var toHex = function(n) {
+	const toHex = function(n) {
 		n = Math.round(Math.max(0, Math.min(255, n)));
-		var hex = n.toString(16);
-		return hex.length === 1 ? '0' + hex : hex;
+		const hex = n.toString(16);
+		return hex.length === 1 ? `0${  hex}` : hex;
 	};
-	return '#' + toHex(r) + toHex(g) + toHex(b);
+	return `#${  toHex(r)  }${toHex(g)  }${toHex(b)}`;
 }
 
 // Calculate relative luminance (WCAG formula)
-function getRelativeLuminance(rgb) {
-	var rsRGB = rgb.r / 255;
-	var gsRGB = rgb.g / 255;
-	var bsRGB = rgb.b / 255;
+function getRelativeLuminance({ r: rVal, g: gVal, b: bVal }) {
+	const rsRGB = rVal / 255;
+	const gsRGB = gVal / 255;
+	const bsRGB = bVal / 255;
 
-	var r = rsRGB <= 0.03928 ? rsRGB / 12.92 : Math.pow((rsRGB + 0.055) / 1.055, 2.4);
-	var g = gsRGB <= 0.03928 ? gsRGB / 12.92 : Math.pow((gsRGB + 0.055) / 1.055, 2.4);
-	var b = bsRGB <= 0.03928 ? bsRGB / 12.92 : Math.pow((bsRGB + 0.055) / 1.055, 2.4);
+	const r = rsRGB <= 0.03928 ? rsRGB / 12.92 : Math.pow((rsRGB + 0.055) / 1.055, 2.4);
+	const g = gsRGB <= 0.03928 ? gsRGB / 12.92 : Math.pow((gsRGB + 0.055) / 1.055, 2.4);
+	const b = bsRGB <= 0.03928 ? bsRGB / 12.92 : Math.pow((bsRGB + 0.055) / 1.055, 2.4);
 
 	return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
 
 // Calculate contrast ratio between two colors (WCAG formula)
 function getContrastRatio(color1, color2) {
-	var lum1 = getRelativeLuminance(hexToRgb(color1));
-	var lum2 = getRelativeLuminance(hexToRgb(color2));
+	const lum1 = getRelativeLuminance(hexToRgb(color1));
+	const lum2 = getRelativeLuminance(hexToRgb(color2));
 
-	var lighter = Math.max(lum1, lum2);
-	var darker = Math.min(lum1, lum2);
+	const lighter = Math.max(lum1, lum2);
+	const darker = Math.min(lum1, lum2);
 
 	return (lighter + 0.05) / (darker + 0.05);
 }
@@ -398,16 +703,16 @@ function getContrastRatio(color1, color2) {
 // Get current theme background color
 function getThemeBackgroundColor() {
 	// Check which stylesheet is active by looking at the chat-wrapper background
-	var chatWrapper = document.getElementById('chat-wrapper');
+	const chatWrapper = document.getElementById('chat-wrapper');
 	if (!chatWrapper) {
 		return '#FFFFFF'; // Default to white
 	}
 
-	var bgColor = window.getComputedStyle(chatWrapper).backgroundColor;
+	const bgColor = window.getComputedStyle(chatWrapper).backgroundColor;
 
 	// Convert rgb/rgba to hex
 	if (bgColor.indexOf('rgb') === 0) {
-		var matches = bgColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+		const matches = bgColor.match(/rgba?(\d+),\s*(\d+),\s*(\d+)/);
 		if (matches) {
 			return rgbToHex(parseInt(matches[1]), parseInt(matches[2]), parseInt(matches[3]));
 		}
@@ -422,24 +727,24 @@ function adjustColorContrast(color, backgroundColor, minRatio) {
 
 	minRatio = minRatio || 4.5; // WCAG AA standard for normal text
 
-	var currentRatio = getContrastRatio(color, backgroundColor);
+	const currentRatio = getContrastRatio(color, backgroundColor);
 	if (currentRatio >= minRatio) {
 		return color; // Already has good contrast
 	}
 
-	var rgb = hexToRgb(color);
-	var bgRgb = hexToRgb(backgroundColor);
-	var bgLum = getRelativeLuminance(bgRgb);
+	const rgb = hexToRgb(color);
+	const bgRgb = hexToRgb(backgroundColor);
+	const bgLum = getRelativeLuminance(bgRgb);
 
 	// Determine if we need to make the color lighter or darker
 	// If background is light, we need to darken the text for contrast
 	// If background is dark, we need to lighten the text for contrast
-	var makeLighter = bgLum < 0.5;
+	const makeLighter = bgLum < 0.5;
 
 	// Binary search for the right adjustment
-	var step = makeLighter ? 10 : -10;
-	var maxIterations = 30;
-	var iterations = 0;
+	const step = makeLighter ? 10 : -10;
+	const maxIterations = 30;
+	let iterations = 0;
 
 	while (getContrastRatio(rgbToHex(rgb.r, rgb.g, rgb.b), backgroundColor) < minRatio && iterations < maxIterations) {
 		if (makeLighter) {
@@ -460,53 +765,54 @@ function adjustColorContrast(color, backgroundColor, minRatio) {
 }
 
 function rxEscape(text) { //backupowanie regex
-	return text.replace(/[.^$*+?()[{\\|]/g, '\\$&');
+	return text.replace(/[.^$*+?()[\\\]|]/g, '\\$&');
 }
 
 if (!String.prototype.isInList) {
-   String.prototype.isInList = function(list) {
-	  var value = this.valueOf();
-	  for (var i = 0, l = list.length; i < l; i += 1) {
-		 if (list[i].toLowerCase() === value.toLowerCase()) return true;
+	String.prototype.isInList = function(list) {
+	  const value = this.valueOf();
+	  for (const item of list) {
+		 if (item.toLowerCase() === value.toLowerCase()) return true;
 	  }
 	  return false;
-   }
+	};
 }
 
-if(!String.prototype.apList){
-	String.prototype.apList = function(data){
-		if(this == ''){
+if (!String.prototype.apList) {
+	String.prototype.apList = function(data) {
+		if (this == '') {
 			return data;
 		} else {
-			return this.valueOf() + ', '+data;
+			return `${this.valueOf()  }, ${  data}`;
 		}
-	}
+	};
 }
 
-if(!String.prototype.startsWith){
+if (!String.prototype.startsWith) {
 	String.prototype.startsWith = function(searchString, position) {
 		position = position || 0;
 		return this.indexOf(searchString, position) === position;
 	};
 }
 
-function fillColorSelector(){
-	var html = '<tr>';
-	for(var i=0; i<=98; i++){
-		if(i%16 == 0){
+function fillColorSelector() {
+	let html = '<tr>';
+	let i;
+	for (i = 0; i <= 98; i++) {
+		if (i % 16 == 0) {
 			html += '</tr><tr>';
 		}
-		html += '<td><button type="button" class="colorButton" value="" style="background-color: ' + $$.getColor(i) + ';" onClick="gateway.insertColor(' + i + ')" /></td>';
+		html += `<td><button type="button" class="colorButton" value="" style="background-color: ${  $$.getColor(i)  };" onClick="uiHelpers.insertColor(${  i  })" /></td>`;
 	}
-	if(i%8 != 0){
+	if (i % 8 != 0) {
 		html += '</tr>';
 	}
 	$('#color-array').html(html);
 }
 
-function fillEmoticonSelector(){
+function fillEmoticonSelector() {
 	if (emoji.selectable.length == 0) {
-		var read = localStorage.getItem('selectableEmojiStore');
+		const read = localStorage.getItem('selectableEmojiStore');
 		if (read)
 			emoji.selectable = JSON.parse(read);
 		else
@@ -517,33 +823,32 @@ function fillEmoticonSelector(){
 				'😿', '😘', '😙', '😚', '😛', '😜', '😝', '🙁', '🙂', '🙃', '💀'
 			];
 	}
-	var html = '';
-	for(var i=0; i<emoji.selectable.length; i++){
-		var c = emoji.selectable[i];
+	let html = '';
+	for (const c of emoji.selectable) {
 		html += makeEmojiSelector(c);
 	}
 	$('#emoticon-symbols').html(html);
 	saveSelectableEmoji();
 }
 
-function makeEmojiSelector(c){
-	return '<span><a class="charSelect" onclick="gateway.insertEmoji(\'' + c + '\')">' + emoji.addTags(c).text + '</a> </span>';
+function makeEmojiSelector(c) {
+	return `<span><a class="charSelect" onclick="uiHelpers.insertEmoji('${  c  }')">${  emoji.addTags(c).text  }</a> </span>`;
 }
 
-function saveSelectableEmoji(){
+function saveSelectableEmoji() {
 	localStorage.setItem('selectableEmojiStore', JSON.stringify(emoji.selectable));
 }
 
-var geoip = {
-	'getName': function(code){
-		var name = language.countries[code];
-		if(name == undefined) return false;
+const geoip = {
+	'getName': function(code) {
+		const name = language.countries[code];
+		if (name == undefined) return false;
 		return name;
 	},
-	'flag': function(code){
-		var out = '';
+	'flag': function(code) {
+		let out = '';
 		code = code.toUpperCase();
-		for(var i=0; i<code.length; i++){
+		for (let i = 0; i < code.length; i++) {
 			out += String.fromCodePoint(code.codePointAt(i) + 0x1F1A5);
 		}
 		return emoji.addTags(out).text;
@@ -552,23 +857,23 @@ var geoip = {
 
 function onBlur() {
 	disp.focused = false;
-	var act = gateway.getActive();
-	if(act){
+	const act = uiTabs.getActive();
+	if (act) {
 		act.setMark();
 	} else {
-		gateway.statusWindow.setMark();
+		uiState.statusWindow.setMark();
 	}
 };
-function onFocus(){
+function onFocus() {
 	clearInterval(disp.titleBlinkInterval);
 	disp.titleBlinkInterval = false;
-	if(document.title == newMessage) document.title = he(guser.nick)+' @ PIRC.pl';
+	if (document.title == window.newMessage) document.title = `${he(connection.chat.me.userRef.nick)  } @ PIRC.pl`;
 	disp.focused = true;
-	var act = gateway.getActive();
-	if(act){
+	const act = uiTabs.getActive();
+	if (act) {
 		act.markRead();
 	} else {
-		gateway.statusWindow.markRead();
+		uiState.statusWindow.markRead();
 	}
 };
 
@@ -580,752 +885,62 @@ if (/*@cc_on!@*/false) { // check for Internet Explorer
 	window.onblur = onBlur;
 }
 
-function browserTooOld(){
+function browserTooOld() {
 	$('.not-connected-text > h3').html(language.outdatedBrowser);
 	$('.not-connected-text > p').html(language.outdatedBrowserInfo);
 	return;
 }
 
 function parseISOString(s) {
-	var b = s.split(/\D+/);
+	const b = s.split(/\D+/);
 	return new Date(Date.UTC(b[0], --b[1], b[2], b[3], b[4], b[5], b[6]));
 }
 
 function lengthInUtf8Bytes(str) {
 	// Matches only the 10.. bytes that are non-initial characters in a multi-byte sequence.
-	var add = 0;
-	var success = false;
+	let add = 0;
+	let success = false;
+	let m;
 	do {
 		try {
-			var m = encodeURIComponent(str).match(/%[89ABab]/g);
+			m = encodeURIComponent(str).match(/%[89ABab]/g);
 			success = true;
-		} catch(e){ // in case the last character is invalid
+		} catch (e) { // in case the last character is invalid
 			str = str.slice(0, -1);
 			add++;
 		}
-	} while(!success);
+	} while (!success);
 	return str.length + (m ? m.length : 0) + add;
 }
 
 function ImageExists(url) {
-	var img = new Image();
+	const img = new Image();
 	img.src = url;
 	return img.height != 0;
 }
 
-var disp = {
-	'size': 1,
-	'focused': true,
-	'titleBlinkInterval': false,
-	'setSize': function(s) {
-		if(!s) return;
-		$('body').css('font-size', s+'em');
-		$('input[type="checkbox"]').css('transform', 'scale('+s+')');
-		disp.size = s;
-		localStorage.setItem('tsize', s);
-	},
-	'displaySpecialDialog': function(name, button) {
-		$('#'+name).dialog({
-			resizable: false,
-			draggable: true,
-			close: function(){
-				$(this).dialog('destroy');
-			},
-			width: 600
-		});
-		if(button) {
-			$('#'+name).dialog('option', 'buttons', [ {
-				text: button,
-				click: function(){
-					$(this).dialog('close');
-				}
-			} ]);
-		}
-	},
-	'listWindowShow': function() {
-		disp.displaySpecialDialog('list-dialog', 'OK');
-	},
-	'colorWindowShow': function() {
-		disp.displaySpecialDialog('color-dialog');
-	},
-	'symbolWindowShow': function() {
-		disp.displaySpecialDialog('symbol-dialog');
-	},
-	'toggleImageView': function(id, url) {
-		$('#img-'+id).fadeToggle(200);
-		setTimeout(function(){
-			if($('#img-'+id).css('display') == 'none'){
-				$('#show-'+id).css('display', 'inline');
-				$('#hide-'+id).css('display', 'none');
-			} else {
-				if($('#imgc-'+id).prop('src') == ''){
-					$('#imgc-'+id).prop('src', url);
-				}
-				$('#show-'+id).css('display', 'none');
-				$('#hide-'+id).css('display', 'inline');
-			}
-		}, 250);
-	},
-	'toggleVideoView': function(id, video) {
-		$('#img-'+id).fadeToggle(200);
-		setTimeout(function(){
-			if($('#img-'+id).css('display') == 'none'){
-				$('#show-'+id).css('display', 'inline');
-				$('#hide-'+id).css('display', 'none');
-			} else {
-				if($('#vid-'+id).prop('src') == ''){
-					$('#vid-'+id).prop('src', 'https://www.youtube.com/embed/'+video);
-				}
-				$('#show-'+id).css('display', 'none');
-				$('#hide-'+id).css('display', 'inline');
-			}
-		}, 250);
-	},
-	'changeSettings': function(e) {
-		booleanSettings.forEach(function(sname){
-			try {
-				localStorage.setItem(sname, $('#'+sname).is(':checked'));
-			} catch(e){}
-		});
-		textSettings.forEach(function(sname){
-			try {
-				if(textSettingsValues[sname]){
-					localStorage.setItem(sname, textSettingsValues[sname]);
-				} else {
-					localStorage.removeItem(sname);
-				}
-			} catch(e){}
-		});
-		comboSettings.forEach(function(sname){
-			try {
-				localStorage.setItem(sname, $('#'+sname).val());
-			} catch(e){}
-		});
-
-		numberSettings.forEach(function(sname){
-			var value = $('#'+sname).val();
-			if(value == '' || isNaN(parseFloat(value)) || value < numberSettingsMinMax[sname]['min'] || value > numberSettingsMinMax[sname]['max']){
-				value = numberSettingsMinMax[sname]['deflt'];
-				$('#'+sname).val(value);
-			}
-			try {
-				localStorage.setItem(sname, value);
-			} catch(e){}
-		});
-		gateway.showNickList(); //WORKAROUND: pokaż panel nawet w prywatnej i w statusie, inaczej poniższe dłubanie w CSS powoduje popsucie interfejsu graficznego
-		settings.backlogLength = parseInt($('#backlogCount').val());
-		if ($('#tabsListBottom').is(':checked')) {
-			$('#top_menu').detach().insertAfter('#inputbox');
-			if($('#tabsDownCss').length == 0) {
-				$('head').append('<link rel="stylesheet" type="text/css" href="/styles/gateway_tabs_down.css" id="tabsDownCss">');
-			}
-		} else {
-			$('#top_menu').detach().insertAfter('#options-box');
-			$('#tabsDownCss').remove();
-		}
-		if ($('#blackTheme').is(':checked')) {
-			if($('#blackCss').length == 0) {
-				$('head').append('<link rel="stylesheet" type="text/css" href="/styles/gateway_black.css" id="blackCss">');
-			}
-		} else {
-			$('#blackCss').remove();
-		}
-		if ($('#monoSpaceFont').is(':checked')) {
-			if($('#monospace_font').length == 0){
-				var style = $('<style id="monospace_font">#chat-wrapper { font-family: DejaVu Sans Mono, Consolas, monospace, Symbola; } </style>');
-				$('html > head').append(style);
-			}
-		} else {
-			$('#monospace_font').remove();
-		}
-		if ($('#noAvatars').is(':checked')) {
-			$('#avatars-style').remove();
-			if($('#no_avatars').length == 0){
-				var style = $('<style id="no_avatars">.msgRepeat { display: block; } .msgRepeatBlock { display: none; } .messageDiv { padding-bottom: unset; } .messageMeta { display: none; } .messageHeader { display: inline; } .messageHeader::after { content: " "; } .messageHeader .time { display: inline; } .evenMessage { background: none !important; } .oddMessage { background: none !important; }</style>');
-				$('html > head').append(style);
-			}
-		} else {
-			$('#no_avatars').remove();
-			if($('#avatars-style').length == 0){
-				var style = $('<style id="avatars-style">span.repeat-hilight, span.repeat-hilight span { color: #1F29D3 !important; font-weight: bold; }</style>');
-				$('html > head').append(style);
-			}
-		}
-		if ($('#showUserHostnames').is(':checked')) {
-			$('#userhost_hidden').remove();
-		} else {
-			if($('#userhost_hidden').length == 0){
-				var style = $('<style id="userhost_hidden">.userhost { display:none; }</style>');
-				$('html > head').append(style);
-			}
-		}
-		if($('#automLogIn').is(':checked')){
-			$('#automLogIn').parent().parent().css('display', '');
-		} else {
-			$('#automLogIn').parent().parent().css('display', 'none');
-		}
-		if($('#biggerEmoji').is(':checked')){
-			document.documentElement.style.setProperty('--emoji-scale', '3');
-		} else {
-			document.documentElement.style.setProperty('--emoji-scale', '1.8');
-		}
-		for(i in settingProcessors){
-			settingProcessors[i]();
-		}
-		if(!e){
-			return;
-		}
-		if(e.currentTarget.id == 'dispEmoji') {
-			if(!$('#dispEmoji').is(':checked')){
-				$('#sendEmoji').prop('checked', false);
-			}
-		} else if(e.currentTarget.id == 'sendEmoji'){
-			if($('#sendEmoji').is(':checked')){
-				$('#dispEmoji').prop('checked', true);
-			}
-		}
-		if(e.currentTarget.id == 'setUmodeD') {
-			if($('#setUmodeD').is(':checked')){
-				$('#setUmodeR').prop('checked', true);
-				ircCommand.umode('+R');
-				if(!guser.umodes.D){
-					ircCommand.umode('+D');
-				}
-			} else {
-				if(guser.umodes.D){
-					ircCommand.umode('-D');
-				}
-			}
-		} else if(e.currentTarget.id == 'setUmodeR') {
-			if(!$('#setUmodeR').is(':checked')){
-				$('#setUmodeD').prop('checked', false);
-				ircCommand.umode('-D');
-				if(guser.umodes.R){
-					ircCommand.umode('-R');
-				}
-			} else {
-				if(!guser.umodes.R){
-					ircCommand.umode('+R');
-				}
-			}
-		} else if(e.currentTarget.id == 'setLanguage') {
-			var lang = $('#setLanguage').val();
-			setLanguage(lang);
-		} else if(e.currentTarget.id == 'showPartQuit'){
-			disp.updateEventVisibility();
-			if(!$('#showPartQuit').is(':checked')){
-				// Re-enable grouping when showing events again
-				disp.regroupAllEvents();
-			}
-		} else if(e.currentTarget.id == 'groupEvents'){
-			if($('#groupEvents').is(':checked')){
-				disp.regroupAllEvents();
-			} else {
-				disp.ungroupAllEvents();
-			}
-		} else if(e.currentTarget.id == 'sortChannelsByJoinOrder'){
-			gateway.sortChannelTabs();
-		}
-		$('#nicklist').removeAttr('style');
-		$('#chlist').removeAttr('style');
-		if($('#chlist-body').is(':visible')){
-			gateway.toggleChanList();
-		}
-	},
-	'showAbout': function() {
-		disp.displaySpecialDialog('about-dialog', 'OK');
-	},
-	'showAvatarSetting': function(){
-		if(!mainSettings.supportAvatars) return;
-		if(!guser.me.registered || window.FormData === undefined || !mainSettings.avatarUploadUrl){
-			var html =
-				'<div id="current-avatar">' +
-					'<div id="current-letter-avatar">' +
-						'<span class="avatar letterAvatar" id="letterAvatarExample"><span role="presentation" id="letterAvatarExampleContent"></span></span>' +
-					'</div>' +
-					'<img id="current-avatar-image" src="/styles/img/noavatar.png" alt="' + language.noAvatarSet + '"><br>' +
-					'<span id="current-avatar-info">' + language.noAvatarSet + '</span> <button type="button" value="" id="delete-avatar">' + language.remove + '</button>' +
-				'</div>' +
-				'<div id="set-avatar">' +
-					language.enterUrl + ' <input type="text" id="avatar-url" name="avatar-url" autocomplete="photo"> <button type="button" id="check-avatar-button" value="">' + language.check +  '</button><br>' +
-					'<button type="button" value="" id="submit-avatar">' + language.applySetting + '</button><br>' +
-					language.avatarFileInfo + '<br>';
-				if(window.FormData === undefined){
-					html += language.browserTooOldForAvatars;
-				} else if(mainSettings.avatarUploadUrl) {
-					html += language.registerNickForAvatars;
-				}
-				html += '</div>';
-			$('#avatar-dialog').html(html);
-			$('#delete-avatar').click(disp.deleteAvatar);
-			$('#submit-avatar').click(disp.submitAvatar);
-			$('#check-avatar-button').click(disp.checkAvatarUrl);
-			if(!textSettingsValues['avatar']){
-				$('#letterAvatarExample').css('background-color',$$.nickColor(guser.nick, true));
-				$('#letterAvatarExampleContent').text(guser.nick.charAt(0));
-				$('#current-avatar-info').text(language.noAvatarSet);
-				$('#current-avatar-image').attr('src', '/styles/img/noavatar.png');
-				$('#current-avatar-image').attr('alt', language.noAvatarSet);
-				$('#current-letter-avatar').show();
-				$('#delete-avatar').hide();
-			} else {
-				$('#current-avatar-info').text(language.currentAvatar);
-				$('#current-avatar-image').attr('src', textSettingsValues['avatar'].replace('{size}', '100'));
-				$('#current-avatar-image').attr('alt', language.currentAvatar);
-				$('#current-letter-avatar').hide();
-				$('#avatar-url').val(textSettingsValues['avatar']);
-				$('#delete-avatar').show();
-			}
-			$('#submit-avatar').hide();
-		} else {
-			var html =
-				'<div id="current-avatar">' +
-					'<div id="current-letter-avatar">' +
-						'<span class="avatar letterAvatar" id="letterAvatarExample"><span role="presentation" id="letterAvatarExampleContent"></span></span>' +
-					'</div>' +
-					'<img id="current-avatar-image" src="/styles/img/noavatar.png" alt="' + language.noAvatarSet + '"><br>' +
-					'<span id="current-avatar-info">' + language.noAvatarSet + '</span> <button type="button" value="" id="delete-avatar">' + language.remove + '</button>' +
-				'</div>' +
-				'<div id="set-avatar">' +
-					language.selectAnImage + ' <input type="file" name="avatarFileToUpload" id="avatarFileToUpload"><br>' +
-					'<button type="submit" value="" id="submit-avatar" name="submit">' + language.applySetting + '</button><br>' +
-					language.youAcceptToStoreTheData + mainSettings.networkName + '.' +
-				'</div>';
-			$('#avatar-dialog').html(html);
-			$('#delete-avatar').click(disp.deleteAvatar);
-			$('#submit-avatar').click(disp.submitAvatar);
-			if(!textSettingsValues['avatar']){
-				$('#letterAvatarExample').css('background-color',$$.nickColor(guser.nick, true));
-				$('#letterAvatarExampleContent').text(guser.nick.charAt(0));
-				$('#current-avatar-info').text(language.avatarNotSet);
-				$('#current-avatar-image').attr('src', '/styles/img/noavatar.png');
-				$('#current-avatar-image').attr('alt', language.avatarNotSet);
-				$('#current-letter-avatar').show();
-				$('#delete-avatar').hide();
-			} else {
-				$('#current-avatar-info').text(language.currentAvatar);
-				$('#current-avatar-image').attr('src', textSettingsValues['avatar']);
-				$('#current-avatar-image').attr('alt', language.currentAvatar);
-				$('#current-letter-avatar').hide();
-				$('#avatar-url').val(textSettingsValues['avatar']);
-				$('#delete-avatar').show();
-			}
-			$('#submit-avatar').show();
-		}
-		disp.displaySpecialDialog('avatar-dialog', 'OK');
-	},
-	'checkAvatarUrl': function() {
-		var url = $('#avatar-url').val();
-		if(!url.startsWith('https://')){
-			$$.alert(language.addressMustStartWithHttps);
-			return;
-		}
-		$('#delete-avatar').hide();
-		$('#current-letter-avatar').hide();
-		$('#current-avatar-image').attr('src', url);
-		$('#current-avatar-image').attr('alt', language.preview);
-		$('#current-avatar-info').text(language.acceptPreview);
-		$('#submit-avatar').show();
-	},
-	'submitAvatar': function() {
-		if(!guser.me.registered){
-			var url = $('#avatar-url').val();
-			if(!url.startsWith('https://')){
-				$$.alert(language.addressMustStartWithHttps);
-				return;
-			}
-			textSettingsValues['avatar'] = url;
-			disp.showAvatarSetting();
-			disp.avatarChanged();
-		} else {
-			var fd = new FormData();
-			var file = $('#avatarFileToUpload')[0].files[0];
-			if(!file){
-				$$.alert(language.noFileSelected);
-				return;
-			}
-			fd.append('fileToUpload', file);
-			fd.append('image-type', 'avatar');
-			$('#set-avatar').append('<br>' + language.processing);
-			var label = gateway.makeLabel();
-			gateway.labelCallbacks[label] = function(label, msg, batch){
-				if(!batch){
-					var jwt = msg.args[2];
-				} else {
-					var jwt = batch.extjwtContent;
-				}
-				fd.append('jwt', jwt);
-				$.ajax({
-					url: mainSettings.avatarUploadUrl,
-					dataType: 'json',
-					method: 'post',
-					processData: false,
-					contentType: false,
-					data: fd,
-					success: function(data){
-						if(data['result'] == 'ok'){
-							textSettingsValues['avatar'] = data['url'];
-							disp.showAvatarSetting();
-							disp.avatarChanged();
-						} else {
-							$$.alert(language.failedToSendImageWithResponse + data['result']); // TODO parse the result
-						}
-					},
-					error: function(){
-						$$.alert(language.failedToSendImage);
-					}
-				});
-			};
-			var args = ['*'];
-			if(mainSettings.extjwtService){
-				args.push(mainSettings.extjwtService);
-			}
-			ircCommand.perform('EXTJWT', args, false, {'label': label});
-		}
-	},
-	'deleteAvatar': function() {
-		if(!guser.me.registered){
-			if(!confirm(language.areYouSureToDeleteAvatar + '"' +textSettingsValues['avatar']+ '"?')){
-				return;
-			}
-			textSettingsValues['avatar'] = false;
-			disp.showAvatarSetting();
-			disp.avatarChanged();
-		} else {
-			if(!confirm(language.deleteAvatarQ)){
-				return;
-			}
-			var label = gateway.makeLabel();
-			gateway.labelCallbacks[label] = function(label, msg, batch){
-				if(!batch){
-					var jwt = msg.args[2];
-				} else {
-					var jwt = batch.extjwtContent;
-				}
-				$.ajax({
-					url: mainSettings.avatarDeleteUrl,
-					dataType: 'json',
-					method: 'post',
-					data: {
-						'image-type': 'avatar',
-						'jwt': jwt
-					},
-					success: function(data){
-						if(data['result'] == 'ok'){
-							textSettingsValues['avatar'] = false;
-							disp.showAvatarSetting();
-							disp.avatarChanged();
-						} else {
-							$$.alert(language.failedToDeleteImageWithResponse + data['result']); // TODO parse the result
-						}
-					},
-					error: function(){
-						$$.alert(language.failedToDeleteImage);
-					}
-				});
-			};
-			var args = ['*'];
-			if(mainSettings.extjwtService){
-				args.push(mainSettings.extjwtService);
-			}
-			ircCommand.perform('EXTJWT', args, false, {'label': label});
-		}
-	},
-	'avatarChanged': function() {
-		disp.changeSettings();
-		if(textSettingsValues['avatar']){
-			ircCommand.metadata('SET', '*', ['avatar', textSettingsValues['avatar']]);
-		} else {
-			ircCommand.metadata('SET', '*', ['avatar']);
-		}
-	},
-	'getAvatarIcon': function(nick, isRegistered){
-		var avatar = gateway.getAvatarUrl(nick, 50);
-		if(avatar) return avatar;
-		if(isRegistered) return icons[6];
-		return icons[0];
-	},
-	'showOptions': function() {
-		disp.displaySpecialDialog('options-dialog', 'OK');
-	},
-	'showQueryUmodes': function() {
-		disp.displaySpecialDialog('query-umodes-dialog', 'OK');
-	},
-	'showSizes': function() {
-		disp.displaySpecialDialog('size-dialog', language.close);
-	},
-	'topicClick': function() {
-		var channel = gateway.findChannel(gateway.active);
-		if(!channel){
-			return;
-		}
-		var topic = $('#'+channel.id+'-topic > h2').html();
-		if(topic == ''){
-			topic = language.topicIsNotSet;
-		}
-		var html = topic +
-			'<p class="' + channel.id + '-operActions" style="display:none;">' +
-				'<b>' + language.changeChannelTopic + '</b><textarea name="topicEdit" id="topicEdit">'+channel.topic+'</textarea>' +
-				'<button id="topic-change-button-' + channel.id + '">' + language.changeTopicSubmit + '</button><br>' +
-				language.youCanCopyCodesToTopic +
-			'</p>';
-		$$.closeDialog('confirm', 'topic');
-		$$.displayDialog('confirm', 'topic', language.topicOfChannel + channel.name, html);
-		$('#topic-change-button-' + channel.id).click(function(){
-			gateway.changeTopic(channel.name);
-		});
-	},
-	'playSound': function() {
-		if ( ! $('#newMsgSound').is(':checked')) {
-			return;
-		}
-		var filename = '/styles/audio/served';
-		$('#sound').html('<audio autoplay="autoplay"><source src="' + filename + '.mp3" type="audio/mpeg" /><source src="' + filename + '.ogg" type="audio/ogg" /><embed hidden="true" autostart="true" loop="false" src="' + filename +'.mp3" /></audio>');
-	},
-	'insertLinebeI': function(mode, args){
-		var chanId = gateway.findChannel(args[1]).id;
-		var listName = disp.getNamebeI(mode);
-		if($$.getDialogSelector('list', 'list-'+mode+'-'+args[1]).length == 0){
-			var html = '<div class="beIListContents"><table><tr><th>' + language.mask + '</th><th>' + language.setBy + '</th><th>' + language.date + '</th>';
-			if(mode == 'b'){
-				html += '<th>' + language.appliesTo + '</th>';
-			}
-			html += '</tr></table></div>';
-			$$.displayDialog('list', 'list-'+mode+'-'+args[1], language.listOf+listName+language.onChannel+he(args[1]), html);
-		}
-		var html = '<tr><td>'+he(args[2])+'</td><td>'+he(args[3])+'</td><td>'+$$.parseTime(args[4])+'</td>';
-			if(mode == 'b'){
-				html += '<td>';
-				try {
-					var affected = localStorage.getItem('banmask-'+md5(args[2]));
-					if(affected){
-						html += he(affected);
-					}
-				} catch(e){}
-				html += '</td>';
-			}
-			html += '<td class="'+chanId+'-operActions button" style="display:none">' +
-			'<button id="un'+mode+'-'+chanId+'-'+md5(args[2])+'">' + language.remove + '</button>' +
-			'</td></tr>';
-		$('table', $$.getDialogSelector('list', 'list-'+mode+'-'+args[1])).append(html);
-		$('#un'+mode+'-'+chanId+'-'+md5(args[2])).click(function(){
-			ircCommand.mode(args[1], '-'+mode+' '+args[2]);
-			ircCommand.mode(args[1], mode);
-			$$.closeDialog('list', 'list-'+mode+'-'+args[1]);
-		});
-	},
-	'endListbeI': function(mode, chan){
-		if($$.getDialogSelector('list', 'list-'+mode+'-'+chan).length == 0){
-			$$.displayDialog('list', 'list-'+mode+'-'+chan, language.listOf+disp.getNamebeI(mode)+language.onChannel+he(chan), language.listIsEmpty);
-		}
-	},
-	'getNamebeI': function(mode){
-		var listName = mode;
-		switch(mode){
-			case 'b': listName = language.ofBans; break;
-			case 'e': listName = language.ofExcepts; break;
-			case 'I': listName = language.ofInvites; break;
-		}
-		return listName;
-	},
-	'showAllEmoticons': function(){
-		$$.closeDialog('emoticons', 'allEmoticons');
-		var html = '<div class="emojiSelector">';
-		var data = emoji.getAll();
-		for(var i=0; i<data.length; i++){
-			html += '<a class="charSelect" onclick="gateway.insertEmoji(\'' + data[i].text + '\')"><g-emoji fallback-src="/styles/emoji/' + data[i].code + '.png" class="emoji-wrapper">' + data[i].text + '</g-emoji></a> ';
-		}
-		html += '</div>';
-		$$.displayDialog('emoticons', 'allEmoticons', language.allEmoticons, html);
-	},
-	'updateEventVisibility': function(){
-		// Hide or show event messages based on showPartQuit setting
-		var hideEvents = $('#showPartQuit').is(':checked');
-		var groupEnabled = $('#groupEvents').is(':checked');
-
-		$('.event-message').each(function(){
-			var $this = $(this);
-			var isInGroup = $this.hasClass('grouped-event');
-
-			if(hideEvents){
-				$this.hide();
-			} else if(isInGroup){
-				// Keep grouped events hidden, they're shown via expand
-				$this.hide();
-			} else {
-				$this.show();
-			}
-		});
-
-		// Also hide/show group summaries
-		$('.event-group-summary').each(function(){
-			if(hideEvents){
-				$(this).hide();
-			} else {
-				$(this).show();
-			}
-		});
-	},
-	'groupEvents': function(container){
-		// Group consecutive event messages (>2) into a collapsible summary
-		if($('#showPartQuit').is(':checked')) return; // Don't group when hiding all events
-		if(!$('#groupEvents').is(':checked')) return; // Grouping disabled
-
-		var $container = $(container);
-		var $messages = $container.children('.messageDiv');
-		var consecutiveEvents = [];
-		var lastWasEvent = false;
-
-		$messages.each(function(){
-			var $this = $(this);
-			var isEvent = $this.hasClass('event-message');
-			var isGroupSummary = $this.hasClass('event-group-summary');
-
-			if(isGroupSummary) return; // Skip existing summaries
-
-			if(isEvent && !$this.hasClass('grouped-event')){
-				consecutiveEvents.push($this);
-				lastWasEvent = true;
-			} else {
-				// Non-event message encountered, check if we should group previous events
-				if(consecutiveEvents.length > 2){
-					disp.createEventGroup(consecutiveEvents);
-				}
-				consecutiveEvents = [];
-				lastWasEvent = false;
-			}
-		});
-
-		// Handle trailing events at the end
-		if(consecutiveEvents.length > 2){
-			disp.createEventGroup(consecutiveEvents);
-		}
-	},
-	'createEventGroup': function(events){
-		if(events.length <= 2) return;
-
-		// Count event types
-		var counts = { join: 0, part: 0, quit: 0, kick: 0, mode: 0, nick: 0 };
-		events.forEach(function($el){
-			var type = $el.attr('data-event-type');
-			if(type in counts) counts[type]++;
-		});
-
-		// Combine part and quit for "left" count
-		var leftCount = counts.part + counts.quit;
-
-		// Build summary text
-		var summaryParts = [];
-		if(counts.join > 0){
-			var label = counts.join === 1 ? language.usersJoined[0] : language.usersJoined[1];
-			summaryParts.push(label.replace('%d', counts.join));
-		}
-		if(leftCount > 0){
-			var label = leftCount === 1 ? language.usersLeft[0] : language.usersLeft[1];
-			summaryParts.push(label.replace('%d', leftCount));
-		}
-		if(counts.kick > 0){
-			var label = counts.kick === 1 ? language.usersKicked[0] : language.usersKicked[1];
-			summaryParts.push(label.replace('%d', counts.kick));
-		}
-		if(counts.mode > 0){
-			var label = counts.mode === 1 ? language.modeChanges[0] : language.modeChanges[1];
-			summaryParts.push(label.replace('%d', counts.mode));
-		}
-		if(counts.nick > 0){
-			var label = counts.nick === 1 ? language.nickChanges[0] : language.nickChanges[1];
-			summaryParts.push(label.replace('%d', counts.nick));
-		}
-
-		var summaryText = summaryParts.join(', ');
-		var groupId = 'evtgrp-' + Math.random().toString(36).substr(2, 9);
-
-		// Create summary element
-		var $summary = $('<div class="messageDiv event-group-summary" data-group-id="' + groupId + '">' +
-			'<span class="time">' + $$.niceTime() + '</span> &nbsp; ' +
-			'<span class="mode"><span class="symbolFont">⋯</span> ' + summaryText + ' ' +
-			'<a href="javascript:void(0)" class="event-group-toggle" id="show-' + groupId + '" style="display:inline">[' + language.expand + ']</a>' +
-			'<a href="javascript:void(0)" class="event-group-toggle" id="hide-' + groupId + '" style="display:none">[' + language.collapse + ']</a>' +
-			'</span></div>');
-
-		// Insert summary before first event in group
-		events[0].before($summary);
-
-		// Mark events as grouped and hide them
-		events.forEach(function($el){
-			$el.addClass('grouped-event').attr('data-group-id', groupId).hide();
-		});
-
-		// Set up toggle handlers
-		$('#show-' + groupId).click(function(){
-			disp.expandEventGroup(groupId);
-		});
-		$('#hide-' + groupId).click(function(){
-			disp.collapseEventGroup(groupId);
-		});
-	},
-	'expandEventGroup': function(groupId){
-		var $groupedEvents = $('.grouped-event[data-group-id="' + groupId + '"]');
-		$groupedEvents.show();
-		$('#show-' + groupId).hide();
-		$('#hide-' + groupId).show();
-
-		// Auto-scroll if expanded events would be below the viewport
-		var $lastEvent = $groupedEvents.last();
-		if($lastEvent.length){
-			var $chatWrapper = $('#chat-wrapper');
-			var wrapperTop = $chatWrapper.offset().top;
-			var wrapperVisibleBottom = wrapperTop + $chatWrapper.innerHeight();
-			var eventBottom = $lastEvent.offset().top + $lastEvent.outerHeight();
-			if(eventBottom > wrapperVisibleBottom){
-				// Scroll to make the last event visible
-				$chatWrapper.scrollTop($chatWrapper.scrollTop() + (eventBottom - wrapperVisibleBottom));
-			}
-		}
-	},
-	'collapseEventGroup': function(groupId){
-		$('.grouped-event[data-group-id="' + groupId + '"]').hide();
-		$('#show-' + groupId).show();
-		$('#hide-' + groupId).hide();
-	},
-	'ungroupAllEvents': function(){
-		// Expand and remove all event groups
-		$('.event-group-summary').each(function(){
-			var groupId = $(this).attr('data-group-id');
-			$('.grouped-event[data-group-id="' + groupId + '"]').removeClass('grouped-event').removeAttr('data-group-id').show();
-			$(this).remove();
-		});
-	},
-	'regroupAllEvents': function(){
-		// First ungroup, then regroup all windows
-		disp.ungroupAllEvents();
-		$('#main-window > span').each(function(){
-			disp.groupEvents(this);
-		});
-	}
-};
 
 //funkcje do obrabiania tekstów i podobne
-var $$ = {
+const $$ = {
 	'parseTime': function(timestamp) {
-		var nd = new Date();
-		nd.setTime(timestamp*1000);
-		if((new Date()).getFullYear() != nd.getFullYear()){
-			return $.vsprintf("%s, %s %s %s, %02s:%02s:%02s", [ language.weekdays[nd.getDay()], nd.getDate(), language.months[nd.getMonth()], nd.getFullYear(), nd.getHours(), nd.getMinutes(), nd.getSeconds() ] );
+		const nd = new Date();
+		nd.setTime(timestamp * 1000);
+		if ((new Date()).getFullYear() != nd.getFullYear()) {
+			return $.vsprintf('%s, %s %s %s, %02s:%02s:%02s', [ language.weekdays[nd.getDay()], nd.getDate(), language.months[nd.getMonth()], nd.getFullYear(), nd.getHours(), nd.getMinutes(), nd.getSeconds() ] );
 		} else {
-			return $.vsprintf("%s, %s %s, %02s:%02s:%02s", [ language.weekdays[nd.getDay()], nd.getDate(), language.months[nd.getMonth()], nd.getHours(), nd.getMinutes(), nd.getSeconds() ] );
+			return $.vsprintf('%s, %s %s, %02s:%02s:%02s', [ language.weekdays[nd.getDay()], nd.getDate(), language.months[nd.getMonth()], nd.getHours(), nd.getMinutes(), nd.getSeconds() ] );
 		}
 	},
 	'nickColor': function(nick, codeOnly) {
-		if (!$('#coloredNicks').is(':checked')){
+		if (!settings.get('coloredNicks')) {
 			return '';
 		}
-		var color;
-		var colorid = nick.length;
-		for(var i = 0; i<nick.length; i++){
+		let color;
+		let colorid = nick.length;
+		for (let i = 0; i < nick.length; i++) {
 			colorid += nick.charCodeAt(i);
 		}
-		switch(colorid % 15){
+		switch (colorid % 15) {
 			case 0: color = '#515185'; break;
 			case 1: color = '#623c00'; break;
 			case 2: color = '#c86c00'; break;
@@ -1342,103 +957,106 @@ var $$ = {
 			case 13: color = '#008100'; break;
 			case 14: color = '#959595'; break;
 		}
-		for(a in nickColorProcessors){
-			var ret = nickColorProcessors[a](nick);
-			if(ret){
-				color = ret;
+		// Emit event for nick color processing
+		const colorData = { nick, color };
+		ircEvents.emit('nick:color', colorData);
+		color = colorData.color;
+
+		// Sanitize and adjust color for contrast with current theme background
+		if (color) {
+			color = sanitizeColor(color);
+			if (color) {
+				const backgroundColor = getThemeBackgroundColor();
+				color = adjustColorContrast(color, backgroundColor, 4.5);
 			}
 		}
 
-	// Sanitize and adjust color for contrast with current theme background
-	if(color){
-		color = sanitizeColor(color);
-		if(color){
-			var backgroundColor = getThemeBackgroundColor();
-			color = adjustColorContrast(color, backgroundColor, 4.5);
-		}
-	}
-
-		if(codeOnly){
+		if (codeOnly) {
 			return color;
 		} else {
-			return 'style="color:' + color +'"';
+			return `style="color:${  color  }"`;
 		}
 	},
 	'colorize': function(message, strip) {
-		if(strip == undefined) var strip = false;
-		if ($('#blackTheme').is(':checked')) {
-			var pageFront = 'white';
-			var pageBack = 'black';
+		if (strip == undefined) strip = false;
+		let pageFront, pageBack;
+		if (settings.get('blackTheme')) {
+			pageFront = 'white';
+			pageBack = 'black';
 		} else {
-			var pageBack  = 'white';
-			var pageFront = 'black';
+			pageBack  = 'white';
+			pageFront = 'black';
 		}
-		var currBack = pageBack;
-		var currFront = pageFront;
-		var newText = '';
-		if($('#dispEmoji').is(':checked')){
+		let currBack = pageBack;
+		let currFront = pageFront;
+		let newText = '';
+		if (settings.get('dispEmoji')) {
 			message = $$.textToEmoji(message);
 		}
-		if(!strip){
-			message = he(message);
+		if (!strip) {
 			message = $$.parseLinks(message);
-			if($('#dispEmoji').is(':checked')){
+			if (settings.get('dispEmoji')) {
 				// Check if message is emoji-only with ≤5 emoji for auto-enlargement
-			var enlargeEmoji = emoji.isTextEmojiOnly(message);
-			var emojiResult = emoji.addTags(message, enlargeEmoji);
-			message = emojiResult.text;
-			// Note: enlargeEmoji already applied during addTags if ≤5
+				const enlargeEmoji = emoji.isTextEmojiOnly(message);
+				const emojiResult = emoji.addTags(message, enlargeEmoji);
+				message = emojiResult.text;
+				// Note: enlargeEmoji already applied during addTags if ≤5
 			}
 		}
-		var length = message.length;
-		var bold = false;
-		var italic = false;
-		var underline = false;
-		var invert = false;
-		var formatSet = false;
-		var formatWaiting = false;
-		for (var i = 0 ; i < length ; i++) {
-			var isText = false;
-			var append = '';
+		const length = message.length;
+		let bold = false;
+		let italic = false;
+		let underline = false;
+		let invert = false;
+		let formatSet = false;
+		let formatWaiting = false;
+		let fgCode, bgCode;
+		for (let i = 0 ; i < length ; i++) {
+			let isText = false;
+			let append = '';
 			switch (message.charAt(i)) {
 				case String.fromCharCode(3):
-					var fgCode = null;
-					var bgCode = null;
-					if (!isNaN(parseInt(message.charAt(i+1)))) {
-						if (!isNaN(parseInt(message.charAt(++i+1)))) {
-							fgCode = parseInt(message.charAt(i)) * 10 + parseInt(message.charAt(++i));
-						} else {
-							fgCode = parseInt(message.charAt(i));
-						}
-						if ((message.charAt(i+1) == ',') && !isNaN(parseInt(message.charAt(++i+1)))) {
-							if (!isNaN(parseInt(message.charAt(++i+1)))) {
-								bgCode = parseInt(message.charAt(i)) * 10 + parseInt(message.charAt(++i));
-							} else {
-								bgCode = parseInt(message.charAt(i));
+					fgCode = null;
+					bgCode = null;
+					{
+						let nc = message.charCodeAt(i + 1);
+						if (nc >= 48 && nc <= 57) {
+							i++;
+							fgCode = nc - 48;
+							nc = message.charCodeAt(i + 1);
+							if (nc >= 48 && nc <= 57) {
+								i++;
+								fgCode = fgCode * 10 + (nc - 48);
 							}
+							if (message.charAt(i + 1) === ',') {
+								nc = message.charCodeAt(i + 2);
+								if (nc >= 48 && nc <= 57) {
+									i += 2;
+									bgCode = nc - 48;
+									nc = message.charCodeAt(i + 1);
+									if (nc >= 48 && nc <= 57) {
+										i++;
+										bgCode = bgCode * 10 + (nc - 48);
+									}
+								}
+							}
+							if (fgCode != null) {
+								currFront = $$.getColor(fgCode, 'foreground');
+							}
+							if (bgCode != null) {
+								currBack = $$.getColor(bgCode, 'background');
+							}
+						} else {
+							currFront = pageFront;
+							currBack = pageBack;
 						}
-						if(fgCode != null){
-							currFront = $$.getColor(fgCode, "foreground");
-						}
-						if(bgCode != null){
-							currBack = $$.getColor(bgCode, "background");
-						}
-					} else {
-						currFront = pageFront;
-						currBack = pageBack;
 					}
 					formatWaiting = true;
 					break;
 
 				case String.fromCharCode(4): // hex color
-					var end = i+7;
-					i++;
-					var code = '#';
-					for(; i<end; ++i){
-						code += message.charAt(i);
-					}
-					i--;
-					currFront = code;
+					currFront = '#' + message.substring(i + 1, i + 7);
+					i += 6;
 					formatWaiting = true;
 					break;
 
@@ -1474,42 +1092,38 @@ var $$ = {
 					append = message.charAt(i);
 					break;
 			}
-			if(!strip && isText && formatWaiting){
+			if (!strip && isText && formatWaiting) {
 				formatWaiting = false;
-				if(formatSet){
+				if (formatSet) {
 					newText += '</span>';
 					formatSet = false;
 				}
-				if(invert || italic || underline || bold || currFront != pageFront || currBack != pageBack){
+				if (invert || italic || underline || bold || currFront != pageFront || currBack != pageBack) {
 					formatSet = true;
-					newText += '<span style="';
-					newText += italic?'font-style:italic;':'';
-					newText += underline?'text-decoration:underline;':'';
-					newText += bold?'font-weight:bold;':'';
-					if(invert){
-						newText += 'color:'+currBack+';background-color:'+currFront+';';
+					const styles = [];
+					if (italic)    styles.push('font-style:italic');
+					if (underline) styles.push('text-decoration:underline');
+					if (bold)      styles.push('font-weight:bold');
+					if (invert) {
+						styles.push(`color:${currBack}`, `background-color:${currFront}`);
 					} else {
-						if(currFront != pageFront){
-							newText += 'color:'+currFront+';';
-						}
-						if(currBack != pageBack){
-							newText += 'background-color:'+currBack+';';
-						}
+						if (currFront != pageFront) styles.push(`color:${currFront}`);
+						if (currBack  != pageBack)  styles.push(`background-color:${currBack}`);
 					}
-					newText += '"><wbr>';
+					newText += `<span style="${styles.join(';')}"><wbr>`;
 				}
 			}
-			if(isText){
+			if (isText) {
 				newText += append;
 			}
 		}
-		if(!strip && formatSet){
+		if (!strip && formatSet) {
 			newText += '</span><wbr>';
 		}
 		return newText;
 	},
 	'getColor': function(numeric, what) {
-		var num = parseInt(numeric);
+		const num = parseInt(numeric);
 		/*if (what == "foreground") {
 			switch (num) {
 				case 0:  return 'white';
@@ -1519,7 +1133,7 @@ var $$ = {
 				case 4:  return '#C30003';
 				case 5:  return '#5F0002';
 				case 6:  return '#950093';
-				case 7:  return '#838900';
+				case 7:  return '#8800ab';
 				case 8:  return '#CED800';
 				case 9:  return '#07D800';
 				case 10: return '#00837E';
@@ -1530,157 +1144,157 @@ var $$ = {
 				default: return '#B9B9B9';
 			}
 		} else {*/
-			switch (num) {
-				case 0:  return 'white';
-				case 1:  return 'black';
-				case 2:  return '#1B54FF';
-				case 3:  return '#4BC128';
-				case 4:  return '#F15254';
-				case 5:  return '#9B4244';
-				case 6:  return '#D749D6';
-				case 7:  return '#AEB32F';
-				case 8:  return '#E7EF3B';
-				case 9:  return '#59FF54';
-				case 10: return '#00DFD6';
-				case 11: return '#60FFF8';
-				case 12: return '#5F6BFF';
-				case 13: return '#FF83F2';
-				case 14: return '#B5B5B5';
-				case 15: return '#E0E0E0';
+		switch (num) {
+			case 0:  return 'white';
+			case 1:  return 'black';
+			case 2:  return '#1B54FF';
+			case 3:  return '#4BC128';
+			case 4:  return '#F15254';
+			case 5:  return '#9B4244';
+			case 6:  return '#D749D6';
+			case 7:  return '#AEB32F';
+			case 8:  return '#E7EF3B';
+			case 9:  return '#59FF54';
+			case 10: return '#00DFD6';
+			case 11: return '#60FFF8';
+			case 12: return '#5F6BFF';
+			case 13: return '#FF83F2';
+			case 14: return '#B5B5B5';
+			case 15: return '#E0E0E0';
 				// extended codes
-				case 16: return '#470000';
-				case 17: return '#472100';
-				case 18: return '#474700';
-				case 19: return '#324700';
-				case 20: return '#004700';
-				case 21: return '#00472c';
-				case 22: return '#004747';
-				case 23: return '#002747';
-				case 24: return '#000047';
-				case 25: return '#2e0047';
-				case 26: return '#470047';
-				case 27: return '#47002a';
-				case 28: return '#740000';
-				case 29: return '#743a00';
-				case 30: return '#747400';
-				case 31: return '#517400';
-				case 32: return '#007400';
-				case 33: return '#007449';
-				case 34: return '#007474';
-				case 35: return '#004074';
-				case 36: return '#000074';
-				case 37: return '#4b0074';
-				case 38: return '#740074';
-				case 39: return '#740045';
-				case 40: return '#b50000';
-				case 41: return '#b56300';
-				case 42: return '#b5b500';
-				case 43: return '#7db500';
-				case 44: return '#00b500';
-				case 45: return '#00b571';
-				case 46: return '#00b5b5';
-				case 47: return '#0063b5';
-				case 48: return '#0000b5';
-				case 49: return '#7500b5';
-				case 50: return '#b500b5';
-				case 51: return '#b5006b';
-				case 52: return '#ff0000';
-				case 53: return '#ff8c00';
-				case 54: return '#ffff00';
-				case 55: return '#b2ff00';
-				case 56: return '#00ff00';
-				case 57: return '#00ffa0';
-				case 58: return '#00ffff';
-				case 59: return '#008cff';
-				case 60: return '#0000ff';
-				case 61: return '#a500ff';
-				case 62: return '#ff00ff';
-				case 63: return '#ff0098';
-				case 64: return '#ff5959';
-				case 65: return '#ffb459';
-				case 66: return '#ffff71';
-				case 67: return '#cfff60';
-				case 68: return '#6fff6f';
-				case 69: return '#65ffc9';
-				case 70: return '#6dffff';
-				case 71: return '#59b4ff';
-				case 72: return '#5959ff';
-				case 73: return '#c459ff';
-				case 74: return '#ff66ff';
-				case 75: return '#ff59bc';
-				case 76: return '#ff9c9c';
-				case 77: return '#ffd39c';
-				case 78: return '#ffff9c';
-				case 79: return '#e2ff9c';
-				case 80: return '#9cff9c';
-				case 81: return '#9cffdb';
-				case 82: return '#9cffff';
-				case 83: return '#9cd3ff';
-				case 84: return '#9c9cff';
-				case 85: return '#dc9cff';
-				case 86: return '#ff9cff';
-				case 87: return '#ff94d3';
-				case 88: return '#000000';
-				case 89: return '#131313';
-				case 90: return '#282828';
-				case 91: return '#363636';
-				case 92: return '#4d4d4d';
-				case 93: return '#656565';
-				case 94: return '#818181';
-				case 95: return '#9f9f9f';
-				case 96: return '#bcbcbc';
-				case 97: return '#e2e2e2';
-				case 98: return '#ffffff';
-				default: return '#666666';
-			}
-		//}
+			case 16: return '#470000';
+			case 17: return '#472100';
+			case 18: return '#474700';
+			case 19: return '#324700';
+			case 20: return '#004700';
+			case 21: return '#00472c';
+			case 22: return '#004747';
+			case 23: return '#002747';
+			case 24: return '#000047';
+			case 25: return '#2e0047';
+			case 26: return '#470047';
+			case 27: return '#47002a';
+			case 28: return '#740000';
+			case 29: return '#743a00';
+			case 30: return '#747400';
+			case 31: return '#517400';
+			case 32: return '#007400';
+			case 33: return '#007449';
+			case 34: return '#007474';
+			case 35: return '#004074';
+			case 36: return '#000074';
+			case 37: return '#4b0074';
+			case 38: return '#740074';
+			case 39: return '#740045';
+			case 40: return '#b50000';
+			case 41: return '#b56300';
+			case 42: return '#b5b500';
+			case 43: return '#7db500';
+			case 44: return '#00b500';
+			case 45: return '#00b571';
+			case 46: return '#00b5b5';
+			case 47: return '#0063b5';
+			case 48: return '#0000b5';
+			case 49: return '#7500b5';
+			case 50: return '#b500b5';
+			case 51: return '#b5006b';
+			case 52: return '#ff0000';
+			case 53: return '#ff8c00';
+			case 54: return '#ffff00';
+			case 55: return '#b2ff00';
+			case 56: return '#00ff00';
+			case 57: return '#00ffa0';
+			case 58: return '#00ffff';
+			case 59: return '#008cff';
+			case 60: return '#0000ff';
+			case 61: return '#a500ff';
+			case 62: return '#ff00ff';
+			case 63: return '#ff0098';
+			case 64: return '#ff5959';
+			case 65: return '#ffb459';
+			case 66: return '#ffff71';
+			case 67: return '#cfff60';
+			case 68: return '#6fff6f';
+			case 69: return '#65ffc9';
+			case 70: return '#6dffff';
+			case 71: return '#59b4ff';
+			case 72: return '#5959ff';
+			case 73: return '#c459ff';
+			case 74: return '#ff66ff';
+			case 75: return '#ff59bc';
+			case 76: return '#ff9c9c';
+			case 77: return '#ffd39c';
+			case 78: return '#ffff9c';
+			case 79: return '#e2ff9c';
+			case 80: return '#9cff9c';
+			case 81: return '#9cffdb';
+			case 82: return '#9cffff';
+			case 83: return '#9cd3ff';
+			case 84: return '#9c9cff';
+			case 85: return '#dc9cff';
+			case 86: return '#ff9cff';
+			case 87: return '#ff94d3';
+			case 88: return '#000000';
+			case 89: return '#131313';
+			case 90: return '#282828';
+			case 91: return '#363636';
+			case 92: return '#4d4d4d';
+			case 93: return '#656565';
+			case 94: return '#818181';
+			case 95: return '#9f9f9f';
+			case 96: return '#bcbcbc';
+			case 97: return '#e2e2e2';
+			case 98: return '#ffffff';
+			default: return '#666666';
+		}
+		/*}*/
 	},
 	'parseImages': function(text, attrs) {
-		if(!attrs)
+		if (!attrs)
 			attrs = '';
-		var rmatch = text.match(/(https?:\/\/[^ ]+\.(png|jpeg|jpg|gif)(\?[^ ]+)?)/gi);
-		var html = '';
-		var callbacks = {};
-		if(rmatch){
-			rmatch.forEach(function(arg){
-				var rand = Math.floor(Math.random() * 10000).toString();
-				var imgurl = arg;
-				html += '<a id="a-img-' + rand + '"'+
-					' class="image_link"'+attrs+'><span id="show-'+rand+'" style="display:inline;">' + language.show + '</span><span id="hide-'+rand+'" style="display:none;">' + language.hide + '</span>' + language.aPicture + '</a>'+
-					'<div style="display:none;" id="img-'+rand+'"><img id="imgc-'+rand+'" style="max-width:100%;" /></div>';
-				callbacks['a-img-' + rand] = function() {
+		const rmatch = text.match(/(https?:\/\/[^ ]+\.(png|jpeg|jpg|gif)(\?[^ ]+)?)/gi);
+		let html = '';
+		const callbacks = {};
+		if (rmatch) {
+			rmatch.forEach((arg) => {
+				const rand = Math.floor(Math.random() * 10000).toString();
+				const imgurl = arg;
+				html += `<a id="a-img-${  rand  }"` +
+					` class="image_link"${  attrs  }><span id="show-${  rand  }" style="display:inline;">${  language.show  }</span><span id="hide-${  rand  }" style="display:none;">${  language.hide  }</span>${  language.aPicture  }</a>` +
+					`<div style="display:none;" id="img-${  rand  }"><img id="imgc-${  rand  }" style="max-width:100%;" /></div>`;
+				callbacks[`a-img-${  rand}`] = function() {
 					disp.toggleImageView(rand, imgurl);
 				};
 			});
 		}
-		var rexpr = /https?:\/\/(?:(?:www|m)\.youtube\.com\/watch\?[^ ]*v=|youtu\.be\/)([^ ]+)/i;
-		var fmatch = text.match(/(https?:\/\/(?:(?:www|m)\.youtube\.com\/watch\?[^ ]*v=|youtu\.be\/)[^ ?&]+)/gi);
-		if(fmatch){
-			fmatch.forEach(function(arg){
-				var rmatch = rexpr.exec(arg);
-				if(rmatch[1]){
-					var rand = Math.floor(Math.random() * 10000).toString();
-					var imgurl = rmatch[1];
-					html += '<a id="a-video-' + rand + '"'+
-						' class="image_link"'+attrs+'><span id="show-'+rand+'" style="display:inline;">' + language.show + '</span><span id="hide-'+rand+'" style="display:none;">' + language.hide + '</span>' + language.aVideo + '</a>'+
-						'<div style="display:none;" id="img-'+rand+'"><iframe width="560" height="315" id="vid-'+rand+'" frameborder="0" allowfullscreen></iframe></div>';
-					callbacks['a-video-' + rand] = function() {
-						disp.toggleVideoView(rand, imgurl);
+		const rexpr = /https?:\/\/(?:(?:www|m)\.youtube\.com\/watch\?[^ ]*v=|youtu\.be\/)([^ ]+)/i;
+		const fmatch = text.match(/(https?:\/\/(?:(?:www|m)\.youtube\.com\/watch\?[^ ]*v=|youtu\.be\/)[^ ?&]+)/gi);
+		if (fmatch) {
+			fmatch.forEach((arg) => {
+				const rmatch = rexpr.exec(arg);
+				if (rmatch[1]) {
+					const rand = Math.floor(Math.random() * 10000).toString();
+					const videoId = rmatch[1]; // Corrected to videoId
+					html += `<a id="a-video-${  rand  }"` +
+						` class="image_link"${  attrs  }><span id="show-${  rand  }" style="display:inline;">${  language.show  }</span><span id="hide-${  rand  }" style="display:none;">${  language.hide  }</span>${  language.aVideo  }</a>` +
+						`<div style="display:none;" id="img-${  rand  }"><iframe width="560" height="315" id="vid-${  rand  }" frameborder="0" allowfullscreen></iframe></div>`;
+					callbacks[`a-video-${  rand}`] = function() {
+						disp.toggleVideoView(rand, videoId);
 					};
 				}
 			});
 		}
-		return { 'html': html, 'callbacks': callbacks };
+		return { html, callbacks };
 	},
-	'applyCallbacks': function(callbacks){
-		for(var key in callbacks) {
-			$('#' + key).click(callbacks[key]);
+	'applyCallbacks': function(callbacks) {
+		for (const [key, handler] of Object.entries(callbacks)) {
+			$(`#${  key}`).click(handler);
 		}
 	},
-	'checkLinkStart': function(text, stubs){
-		var ret = { 'found' : false, 'linkBegin' : '', 'beginLength' : 0 };
-		stubs.forEach(function(stub){
-			if(text.substring(0, stub.length) == stub){
+	'checkLinkStart': function(text, stubs) {
+		const ret = { found: false, linkBegin: '', beginLength: 0 };
+		stubs.forEach((stub) => {
+			if (text.substring(0, stub.length) == stub) {
 				ret.found = true;
 				ret.linkBegin = stub;
 				ret.beginLength = stub.length;
@@ -1688,228 +1302,138 @@ var $$ = {
 		});
 		return ret;
 	},
-	'correctLink': function(link){
-		var append = '';
-		var text = link;
-		var stripLink = $$.colorize(link, true);
-		if(stripLink.slice(-1) == '.') {
+	'correctLink': function(link) {
+		let append = '';
+		const text = link;
+		let stripLink = $$.colorize(link, true);
+		if (stripLink.slice(-1) == '.') {
 			stripLink = stripLink.slice(0, -1);
 			append = '.';
 		}
-		if(stripLink.startsWith('www.')){
-			stripLink = 'http://' + stripLink;
+		if (stripLink.startsWith('www.')) {
+			stripLink = `http://${  stripLink}`;
 		}
-		return {'link': stripLink, 'append': append, 'text': text};
+		return { link: stripLink, append, text };
 	},
-	'parseLinks': function(text){
-		var newText = '';
-		var currLink = '';
-		var confirm= '';
-		var confirmChan = '';
-		if ($('#displayLinkWarning').is(':checked')) {
-			confirm = " onclick=\"return confirm('" + language.linkCanBeUnsafe + "')\"";
-			confirmChan = " onclick=\"return confirm('" + language.confirmJoin + "')\"";
-		}
-		var stateText = 0;
-		var stateChannel = 1;
-		var stateUrl = 2;
-		var state = stateText;
+	'parseLinks': function(text) {
+		let newText = '';
+		let currLink = '';
+		const linkWarning = settings.get('displayLinkWarning');
+		const stateText = 0;
+		const stateChannel = 1;
+		const stateUrl = 2;
+		let state = stateText;
+		let stub, found, c, code, link;
 
-		for(var i=0; i < text.length; i++){
-			switch(state){
+		const makeChannelAnchor = function(link, suffix) {
+			const a = document.createElement('a');
+			a.href = '#';
+			a.dataset.channel = link.link;
+			a.textContent = link.text;
+			return a.outerHTML + suffix;
+		};
+		const makeUrlAnchor = function(link, suffix) {
+			const a = document.createElement('a');
+			a.href = link.link;
+			a.target = '_blank';
+			a.textContent = link.text;
+			if (linkWarning) {
+				a.dataset.linkWarn = '1';
+			}
+			return a.outerHTML + suffix;
+		};
+
+		for (let i = 0; i < text.length; i++) {
+			switch (state) {
 				case stateText:
-					var stub = text.substring(i);
-					var found = $$.checkLinkStart(stub, ['ftp://', 'http://', 'https://', 'www.']);
-					if(found.found){
+					stub = text.substring(i);
+					found = $$.checkLinkStart(stub, ['ftp://', 'http://', 'https://', 'www.']);
+					if (found.found) {
 						currLink = found.linkBegin;
-						i += found.beginLength-1;
+						i += found.beginLength - 1;
 						state = stateUrl;
-					} else if(text.charAt(i) == '#' && text.charAt(i-1) != '[') {
+					} else if (text.charAt(i) == '#' && text.charAt(i - 1) != '[') {
 						state = stateChannel;
 						currLink = '#';
 					} else {
-						newText += text.charAt(i);
+						newText += he(text.charAt(i));
 					}
 					break;
 				case stateChannel:
-					var c = text.charAt(i);
-					var code = c.charCodeAt();
-					if(c != ' ' && c != ',' && code > 10){
+					c = text.charAt(i);
+					code = c.charCodeAt();
+					if (c != ' ' && c != ',' && code > 10) {
 						currLink += c;
 					} else {
-						var append = '';
-						var link = $$.correctLink(currLink);
-						newText += '<a href="javascript:ircCommand.channelJoin(\''+bsEscape(link.link)+'\')"' + confirmChan + '>'+link.text+'</a>' + c + link.append;
+						link = $$.correctLink(currLink);
+						newText += makeChannelAnchor(link, he(c) + he(link.append));
 						state = stateText;
 					}
 					break;
 				case stateUrl:
-					var c = text.charAt(i);
-					var code = c.charCodeAt();
-					if(c != ' ' && code > 10 && c != '<'){
+					c = text.charAt(i);
+					code = c.charCodeAt();
+					if (c != ' ' && code > 10 && c != '<') {
 						currLink += c;
 					} else {
-						var link = $$.correctLink(currLink);
-						newText += '<a href="'+link.link+'" target="_blank"' + confirm + '>'+link.text+'</a>' + c + link.append;
+						link = $$.correctLink(currLink);
+						newText += makeUrlAnchor(link, he(c) + he(link.append));
 						state = stateText;
 					}
 					break;
 			}
 		}
-		if(state == stateUrl){
-			var link = $$.correctLink(currLink);
-			newText += '<a href="'+link.link+'" target="_blank"' + confirm + '>'+link.text+'</a>' + link.append;
+		if (state == stateUrl) {
+			link = $$.correctLink(currLink);
+			newText += makeUrlAnchor(link, he(link.append));
 		}
-		if(state == stateChannel){
-			var link = $$.correctLink(currLink);
-			newText += '<a href="javascript:ircCommand.channelJoin(\''+bsEscape(link.link)+'\')"' + confirmChan + '>'+link.text+'</a>' + link.append;
+		if (state == stateChannel) {
+			link = $$.correctLink(currLink);
+			newText += makeChannelAnchor(link, he(link.append));
 		}
 		return newText;
-	},
-	'displayReconnect': function(){
-		var button = [ {
-			text: language.reconnect,
-			click: function(){
-				gateway.reconnect();
-			}
-		} ];
-		$$.displayDialog('connect', 'reconnect', language.disconnected, language.lostNetworkConnection, button);
-	},
-	'getDialogSelector': function(type, sender) {
-		return $('#'+type+'Dialog-'+md5(sender.toLowerCase()));
-	},
-	'displayDialog': function(type, sender, title, message, button, attrs){
-		if(!attrs)
-			attrs = '';
-		switch(type){ //specyficzne dla typu okna
-			case 'whois':
-				if(gateway.connectStatus != 'connected'){
-					return;
-				}
-				if(sender.toLowerCase() == guser.nick.toLowerCase() && !gateway.displayOwnWhois){
-					return;
-				}
-			case 'warning': case 'error': case 'confirm': case 'connect': case 'admin': case 'services': case 'ignore': case 'list': case 'alert': case 'emoticons': // nie wyświetlamy czasu
-				var html = '<span ' + attrs + '>' + message + '</span>';
-				break;
-			default:
-				var html = '<p '+attrs+'><span class="time">'+$$.niceTime()+'</span> '+message+'</p>';
-				break;
-		}
-		var id = type+'Dialog-'+md5(sender.toLowerCase());
-		var $dialog = $('#'+id);
-		if($dialog.length == 0){
-			if(!title){
-				title = type;
-			}
-			title = he(title);
-			var additionalClasses = '';
-			if(type == 'notice' && sender.toLowerCase() == 'memoserv'){ // specjalny styl dla MemoServ
-				additionalClasses += 'notice-dialog-memoserv';
-			}
-			$dialog = $('<div id="'+id+'" class="dialog '+type+'-dialog '+additionalClasses+'" title="'+title+'" />');
-			$dialog.appendTo('html');
-		}
-
-		$dialog.append(html);
-		$dialog.scrollTop($dialog.prop("scrollHeight"));
-		if(type == 'connect'){
-			$dialog.dialog({/* modal: true,*/ dialogClass: 'no-close' });
-		} else if(sender == 'noaccess') {
-			$dialog.dialog({ /*modal: true, */dialogClass: 'no-access' });
-		} else {
-			$dialog.dialog({ dialogClass: type+'-dialog-spec' });
-		}
-		var dWidth = 600;
-		if(type == 'alert'){
-			dWidth = 400;
-		}
-		$dialog.dialog({
-			resizable: false,
-			draggable: true,
-			close: function(){
-				$('#'+id).dialog('destroy');
-				$('#'+id).remove();
-			},
-			width: dWidth
-		});
-		if(button == 'OK'){
-			var button = [{
-				text: 'OK',
-				click: function(){
-					$(this).dialog('close');
-				}
-			}];
-		}
-		if(button){
-			$dialog.dialog('option', 'buttons', button);
-		}
-		if($dialog.find('input').length == 0){
-			gateway.inputFocus();
-		}
-		if(type != 'error' && type != 'alert'){
-			$('.connect-dialog').dialog('moveToTop');
-		}
-	},
-	'closeDialog': function(type, nick){
-		var id = type+'Dialog-'+md5(nick.toLowerCase());
-		var $dialog = $('#'+id);
-		$dialog.dialog('close');
-		gateway.inputFocus();
 	},
 	'sescape': function(val) {
 		return val.replace('\\', '\\\\');
 	},
-	'alert': function(text) {
-		var button = [ {
-			text: 'OK',
-			click: function(){
-				$(this).dialog('close');
-			}
-		} ];
-		if($$.getDialogSelector('alert', 'alert').length > 0){
-			text = '<br>' + text;
-		}
-		$$.displayDialog('alert', 'alert', language.msgNotice, text, button);
+	'wildcardToRegex': function(regex) {
+		regex = regex.replace(/[-[\]{}()+,.\\^$|#\s]/g, '\\$&\\');
+		regex = regex.replace(/[*?]/g, '.$&');
+		return `^${  regex  }$`;
 	},
-	'wildcardToRegex': function(regex){
-		regex = regex.replace(/[-[\]{}()+,.\\^$|#\s]/g, "\\$&");
-		regex = regex.replace(/[*?]/g, ".$&");
-		return '^'+regex+'$';
-	},
-	'regexToWildcard': function(regex){
-		regex = regex.replace(/\.\*/g, "*");
-		regex = regex.replace(/\.\?/g, "?");
-		regex = regex.replace(/\\\./g, ".");
-		regex = regex.replace(/\\/g, "");
+	'regexToWildcard': function(regex) {
+		regex = regex.replace(/\.\*/g, '*');
+		regex = regex.replace(/\.\?/g, '?');
+		regex = regex.replace(/\\\./g, '.');
+		regex = regex.replace(/\\/g, '');
 		return regex.slice(1, -1);
 	},
-	'textToEmoji': function(text){
-		for(i in emojiRegex){
-			var regexp = emojiRegex[i][0];
-			text = text.replace(regexp, emojiRegex[i][1]+'$1');
+	'textToEmoji': function(text) {
+		for (const [regexp, emojiChar] of emojiRegex) {
+			text = text.replace(regexp, `${emojiChar  }$1`);
 		}
 		return text;
 	},
 	'niceTime': function(date) {
-		if(date){
+		if (date) {
 			dateobj = date;
 		} else {
 			dateobj = new Date();
 		}
 		hours = dateobj.getHours();
-		if(hours < 10) {
-			hours = '0'+hours;
+		if (hours < 10) {
+			hours = `0${  hours}`;
 		}
 		minutes = dateobj.getMinutes();
-		if(minutes < 10) {
-			minutes = '0'+minutes;
+		if (minutes < 10) {
+			minutes = `0${  minutes}`;
 		}
-		return hours+':'+minutes;
+		return `${hours  }:${  minutes}`;
 	}
-}
+};
 
 function escapeRegExp(string) { // my editor syntax colouring fails at this, so moved to the end
 	return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
 }
 
+function joinChannel(name) { commandBus.emit('chat:joinChannel', { channels: name }); }

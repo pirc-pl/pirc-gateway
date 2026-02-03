@@ -1,5 +1,5 @@
-/* Copyright (c) 2020 k4be and the PIRC.pl Team
- * 
+/* Copyright (c) 2020-2026 k4be and the PIRC.pl Team
+ *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
  * "Software"), to deal in the Software without restriction, including
@@ -42,173 +42,179 @@ lang.en['darkBgPreview'] = 'Dark background preview';
 lang.en['lightBgPreview'] = 'Light background preview';
 lang.en['enableMessageColoring'] = 'Enable message colouring';
 
-var mcolor = false;
+let mcolor = false;
 
-var mcolorMetadataSet = function(msg){
-	if(!mcolor) return;
-	ircCommand.metadata('SET', '*', ['color', mcolor]);
-}
+const mcolorMetadataSet = function(msg) {
+	if (!mcolor) return;
+	commandBus.emit('chat:setColor', { color: mcolor });
+};
 
-var isCorrectColor = function(color){
-	if(color.match(/^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/)){
+const isCorrectColor = function(color) {
+	if (color.match(/^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/)) {
 		return true;
 	}
 	return false;
-}
+};
 
-var setMyColor = function(color, serverOrigin){
+const setMyColor = function(color, serverOrigin) {
 	colorExampleApply();
-	if(!color){
+	let scolor;
+	if (!color) {
 		mcolor = false;
-		var scolor = false;
+		scolor = false;
 	} else {
-		if(!isCorrectColor(color)){
-			$$.displayDialog('info', 'info', 'Info', '<p>' + language.invalidColorCode + ' '+he(color)+'</p>');
+		if (!isCorrectColor(color)) {
+			uiDialogs.displayDialog('info', 'info', 'Info', `<p>${  language.invalidColorCode  } ${  he(color)  }</p>`);
 			return;
 		}
 		mcolor = color;
-		var scolor = color;
+		scolor = color;
 	}
-	if(!serverOrigin){ // we were getting caught in an infinite loop without this
-		if(scolor){
-			ircCommand.metadata('SET', '*', ['color', scolor]);
+	if (!serverOrigin) { // we were getting caught in an infinite loop without this
+		if (scolor) {
+			commandBus.emit('chat:setColor', { color: scolor });
 		} else {
-			if('color' in guser.me.metadata)
-				ircCommand.metadata('SET', '*', ['color']);
+			if ('color' in connection.chat.me.userRef.metadata)
+				commandBus.emit('chat:setColor', { color: null });
 		}
 	}
 	try {
-		if(scolor){
+		if (scolor) {
 			localStorage.setItem('mcolor', scolor);
 		} else {
 			localStorage.removeItem('mcolor');
 		}
-	} catch(e){}
-}
+	} catch (e) {}
+};
 
-var colorsAllowed = function(chan){
-	if(!chan){
+const colorsAllowed = function(chan) {
+	if (!chan) {
 		return true;
 	}
-	if(typeof chan == 'string'){
-		chan = gateway.findChannel(chan);
-		if(!chan){
+	if (typeof chan == 'string') {
+		chan = uiTabs.findChannel(chan);
+		if (!chan) {
 			return true;
 		}
 	}
-	if(chan.modes.S || chan.modes.c || chan.modes.C){
+	if (chan.modes.S || chan.modes.c || chan.modes.C) {
 		return false;
 	}
-	return true;		
-}
+	return true;
+};
 
-var getColor = function(nick){
-	var user = users.getUser(nick);
-	if('color' in user.metadata){
+const getColor = function(nick) {
+	const user = connection.chat.users.getUser(nick);
+	if ('color' in user.metadata) {
 		return user.metadata['color'];
 	}
 	return false;
-}
+};
 
-var colorMessage = function(src, dst, text){
-	if(!$('#mcolorEnable').is(':checked')){
+const colorMessage = function(src, dst, text) {
+	if (!$('#mcolorEnable').is(':checked')) {
 		return text;
 	}
-	if(dst.charAt(0) == '#'){
-		var chan = gateway.findChannel(dst);
-	} else if(src.charAt(0) == '#'){
-		var chan = gateway.findChannel(src);
+	let chan;
+	if (dst.charAt(0) == '#') {
+		chan = uiTabs.findChannel(dst);
+	} else if (src.charAt(0) == '#') {
+		chan = uiTabs.findChannel(src);
 	}
-	if(!colorsAllowed(chan)){
+	if (!colorsAllowed(chan)) {
 		return text;
 	}
-	var color = getColor(src);
-	if(color){
+	let color = getColor(src);
+	if (color) {
 		// Sanitize color to prevent XSS
 		color = sanitizeColor(color);
-		if(color){
+		if (color) {
 			// Adjust color for contrast with current theme background
-			var backgroundColor = getThemeBackgroundColor();
+			const backgroundColor = getThemeBackgroundColor();
 			color = adjustColorContrast(color, backgroundColor, 4.5);
-			text = '<span style="color:'+color+'">'+text+'</span>';
+			text = `<span style="color:${  color  }">${  text  }</span>`;
 		}
 	}
 	return text;
-}
+};
 
-var colorNick = function(nick){
-	if(!$('#mcolorEnable').is(':checked')){
+const colorNick = function(colorData) {
+	if (!$('#mcolorEnable').is(':checked')) {
 		return false;
 	}
-	return getColor(nick);
-}
+	const color = getColor(colorData.nick);
+	if (color) {
+		colorData.color = color;
+	}
+};
 
-var colorSettingsChange = function(){
-	var checked = $('#mcolorEnable').is(':checked');
-	if(checked){
+const colorSettingsChange = function() {
+	const checked = $('#mcolorEnable').is(':checked');
+	if (checked) {
 		$('.mcolor').show();
 	} else {
 		$('.mcolor').hide();
 	}
-}
+};
 
-var mcolorMetadataChanged = function(user, key, value){
-	if(user == guser.me)
-		setMyColor(value, true);
-}
+const mcolorMetadataChanged = function(data) {
+	if (data.user == connection.chat.me.userRef)
+		setMyColor(data.value, true);
+};
 
-insertBinding(cmdBinds, '001', mcolorMetadataSet);
-insertBinding(metadataBinds, 'color', mcolorMetadataChanged);
-messageProcessors.push(colorMessage);
-nickColorProcessors.push(colorNick);
-settingProcessors.push(colorSettingsChange);
+ircEvents.on('cmd:001', mcolorMetadataSet);
+hooks.onMetadata('color', mcolorMetadataChanged);
+hooks.addMessageProcessor(colorMessage);
+ircEvents.on('nick:color', colorNick);
+ircEvents.on('settings:changed', colorSettingsChange);
 commands['mycolor'] = {
 	'channels': false,
 	'nicks': false,
 	'custom': [],
 	'callback': function(command, input) {
-		if(command[1]) {
+		if (command[1]) {
 			setMyColor(command[1]);
 		} else {
-			gateway.notEnoughParams("mycolor", language.youMustGiveColorCode);
+			uiInput.notEnoughParams('mycolor', language.youMustGiveColorCode);
 		}
 	}
 };
 
-var colorExampleApply = function(){
-	if(mcolor){
-		var lightColor = mcolor;
-		var darkColor = mcolor;
+const colorExampleApply = function() {
+	let lightColor, darkColor;
+	if (mcolor) {
+		lightColor = mcolor;
+		darkColor = mcolor;
 		$('#nickColorPick').val(mcolor);
 	} else {
-		var lightColor = '#000000';
-		var darkColor = '#E6E6E6';
+		lightColor = '#000000';
+		darkColor = '#E6E6E6';
 		$('#nickColorPick').val('#000000');
 	}
 	$('#lightBgPreview').css('color', lightColor);
 	$('#darkBgPreview').css('color', darkColor);
 };
 
-var mcolorInit = function(){
+const mcolorInit = function() {
 	try {
-		var ls = localStorage.getItem('mcolor')
-		if(ls){
+		const ls = localStorage.getItem('mcolor');
+		if (ls) {
 			mcolor = ls;
 		}
-	} catch(e){}
+	} catch (e) {}
 	$('#formatting-button').show();
 	$('#formatting').hide();
-	$('#color-dialog h3').append('<span class="mcolor">' + language.changeTemporary + '</span>');
-	var html = '<div class="mcolor"><h3>' + language.setColorPermanently + '</h3><p>' + language.selectAColor + '<input type="color" id="nickColorPick"></p>' +
-		'<p><button id="clearNickColor">' + language.deleteColor + '</button></p></div>' +
-		'<div> ' + language.lightBgPreview + ':<div id="lightBgPreview" style="background-color: #ffffff; padding: 5px;">' + language.exampleText + '</div></div>' +
-		'<div> ' + language.darkBgPreview + ':<div id="darkBgPreview" style="background-color: #000000; padding: 5px;">' + language.exampleText + '</div></div>';
+	$('#color-dialog h3').append(`<span class="mcolor">${  language.changeTemporary  }</span>`);
+	let html = `<div class="mcolor"><h3>${  language.setColorPermanently  }</h3><p>${  language.selectAColor  }<input type="color" id="nickColorPick"></p>` +
+		`<p><button id="clearNickColor">${  language.deleteColor  }</button></p></div>` +
+		`<div> ${  language.lightBgPreview  }:<div id="lightBgPreview" style="background-color: #ffffff; padding: 5px;">${  language.exampleText  }</div></div>` +
+		`<div> ${  language.darkBgPreview  }:<div id="darkBgPreview" style="background-color: #000000; padding: 5px;">${  language.exampleText  }</div></div>`;
 	$('#color-dialog').append(html);
 	colorExampleApply();
-	html = '<tr><td  class="optionsCheckBox"><input type="checkbox" id="mcolorEnable" onchange="disp.changeSettings(event)" checked="checked" /></td><td class="info">' + language.enableMessageColoring + '</td></tr>';
+	html = `<tr><td  class="optionsCheckBox"><input type="checkbox" id="mcolorEnable" onchange="disp.changeSettings(event)" checked="checked" /></td><td class="info">${  language.enableMessageColoring  }</td></tr>`;
 	$('#options-dialog table').prepend(html);
-	booleanSettings.push('mcolorEnable');
-	$('#nickColorPick').change(function(){
+	settings.registerBooleanSetting('mcolorEnable');
+	$('#nickColorPick').change(() => {
 		/*if($('#nickColorPick').val() != mcolor){
 			$('#nickColorInfo').text('Kliknij "Zatwierdź" aby zmienić');
 		} else {
@@ -216,21 +222,21 @@ var mcolorInit = function(){
 		}*/
 		setMyColor($('#nickColorPick').val());
 	});
-/*	$('#setNickColor').click(function(){
+	/*	$('#setNickColor').click(function(){
 		setMyColor($('#nickColorPick').val());
 	});*/
-	$('#clearNickColor').click(function(){
+	$('#clearNickColor').click(() => {
 		setMyColor(false);
 		$('#nickColorPick').val('#000000');
 	});
-	if(mcolor){
+	if (mcolor) {
 		$('#nickColorPick').val(mcolor);
 	}
 	/*$('#nickColorPick').on('input', function(){
 		setMyColor($('#nickColorPick').val());
 	});*/
-}
+};
 
-readyFunctions.push(mcolorInit);
+ircEvents.on('system:ready', mcolorInit);
 addons.push('mcolor');
 

@@ -1,5 +1,5 @@
-/* Copyright (c) 2020 k4be and the PIRC.pl Team
- * 
+/* Copyright (c) 2020-2026 k4be and the PIRC.pl Team
+ *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
  * "Software"), to deal in the Software without restriction, including
@@ -26,9 +26,9 @@
  * - add new item to `languageFiles` in /js/load.js
  */
 
-var lang = {};
+const lang = {};
 
-function setLanguage(slang){
+function setLanguage(slang) {
 	window.language = lang[slang];
 	// fill static HTML with translations
 	$('.language-privateMsgBlockingTitle').attr('title', language.privateMsgBlocking);
@@ -106,17 +106,5 @@ function setLanguage(slang){
 	$('.language-italicText').html(language.italicText);
 };
 
-function setDefaultLanguage(){
-	try {
-		if(localStorage.getItem('setLanguage') == null){
-			$('#setLanguage').val(mainSettings.language);
-		} else {
-			$('#setLanguage').val(localStorage.getItem('setLanguage'));
-		}
-	} catch(e){
-		console.error('Error setting language!');
-		$('#setLanguage').val(mainSettings.language);
-	}
-	conn.setLanguage();
-}
+
 

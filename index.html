@@ -15,16 +15,25 @@
 		<script type="text/javascript" src="/js/load.js"></script>
 	</head>
 	<body>
+		<noscript>
+			<div style="position:fixed;top:0;left:0;width:100%;height:100%;background:#111;color:#eee;display:flex;align-items:center;justify-content:center;font-family:sans-serif;font-size:1.2em;text-align:center;z-index:9999;">
+				<div>
+					<h2>JavaScript is required</h2>
+					<p>Aby korzystać z bramki IRC, włącz obsługę JavaScript w przeglądarce.</p>
+					<p>To use the IRC client, please enable JavaScript in your browser.</p>
+				</div>
+			</div>
+		</noscript>
 		<div id="background-wrapper"></div>
 		<div id="not_connected_wrapper">
 			<img src="/styles/img/gbg.png" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;">
 			<div id="not_connected_div">
 				<div class="not-connected-text">
 					<h3>Ładowanie / Loading</h3>
-					<p>Aby korzystać z bramki należy włączyć obsługę JavaScript. / You must enable JavaScript to use the client.</p>
+					<p>Ładowanie, proszę czekać... / Loading, please wait...</p>
 				</div>
 			</div>
-		</div>	
+		</div>
 		
 		<div id="query-umodes-dialog" class="language-privateMsgBlockingTitle">
 			<span class="language-dontWantPrivateMessages"></span>
@@ -159,15 +168,15 @@
 
 		<div id="top_menu">
 			<div id="leftarrow">
-				<input class="top" type="image" src="/styles/img/g_lewo.png" value="" onClick="gateway.prevTab()">
+				<input class="top" type="image" src="/styles/img/g_lewo.png" value="" onClick="uiTabs.prevTab()">
 			</div>
 			<div id="tab-wrapper">
 				<ul class="tabs" id="tabs">
-					<li id="--status-tab"><a href="javascript:void(0);" onclick="gateway.switchTab('--status')" class="switchTab language-statusTabName"></a><a href="#"></a></li>
+					<li id="--status-tab"><a href="javascript:void(0);" onclick="uiTabs.switchTab('--status')" class="switchTab language-statusTabName"></a><a href="#"></a></li>
 				</ul>
 			</div>
 			<div id="rightarrow">
-				<input class="top" type="image" src="/styles/img/g_prawo.png" value="" onClick="gateway.nextTab()">
+				<input class="top" type="image" src="/styles/img/g_prawo.png" value="" onClick="uiTabs.nextTab()">
 			</div>
 		</div>
 		
@@ -175,7 +184,7 @@
 			<a id="button-tsize" href="javascript:void(0);" onclick="disp.showSizes();" class="language-changeSizeTitle"></a>
 			<a id="button-options" href="javascript:void(0);" onClick="disp.showOptions();" class="language-settingsTitle"></a> 
 			<a id="button-about" href="javascript:void(0);" onClick="disp.showAbout();" class="language-gatewayInfoTitle"></a>
-			<a id="button-quit" href="javascript:void(0);" onClick="gateway.clickQuit();" class="language-disconnectWithIrcTitle"></a> 
+			<a id="button-quit" href="javascript:void(0);" onClick="uiDialogs.clickQuit();" class="language-disconnectWithIrcTitle"></a> 
 		</div>
 
 		<div id="wrapper">
@@ -199,12 +208,12 @@
 				</div>
 			</div>
 			<div id="nicklist-closed">
-				<div id="nicklist-hide-button" class="closed" onclick="gateway.nickListToggle()"></div>
+				<div id="nicklist-hide-button" class="closed" onclick="uiNicklist.nickListToggle()"></div>
 			</div>
 			<div id="nicklist">
 				<div id="nick-wrapper">
 					<div style="margin: 0 auto; width: 93%; margin-top: 3%; margin-bottom: 3%;" id="nicklist-main">
-						<div id="nicklist-hide-button" onclick="gateway.nickListToggle()"></div>
+						<div id="nicklist-hide-button" onclick="uiNicklist.nickListToggle()"></div>
 						<div id="nicklist-hide-wrap">
 							<span id="--status-nicklist">
 							</span>
@@ -215,16 +224,17 @@
 			<div id="chlist">
 				<div class="chlistwrapper">
 					<div id="chlist-body" class="language-loadingWait"></div>
-					<div id="chlist-button" onclick="gateway.toggleChanList()" class="symbolFont language-extendChannelList"></div>
+					<div id="chlist-button" onclick="uiTabs.toggleChanList()" class="symbolFont language-extendChannelList"></div>
 				</div>
 			</div>
 			<div id="nickopts">
 				<div id="nickopts-wrapper">
-					<div class="nickoptsButton language-nickOptions" onclick="gateway.toggleNickOpts()"></div>
+					<div class="nickoptsButton language-nickOptions" onclick="uiNicklist.toggleNickOpts()"></div>
 					<ul id="nickOptions">
 						<li id="nickRegister" onclick="services.registerMyNick()" class="language-registerNick"></li>
 						<li onclick="services.changeMyNick()" class="language-changeNick"></li>
 						<li onclick="disp.showQueryUmodes()" class="language-privateMessagesBlocking"></li>
+						<li class="avatarCapability language-setOwnAvatar" onclick="disp.showAvatarSetting()"></li>
 						<!--<li class="nickRegistered" onclick="services.setCloak()">Ustaw automatycznego vhosta</li>-->
 						<li class="nickRegistered language-requestAVhost" onclick="services.setVhost()"></li>
 						<li class="nickRegistered language-showChannelsWithAccess" onclick="services.perform('NickServ', 'ALIST', [], true)"></li>
@@ -238,17 +248,17 @@
 			<div id="input-wrapper">
 				<table class="nostyle"><tr>
 					<!--<td style="width: 150px; text-align: right;"><span id="usernick" class="yournickname">{$nick}</span></td>-->
-					<td style="width: 10px;"><input type="image" src="/styles/img/plus.png" value="" class="completion language-tabTitle" onClick="gateway.doComplete();$('#input').focus()"></td>
+					<td style="width: 10px;"><input type="image" src="/styles/img/plus.png" value="" class="completion language-tabTitle" onClick="uiInput.doComplete();$('#input').focus()"></td>
 					<td style="padding-right: 10px; padding-left: 5px;"> <input id="input" type="text" name="input" class="input"></td>
 					<td style="width: 10px;"><input type="image" src="/styles/img/smiley_mu.png" class="symbols language-emoticonsSymbolsTitle" onClick="disp.symbolWindowShow()"></td>
 					<td style="width: 10px;"><input type="image" src="/styles/img/kolorki.png" value="" class="insertColor language-colorsFormattingTitle" onClick="disp.colorWindowShow()"></td>
-					<td style="width: 10px;"><input type="submit" value="&#11166;" class="submit symbolFont language-enterTitle" OnClick="gateway.enterPressed()"></td>
+					<td style="width: 10px;"><input type="submit" value="&#11166;" class="submit symbolFont language-enterTitle" OnClick="uiInput.enterPressed()"></td>
 				</tr></table>
 			</div>
 		</div>
 
 		<div class="statuswindow">
-			<div class="status-close" onclick="gateway.closeStatus()">
+			<div class="status-close" onclick="$('.statuswindow').hide()">
 				&#215;
 			</div>
 			<div class="status-text">
@@ -256,18 +266,18 @@
 		</div>
 		
 		<div id="color-dialog" class="language-textFormattingTitle">
-			<div id="formatting-button" onclick="gateway.toggleFormatting()" class="language-insertFormatCodes"></div>
+			<div id="formatting-button" onclick="uiHelpers.toggleFormatting()" class="language-insertFormatCodes"></div>
 			<div id="formatting">
 				<h3 class="language-insertColorCode"></h3>
 				<table id="color-array">
 				</table>
 				<h3 class="language-insertSpecialCode"></h3>
-				<button type="button" class="textFormat language-turnOffColor" onClick="gateway.insertCode(3)"></button>
-				<button type="button" class="textFormat language-boldText" onClick="gateway.insertCode(2)"></button>
-				<button type="button" class="textFormat language-reverseColors" onClick="gateway.insertCode(22)"></button>
-				<button type="button" class="textFormat language-italicText" onClick="gateway.insertCode(29)"></button>
-				<button type="button" class="textFormat language-underscoreText" onClick="gateway.insertCode(31)"></button>
-	   			<button type="button" class="textFormat language-clearFormats" onClick="gateway.insertCode(15)"></button>
+				<button type="button" class="textFormat language-turnOffColor" onClick="uiHelpers.insertCode(3)"></button>
+				<button type="button" class="textFormat language-boldText" onClick="uiHelpers.insertCode(2)"></button>
+				<button type="button" class="textFormat language-reverseColors" onClick="uiHelpers.insertCode(22)"></button>
+				<button type="button" class="textFormat language-italicText" onClick="uiHelpers.insertCode(29)"></button>
+				<button type="button" class="textFormat language-underscoreText" onClick="uiHelpers.insertCode(31)"></button>
+	   			<button type="button" class="textFormat language-clearFormats" onClick="uiHelpers.insertCode(15)"></button>
 	   		</div>
    		</div>
 		
@@ -277,15 +287,15 @@
 			<div class="dfooter"><a href="javascript:void(0)" onclick="disp.showAllEmoticons()" class="language-showAllAvailable"></a> <span class="language-thisCanTakeTime"></span></div>
 			<h3 class="language-engineeringSymbols"></h3>
 			<div id="engineer-symbols">
-				<a class="charSelect" onclick="gateway.insert('µ')">µ</a> <a class="charSelect" onclick="gateway.insert('Ω')">Ω</a> <a class="charSelect" onclick="gateway.insert('φ')">φ</a> <a class="charSelect" onclick="gateway.insert('Δ')">Δ</a>
-				<a class="charSelect" onclick="gateway.insert('Θ')">Θ</a> <a class="charSelect" onclick="gateway.insert('Λ')">Λ</a> <a class="charSelect" onclick="gateway.insert('Σ')">Σ</a> <a class="charSelect" onclick="gateway.insert('Φ')">Φ</a>
-				<a class="charSelect" onclick="gateway.insert('Ψ')">Ψ</a> <a class="charSelect" onclick="gateway.insert('α')">α</a> <a class="charSelect" onclick="gateway.insert('β')">β</a> <a class="charSelect" onclick="gateway.insert('χ')">χ</a>
-				<a class="charSelect" onclick="gateway.insert('τ')">τ</a> <a class="charSelect" onclick="gateway.insert('δ')">δ</a> <a class="charSelect" onclick="gateway.insert('ε')">ε</a> <a class="charSelect" onclick="gateway.insert('η')">η</a>
-				<a class="charSelect" onclick="gateway.insert('ψ')">ψ</a> <a class="charSelect" onclick="gateway.insert('θ')">θ</a> <a class="charSelect" onclick="gateway.insert('λ')">λ</a> <a class="charSelect" onclick="gateway.insert('ξ')">ξ</a>
-				<a class="charSelect" onclick="gateway.insert('ρ')">ρ</a> <a class="charSelect" onclick="gateway.insert('σ')">σ</a> <a class="charSelect" onclick="gateway.insert('√')">√</a> <a class="charSelect" onclick="gateway.insert('∞')">∞</a>
-				<a class="charSelect" onclick="gateway.insert('∫')">∫</a> <a class="charSelect" onclick="gateway.insert('≈')">≈</a> <a class="charSelect" onclick="gateway.insert('≠')">≠</a> <a class="charSelect" onclick="gateway.insert('±')">±</a>
-				<a class="charSelect" onclick="gateway.insert('ω')">ω</a> <a class="charSelect" onclick="gateway.insert('κ')">κ</a> <a class="charSelect" onclick="gateway.insert('π')">π</a> <a class="charSelect" onclick="gateway.insert('§')">§</a>
-				<a class="charSelect" onclick="gateway.insert('Γ')">Γ</a> <a class="charSelect" onclick="gateway.insert('∑')">∑</a>
+				<a class="charSelect" onclick="uiHelpers.insert('µ')">µ</a> <a class="charSelect" onclick="uiHelpers.insert('Ω')">Ω</a> <a class="charSelect" onclick="uiHelpers.insert('φ')">φ</a> <a class="charSelect" onclick="uiHelpers.insert('Δ')">Δ</a>
+				<a class="charSelect" onclick="uiHelpers.insert('Θ')">Θ</a> <a class="charSelect" onclick="uiHelpers.insert('Λ')">Λ</a> <a class="charSelect" onclick="uiHelpers.insert('Σ')">Σ</a> <a class="charSelect" onclick="uiHelpers.insert('Φ')">Φ</a>
+				<a class="charSelect" onclick="uiHelpers.insert('Ψ')">Ψ</a> <a class="charSelect" onclick="uiHelpers.insert('α')">α</a> <a class="charSelect" onclick="uiHelpers.insert('β')">β</a> <a class="charSelect" onclick="uiHelpers.insert('χ')">χ</a>
+				<a class="charSelect" onclick="uiHelpers.insert('τ')">τ</a> <a class="charSelect" onclick="uiHelpers.insert('δ')">δ</a> <a class="charSelect" onclick="uiHelpers.insert('ε')">ε</a> <a class="charSelect" onclick="uiHelpers.insert('η')">η</a>
+				<a class="charSelect" onclick="uiHelpers.insert('ψ')">ψ</a> <a class="charSelect" onclick="uiHelpers.insert('θ')">θ</a> <a class="charSelect" onclick="uiHelpers.insert('λ')">λ</a> <a class="charSelect" onclick="uiHelpers.insert('ξ')">ξ</a>
+				<a class="charSelect" onclick="uiHelpers.insert('ρ')">ρ</a> <a class="charSelect" onclick="uiHelpers.insert('σ')">σ</a> <a class="charSelect" onclick="uiHelpers.insert('√')">√</a> <a class="charSelect" onclick="uiHelpers.insert('∞')">∞</a>
+				<a class="charSelect" onclick="uiHelpers.insert('∫')">∫</a> <a class="charSelect" onclick="uiHelpers.insert('≈')">≈</a> <a class="charSelect" onclick="uiHelpers.insert('≠')">≠</a> <a class="charSelect" onclick="uiHelpers.insert('±')">±</a>
+				<a class="charSelect" onclick="uiHelpers.insert('ω')">ω</a> <a class="charSelect" onclick="uiHelpers.insert('κ')">κ</a> <a class="charSelect" onclick="uiHelpers.insert('π')">π</a> <a class="charSelect" onclick="uiHelpers.insert('§')">§</a>
+				<a class="charSelect" onclick="uiHelpers.insert('Γ')">Γ</a> <a class="charSelect" onclick="uiHelpers.insert('∑')">∑</a>
 			</div>
 		</div>
 		<div id="size-dialog" class="language-selectTextSizeTitle">

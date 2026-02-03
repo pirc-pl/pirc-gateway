@@ -1,5 +1,5 @@
-/* Copyright (c) 2020 k4be and the PIRC.pl Team
- * 
+/* Copyright (c) 2020-2026 k4be and the PIRC.pl Team
+ *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
  * "Software"), to deal in the Software without restriction, including
@@ -26,7 +26,7 @@ lang.pl = {
 		'nickInUse': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="kick"><span class="symbolFont">✯</span> <span class="modeinfo">%s</span>: Nick jest już używany przez kogoś innego.</span></div>',
 		'badNick': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="kick"><span class="symbolFont">⮿</span> <span class="modeinfo">%s</span>: Nick nie jest dostępny.</span></div>',
 		'nickChangeOwn': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">✯</span> Jesteś teraz znany jako <span class="modeinfo">%s</span></span></div>',
-		'joinOwn': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="join"><span class="symbolFont">🢡</span> Dołączyłeś <i class="userhost">(%s!%s@%s)</i> do kanału <span class="modeinfo">%s</span>.</span></div>',
+		'joinOwn': '<div class="messageDiv channel-join-info"><span class="time">%s</span> &nbsp; <span class="join"><span class="symbolFont">🢡</span> Dołączyłeś <i class="userhost">(%s!%s@%s)</i> do kanału <span class="modeinfo">%s</span>.</span></div>',
 		'join': '<div class="messageDiv event-message" data-event-type="join"><span class="time">%s</span> &nbsp; <span class="join"><span class="symbolFont">🢡</span> <b>%s</b> <i class="userhost">[%s@%s]</i> dołączył do <span class="modeinfo">%s</span>.</span></div>',
 		'part': '<div class="messageDiv event-message" data-event-type="part"><span class="time">%s</span> &nbsp; <span class="part"><span class="symbolFont">🢠</span> <b>%s</b> <i class="userhost">[%s@%s]</i> opuścił <span class="modeinfo">%s</span> [%s]</span></div>',
 		'quit': '<div class="messageDiv event-message" data-event-type="quit"><span class="time">%s</span> &nbsp; <span class="part"><span class="symbolFont">🢠</span> <b>%s</b> <i class="userhost">[%s@%s]</i> opuścił IRC [%s]</span></div>',
@@ -39,19 +39,19 @@ lang.pl = {
 		'channelActionHilight': '<div class="messageDiv %s" %s><span class="time">%s</span> &nbsp; <span class="symbolFont">❇</span> <span class="hilight"><span class="nick">%s</span> %s</span></div>',
 		'changeTopic': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">✯</span> <span class="modeinfo">%s</span> zmienił temat na: %s</span></div>',
 		'deleteTopic': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">✯</span> <span class="modeinfo">%s</span> usunął temat <span class="modeinfo">%s</span></span></div>',
-		'topic': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">✯</span> Temat kanału <span class="modeinfo">%s</span>: %s</span></div>',
-		'topicNotSet': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">✯</span> Temat <span class="modeinfo">%s</span> nie jest ustawiony</span></div>',
-		'topicTime': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">✯</span> Temat ustawiony przez <span class="modeinfo">%s</span> [%s]</span></div>',
+		'topic': '<div class="messageDiv channel-join-info"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">✯</span> Temat kanału <span class="modeinfo">%s</span>: %s</span></div>',
+		'topicNotSet': '<div class="messageDiv channel-join-info"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">✯</span> Temat <span class="modeinfo">%s</span> nie jest ustawiony</span></div>',
+		'topicTime': '<div class="messageDiv channel-join-info"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">✯</span> Temat ustawiony przez <span class="modeinfo">%s</span> [%s]</span></div>',
 		'kick': '<div class="messageDiv event-message" data-event-type="kick"><span class="time">%s</span> &nbsp; <span class="kick"><span class="symbolFont">✀</span> <span class="modeinfo">%s</span> wyrzucił <span class="modeinfo">%s</span> z <span class="modeinfo">%s</span> [Powód: %s]</span></div>',
 		'kickOwn': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="kick"><span class="symbolFont">✀</span> <span class="modeinfo">%s</span> wyrzucił cię z <span class="modeinfo">%s</span> [Powód: %s]</span></div>',
 		'modeChange': '<div class="messageDiv event-message" data-event-type="mode"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">🔧</span> <span class="modeinfo">%s</span> %s na kanale <span class="modeinfo">%s</span></span></div>',
-		'mode': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">🔧</span> Ustawienia kanału <span class="modeinfo">%s</span>: %s</span></div>',
-		'umode': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">🔧</span> Ustawienia nicka <span class="modeinfo">%s</span>: %s</span></div>',
-		'creationTime': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">✯</span> Kanał stworzony: %s</span></div>',
+		'mode': '<div class="messageDiv channel-join-info"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">🔧</span> Ustawienia kanału <span class="modeinfo">%s</span>: %s</span></div>',
+		'selfUserSettingInfo': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">🔧</span> Ustawienia nicka <span class="modeinfo">%s</span>: %s</span></div>',
+		'creationTime': '<div class="messageDiv channel-join-info"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">✯</span> Kanał stworzony: %s</span></div>',
 		'startedQuery': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="join"><span class="symbolFont">🢡</span> Rozpoczęto rozmowę z <span class="modeinfo">%s</span>. <a onclick="ignore.askIgnore(\'%s\');">Ignoruj tego użytkownika</a> / <a onclick="disp.showQueryUmodes()">Blokowanie wiadomości prywatnych</a></span></div>',
 		'queryBacklog': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="join"><span class="symbolFont">✯</span> Zapis poprzedniej rozmowy z <span class="modeinfo">%s</span>:</span></div>',
-		'channelBacklog': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">✯</span> Zapis poprzedniej wizyty na <span class="modeinfo">%s</span>:</span></div>',
-		'channelBacklogEnd': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">✯</span> Koniec zapisu.</span></div>',
+		'channelBacklog': '<div class="messageDiv channel-join-info"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">✯</span> Zapis poprzedniej wizyty na <span class="modeinfo">%s</span>:</span></div>',
+		'channelBacklogEnd': '<div class="messageDiv channel-join-info"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">✯</span> Koniec zapisu.</span></div>',
 		'noSuchCommand': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">⮿</span> <span class="modeinfo">%s</span>: nieznana komenda.</span></div>',
 		'noSuchNick': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">⮿</span> <span class="modeinfo">%s</span>: nie ma takiego nicku ani kanału</span></div>',
 		'noSuchNickHistory': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">⮿</span> <span class="modeinfo">%s</span>: brak historii wizyt nicka</span></div>',
@@ -74,9 +74,9 @@ lang.pl = {
 		'SaslAuthenticate': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="sinfo"><span class="symbolFont">🔧</span> %s</span></div>',
 		'ctcpRequest': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">✯</span> <span class="modeinfo">%s</span> wysyła CTCP REQUEST: %s</span></div>',
 		'ctcpReply': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="notice"><span class="symbolFont">✯</span> <b>CTCP REPLY od %s:</b> %s</span></div>',
-		'chanListElement': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="notice"><span class="symbolFont">✯</span> <b><a href="#" onClick="ircCommand.channelJoin(\'%s\')">%s</a></b> (%s) - %s </span> </div>',
+		'chanListElement': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="notice"><span class="symbolFont">✯</span> <b><a href="#" onClick="joinChannel(\'%s\')">%s</a></b> (%s) - %s </span> </div>',
 		'chanListElementHidden': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="notice"><span class="symbolFont">✯</span> <b>(kanał ukryty)</b> (%s) - (temat ukryty) </span> </div>',
-		'error': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"> <span class="symbolFont">⮿</span> Rozłączono z serwerem: %s</span></div>',
+		'selfDisconnected': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"> <span class="symbolFont">⮿</span> Rozłączono z serwerem: %s</span></div>',
 		'existingConnection': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">✯</span> Połączenie już istnieje, dołączam się do niego.</span></div>',
 		'away': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">🍵</span> <span class="modeinfo">%s</span> otrzymał twoją wiadomość, ale jest teraz nieobecny: %s</span></div>',
 		'yourAwayEnabled': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">🍵</span> Jesteś teraz oznaczony jako nieobecny</span></div>',
@@ -251,6 +251,7 @@ lang.pl = {
 	'reconnect': 'Połącz ponownie',
 	'lostNetworkConnection': 'Utracono połączenie z siecią.',
 	'disconnected': 'Rozłączono',
+	'nickservRecoverDisconnected': 'NickServ rozłączył cię komendą RECOVER. Kliknij Połącz ponownie, aby się połączyć.',
 	'msgNotice': 'Komunikat',
 	'passwordNotGiven': 'Nie podałeś hasła!',
 	'reconnectingWait': 'Ponowne łączenie, czekaj...',
@@ -330,11 +331,11 @@ lang.pl = {
 	'insertFormatCodes': 'Wstaw kody formatowania',
 	'hideFormatting': 'Schowaj formatowanie',
 	'cantSendNoConnection': 'Nie możesz teraz wykonać komendy ani wysłać wiadomości, ponieważ nie masz połączenia z IRC.',
-	'connectionNotAllowedHtml': '<p>Serwer nie zezwolił na to połączenie. Prawdopodobnie Twój adres IP został zbanowany.</p><p>Jeśli masz pewność, że nie zrobiłeś(aś) nic złego (sprawdź <a href="' + mainSettings.rulesUrl + '" target="_blank">regulamin</a>), spróbuj następujących kroków:'+
-		'<ul>'+
-		'<li>Wyłącz usługi typu VPN, Proxy, TOR. Użytkownicy tych usług tak często dokonują nadużyć, że PIRC nie zezwala im na dostęp.</li>'+
-		'<li>Zresetuj swój router. Być może Twój dostawca internetu przypadkowo przypisał Tobie adres, za pomocą którego ktoś inny zrobił kiedyś coś złego.</li>'+
-		'<li>Skontaktuj się z administracją PIRC pod adresem e-mail ' + mainSettings.adminMail + '</li>',
+	'connectionNotAllowedHtml': `<p>Serwer nie zezwolił na to połączenie. Prawdopodobnie Twój adres IP został zbanowany.</p><p>Jeśli masz pewność, że nie zrobiłeś(aś) nic złego (sprawdź <a href="${  mainSettings.rulesUrl  }" target="_blank">regulamin</a>), spróbuj następujących kroków:` +
+		'<ul>' +
+		'<li>Wyłącz usługi typu VPN, Proxy, TOR. Użytkownicy tych usług tak często dokonują nadużyć, że PIRC nie zezwala im na dostęp.</li>' +
+		'<li>Zresetuj swój router. Być może Twój dostawca internetu przypadkowo przypisał Tobie adres, za pomocą którego ktoś inny zrobił kiedyś coś złego.</li>' +
+		`<li>Skontaktuj się z administracją PIRC pod adresem e-mail ${  mainSettings.adminMail  }</li>`,
 	'noAccessToNetwork': 'Brak dostępu',
 	'listIsEmpty': 'Lista jest pusta.',
 	'listOfIgnoredUsers': 'Lista ignorowanych użytkowników',
@@ -501,7 +502,7 @@ lang.pl = {
 	'monospaceFont': 'Wyświetlaj treść rozmowy fontem o stałej szerokości',
 	'autoDisconnect': 'Automatycznie rozłączaj przy zamykaniu strony',
 	'autoConnect': 'Automatyczne łączenie (bez podawania nicka i hasła)',
-	'backlogCount':  'Ilość linii w historii rozmów z poprzedniej wizyty',
+	'backlogCount': 'Ilość linii w historii rozmów z poprzedniej wizyty',
 	'popupWindow': 'Wyskakujące okienko',
 	'statusTab': 'Zakładka statusu',
 	'manageIgnored': 'Zarządzaj ignorowanymi nickami',

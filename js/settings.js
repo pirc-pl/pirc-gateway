@@ -1,0 +1,224 @@
+// js/settings.js
+
+const settings = (function() {
+	// NOTE: Three settings have inverted naming — their internal name starts with "show" but
+	// true means HIDE (the checkbox label says "don't show..." and the display code guards with !get(...)):
+	//   'showPartQuit'    — true = hide JOIN/PART/QUIT messages  (label: dontShowJoinsQuits)
+	//   'showNickChanges' — true = hide nick change messages      (label: dontShowNickChanges)
+	//   'showMode'        — true = hide mode change messages      (label: dontShowModes)
+	// Renaming these would require a migration layer, e.g. on load: if localStorage has the old key,
+	// read its value, write the new key with the same value, and remove the old key. Until then,
+	// all consumers must continue to use inverted logic: if (!settings.get('showPartQuit')) { ... }
+	const booleanSettings = [ 'showPartQuit', 'showNickChanges', 'tabsListBottom', 'showUserHostnames', 'autoReconnect', 'displayLinkWarning', 'blackTheme', 'newMsgSound', 'autoDisconnect', 'coloredNicks', 'showMode', 'dispEmoji', 'sendEmoji', 'monoSpaceFont', 'automLogIn', 'enableautomLogIn', 'save_password', 'setUmodeD', 'setUmodeR', 'noAvatars', 'biggerEmoji', 'groupEvents', 'shortModeDisplay', 'sortChannelsByJoinOrder' ];
+	// Default values for boolean settings (settings not listed here default to false)
+	const booleanDefaults = {
+		'autoReconnect': true,
+		'displayLinkWarning': true,
+		'coloredNicks': true,
+		'dispEmoji': true,
+		'groupEvents': true,
+		'autoDisconnect': true
+	};
+	const comboSettings = [ 'noticeDisplay', 'setLanguage' ];
+	const numberSettings = [ 'backlogCount' ];
+	const numberSettingsMinMax = {
+		'backlogCount': { 'min': 0, 'max': 500, 'deflt': 15 }
+	};
+	const textSettings = [ 'avatar' ];
+	const textSettingsValues = {}; // Cached values for text settings
+
+	function getSettingFromDom(key) {
+		if (booleanSettings.includes(key)) {
+			return $(`#${  key}`).is(':checked');
+		}
+		if (comboSettings.includes(key)) {
+			return $(`#${  key}`).val();
+		}
+		if (numberSettings.includes(key)) {
+			const value = $(`#${  key}`).val();
+			if (value === '' || isNaN(parseFloat(value))) {
+				return null;
+			}
+			return parseInt(value, 10);
+		}
+		if (textSettings.includes(key)) {
+			const $el = $(`#${  key}`);
+			if (!$el.length) return null;
+			return $el.val();
+		}
+		return null;
+	}
+
+	function saveSettingToLocalStorage(key, value) {
+		try {
+			if (value === null || value === undefined) {
+				localStorage.removeItem(key);
+			} else {
+				localStorage.setItem(key, value);
+			}
+		} catch (e) {
+			console.error(`Failed to save setting "${  key  }":`, e);
+		}
+	}
+
+	return {
+		registerBooleanSetting: function(key) {
+			if (!booleanSettings.includes(key)) {
+				booleanSettings.push(key);
+			}
+		},
+
+		registerComboSetting: function(key) {
+			if (!comboSettings.includes(key)) {
+				comboSettings.push(key);
+			}
+		},
+
+		registerNumberSetting: function(key, minMaxDeflt) {
+			if (!numberSettings.includes(key)) {
+				numberSettings.push(key);
+				if (minMaxDeflt) {
+					numberSettingsMinMax[key] = minMaxDeflt;
+				}
+			}
+		},
+
+		registerTextSetting: function(key) {
+			if (!textSettings.includes(key)) {
+				textSettings.push(key);
+			}
+		},
+
+		get: function(key) {
+			const value = localStorage.getItem(key);
+			if (value === null) {
+				if (booleanSettings.includes(key)) {
+					// Return default value if specified, otherwise false
+					return booleanDefaults[key] !== undefined ? booleanDefaults[key] : false;
+				}
+				if (numberSettings.includes(key) && numberSettingsMinMax[key]) return numberSettingsMinMax[key]['deflt'];
+				return null;
+			}
+			if (booleanSettings.includes(key)) return value === 'true';
+			if (numberSettings.includes(key)) return parseInt(value, 10);
+			return value;
+		},
+
+		set: function(key, value) {
+			// Update DOM element
+			if (booleanSettings.includes(key)) {
+				$(`#${  key}`).prop('checked', value);
+			} else if (comboSettings.includes(key) || numberSettings.includes(key) || textSettings.includes(key)) {
+				$(`#${  key}`).val(value);
+				if (textSettings.includes(key)) {
+					textSettingsValues[key] = value;
+				}
+			}
+			// Save to localStorage
+			saveSettingToLocalStorage(key, value);
+		},
+
+		saveFromDom: function(key) {
+			let value = getSettingFromDom(key);
+			if (value !== null) {
+				if (numberSettings.includes(key) && numberSettingsMinMax[key]) {
+					if (value < numberSettingsMinMax[key]['min'] || value > numberSettingsMinMax[key]['max']) {
+						value = numberSettingsMinMax[key]['deflt'];
+						$(`#${  key}`).val(value);
+					}
+				}
+				saveSettingToLocalStorage(key, value);
+			} else if (textSettings.includes(key) && settings._textSettingsValues[key]) {
+				saveSettingToLocalStorage(key, settings._textSettingsValues[key]);
+			}
+		},
+
+		saveAllFromDom: function() {
+			const allSettingsKeys = [...booleanSettings, ...comboSettings, ...numberSettings, ...textSettings];
+			allSettingsKeys.forEach((key) => {
+				this.saveFromDom(key);
+			});
+		},
+
+		load: function() {
+			const allSettingsKeys = [...booleanSettings, ...comboSettings, ...numberSettings, ...textSettings];
+			allSettingsKeys.forEach((key) => {
+				const value = this.get(key);
+				if (value !== null) {
+					if (booleanSettings.includes(key)) {
+						$(`#${  key}`).prop('checked', value);
+					} else if (comboSettings.includes(key)) {
+						$(`#${  key}`).val(value);
+					} else if (numberSettings.includes(key)) {
+						$(`#${  key}`).val(value);
+					} else if (textSettings.includes(key)) {
+						$(`#${  key}`).val(value);
+						if (key === 'avatar') {
+							settings._textSettingsValues['avatar'] = value;
+						}
+					}
+				}
+			});
+
+			// Appearance settings (will be event-driven later)
+			// For now, these are applied directly on load.
+			if (settings.get('blackTheme')) {
+				if ($('#blackCss').length == 0) {
+					$('head').append('<link rel="stylesheet" type="text/css" href="/styles/gateway_black.css" id="blackCss">');
+				}
+			} else {
+				$('#blackCss').remove();
+			}
+			if (settings.get('monoSpaceFont')) {
+				if ($('#monospace_font').length == 0) {
+					const style = $('<style id="monospace_font">#chat-wrapper { font-family: DejaVu Sans Mono, Consolas, monospace, Symbola; } </style>');
+					$('html > head').append(style);
+				}
+			} else {
+				$('#monospace_font').remove();
+			}
+			if (settings.get('noAvatars')) {
+				$('#avatars-style').remove();
+				if ($('#no_avatars').length == 0) {
+					const style = $('<style id="no_avatars">.msgRepeat { display: block; } .msgRepeatBlock { display: none; } .messageDiv { padding-bottom: unset; } .messageMeta { display: none; } .messageHeader { display: inline; } .messageHeader::after { content: " "; } .messageHeader .time { display: inline; } .evenMessage { background: none !important; } .oddMessage { background: none !important; }</style>');
+					$('html > head').append(style);
+				}
+			} else {
+				$('#no_avatars').remove();
+				if ($('#avatars-style').length == 0) {
+					const style = $('<style id="avatars-style">span.repeat-hilight, span.repeat-hilight span { color: #1F29D3 !important; font-weight: bold; }</style>');
+					$('html > head').append(style);
+				}
+			}
+			if (settings.get('showUserHostnames')) {
+				$('#userhost_hidden').remove();
+			} else {
+				if ($('#userhost_hidden').length == 0) {
+					const style = $('<style id="userhost_hidden">.userhost { display:none; }</style>');
+					$('html > head').append(style);
+				}
+			}
+			if (settings.get('tabsListBottom')) {
+				$('#top_menu').detach().insertAfter('#inputbox');
+				if ($('#tabsDownCss').length == 0) {
+					$('head').append('<link rel="stylesheet" type="text/css" href="/styles/gateway_tabs_down.css" id="tabsDownCss">');
+				}
+			} else {
+				$('#top_menu').detach().insertAfter('#options-box');
+				$('#tabsDownCss').remove();
+			}
+			if (settings.get('biggerEmoji')) {
+				document.documentElement.style.setProperty('--emoji-scale', '3');
+			} else {
+				document.documentElement.style.setProperty('--emoji-scale', '1.8');
+			}
+			if (settings.get('automLogIn')) { // Special handling for automLogIn, depends on parent tr visibility
+				$('#automLogIn').parent().parent().css('display', '');
+			} else {
+				$('#automLogIn').parent().parent().css('display', 'none');
+			}
+		},
+		_textSettingsValues: textSettingsValues,
+		backlogLength: 15  // Cached value for backlogCount, updated by changeSettings()
+	};
+})();

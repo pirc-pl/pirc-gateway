@@ -168,6 +168,7 @@ input, button, submit {
 	height: 100%;
 	margin: 10px auto;
 	overflow: auto;
+	overflow-anchor: none;
 	width: 97%;
 	word-wrap: break-word;
 }
@@ -1245,6 +1246,11 @@ div.alert-dialog {
 	font-size: .9em;
 }
 
+#nickOptions .nickRegistered,
+#nickOptions .avatarCapability {
+	display: none;
+}
+
 #nickOptions {
 	position: absolute;
     bottom: .9em;
@@ -1430,11 +1436,17 @@ img.emoji {
 
 :root {
 	--emoji-scale: 1.8;
+	--emoji-hover-scale: 3;
+}
+
+/* Explicitly use system color emoji fonts, bypassing any inherited font (e.g. Symbola) */
+g-emoji, .emoji-wrapper {
+	font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', 'Twemoji Mozilla', 'EmojiOne Color', sans-serif;
 }
 
 .emoji-wrapper:hover {
     display: inline-block;
-    transform:scale(var(--emoji-scale));
+    transform:scale(var(--emoji-hover-scale));
     z-index: 1000;
     position: relative;
 }
@@ -1484,16 +1496,19 @@ img.emoji {
 }
 
 .listWindowChannel {
-  text-align: left;
-  white-space: nowrap;
-  width: 1px; /* Forces the column to shrink to content */
+    text-align: left;
+    white-space: nowrap;
+    width: 1%;
 }
 
 .listWindowUsers {
     text-align: right;
+    white-space: nowrap;
+    width: 1%;
 }
 
 .listWindowTopic {
+    width: 100%;
 }
 
 .listWindowLoading, .listWindowEmpty {
