@@ -83,16 +83,13 @@ var ctcpBinds = {};
 ircEvents.on('batch:chathistory', function(data){
 	var msg = data.msg;
 	var batch = data.batch;
-	batch.receivedMessages = 0; // Track how many messages we received
-	batch.oldestMsgid = null; // Track oldest message msgid
-	batch.oldestTimestamp = null; // Track oldest message timestamp
-});
 
-ircEvents.on('batch:chathistory', function(data){
-	var msg = data.msg;
-	var batch = data.batch;
-	// This will be called when the batch ends (msg.isBatchEnd is true)
-	// We need to set a callback to add the "load older" link
+	// Track how many messages we received
+	batch.receivedMessages = 0;
+	batch.oldestMsgid = null;
+	batch.oldestTimestamp = null;
+
+	// Set callback to add the "load older" link when batch ends
 	batch.callback = function(batch, msg){
 		console.log('chathistory batch ended, received', batch.receivedMessages, 'messages');
 		var chan = gateway.findChannel(batch.args[0]);
