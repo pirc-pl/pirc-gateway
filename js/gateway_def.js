@@ -80,7 +80,7 @@ var irc = {
 	'messagedata': function() {
 		this.text = '';
 		this.args = [];
-		this.tags = [];
+		this.tags = {};
 		this.command = '';
 		this.sender = {
 			'nick': '',
@@ -119,9 +119,9 @@ var irc = {
 		return {'status': 2, 'packets': packets };
 	},
 	'parseTags': function(tagsLine){
-		var tags = [];
+		var tags = {};
 		var tagState = 'keyName';
-		var keyValue;
+		var keyValue = '';
 		var keyName = '';
 		for(var i = 0; i < tagsLine.length; i++){
 			var cchar = tagsLine.charAt(i);
@@ -156,6 +156,7 @@ var irc = {
 						case 's': keyValue += ' '; break;
 						case 'r': keyValue += '\r'; break;
 						case 'n': keyValue += '\n'; break;
+						// Per IRC spec, unrecognized escape sequences are treated as the escaped char
 						default: keyValue += cchar; break;
 					}
 					tagState = 'keyValue';
@@ -169,7 +170,6 @@ var irc = {
 		var ircmsg = new irc.messagedata();
 
 		var line = line.trim();
-		line.replace(/^\s+|\s+$/gm,'');
 		if(line == ''){
 			return;
 		}
@@ -178,6 +178,7 @@ var irc = {
 		var currArg = '';
 		var tags = '';
 		var haveText = false;
+		var prevChar = '';
 
 		for(var i = 0; i < msglen; i++){
 			var cchar = line.charAt(i);
@@ -251,7 +252,7 @@ var irc = {
 					ircmsg.text += cchar;
 					break;
 			}
-			var prevChar = cchar;
+			prevChar = cchar;
 		}
 		if(pstate == 'args'){
 			ircmsg.args.push(currArg);
@@ -271,16 +272,16 @@ var irc = {
 		if(ircmsg.sender.nick.length > 0){
 			var user = users.getUser(ircmsg.sender.nick);
 			ircmsg.user = user;
-		}
 
-// add u@h
-		if(ircmsg.sender.user){
-			if(ircmsg.sender.ident.length > 0) user.setIdent(ircmsg.sender.ident);
-			if(ircmsg.sender.host.length > 0) user.setHost(ircmsg.sender.host);
-		}
-		
-		if(ircmsg.sender.server){
-			user.server = true;
+			// add u@h
+			if(ircmsg.sender.user){
+				if(ircmsg.sender.ident.length > 0) user.setIdent(ircmsg.sender.ident);
+				if(ircmsg.sender.host.length > 0) user.setHost(ircmsg.sender.host);
+			}
+
+			if(ircmsg.sender.server){
+				user.server = true;
+			}
 		}
 
 		gateway.processIncomingTags(ircmsg);
@@ -462,8 +463,9 @@ var gateway = {
 			gateway.labelProcessed = false;
 			try {
 				var msg = data.packets[i];
+				if(!msg || !msg.command) continue; // Skip invalid messages
 				console.log('→', ircLog.filterIncoming(msg));
-				if('batch' in msg.tags && msg.tags.batch in gateway.batch){
+				if(msg.tags && 'batch' in msg.tags && msg.tags.batch in gateway.batch){
 					msg.batch = gateway.batch[msg.tags.batch];
 				}
 				var command = msg.command;
@@ -472,7 +474,11 @@ var gateway = {
 						cmdNotImplemented(msg);
 					} else {
 						for(func in cmdBinds[command]) {
-							cmdBinds[command][func](msg);
+							try {
+								cmdBinds[command][func](msg);
+							} catch(handlerError) {
+								console.error('Error in handler for ' + command + '[' + func + ']:', handlerError);
+							}
 						}
 					}
 				} else { // not implemented
@@ -2547,7 +2553,11 @@ var gateway = {
 		if(nickInfo.length > 0)
 			nick = '<span title="' + nickInfo + '">' + nick + '</span>';
 		for(f in messageProcessors){
-			message = messageProcessors[f](sender.nick, dest, message);
+			try {
+				message = messageProcessors[f](sender.nick, dest, message);
+			} catch(e) {
+				console.error('Error in message processor:', e);
+			}
 		}
 
 //		$('[data-msgid="'+msgid+'"]').remove(); // drop the message from backlog field
@@ -2780,6 +2790,20 @@ var gateway = {
 			console.log('No handler for labeled-response', label, msg, batch);
 		}
 	},
+	'setLabelCallback': function(label, callback, timeoutMs) {
+		timeoutMs = timeoutMs || 30000;
+		var timeoutId = setTimeout(function() {
+			if(label in gateway.labelCallbacks) {
+				delete gateway.labelCallbacks[label];
+				callback(label, null, null, true); // timeout flag
+			}
+		}, timeoutMs);
+
+		gateway.labelCallbacks[label] = function(label, msg, batch) {
+			clearTimeout(timeoutId);
+			callback(label, msg, batch, false);
+		};
+	},
 	'msgNotDelivered': function(label, msg){ // called for unexpected replies when waiting for echo-message
 		if(!('echo-message' in activeCaps))
 			return;
@@ -2936,4 +2960,24 @@ var insertBinding = function(list, item, handler){
 		list[item] = [ handler ];
 	}
 }
+
+// Formal hook registration API for addons
+var hooks = {
+	onCommand: function(command, handler) {
+		insertBinding(cmdBinds, command, handler);
+	},
+	onMetadata: function(key, handler) {
+		insertBinding(metadataBinds, key, handler);
+	},
+	addMessageProcessor: function(processor) {
+		messageProcessors.push(processor);
+	},
+	onCtcp: function(ctcp, handler) {
+		insertBinding(ctcpBinds, ctcp, handler);
+	},
+	onBatch: function(type, handler) {
+		insertBinding(batchBinds, type, handler);
+	}
+};
+window.hooks = hooks;
 

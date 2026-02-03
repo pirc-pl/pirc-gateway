@@ -198,7 +198,7 @@ var cmdBinds = {
 				if(batch.callback){
 					batch.callback(batch, msg);
 				}
-				setTimeout(function(){ delete gateway.batch[name]; }, 500);
+				delete gateway.batch[name];
 				msg.isBatchEnd = true;
 				msg.batch = batch;
 			} else if(msg.args[0].charAt(0) == '+'){
