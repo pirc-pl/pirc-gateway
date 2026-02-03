@@ -1361,18 +1361,15 @@ ircEvents.on('cmd:404', function(msg) {	// ERR_CANNOTSENDTOCHAN
 	}
 });
 
-ircEvents.on('cmd:405', function(msg) {});	// ERR_TOOMANYCHANNELS
+// 405 ERR_TOOMANYCHANNELS - falls through to cmdNotImplemented
 
 ircEvents.on('cmd:406', function(msg) {	// ERR_WASNOSUCHNICK
 	$$.displayDialog('error', 'error', 'Błąd', '<p>' + language.recentVisitsForNickNotFound + '<b>'+he(msg.args[1])+'</b></p>');
 	gateway.statusWindow.appendMessage(language.messagePatterns.noSuchNickHistory, [$$.niceTime(msg.time), he(msg.args[1])]);
 });
 
-// Empty error handlers 407-410
-ircEvents.on('cmd:407', function(msg) {});	// ERR_TOOMANYTARGETS
-ircEvents.on('cmd:408', function(msg) {});	// ERR_NOSUCHSERVICE
-ircEvents.on('cmd:409', function(msg) {});	// ERR_NOORIGIN
-ircEvents.on('cmd:410', function(msg) {});	// ERR_INVALIDCAPCMD
+// 407-410: ERR_TOOMANYTARGETS, ERR_NOSUCHSERVICE, ERR_NOORIGIN, ERR_INVALIDCAPCMD
+// Fall through to cmdNotImplemented
 
 ircEvents.on('cmd:411', function(msg) {	//ERR_NORECIPIENT - that was a hack to discover own nick with previous websocket interface
 	if(gateway.connectStatus != 'disconnected'){
@@ -1391,18 +1388,10 @@ ircEvents.on('cmd:411', function(msg) {	//ERR_NORECIPIENT - that was a hack to d
 	gateway.connectStatus = '001';
 });
 
-// Empty error handlers 412-424
-ircEvents.on('cmd:412', function(msg) {});	// ERR_NOTEXTTOSEND
-ircEvents.on('cmd:413', function(msg) {});	// ERR_NOTOPLEVEL
-ircEvents.on('cmd:414', function(msg) {});	// ERR_WILDTOPLEVEL
-ircEvents.on('cmd:416', function(msg) {});	// ERR_TOOMANYMATCHES
-ircEvents.on('cmd:421', function(msg) {});	// ERR_UNKNOWNCOMMAND
-ircEvents.on('cmd:422', function(msg) {});	// ERR_NOMOTD
-ircEvents.on('cmd:423', function(msg) {});	// ERR_NOADMININFO
-ircEvents.on('cmd:424', function(msg) {});	// ERR_FILEERROR
-ircEvents.on('cmd:425', function(msg) {});	// ERR_NOOPERMOTD
-ircEvents.on('cmd:429', function(msg) {});	// ERR_TOOMANYAWAY
-ircEvents.on('cmd:431', function(msg) {});	// ERR_NONICKNAMEGIVEN
+// 412-431: Various errors - fall through to cmdNotImplemented
+// ERR_NOTEXTTOSEND, ERR_NOTOPLEVEL, ERR_WILDTOPLEVEL, ERR_TOOMANYMATCHES,
+// ERR_UNKNOWNCOMMAND, ERR_NOMOTD, ERR_NOADMININFO, ERR_FILEERROR,
+// ERR_NOOPERMOTD, ERR_TOOMANYAWAY, ERR_NONICKNAMEGIVEN
 
 ircEvents.on('cmd:432', function(msg) {	// ERR_ERRONEUSNICKNAME
 	if(gateway.connectStatus == 'disconnected'){
@@ -1440,15 +1429,9 @@ ircEvents.on('cmd:433', function(msg) {	// ERR_NICKNAMEINUSE
 	gateway.statusWindow.appendMessage(language.messagePatterns.nickInUse, [$$.niceTime(msg.time), msg.args[1]]);
 });
 
-// Empty error handlers 434-441
-ircEvents.on('cmd:434', function(msg) {});	// ERR_NORULES
-ircEvents.on('cmd:435', function(msg) {});	// ERR_SERVICECONFUSED
-ircEvents.on('cmd:436', function(msg) {});	// ERR_NICKCOLLISION
-ircEvents.on('cmd:437', function(msg) {});	// ERR_BANNICKCHANGE
-ircEvents.on('cmd:438', function(msg) {});	// ERR_NCHANGETOOFAST
-ircEvents.on('cmd:439', function(msg) {});	// ERR_TARGETTOOFAST
-ircEvents.on('cmd:440', function(msg) {});	// ERR_SERVICESDOWN
-ircEvents.on('cmd:441', function(msg) {});	// ERR_USERNOTINCHANNEL
+// 434-441: Various errors - fall through to cmdNotImplemented
+// ERR_NORULES, ERR_SERVICECONFUSED, ERR_NICKCOLLISION, ERR_BANNICKCHANGE,
+// ERR_NCHANGETOOFAST, ERR_TARGETTOOFAST, ERR_SERVICESDOWN, ERR_USERNOTINCHANNEL
 
 ircEvents.on('cmd:442', function(msg) {	// ERR_NOTONCHANNEL
 	var html = '<p>'+he(msg.args[1])+':' + language.youreNotOnChannel + '</p>';
@@ -1462,10 +1445,7 @@ ircEvents.on('cmd:443', function(msg) {	// ERR_USERONCHANNEL
 	gateway.statusWindow.appendMessage(language.messagePatterns.alreadyOnChannel, [$$.niceTime(msg.time), he(msg.args[2]), he(msg.args[1])]);
 });
 
-// Empty error handlers 444-446
-ircEvents.on('cmd:444', function(msg) {});	// ERR_NOLOGIN
-ircEvents.on('cmd:445', function(msg) {});	// ERR_SUMMONDISABLED
-ircEvents.on('cmd:446', function(msg) {});	// ERR_USERSDISABLED
+// 444-446: ERR_NOLOGIN, ERR_SUMMONDISABLED, ERR_USERSDISABLED - fall through to cmdNotImplemented
 
 ircEvents.on('cmd:447', function(msg) {	// ERR_NONICKCHANGE
 	var html = '<p>' + language.cantChangeNickMessageHtml + he(msg.text) + '</p>';
@@ -1473,16 +1453,9 @@ ircEvents.on('cmd:447', function(msg) {	// ERR_NONICKCHANGE
 	gateway.statusWindow.appendMessage(language.messagePatterns.notOnChannel, [$$.niceTime(msg.time), he(msg.args[1])]);
 });
 
-// Empty error handlers 448-460
-ircEvents.on('cmd:448', function(msg) {});	// ERR_FORBIDDENCHANNEL
-ircEvents.on('cmd:451', function(msg) {});	// ERR_NOTREGISTERED
-ircEvents.on('cmd:455', function(msg) {});	// ERR_HOSTILENAME
-ircEvents.on('cmd:459', function(msg) {});	// ERR_NOHIDING
-ircEvents.on('cmd:460', function(msg) {});	// ERR_NOTFORHALFOPS
-ircEvents.on('cmd:461', function(msg) {});	// ERR_NEEDMOREPARAMS
-ircEvents.on('cmd:462', function(msg) {});	// ERR_ALREADYREGISTRED
-ircEvents.on('cmd:463', function(msg) {});	// ERR_NOPERMFORHOST
-ircEvents.on('cmd:464', function(msg) {});	// ERR_PASSWDMISMATCH
+// 448-464: Various errors - fall through to cmdNotImplemented
+// ERR_FORBIDDENCHANNEL, ERR_NOTREGISTERED, ERR_HOSTILENAME, ERR_NOHIDING,
+// ERR_NOTFORHALFOPS, ERR_NEEDMOREPARAMS, ERR_ALREADYREGISTRED, ERR_NOPERMFORHOST, ERR_PASSWDMISMATCH
 
 ircEvents.on('cmd:465', function(msg) {	// ERR_YOUREBANNEDCREEP
 	gateway.displayGlobalBanInfo(msg.text);
