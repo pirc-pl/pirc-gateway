@@ -469,20 +469,27 @@ var gateway = {
 					msg.batch = gateway.batch[msg.tags.batch];
 				}
 				var command = msg.command;
-				if(command in cmdBinds) {
-					if(cmdBinds[command].length == 0){ // implementation empty
-						cmdNotImplemented(msg);
-					} else {
-						for(func in cmdBinds[command]) {
-							try {
-								cmdBinds[command][func](msg);
-							} catch(handlerError) {
-								console.error('Error in handler for ' + command + '[' + func + ']:', handlerError);
+				// Emit to new event system first
+				var continueProcessing = ircEvents.emit('cmd:' + command, msg);
+
+				// Continue with legacy handlers if not stopped
+				if(continueProcessing) {
+					if(command in cmdBinds) {
+						if(cmdBinds[command].length == 0){ // implementation empty
+							cmdNotImplemented(msg);
+						} else {
+							for(func in cmdBinds[command]) {
+								try {
+									cmdBinds[command][func](msg);
+								} catch(handlerError) {
+									console.error('Error in handler for ' + command + '[' + func + ']:', handlerError);
+								}
 							}
 						}
+					} else if(!ircEvents.hasListeners('cmd:' + command)) {
+						// Only show not implemented if no handlers at all
+						cmdNotImplemented(msg);
 					}
-				} else { // not implemented
-					cmdNotImplemented(msg);
 				}
 			} catch(error) {
 				console.error('Error processing message!', msg, error);
@@ -2961,22 +2968,191 @@ var insertBinding = function(list, item, handler){
 	}
 }
 
+/**
+ * Event emitter with priority support for IRC handlers
+ * @constructor
+ */
+var IRCEventEmitter = function() {
+	this._handlers = {};
+};
+
+IRCEventEmitter.prototype = {
+	/**
+	 * Register event handler with optional priority
+	 * @param {string} event - Event name (e.g., 'cmd:PRIVMSG', 'batch:chathistory')
+	 * @param {function} handler - Handler function
+	 * @param {object} options - { priority: 0-100 (default 50), once: false }
+	 * @returns {function} Unsubscribe function
+	 */
+	on: function(event, handler, options) {
+		options = options || {};
+		var priority = options.priority !== undefined ? options.priority : 50;
+		var once = options.once || false;
+
+		if (!this._handlers[event]) {
+			this._handlers[event] = [];
+		}
+
+		var entry = {
+			handler: handler,
+			priority: priority,
+			once: once
+		};
+
+		this._handlers[event].push(entry);
+		// Sort by priority (higher first)
+		this._handlers[event].sort(function(a, b) {
+			return b.priority - a.priority;
+		});
+
+		// Return unsubscribe function
+		var self = this;
+		return function() {
+			self.off(event, handler);
+		};
+	},
+
+	/**
+	 * Register one-time event handler
+	 */
+	once: function(event, handler, options) {
+		options = options || {};
+		options.once = true;
+		return this.on(event, handler, options);
+	},
+
+	/**
+	 * Unregister event handler
+	 */
+	off: function(event, handler) {
+		if (!this._handlers[event]) return;
+		this._handlers[event] = this._handlers[event].filter(function(entry) {
+			return entry.handler !== handler;
+		});
+	},
+
+	/**
+	 * Emit event to all registered handlers
+	 * @param {string} event - Event name
+	 * @param {*} data - Data to pass to handlers
+	 * @returns {boolean} false if propagation was stopped, true otherwise
+	 */
+	emit: function(event, data) {
+		if (!this._handlers[event]) return true;
+
+		var toRemove = [];
+		var stopped = false;
+
+		for (var i = 0; i < this._handlers[event].length; i++) {
+			var entry = this._handlers[event][i];
+
+			try {
+				var result = entry.handler(data);
+				if (result === false) {
+					stopped = true;
+				}
+			} catch (e) {
+				console.error('Event handler error [' + event + ']:', e);
+			}
+
+			if (entry.once) {
+				toRemove.push(entry);
+			}
+
+			if (stopped) break;
+		}
+
+		// Remove once handlers
+		for (var j = 0; j < toRemove.length; j++) {
+			this.off(event, toRemove[j].handler);
+		}
+
+		return !stopped;
+	},
+
+	/**
+	 * Check if any handlers exist for event
+	 */
+	hasListeners: function(event) {
+		return this._handlers[event] && this._handlers[event].length > 0;
+	}
+};
+
+// Global IRC event emitter instance
+var ircEvents = new IRCEventEmitter();
+window.ircEvents = ircEvents;
+
 // Formal hook registration API for addons
 var hooks = {
-	onCommand: function(command, handler) {
+	/**
+	 * Register command handler
+	 * @param {string} command - IRC command (e.g., 'PRIVMSG')
+	 * @param {function} handler - Handler function(msg)
+	 * @param {object} options - { priority: 0-100, once: boolean }
+	 * @returns {function} Unsubscribe function
+	 */
+	onCommand: function(command, handler, options) {
+		var unsub = ircEvents.on('cmd:' + command, handler, options);
 		insertBinding(cmdBinds, command, handler);
+		return unsub;
 	},
-	onMetadata: function(key, handler) {
+	/**
+	 * Register metadata change handler
+	 * @param {string} key - Metadata key (e.g., 'avatar')
+	 * @param {function} handler - Handler function(data) where data = {user, key, value}
+	 * @param {object} options - { priority: 0-100, once: boolean }
+	 * @returns {function} Unsubscribe function
+	 */
+	onMetadata: function(key, handler, options) {
+		var unsub = ircEvents.on('metadata:' + key, handler, options);
 		insertBinding(metadataBinds, key, handler);
+		return unsub;
 	},
+	/**
+	 * Add message text processor
+	 * @param {function} processor - Function(senderNick, dest, message) returns modified message
+	 */
 	addMessageProcessor: function(processor) {
 		messageProcessors.push(processor);
 	},
-	onCtcp: function(ctcp, handler) {
+	/**
+	 * Register CTCP handler
+	 * @param {string} ctcp - CTCP type (e.g., 'VERSION')
+	 * @param {function} handler - Handler function(msg)
+	 * @param {object} options - { priority: 0-100, once: boolean }
+	 * @returns {function} Unsubscribe function
+	 */
+	onCtcp: function(ctcp, handler, options) {
+		var unsub = ircEvents.on('ctcp:' + ctcp, handler, options);
 		insertBinding(ctcpBinds, ctcp, handler);
+		return unsub;
 	},
-	onBatch: function(type, handler) {
+	/**
+	 * Register batch handler
+	 * @param {string} type - Batch type (e.g., 'chathistory')
+	 * @param {function} handler - Handler function(data) where data = {msg, batch}
+	 * @param {object} options - { priority: 0-100, once: boolean }
+	 * @returns {function} Unsubscribe function
+	 */
+	onBatch: function(type, handler, options) {
+		var unsub = ircEvents.on('batch:' + type, handler, options);
 		insertBinding(batchBinds, type, handler);
+		return unsub;
+	},
+	/**
+	 * Direct event registration (for custom events)
+	 */
+	on: function(event, handler, options) {
+		return ircEvents.on(event, handler, options);
+	},
+	once: function(event, handler, options) {
+		return ircEvents.once(event, handler, options);
+	},
+	off: function(event, handler) {
+		ircEvents.off(event, handler);
+	},
+	emit: function(event, data) {
+		return ircEvents.emit(event, data);
 	}
 };
 window.hooks = hooks;

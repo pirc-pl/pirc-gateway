@@ -207,6 +207,9 @@ var cmdBinds = {
 				if('label' in msg.tags){
 					batch.label = msg.tags.label;
 				}
+				// Emit to new event system
+				ircEvents.emit('batch:' + type, {msg: msg, batch: batch});
+				// Legacy handlers
 				if(type in batchBinds){
 					for(var i=0; i<batchBinds[type].length; i++){
 						batchBinds[type][i](msg, batch);
@@ -526,6 +529,9 @@ var cmdBinds = {
 			} else {
 				var user = users.getUser(target);
 				user.setMetadata(key, value);
+				// Emit to new event system
+				ircEvents.emit('metadata:' + key, {user: user, key: key, value: value});
+				// Legacy handlers
 				if(key in metadataBinds){
 					for(var i=0; i<metadataBinds[key].length; i++){
 						metadataBinds[key][i](user, key, value);
@@ -701,11 +707,14 @@ var cmdBinds = {
 				if('label' in msg.tags && ctcp != 'ACTION'){
 					return; // don't display nor process own requests, this may change later
 				}
+				// Emit to new event system
+				ircEvents.emit('ctcp:' + ctcp, msg);
+				// Legacy handlers
 				if(ctcp in ctcpBinds){
 					for(func in ctcpBinds[ctcp]){
 						ctcpBinds[ctcp][func](msg);
 					}
-				} else { // unknown ctcp request
+				} else if(!ircEvents.hasListeners('ctcp:' + ctcp)) { // unknown ctcp request
 					if(msg.sender.nick == guser.nick){
 						var qname = msg.args[0];
 					} else {
