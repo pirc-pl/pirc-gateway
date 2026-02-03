@@ -144,6 +144,121 @@ window.metadataBinds = {};
 window.addons = [];
 var loaded = false;
 
+/**
+ * Event emitter with priority support for IRC handlers
+ * Must be defined here (before gateway_cmd_binds.js loads)
+ * @constructor
+ */
+var IRCEventEmitter = function() {
+	this._handlers = {};
+};
+
+IRCEventEmitter.prototype = {
+	/**
+	 * Register event handler with optional priority
+	 * @param {string} event - Event name (e.g., 'cmd:PRIVMSG', 'batch:chathistory')
+	 * @param {function} handler - Handler function
+	 * @param {object} options - { priority: 0-100 (default 50), once: false }
+	 * @returns {function} Unsubscribe function
+	 */
+	on: function(event, handler, options) {
+		options = options || {};
+		var priority = options.priority !== undefined ? options.priority : 50;
+		var once = options.once || false;
+
+		if (!this._handlers[event]) {
+			this._handlers[event] = [];
+		}
+
+		var entry = {
+			handler: handler,
+			priority: priority,
+			once: once
+		};
+
+		this._handlers[event].push(entry);
+		// Sort by priority (higher first)
+		this._handlers[event].sort(function(a, b) {
+			return b.priority - a.priority;
+		});
+
+		// Return unsubscribe function
+		var self = this;
+		return function() {
+			self.off(event, handler);
+		};
+	},
+
+	/**
+	 * Register one-time event handler
+	 */
+	once: function(event, handler, options) {
+		options = options || {};
+		options.once = true;
+		return this.on(event, handler, options);
+	},
+
+	/**
+	 * Unregister event handler
+	 */
+	off: function(event, handler) {
+		if (!this._handlers[event]) return;
+		this._handlers[event] = this._handlers[event].filter(function(entry) {
+			return entry.handler !== handler;
+		});
+	},
+
+	/**
+	 * Emit event to all registered handlers
+	 * @param {string} event - Event name
+	 * @param {*} data - Data to pass to handlers
+	 * @returns {boolean} false if propagation was stopped, true otherwise
+	 */
+	emit: function(event, data) {
+		if (!this._handlers[event]) return true;
+
+		var toRemove = [];
+		var stopped = false;
+
+		for (var i = 0; i < this._handlers[event].length; i++) {
+			var entry = this._handlers[event][i];
+
+			try {
+				var result = entry.handler(data);
+				if (result === false) {
+					stopped = true;
+				}
+			} catch (e) {
+				console.error('Event handler error [' + event + ']:', e);
+			}
+
+			if (entry.once) {
+				toRemove.push(entry);
+			}
+
+			if (stopped) break;
+		}
+
+		// Remove once handlers
+		for (var j = 0; j < toRemove.length; j++) {
+			this.off(event, toRemove[j].handler);
+		}
+
+		return !stopped;
+	},
+
+	/**
+	 * Check if any handlers exist for event
+	 */
+	hasListeners: function(event) {
+		return this._handlers[event] && this._handlers[event].length > 0;
+	}
+};
+
+// Global IRC event emitter instance
+var ircEvents = new IRCEventEmitter();
+window.ircEvents = ircEvents;
+
 // Register initialization functions defined in this file
 // readyFunctions array is defined in load.js
 readyFunctions.push(setEnvironment);
