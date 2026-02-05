@@ -463,7 +463,7 @@ var gateway = {
 	'sockError': function(e) { // Protocol/Connection layer
 		console.error('WebSocket error!');
 		setTimeout(function(){
-			ircEvents.emit('domain:websocketError', { event: e, currentStatus: ircEvents.emit('domain:getConnectStatus'), autoReconnect: $('#autoReconnect').is(':checked') }); // Emit domain event
+			ircEvents.emit('domain:websocketError', { event: e, currentStatus: ircEvents.emit('domain:getConnectStatus'), autoReconnect: settings.get('autoReconnect') }); // Emit domain event
 		}, 1000);
 	},
 	'onRecv': function(sdata) { // Protocol layer: entry point from websocket
@@ -495,7 +495,7 @@ var gateway = {
 	'initialize': function() { // UI-initiated connection flow
 		var nickInput, chanInput, passInput;
 
-		if($('#automLogIn').is(':checked')){
+		if(settings.get('automLogIn')){
 			if(conn.my_nick == '' || conn.my_reqChannel == ''){
 				$$.alert(language.errorLoadingData);
 				return false;
@@ -521,9 +521,9 @@ var gateway = {
 			if(passInput.match(/[ ]+/i)) { $$.alert(language.spaceInPassword); return false; }
 		}
 
-		if($('#enableautomLogIn').is(':checked')){
-			$('#automLogIn').prop('checked', true);
-			disp.changeSettings(); // This emits settings:changed and domain:requestUmodeChange
+		if(settings.get('enableautomLogIn')){
+			// Handled by settings.set('automLogIn', true);
+			settings.set('automLogIn', true); // Use settings.set directly
 			var button = [ {
 				text: 'OK',
 				click: function(){ $(this).dialog('close'); }
@@ -537,13 +537,13 @@ var gateway = {
 			channels: [ chanInput ],
 			nickservNick: nickInput,
 			nickservPass: passInput,
-			savePassword: $('#save_password').is(":checked")
+			savePassword: settings.get('save_password')
 		});
 
 		try { // UI localStorage updates
 			if(chanInput){ localStorage.setItem('channel', chanInput); }
 			if(nickInput){ localStorage.setItem('nick', nickInput); }
-			if($('#save_password').is(":checked")){
+			if(settings.get('save_password')){
 				if(nickInput && passInput){ // Use current nick and pass
 					localStorage.setItem('password', encryptPassword(passInput));
 				}
@@ -609,7 +609,7 @@ var gateway = {
 		return false;
 	},
 	'sortChannelTabs': function() { // UI-level sorting
-		if($('#sortChannelsByJoinOrder').is(':checked')){
+		if(settings.get('sortChannelsByJoinOrder')){
 			return; // Keep join order, don't sort
 		}
 		// Sort channels array alphabetically by name
@@ -1056,7 +1056,7 @@ var gateway = {
 		if(!input){
 			input = '';
 		}
-		if($('#sendEmoji').is(':checked')){
+		if(settings.get('sendEmoji')){
 			input = $$.textToEmoji(input);
 		}
 		if (!input) {
@@ -1692,12 +1692,12 @@ var gateway = {
 	},
 	'processQuit': function(msg){ // Domain logic, needs to be moved to gateway_domain.js
 		console.warn('gateway.processQuit is domain logic and should be moved.');
-		ircEvents.emit('domain:processQuitCommand', { msg: msg, showPartQuit: $('#showPartQuit').is(':checked'), time: new Date() }); // Emit domain event
+		ircEvents.emit('domain:processQuitCommand', { msg: msg, showPartQuit: settings.get('showPartQuit'), time: new Date() }); // Emit domain event
 		return true; // Keep old return for compatibility until fully removed
 	},
 	'processJoin': function(msg){ // Domain logic, needs to be moved to gateway_domain.js
 		console.warn('gateway.processJoin is domain logic and should be moved.');
-		ircEvents.emit('domain:processJoinCommand', { msg: msg, showPartQuit: $('#showPartQuit').is(':checked'), time: new Date() }); // Emit domain event
+		ircEvents.emit('domain:processJoinCommand', { msg: msg, showPartQuit: settings.get('showPartQuit'), time: new Date() }); // Emit domain event
 	},
 	'findOrCreate': function(name, setActive){ // UI action, should trigger domain logic
 		if(!name || name == ''){

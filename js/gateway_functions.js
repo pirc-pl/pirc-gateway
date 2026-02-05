@@ -37,14 +37,7 @@ function setEnvironment(){
 
 		window.reqChannel = '';
 
-		window.booleanSettings = [ 'showPartQuit', 'showNickChanges', 'tabsListBottom', 'showUserHostnames', 'autoReconnect', 'displayLinkWarning', 'blackTheme', 'newMsgSound', 'autoDisconnect', 'coloredNicks', 'showMode', 'dispEmoji', 'sendEmoji', 'monoSpaceFont', 'automLogIn', 'setUmodeD', 'setUmodeR', 'noAvatars', 'biggerEmoji', 'groupEvents', 'shortModeDisplay', 'sortChannelsByJoinOrder' ];
-		window.comboSettings = [ 'noticeDisplay', 'setLanguage' ];
-		window.numberSettings = [ 'backlogCount' ];
-		window.numberSettingsMinMax = {
-			'backlogCount' : { 'min' : 0, 'max' : 500, 'deflt' : 15 }
-		};
-		window.textSettings = [ 'avatar' ];
-		window.textSettingsValues = {};
+
 
         // banData should be managed by the Domain Layer, but its structure is defined here
 		window.banData = {
@@ -133,6 +126,146 @@ function setEnvironment(){
 		window.settings = {
 			'backlogLength': 15
 		}
+
+        // New event listeners for settings changes
+        ircEvents.on('settings:changed:tabsListBottom', function(data) {
+            if (data.newValue) {
+                $('#top_menu').detach().insertAfter('#inputbox');
+                if($('#tabsDownCss').length == 0) {
+                    $('head').append('<link rel="stylesheet" type="text/css" href="/styles/gateway_tabs_down.css" id="tabsDownCss">');
+                }
+            } else {
+                $('#top_menu').detach().insertAfter('#options-box');
+                $('#tabsDownCss').remove();
+            }
+        });
+
+        ircEvents.on('settings:changed:blackTheme', function(data) {
+            if (data.newValue) {
+                if($('#blackCss').length == 0) {
+                    $('head').append('<link rel="stylesheet" type="text/css" href="/styles/gateway_black.css" id="blackCss">');
+                }
+            } else {
+                $('#blackCss').remove();
+            }
+        });
+
+        ircEvents.on('settings:changed:monoSpaceFont', function(data) {
+            if (data.newValue) {
+                if($('#monospace_font').length == 0){
+                    var style = $('<style id="monospace_font">#chat-wrapper { font-family: DejaVu Sans Mono, Consolas, monospace, Symbola; } </style>');
+                    $('html > head').append(style);
+                }
+            } else {
+                $('#monospace_font').remove();
+            }
+        });
+
+        ircEvents.on('settings:changed:noAvatars', function(data) {
+            if (data.newValue) {
+                $('#avatars-style').remove();
+                if($('#no_avatars').length == 0){
+                    var style = $('<style id="no_avatars">.msgRepeat { display: block; } .msgRepeatBlock { display: none; } .messageDiv { padding-bottom: unset; } .messageMeta { display: none; } .messageHeader { display: inline; } .messageHeader::after { content: " "; } .messageHeader .time { display: inline; } .evenMessage { background: none !important; } .oddMessage { background: none !important; }</style>');
+                    $('html > head').append(style);
+                }
+            } else {
+                $('#no_avatars').remove();
+                if($('#avatars-style').length == 0){
+                    var style = $('<style id="avatars-style">span.repeat-hilight, span.repeat-hilight span { color: #1F29D3 !important; font-weight: bold; }</style>');
+                    $('html > head').append(style);
+                }
+            }
+        });
+
+        ircEvents.on('settings:changed:showUserHostnames', function(data) {
+            if (data.newValue) {
+                $('#userhost_hidden').remove();
+            } else {
+                if($('#userhost_hidden').length == 0){
+                    var style = $('<style id="userhost_hidden">.userhost { display:none; }</style>');
+                    $('html > head').append(style);
+                }
+            }
+        });
+
+        ircEvents.on('settings:changed:automLogIn', function(data) {
+            if (data.newValue) {
+                $('#automLogIn').parent().parent().css('display', '');
+            } else {
+                $('#automLogIn').parent().parent().css('display', 'none');
+            }
+        });
+
+        ircEvents.on('settings:changed:biggerEmoji', function(data) {
+            if (data.newValue) {
+                document.documentElement.style.setProperty('--emoji-scale', '3');
+            } else {
+                document.documentElement.style.setProperty('--emoji-scale', '1.8');
+            }
+        });
+
+        ircEvents.on('settings:changed:dispEmoji', function(data) {
+            if(!data.newValue){ // If dispEmoji is turned off
+                settings.set('sendEmoji', false); // Update related setting in UI and localStorage
+            }
+        });
+
+        ircEvents.on('settings:changed:sendEmoji', function(data) {
+            if(data.newValue){ // If sendEmoji is turned on
+                settings.set('dispEmoji', true); // Update related setting in UI and localStorage
+            }
+        });
+
+        ircEvents.on('settings:changed:setUmodeD', function(data) {
+            if(data.newValue){ // If setUmodeD is turned on
+                settings.set('setUmodeR', true); // Update related setting in UI and localStorage
+                ircEvents.emit('domain:requestUmodeChange', { mode: '+D' }); // Request domain action
+                ircEvents.emit('domain:requestUmodeChange', { mode: '+R' }); // Request domain action
+            } else { // If setUmodeD is turned off
+                ircEvents.emit('domain:requestUmodeChange', { mode: '-D' }); // Request domain action
+            }
+        });
+
+        ircEvents.on('settings:changed:setUmodeR', function(data) {
+            if (!data.newValue) { // If setUmodeR is turned off
+                settings.set('setUmodeD', false); // Update related setting in UI and localStorage
+                ircEvents.emit('domain:requestUmodeChange', { mode: '-R' }); // Request domain action
+            } else { // If setUmodeR is turned on
+                ircEvents.emit('domain:requestUmodeChange', { mode: '+R' }); // Request domain action
+            }
+        });
+
+        ircEvents.on('settings:changed:setLanguage', function(data) {
+            setLanguage(data.newValue);
+        });
+
+        ircEvents.on('settings:changed:showPartQuit', function(data) {
+            disp.updateEventVisibility();
+            if(!data.newValue){ // If showPartQuit is turned off (meaning events are shown)
+                disp.regroupAllEvents();
+            }
+        });
+
+        ircEvents.on('settings:changed:groupEvents', function(data) {
+            if(data.newValue){
+                disp.regroupAllEvents();
+            } else {
+                disp.ungroupAllEvents();
+            }
+        });
+
+        ircEvents.on('settings:changed:sortChannelsByJoinOrder', function(data) {
+            gateway.sortChannelTabs();
+        });
+
+        ircEvents.on('settings:changed', function() { // General listener for other UI updates
+            $('#nicklist').removeAttr('style');
+            $('#chlist').removeAttr('style');
+            if($('#chlist-body').is(':visible')){
+                gateway.toggleChanList();
+            }
+        });
+
 	} catch(e){
 		console.error('Failed to set up environment:', e)
 	}
@@ -269,7 +402,8 @@ var readyFunc = function(){
 		$('.not-connected-text > p').html('Niepoprawna konfiguracja aplikacji. Proszę skontaktować się z administratorem.<br>Invalid application configuration. Please contact administrator.');
 		return;
 	}
-	setDefaultLanguage();
+
+	settings.load();
 	$('.gateway-version').html(mainSettings.version);
 	$('.not-connected-text > h3').html(language.loading);
 	$('.not-connected-text > p').html(language.loadingWait);
@@ -304,7 +438,7 @@ function getModeInfo(letter, type){
 	if(!type){
 		type = 0;
 	}
-	if($('#shortModeDisplay').is(':checked')){
+	if(settings.get('shortModeDisplay')){
 		return letter;
 	}
 	if(!(letter in language.modes.chModeInfo)) return language.mode+' '+letter; // no text description for this mode char
@@ -792,152 +926,34 @@ var disp = {
 		}, 250);
 	},
 	'changeSettings': function(e) {
-		booleanSettings.forEach(function(sname){
-			try {
-				localStorage.setItem(sname, $('#'+sname).is(':checked'));
-			} catch(e){}
-		});
-		textSettings.forEach(function(sname){
-			try {
-				if(textSettingsValues[sname]){
-					localStorage.setItem(sname, textSettingsValues[sname]);
-				} else {
-					localStorage.removeItem(sname);
-				}
-			} catch(e){}
-		});
-		comboSettings.forEach(function(sname){
-			try {
-				localStorage.setItem(sname, $('#'+sname).val());
-			} catch(e){}
-		});
+		if (!e || !e.currentTarget || !e.currentTarget.id) {
+			// If called without event, assume a general save or initialization.
+			// For now, we'll ensure saveAllFromDom is called if e is missing.
+			// This branch needs careful re-evaluation once all setters are event-driven.
+			settings.saveAllFromDom();
+		} else {
+			var settingName = e.currentTarget.id;
+			var newValue = settings.get(settingName); // Get the new value after DOM update
+			var oldValue = settings.get(settingName); // Needs to be obtained before saveFromDom if it affects comparison
+			
+			settings.saveFromDom(settingName); // Save the specific setting that changed
 
-		numberSettings.forEach(function(sname){
-			var value = $('#'+sname).val();
-			if(value == '' || isNaN(parseFloat(value)) || value < numberSettingsMinMax[sname]['min'] || value > numberSettingsMinMax[sname]['max']){
-				value = numberSettingsMinMax[sname]['deflt'];
-				$('#'+sname).val(value);
-			}
-			try {
-				localStorage.setItem(sname, value);
-			} catch(e){}
-		});
-		gateway.showNickList(); //WORKAROUND: pokaż panel nawet w prywatnej i w statusie, inaczej poniższe dłubanie w CSS powoduje popsucie interfejsu graficznego
-		settings.backlogLength = parseInt($('#backlogCount').val());
-		if ($('#tabsListBottom').is(':checked')) {
-			$('#top_menu').detach().insertAfter('#inputbox');
-			if($('#tabsDownCss').length == 0) {
-				$('head').append('<link rel="stylesheet" type="text/css" href="/styles/gateway_tabs_down.css" id="tabsDownCss">');
-			}
-		} else {
-			$('#top_menu').detach().insertAfter('#options-box');
-			$('#tabsDownCss').remove();
+			// Retrieve new value after saving
+			newValue = settings.get(settingName);
+
+			// Emit granular event for the specific setting that changed
+			ircEvents.emit('settings:changed:' + settingName, { key: settingName, newValue: newValue, oldValue: oldValue, event: e });
 		}
-		if ($('#blackTheme').is(':checked')) {
-			if($('#blackCss').length == 0) {
-				$('head').append('<link rel="stylesheet" type="text/css" href="/styles/gateway_black.css" id="blackCss">');
-			}
-		} else {
-			$('#blackCss').remove();
+
+		// Update global settings.backlogLength if backlogCount changed
+		if (e && e.currentTarget.id === 'backlogCount') {
+			settings.backlogLength = settings.get('backlogCount');
+		} else if (!e) { // If called generally, ensure backlogLength is updated
+			settings.backlogLength = settings.get('backlogCount');
 		}
-		if ($('#monoSpaceFont').is(':checked')) {
-			if($('#monospace_font').length == 0){
-				var style = $('<style id="monospace_font">#chat-wrapper { font-family: DejaVu Sans Mono, Consolas, monospace, Symbola; } </style>');
-				$('html > head').append(style);
-			}
-		} else {
-			$('#monospace_font').remove();
-		}
-		if ($('#noAvatars').is(':checked')) {
-			$('#avatars-style').remove();
-			if($('#no_avatars').length == 0){
-				var style = $('<style id="no_avatars">.msgRepeat { display: block; } .msgRepeatBlock { display: none; } .messageDiv { padding-bottom: unset; } .messageMeta { display: none; } .messageHeader { display: inline; } .messageHeader::after { content: " "; } .messageHeader .time { display: inline; } .evenMessage { background: none !important; } .oddMessage { background: none !important; }</style>');
-				$('html > head').append(style);
-			}
-		} else {
-			$('#no_avatars').remove();
-			if($('#avatars-style').length == 0){
-				var style = $('<style id="avatars-style">span.repeat-hilight, span.repeat-hilight span { color: #1F29D3 !important; font-weight: bold; }</style>');
-				$('html > head').append(style);
-			}
-		}
-		if ($('#showUserHostnames').is(':checked')) {
-			$('#userhost_hidden').remove();
-		} else {
-			if($('#userhost_hidden').length == 0){
-				var style = $('<style id="userhost_hidden">.userhost { display:none; }</style>');
-				$('html > head').append(style);
-			}
-		}
-		if($('#automLogIn').is(':checked')){
-			$('#automLogIn').parent().parent().css('display', '');
-		} else {
-			$('#automLogIn').parent().parent().css('display', 'none');
-		}
-		if ($('#biggerEmoji').is(':checked')){
-			document.documentElement.style.setProperty('--emoji-scale', '3');
-		} else {
-			document.documentElement.style.setProperty('--emoji-scale', '1.8');
-		}
+		
+		// Emit a general event that settings have changed (for listeners that need to react to any change)
 		ircEvents.emit('settings:changed');
-		if(!e){
-			return;
-		}
-		if(e.currentTarget.id == 'dispEmoji') {
-			if(!$('#dispEmoji').is(':checked')){
-				$('#sendEmoji').prop('checked', false);
-			}
-		} else if(e.currentTarget.id == 'sendEmoji'){
-			if($('#sendEmoji').is(':checked')){
-				$('#dispEmoji').prop('checked', true);
-			}
-		} else if(e.currentTarget.id == 'setUmodeD') {
-			if($('#setUmodeD').is(':checked')){
-				$('#setUmodeR').prop('checked', true);
-				ircEvents.emit('domain:requestUmodeChange', { mode: '+R' });
-				if(!ircEvents.emit('domain:getUserMode', { mode: 'D' })){
-					ircEvents.emit('domain:requestUmodeChange', { mode: '+D' });
-				}
-			} else {
-				if(ircEvents.emit('domain:getUserMode', { mode: 'D' })){
-					ircEvents.emit('domain:requestUmodeChange', { mode: '-D' });
-				}
-			}
-		} else if(e.currentTarget.id == 'setUmodeR') {
-			if(!$('#setUmodeR').is(':checked')){
-				$('#setUmodeD').prop('checked', false);
-				ircEvents.emit('domain:requestUmodeChange', { mode: '-D' });
-				if(ircEvents.emit('domain:getUserMode', { mode: 'R' })){
-					ircEvents.emit('domain:requestUmodeChange', { mode: '-R' });
-				}
-			} else {
-				if(!ircEvents.emit('domain:getUserMode', { mode: 'R' })){
-					ircEvents.emit('domain:requestUmodeChange', { mode: '+R' });
-				}
-			}
-		} else if(e.currentTarget.id == 'setLanguage') {
-			var lang = $('#setLanguage').val();
-			setLanguage(lang);
-		} else if(e.currentTarget.id == 'showPartQuit'){
-			disp.updateEventVisibility();
-			if(!$('#showPartQuit').is(':checked')){
-				// Re-enable grouping when showing events again
-				disp.regroupAllEvents();
-			}
-		} else if(e.currentTarget.id == 'groupEvents'){
-			if($('#groupEvents').is(':checked')){
-				disp.regroupAllEvents();
-			} else {
-				disp.ungroupAllEvents();
-			}
-		} else if(e.currentTarget.id == 'sortChannelsByJoinOrder'){
-			gateway.sortChannelTabs();
-		}
-		$('#nicklist').removeAttr('style');
-		$('#chlist').removeAttr('style');
-		if($('#chlist-body').is(':visible')){
-			gateway.toggleChanList();
-		}
 	},
 	'showAbout': function() {
 		disp.displaySpecialDialog('about-dialog', 'OK');
@@ -967,7 +983,7 @@ var disp = {
 			$('#delete-avatar').click(disp.deleteAvatar);
 			$('#submit-avatar').click(disp.submitAvatar);
 			$('#check-avatar-button').click(disp.checkAvatarUrl);
-			if(!textSettingsValues['avatar']){
+			if(!settings._textSettingsValues['avatar']){
 				$('#letterAvatarExample').css('background-color',$$.nickColor(ircEvents.emit('domain:getMeUserNick'), true)); // Get guser.nick via domain event
 				$('#letterAvatarExampleContent').text(ircEvents.emit('domain:getMeUserNick').charAt(0)); // Get guser.nick via domain event
 				$('#current-avatar-info').text(language.noAvatarSet);
@@ -976,10 +992,10 @@ var disp = {
 				$('#delete-avatar').hide();
 			} else {
 				$('#current-avatar-info').text(language.currentAvatar);
-				$('#current-avatar-image').attr('src', textSettingsValues['avatar'].replace('{size}', '100'));
+				$('#current-avatar-image').attr('src', settings._textSettingsValues['avatar'].replace('{size}', '100'));
 				$('#current-avatar-image').attr('alt', language.currentAvatar);
 				$('#current-letter-avatar').hide();
-				$('#avatar-url').val(textSettingsValues['avatar']);
+				$('#avatar-url').val(settings._textSettingsValues['avatar']);
 				$('#delete-avatar').show();
 			}
 			$('#submit-avatar').hide();
@@ -999,7 +1015,7 @@ var disp = {
 			$('#avatar-dialog').html(html);
 			$('#delete-avatar').click(disp.deleteAvatar);
 			$('#submit-avatar').click(disp.submitAvatar);
-			if(!textSettingsValues['avatar']){
+			if(!settings._textSettingsValues['avatar']){
 				$('#letterAvatarExample').css('background-color',$$.nickColor(ircEvents.emit('domain:getMeUserNick'), true)); // Get guser.nick via domain event
 				$('#letterAvatarExampleContent').text(ircEvents.emit('domain:getMeUserNick').charAt(0)); // Get guser.nick via domain event
 				$('#current-avatar-info').text(language.avatarNotSet);
@@ -1008,10 +1024,10 @@ var disp = {
 				$('#delete-avatar').hide();
 			} else {
 				$('#current-avatar-info').text(language.currentAvatar);
-				$('#current-avatar-image').attr('src', textSettingsValues['avatar']);
+				$('#current-avatar-image').attr('src', settings._textSettingsValues['avatar']);
 				$('#current-avatar-image').attr('alt', language.currentAvatar);
 				$('#current-letter-avatar').hide();
-				$('#avatar-url').val(textSettingsValues['avatar']);
+				$('#avatar-url').val(settings._textSettingsValues['avatar']);
 				$('#delete-avatar').show();
 			}
 			$('#submit-avatar').show();
@@ -1038,7 +1054,8 @@ var disp = {
 				$$.alert(language.addressMustStartWithHttps);
 				return;
 			}
-			textSettingsValues['avatar'] = url;
+			settings._textSettingsValues['avatar'] = url;
+			settings.set('avatar', url);
 			disp.showAvatarSetting();
 			disp.avatarChanged();
 		} else {
@@ -1069,7 +1086,8 @@ var disp = {
 					data: fd,
 					success: function(data){
 						if(data['result'] == 'ok'){
-							textSettingsValues['avatar'] = data['url'];
+							settings._textSettingsValues['avatar'] = data['url'];
+							settings.set('avatar', data['url']);
 							disp.showAvatarSetting();
 							disp.avatarChanged();
 						} else {
@@ -1086,11 +1104,11 @@ var disp = {
 	},
 	'deleteAvatar': function() {
 		if(!ircEvents.emit('domain:getMeUserRegisteredStatus')){
-			if(!confirm(language.areYouSureToDeleteAvatar + '"' +textSettingsValues['avatar']+ '"?')){
+			if(!confirm(language.areYouSureToDeleteAvatar + '"' +settings._textSettingsValues['avatar']+ '"?')){
 				return;
 			}
-			textSettingsValues['avatar'] = false;
-			disp.showAvatarSetting();
+										settings._textSettingsValues['avatar'] = false;
+										settings.set('avatar', false);			disp.showAvatarSetting();
 			disp.avatarChanged();
 		} else {
 			if(!confirm(language.deleteAvatarQ)){
@@ -1114,7 +1132,8 @@ var disp = {
 					},
 					success: function(data){
 						if(data['result'] == 'ok'){
-							textSettingsValues['avatar'] = false;
+							settings._textSettingsValues['avatar'] = false;
+							settings.set('avatar', false);
 							disp.showAvatarSetting();
 							disp.avatarChanged();
 						} else {
@@ -1131,8 +1150,8 @@ var disp = {
 	},
 	'avatarChanged': function() {
 		disp.changeSettings();
-		if(textSettingsValues['avatar']){
-			ircEvents.emit('domain:requestMetadataUpdate', { key: 'avatar', value: textSettingsValues['avatar'] }); // Emit domain event
+		if(settings._textSettingsValues['avatar']){
+			ircEvents.emit('domain:requestMetadataUpdate', { key: 'avatar', value: settings._textSettingsValues['avatar'] }); // Emit domain event
 		} else {
 			ircEvents.emit('domain:requestMetadataUpdate', { key: 'avatar', value: null }); // Emit domain event to clear
 		}
@@ -1174,7 +1193,7 @@ var disp = {
 		});
 	},
 	'playSound': function() {
-		if ( ! $('#newMsgSound').is(':checked')) {
+		if ( ! settings.get('newMsgSound')) {
 			return;
 		}
 		var filename = '/styles/audio/served';
@@ -1207,8 +1226,8 @@ var disp = {
 	},
 	'updateEventVisibility': function(){
 		// Hide or show event messages based on showPartQuit setting
-		var hideEvents = $('#showPartQuit').is(':checked');
-		var groupEnabled = $('#groupEvents').is(':checked');
+		var hideEvents = settings.get('showPartQuit');
+		var groupEnabled = settings.get('groupEvents');
 
 		$('.event-message').each(function(){
 			var $this = $(this);
@@ -1263,8 +1282,8 @@ var disp = {
 	},
 	'groupEvents': function(container){
 		// Group consecutive event messages (>2) into a collapsible summary
-		if($('#showPartQuit').is(':checked')) return; // Don't group when hiding all events
-		if(!$('#groupEvents').is(':checked')) return; // Grouping disabled
+		if(settings.get('showPartQuit')) return; // Don't group when hiding all events
+		if(!settings.get('groupEvents')) return; // Grouping disabled
 
 		var $container = $(container);
 		var $messages = $container.children('.messageDiv');
@@ -1412,7 +1431,7 @@ var $$ = {
 		}
 	},
 	'nickColor': function(nick, codeOnly) {
-		if (!$('#coloredNicks').is(':checked')){
+		if (!settings.get('coloredNicks')){
 			return '';
 		}
 		var color;
@@ -1459,7 +1478,7 @@ var $$ = {
 	},
 	'colorize': function(message, strip) {
 		if(strip == undefined) var strip = false;
-		if ($('#blackTheme').is(':checked')) {
+		if (settings.get('blackTheme')) {
 			var pageFront = 'white';
 			var pageBack = 'black';
 		} else {
@@ -1469,13 +1488,13 @@ var $$ = {
 		var currBack = pageBack;
 		var currFront = pageFront;
 		var newText = '';
-		if($('#dispEmoji').is(':checked')){
+		if(settings.get('dispEmoji')){
 			message = $$.textToEmoji(message);
 		}
 		if(!strip){
 			message = he(message);
 			message = $$.parseLinks(message);
-			if($('#dispEmoji').is(':checked')){
+			if(settings.get('dispEmoji')){
 				// Check if message is emoji-only with ≤5 emoji for auto-enlargement
 			var enlargeEmoji = emoji.isTextEmojiOnly(message);
 			var emojiResult = emoji.addTags(message, enlargeEmoji);
@@ -1799,7 +1818,7 @@ var $$ = {
 		var currLink = '';
 		var confirm= '';
 		var confirmChan = '';
-		if ($('#displayLinkWarning').is(':checked')) {
+		if (settings.get('displayLinkWarning')) {
 			confirm = " onclick=\"return confirm('" + language.linkCanBeUnsafe + "')\"";
 			confirmChan = " onclick=\"return confirm('" + language.confirmJoin + "')\"";
 		}

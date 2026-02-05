@@ -118,7 +118,7 @@ var conn = {
 		} catch(e) {}
 		conn.my_reqChannel = reqChannel;
 
-		if($('#automLogIn').is(':checked')){
+		if(settings.get('automLogIn')){
 			var auto_initialized = false;
 			if(gateway.initialize()){
 				auto_initialized = true;
@@ -130,7 +130,7 @@ var conn = {
 			nconn_html += '<tr><td style="text-align: right; padding-right: 10px;">' + language.nickname + ':</td><td><input type="text" id="nsnick" value="'+conn.my_nick+'" /></td></tr>';
 			nconn_html += '<tr><td style="text-align: right; padding-right: 10px;">' + language.passwordIfRegistered + ':</td><td><input type="password" id="nspass" value="'+conn.my_pass+'" /></td></tr>';
 			nconn_html += '<tr><td></td><td style="text-align: left;"><input type="checkbox" id="save_password" /> ' + language.savePassword + '</td></tr>';
-			nconn_html += '<tr><td></td><td style="text-align: left;"><input type="checkbox" id="enableautomLogIn" onchange="if($(\'#enableautomLogIn\').is(\':checked\')) $(\'#save_password\').prop(\'checked\', true);" /> ' + language.saveAllAndDontShowAgain + '</td></tr>';
+			nconn_html += '<tr><td></td><td style="text-align: left;"><input type="checkbox" id="enableautomLogIn" /> ' + language.saveAllAndDontShowAgain + '</td></tr>';
 			nconn_html += '</table><input type="submit" style="display:none"></form>';
 			var button = [ {
 				text: language.connectToIRC,
@@ -150,223 +150,6 @@ var conn = {
 		$('#not_connected_wrapper').fadeOut(400);
 	},
 	'gatewayInit': function(){
-		try {
-			localStorage.removeItem('checkAliveReply');
-			localStorage.removeItem('checkAlive');
-			localStorage.removeItem('reqChannelJoin');
-
-			booleanSettings.forEach(function(sname){
-				if(localStorage.getItem(sname) == null){
-					return;
-				}
-				$('#'+sname).prop('checked', str2bool(localStorage.getItem(sname)));
-			});
-			comboSettings.forEach(function(sname){
-				if(localStorage.getItem(sname) == null){
-					return;
-				}
-				$('#'+sname).val(localStorage.getItem(sname));
-			});
-			numberSettings.forEach(function(sname){
-				if(localStorage.getItem(sname) == null){
-					return;
-				}
-				$('#'+sname).val(localStorage.getItem(sname));
-			});
-			textSettings.forEach(function(sname){
-				if(localStorage.getItem(sname) == null){
-					return;
-				}
-				if(localStorage.getItem(sname)){
-					textSettingsValues[sname] = localStorage.getItem(sname);
-				} else {
-					textSettingsValues[sname] = false;
-				}
-			});
-			disp.setSize(localStorage.getItem('tsize'));
-			ignore.loadList();
-		} catch(e){
-			console.error(e);
-			//za mało miejsca na dysku?
-		}
-		disp.changeSettings();
-		$('#chatbox').click(function() {
-			gateway.inputFocus();
-		});
-		$('#nicklist').click(function() {
-			gateway.inputFocus();
-		});
-		$(window).resize(function () {
-			$('#chat-wrapper').scrollTop(document.getElementById('chat-wrapper').scrollHeight);
-		});
-		$('#input').keydown(function(e) {
-			if(e.which == 13 || e.which == 38 || e.which == 40 || e.which == 9) {
-				e.preventDefault();
-			}
-		});
-		$('#input').keyup(function(e) {
-			if(e.which == 13) {
-				if($('#input').val() != '') {
-					gateway.enterPressed();
-				}
-				e.preventDefault();
-			} else if(e.which == 38) { //strzalka w gore
-				e.preventDefault();
-				gateway.arrowPressed('up');
-			} else if(e.which == 40) { // strzalka w dol
-				e.preventDefault();
-				gateway.arrowPressed('down');
-			} else if(e.which == 9) { // TAB
-				gateway.doComplete();
-				e.preventDefault();
-				return false;
-			} else if (!e.altKey) {
-				gateway.inputKeypress();
-			}
-			if(e.which != 9) { // nie TAB
-				gateway.completion.repeat = 0;
-				gateway.completion.string = '';
-				gateway.completion.array = [];
-			}
-		});
-
-		// Helper function to get tab name by display index (1-based)
-		function getTabNameByIndex(index) {
-			if(index < 1) return null;
-			var tabElements = $('#tabs > li');
-			if(index > tabElements.length) return null;
-
-			var targetTab = tabElements.eq(index - 1);
-			var tabId = targetTab.attr('id');
-
-			if(tabId === '--status-tab') {
-				return '--status';
-			}
-
-			// Find matching channel or query by ID
-			for(var i = 0; i < gateway.channels.length; i++) {
-				if(gateway.channels[i].id + '-tab' === tabId) {
-					return gateway.channels[i].name;
-				}
-			}
-			for(var i = 0; i < gateway.queries.length; i++) {
-				if(gateway.queries[i].id + '-tab' === tabId) {
-					return gateway.queries[i].name;
-				}
-			}
-
-			return null;
-		}
-
-		// Document-level keyboard shortcuts for tab switching
-		$(document).keydown(function(e) {
-			// Only handle Alt key (not AltGr which is Alt+Ctrl)
-			if(!e.altKey || e.ctrlKey || e.metaKey) {
-				return;
-			}
-
-			var handled = false;
-			var tabName = null;
-
-			// Alt+1 through Alt+9 → tabs 1-9
-			if(e.which >= 49 && e.which <= 57) {
-				var tabIndex = e.which - 48;
-				tabName = getTabNameByIndex(tabIndex);
-				handled = true;
-			}
-			// Alt+0 → tab 10
-			else if(e.which === 48) {
-				tabName = getTabNameByIndex(10);
-				handled = true;
-			}
-			// Alt+Q through Alt+O → tabs 11-19
-			else if(e.which === 81) { // Q
-				tabName = getTabNameByIndex(11);
-				handled = true;
-			}
-			else if(e.which === 87) { // W
-				tabName = getTabNameByIndex(12);
-				handled = true;
-			}
-			else if(e.which === 69) { // E
-				tabName = getTabNameByIndex(13);
-				handled = true;
-			}
-			else if(e.which === 82) { // R
-				tabName = getTabNameByIndex(14);
-				handled = true;
-			}
-			else if(e.which === 84) { // T
-				tabName = getTabNameByIndex(15);
-				handled = true;
-			}
-			else if(e.which === 89) { // Y
-				tabName = getTabNameByIndex(16);
-				handled = true;
-			}
-			else if(e.which === 85) { // U
-				tabName = getTabNameByIndex(17);
-				handled = true;
-			}
-			else if(e.which === 73) { // I
-				tabName = getTabNameByIndex(18);
-				handled = true;
-			}
-			else if(e.which === 79) { // O
-				tabName = getTabNameByIndex(19);
-				handled = true;
-			}
-			// Alt+Left Arrow → previous tab
-			else if(e.which === 37) {
-				gateway.prevTab();
-				handled = true;
-			}
-			// Alt+Right Arrow → next tab
-			else if(e.which === 39) {
-				gateway.nextTab();
-				handled = true;
-			}
-
-			// Switch to tab if we found one
-			if(handled) {
-				e.preventDefault();
-				if(tabName) {
-					gateway.switchTab(tabName);
-				}
-			}
-		});
-
-		try {
-			$('#not_connected_wrapper').fadeIn(200);
-		} catch(e) {
-			browserTooOld();
-		}
-		dnick = he(guser.nick);
-		if(guser.nick == '1') {
-			dnick = ''
-			$(document).attr('title', language.unknown + ' @ ' + mainSettings.networkName);
-		}
-		$(window).on('beforeunload', function() {
-			if (gateway.connectStatus != 'disconnected') {
-				if ($('#autoDisconnect').is(':checked')) {
-					ircCommand.quit(language.userClosedPage);
-					gateway.userQuit = true;
-				} else {
-					gateway.clickQuit();
-					return language.youreStillConnected;
-				}
-			}
-		});
-		if(!navigator.cookieEnabled){
-			$('.not-connected-text > p').html(language.cookiesDisabledHtml);
-			return;
-		}
-		if(window.WebSocket == null){
-			$('.not-connected-text > p').html(language.websocketDisabledHtml + mainSettings.oldGatewayHtml);
-			return;
-		}
-		
-		window.addEventListener('storage', gateway.storageHandler);
 		conn.waitForAlive = true;
 		try {
 			localStorage.setItem('checkAlive', Math.random().toString());
@@ -389,10 +172,7 @@ var conn = {
 	},
 	'aliveWaitTimeout': false,
 	'waitForAlive': false,
-	'setLanguage': function(){
-		var lang = $('#setLanguage').val();
-		setLanguage(lang);
-	}
+
 }
 
 // Register initialization function for this module

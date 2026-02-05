@@ -53,7 +53,7 @@
 
             // The domain layer should have already updated the user object and nicklist.
             // UI layer just needs to re-render the nicklist or append the join message.
-            if (!$("#showPartQuit").is(':checked')) { // Query setting directly from DOM for UI preference
+            if (!settings.get('showPartQuit')) {
                 chan.appendMessage(language.messagePatterns.join, [
                     $$.niceTime(data.time),
                     he(data.nick),
@@ -412,7 +412,7 @@
         ircEvents.on('channel:modesUpdated', function(data) { // Replaced channel:modeChange and channel:modeDisplay
             var channel = gateway.findChannel(data.channelName);
             if (channel) {
-                if ($('#showMode').is(':checked')) { // Query setting directly from DOM
+                if (settings.get('showMode')) { // Query setting directly from DOM
                     channel.appendMessage(language.messagePatterns.mode, [$$.niceTime(data.time), he(data.byNick), data.modes + ' ' + data.modeParams.join(' ')]); // Assuming byNick from data or msg.user.nick
                 }
                 channel.nicklist.sort(); // Re-sort based on updated domain state
@@ -531,7 +531,7 @@
         });
 
         ircEvents.on('user:avatarChanged', function() { // Triggered by metadata:updated for avatar
-            if(textSettingsValues['avatar']){ // Check setting directly in display layer
+            if(settings.get('avatar')){ // Check setting directly in display layer
                 disp.avatarChanged(); // Pure UI function
             }
         });

@@ -44,6 +44,7 @@ $(document).ready(function() {
 var scriptFiles = [
 	'/js/gateway_global_settings.js',
 	'/js/language.js',
+	'/js/settings.js', // New settings API
 	'/js/gateway_functions.js',  // Provides: decryptPassword, encryptPassword, readyFunc; Pushes: setEnvironment, fillEmoticonSelector, fillColorSelector
 	'/js/gateway_conn.js',        // Uses: decryptPassword (line 112); Provides: conn object; Pushes: conn.gatewayInit
 	'/js/gateway_ignore.js',

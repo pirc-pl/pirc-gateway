@@ -106,17 +106,5 @@ function setLanguage(slang){
 	$('.language-italicText').html(language.italicText);
 };
 
-function setDefaultLanguage(){
-	try {
-		if(localStorage.getItem('setLanguage') == null){
-			$('#setLanguage').val(mainSettings.language);
-		} else {
-			$('#setLanguage').val(localStorage.getItem('setLanguage'));
-		}
-	} catch(e){
-		console.error('Error setting language!');
-		$('#setLanguage').val(mainSettings.language);
-	}
-	conn.setLanguage();
-}
+
 

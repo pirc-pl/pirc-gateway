@@ -439,7 +439,7 @@ var services = {
 				'<option value=" ">' + language.noAutoUnban + '</option>'
 				'<option value="1d">' + language.unban1Day + '</option>'
 				'<option value="1h">' + language.unban1Hour + '</option>';
-		if(mainSettings.timedBanMethod == 'ChanServ'){
+		if(settings.get('timedBanMethod') == 'ChanServ'){
 			html += '<option value="30d">' + language.unban1Month + '</option>';
 		} else {
 			html += '<option value="7d">' + language.unban1Week + '</option>';
@@ -463,7 +463,7 @@ var services = {
 	'processBan': function(channel, nick) {
 		var reason = $("#kbinput").val();
 		var banTime = $('#kbtime').val();
-		if(mainSettings.timedBanMethod == '~t:minutes:'){
+		if(settings.get('timedBanMethod') == '~t:minutes:'){
 			var user = users.getUser(nick);
 			if(!user)
 				return; // TODO ban even if the user already quit
