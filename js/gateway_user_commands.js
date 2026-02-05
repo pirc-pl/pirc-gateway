@@ -89,7 +89,7 @@ var commands = {
 		'callback': function(command, input) {
 			if(command[1]) {
 				ircCommand.whois(command[1]);
-				if(command[1].toLowerCase() == ircEvents.emit('domain:getMeUser').nick.toLowerCase()){ // Get guser.nick via domain event
+				if(command[1].toLowerCase() == guser.me.nick.toLowerCase()){
 					gateway.displayOwnWhois = true; // UI flag
 				}
 			} else {

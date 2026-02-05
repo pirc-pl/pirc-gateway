@@ -159,23 +159,23 @@ var services = {
 			return false;
 		}
 		if (maskMatch(msg.text, 'invalidPassword')) { // złe hasło nickserv
-			services.nickStore = ircEvents.emit('domain:getNickservNick'); // Get guser.nickservnick via domain event
-			var html = language.givenPasswordForNick + '<b>'+ircEvents.emit('domain:getNickservNick')+'</b>' + language.isInvalidChangeNick + '<br>'+services.badNickString(); // Get guser.nickservnick via domain event
+			services.nickStore = guser.me.nickservNick;
+			var html = language.givenPasswordForNick + '<b>'+guser.me.nickservNick+'</b>' + language.isInvalidChangeNick + '<br>'+services.badNickString();
 			$$.displayDialog('error', 'nickserv', language.error, html);
 			services.displayBadNickCounter();
 			return true;
 		}
 		if(maskMatch(msg.text, 'registeredProtectedNick')){
 			if(ircEvents.emit('domain:getConnectStatus') == 'ghostAndNickSent'){ // Check gateway.connectStatus via domain event
-				ircCommand.NickServ('IDENTIFY', [ircEvents.emit('domain:getNickservPass')]); // Get guser.nickservpass via domain event
+				ircCommand.NickServ('IDENTIFY', [guser.me.nickservPass]);
 				ircEvents.emit('domain:setConnectStatus', { status: 'identified' }); // Set gateway.connectStatus via domain event
 				return true;
 			}
 			ircEvents.emit('domain:setConnectStatus', { status: 'wrongPassword' }); // Set gateway.connectStatus via domain event
 			if($$.getDialogSelector('error', 'nickserv').length < 1){
 				services.showTimeToChange = true;
-				services.nickStore = ircEvents.emit('domain:getMeUser').nick; // Get guser.nick via domain event
-				var html = language.selectedNick + '<b>'+ircEvents.emit('domain:getMeUser').nick+'</b>' + language.isRegisteredChangeNick + '<br>'+services.badNickString(); // Get guser.nick via domain event
+				services.nickStore = guser.me.nick;
+				var html = language.selectedNick + '<b>'+guser.me.nick+'</b>' + language.isRegisteredChangeNick + '<br>'+services.badNickString();
 				$$.displayDialog('error', 'nickserv', language.error, html);
 			}
 			return true;
@@ -191,10 +191,10 @@ var services = {
 		if(maskMatch(msg.text ,'accessDenied')){
 			if(ircEvents.emit('domain:getConnectStatus') == 'ghostSent'){ // Check gateway.connectStatus via domain event
 				ircEvents.emit('domain:setConnectStatus', { status: 'identified' }); // Set gateway.connectStatus via domain event
-				services.nickStore = ircEvents.emit('domain:getNickservNick'); // Get guser.nickservnick via domain event
+				services.nickStore = guser.me.nickservNick;
 				ircEvents.emit('domain:setNickservNick', { nick: '' }); // Set guser.nickservnick via domain event
 				ircEvents.emit('domain:setNickservPass', { pass: '' }); // Set guser.nickservpass via domain event
-				var html = language.passwordForUsedNick + '<b>'+ircEvents.emit('domain:getNickservNick')+'</b>' + language.isInvalidRetryOrChangeNick + '<br>'+services.badNickString(); // Get guser.nickservnick via domain event
+				var html = language.passwordForUsedNick + '<b>'+guser.me.nickservNick+'</b>' + language.isInvalidRetryOrChangeNick + '<br>'+services.badNickString();
 				$$.displayDialog('error', 'nickserv', language.error, html);
 				services.ignoreNextAccessDenial = true;
 				return true;
@@ -205,7 +205,7 @@ var services = {
 			return false;
 		}
 		if(maskMatch(msg.text, 'nickRemovedFromNetwork') || maskMatch(msg.text, 'servicesReleasedNick')){
-			ircCommand.changeNick(ircEvents.emit('domain:getNickservNick')); // Get guser.nickservnick via domain event
+			ircCommand.changeNick(guser.me.nickservNick);
 			ircEvents.emit('domain:setConnectStatus', { status: 'ghostAndNickSent' }); // Set gateway.connectStatus via domain event
 			return true;
 		}
@@ -505,14 +505,14 @@ var services = {
 		gateway.performCommand(banString);
 	},
 	'requireRegisteredNick': function() {
-		if(!ircEvents.emit('domain:getMeUser').registered){ // Check guser.me.registered via domain event
+		if(!guser.me.registered){ // Check guser.me.registered via domain event
 			$$.alert(language.youNeedRegisteredNickToUseThis);
 			return false;
 		}
 		return true;
 	},
 	'changeMyNick': function() {
-		var html = language.newNick + ' <input type="text" value="'+ircEvents.emit('domain:getMeUser').nick+'" id="nickChangeInput">'; // Get guser.nick via domain event
+		var html = language.newNick + ' <input type="text" value="'+guser.me.nick+'" id="nickChangeInput">';
 		var button = [ { 
 			text: language.cancel,
 			click: function(){
@@ -559,7 +559,7 @@ var services = {
 				}
 			}
 		} ];
-		$$.displayDialog('services', 'nickserv', language.registrationOfNick+ircEvents.emit('domain:getMeUser').nick, html, button); // Get guser.nick via domain event
+		$$.displayDialog('services', 'nickserv', language.registrationOfNick+guser.me.nick, html, button);
 	},
 	'doRegisterNick': function() {
 		var password = $('#nickRegisterPass').val();

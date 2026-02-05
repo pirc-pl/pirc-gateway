@@ -1971,9 +1971,9 @@ var gateway = {
 			}
 		}
 		
-		if(!sender) sender = ircEvents.emit('domain:getMeUser'); // Get guser.me from domain
+		if(!sender) sender = guser.me;
 		
-		if(sender == ircEvents.emit('domain:getMeUser') && text.charAt(0) == '\001') return; // don't display own ctcp requests/replies, this is confirmed to be called when sending requests and NOT for actions
+		if(sender == guser.me && text.charAt(0) == '\001') return; // don't display own ctcp requests/replies, this is confirmed to be called when sending requests and NOT for actions
 		
 		var meta = gateway.getMeta(sender.nick, 100);
 		var images = $$.parseImages(text, attrs);
@@ -2031,8 +2031,8 @@ var gateway = {
 
 //		$('[data-msgid="'+msgid+'"]').remove(); // drop the message from backlog field
 
-		if(channel && sender != ircEvents.emit('domain:getMeUser')){ // Compare with domain's guser.me
-			var pattern = "\\b"+escapeRegExp(ircEvents.emit('domain:getMeUser').nick)+"\\b"; // Get guser.nick from domain
+		if(channel && sender != guser.me){ // Compare with domain's guser.me
+			var pattern = "\\b"+escapeRegExp(guser.me.nick)+"\\b";
 			var re = new RegExp(pattern);
 			var hlmatch = re.test(message);
 		} else {
@@ -2048,7 +2048,7 @@ var gateway = {
 		}
 		if(cmd == 'PRIVMSG' || cmd == 'ACTION'){ // channel or private message
 			if(!channel){
-				if(sender.nick == ircEvents.emit('domain:getMeUser').nick){ // Compare with domain's guser.nick
+				if(sender.nick == guser.me.nick){ // Compare with domain's guser.nick
 					var qname = dest;
 				} else {
 					var qname = sender.nick;
@@ -2056,9 +2056,8 @@ var gateway = {
 				// gateway.find(qname) needs to be domain
 				var foundTab = ircEvents.emit('domain:findTab', { tabName: qname }); // Check via domain event
 				if(
-				((sender.nick == ircEvents.emit('domain:getMeUser').nick && dest.isInList(servicesNicks))
-				|| (dest == ircEvents.emit('domain:getMeUser').nick && sender.nick.isInList(servicesNicks)))
-				&& !foundTab){
+						((sender.nick == guser.me.nick && dest.isInList(servicesNicks))
+						|| (dest == guser.me.nick && sender.nick.isInList(servicesNicks)))				&& !foundTab){
 					if($("#noticeDisplay").val() == 0){ // pop-up
 						var html = '<span class="notice">[<b>' + sender.nick + " → " + dest + "</b>]</span> " + message;
 						$$.displayDialog('notice', 'service', language.networkServiceMessage, html, false, attrs);
@@ -2136,9 +2135,9 @@ var gateway = {
 				}
 			} else { // not highlighted or query
 				if(cmd != 'ACTION'){
-						tab.appendMessage((sender.nick == ircEvents.emit('domain:getMeUser').nick)?language.messagePatterns.yourMsg:language.messagePatterns.channelMsg, ['sender'+md5(sender.nick) + ' ' + messageClass, attrs, meta, $$.niceTime(time), $$.nickColor(sender.nick), nick, nickComments, message], time);
+						tab.appendMessage((sender.nick == guser.me.nick)?language.messagePatterns.yourMsg:language.messagePatterns.channelMsg, ['sender'+md5(sender.nick) + ' ' + messageClass, attrs, meta, $$.niceTime(time), $$.nickColor(sender.nick), nick, nickComments, message], time);
 				} else {
-						tab.appendMessage((sender.nick == ircEvents.emit('domain:getMeUser').nick)?language.messagePatterns.yourAction:language.messagePatterns.channelAction, [addClass, attrs, $$.niceTime(time), $$.nickColor(sender.nick), nick, message], time);
+						tab.appendMessage((sender.nick == guser.me.nick)?language.messagePatterns.yourAction:language.messagePatterns.channelAction, [addClass, attrs, $$.niceTime(time), $$.nickColor(sender.nick), nick, message], time);
 				}
 				if(gateway.active.toLowerCase() != qname.toLowerCase() || !disp.focused) {
 					if(channel){
@@ -2171,8 +2170,8 @@ var gateway = {
 				}
 				return;
 			}
-			if(!sender.server){ // sent by user or service
-				if(sender.nick == ircEvents.emit('domain:getMeUser').nick){ // Compare with domain's guser.nick
+				if(!sender.server){ // sent by user or service
+				if(sender.nick == guser.me.nick){ // Compare with domain's guser.nick
 					var qname = dest;
 				} else {
 					var qname = sender.nick;
@@ -2180,9 +2179,8 @@ var gateway = {
 				// gateway.find(qname) needs to be domain
 				var foundTab = ircEvents.emit('domain:findTab', { tabName: qname });
 				if(
-				((sender.nick == ircEvents.emit('domain:getMeUser').nick && dest.isInList(servicesNicks))
-				|| (dest == ircEvents.emit('domain:getMeUser').nick && sender.nick.isInList(servicesNicks)))
-				&& !foundTab){
+						((sender.nick == guser.me.nick && dest.isInList(servicesNicks))
+						|| (dest == guser.me.nick && sender.nick.isInList(servicesNicks)))				&& !foundTab){
 					if($("#noticeDisplay").val() == 0){ // pop-up
 						var html = '<span class="notice">[<b>' + sender.nick + " → " + dest + "</b>]</span> " + message;
 						$$.displayDialog('notice', 'service', language.networkServiceMessage, html, false, attrs);

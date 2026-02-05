@@ -162,7 +162,7 @@ var ircCommand = {
 			if(channels.length == 0) return;
 			for(var i=0; i<channels.length; i++){
 				var channel = channels[i];
-				if(channel instanceof Channel){
+				if(channel instanceof ChannelTab){
 					channel = channel.name;
 				}
 				if(i>0) channelString += ',';

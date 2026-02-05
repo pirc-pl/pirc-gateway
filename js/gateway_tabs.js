@@ -17,22 +17,47 @@
  * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
  * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
  * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
- * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. 
  */
 
 function Nicklist(chan, id) {
 	this.channel = chan;
 	this.id = id+'-nicklist';
-	this.list = []; // This list represents the UI state for the nicklist display
+	this.uiMembers = new Map(); // Map of NicklistUser instances, indexed by ChannelMember.id
+    // Event listener for when the overall channel member list changes (add/remove)
+    ircEvents.on('domain:channelMemberListChanged', function(data) {
+        if (data.channelName !== this.channel) {
+            return;
+        }
+
+        if (data.type === 'add') {
+            this._addMemberToUI(data.member);
+        } else if (data.type === 'remove') {
+            this._removeMemberFromUI(data.memberId);
+        } else if (data.type === 'update' || data.type === 'nickChange' || data.type === 'modeChange' || data.type === 'levelChange' || data.type === 'awayStatusChange' || data.type === 'accountChange') {
+            this._updateMemberInUI(data.member, data.oldNick); // Pass oldNick for potential sorting changes
+        }
+        this.showChstats(); // Always refresh stats on list change
+    }.bind(this));
+
+    // Event listener for when a specific channel member's properties are updated
+    ircEvents.on('domain:channelMemberUpdated', function(data) {
+        if (data.channelName !== this.channel) {
+            return;
+        }
+        this._updateMemberInUI(data.newMember, data.oldNick, data.oldLevel, data.oldModes);
+        this.showChstats(); // Always refresh stats on member update
+    }.bind(this));
 	this.sortFunc = function(a, b) {
-		if(a.level < b.level) {
+        // Note: a and b are NicklistUser instances. Read level and nick from their channelMember.
+		if(a.channelMember.level < b.channelMember.level) {
 			return 1;
-		} else if(a.level > b.level) {
+		} else if(a.channelMember.level > b.channelMember.level) {
 			return -1;
 		} else {
-			if(a.user.nick.toLowerCase() < b.user.nick.toLowerCase()) {
+			if(a.channelMember.nick.toLowerCase() < b.channelMember.nick.toLowerCase()) {
 				return -1;
-			} else if(a.user.nick.toLowerCase() > b.user.nick.toLowerCase()) {
+			} else if(a.channelMember.nick.toLowerCase() > b.channelMember.nick.toLowerCase()) {
 				return 1;
 			} else {
 				return 0; //nigdy nie powinno nastapic ;p
@@ -40,77 +65,90 @@ function Nicklist(chan, id) {
 		}
 	}
 
+    this._addMemberToUI = function(channelMember) {
+        var nickListItem = new NicklistUser(channelMember, this.channel);
+        this.uiMembers.set(channelMember.id, nickListItem);
+
+        var $nicklistUl = $('#' + this.id + ' .nicklist');
+        $nicklistUl.append(nickListItem.makeHTML());
+        nickListItem.setActions();
+        this.sort(); // Re-sort to place the new member in correct position
+        this.showChstats();
+    };
+
+    this._removeMemberFromUI = function(memberId) {
+        var nickListItem = this.uiMembers.get(memberId);
+        if (nickListItem) {
+            nickListItem.remove(); // Remove its DOM element
+            this.uiMembers.delete(memberId);
+            this.showChstats();
+        }
+    };
+
+    this._updateMemberInUI = function(channelMember, oldNick, oldLevel, oldModes) {
+        var nickListItem = this.uiMembers.get(channelMember.id);
+        if (nickListItem) {
+            nickListItem.channelMember = channelMember; // Update the reference to the latest domain object
+            nickListItem.refreshHtmlInPlace(); // Refresh its DOM element
+
+            // Check if properties affecting sort order have changed
+            var sortChanged = (oldNick && oldNick !== channelMember.nick) ||
+                              (oldLevel !== undefined && oldLevel !== channelMember.level) ||
+                              (oldModes && JSON.stringify(oldModes) !== JSON.stringify(channelMember.channelModes));
+
+            if (sortChanged) {
+                // Re-sort the DOM elements
+                this.sort();
+            }
+            this.showChstats();
+        }
+    };
+
 	this.sort = function() {
-		this.list.sort(this.sortFunc);
-		// After sorting, re-render the HTML
-		this.render();
+        var $nicklistUl = $('#' + this.id + ' .nicklist');
+        var sortedNicklistUsers = Array.from(this.uiMembers.values()).sort(this.sortFunc);
+        var sortedElements = [];
+        sortedNicklistUsers.forEach(function(nicklistUser) {
+            sortedElements.push($('#' + nicklistUser.id));
+        });
+        $nicklistUl.append(sortedElements); // Append all at once for performance
 	}
 	this.remove = function() {
 		$('#'+this.id).remove();
-		this.list = [];
+		this.uiMembers.clear(); // Clear the map on remove
 	}
-	this.findUser = function(user) {
-		for (i in this.list) {
-			if(this.list[i].user == user) {
-				return this.list[i];
-			}
-		}
-		return false;
-	}
-	this.findNick = function(nick) {
-		var userData = ircEvents.emit('domain:getUserData', { nick: nick }); // Get user data from domain
-		if (!userData) return false;
-		return this.findUser(userData);
-	}
-    // New method to update the entire nicklist from domain data
-    this.update = function() {
-        var chanObj = gateway.findChannel(this.channel); // Get the UI channel object
-        if (!chanObj) {
-            this.list = [];
-            this.render();
-            return;
-        }
 
-        var domainNicklist = ircEvents.emit('domain:getChannelNicklist', { channelName: this.channel }); // Get domain nicklist
-        if (!domainNicklist) {
-            this.list = [];
-            this.render();
-            return;
-        }
 
-        // Rebuild UI nicklist from domain nicklist
-        this.list = [];
-        domainNicklist.forEach(function(user) { // Assuming domainNicklist is an array of domain user objects
-            this.list.push(new NicklistUser(user, this.channel));
-        }.bind(this));
-        this.sort();
-        this.render(); // Render after updating list
-    }
+
+
+
 
     this.render = function() {
         var $nicklistUl = $('#' + this.id + ' .nicklist');
         $nicklistUl.empty(); // Clear current HTML
 
-        this.list.forEach(function(nickListItem) {
+        // Retrieve current members from domain or use the ones already in uiMembers
+        // For a full re-render, we'd typically ask the domain for the full list.
+        // For now, iterate over what's in uiMembers and render.
+        var sortedNicklistUsers = Array.from(this.uiMembers.values()).sort(this.sortFunc);
+
+        sortedNicklistUsers.forEach(function(nickListItem) {
             $nicklistUl.append(nickListItem.makeHTML());
             nickListItem.setActions();
-            if (nickListItem.user.host && nickListItem.user.ident) {
-                $('#' + nickListItem.id).attr('title', nickListItem.user.nick + '!' + nickListItem.user.ident + '@' + nickListItem.user.host);
-            }
         });
         this.showChstats();
     }
 	this.showChstats = function() {
 		var opCount = 0;
 		var normCount = 0;
-		for(i in this.list) {
-			var modes = this.list[i].modes;
-			if(modes.owner || modes.admin || modes.op || modes.halfop){
-				opCount++;
-			} else {
-				normCount++;
-			}
-		}
+        this.uiMembers.forEach(function(nickListItem) {
+            var modes = nickListItem.channelMember.channelModes; // Use stable user.channelModes
+            if(modes && (modes.owner || modes.admin || modes.op || modes.halfop)){
+                opCount++;
+            } else {
+                normCount++;
+            }
+        });
 		var text = '';
 		if(normCount > 0){
 			text = normCount + ' ' + language.user;
@@ -139,45 +177,37 @@ function Nicklist(chan, id) {
 	}
 }
 
-function NicklistUser(user, chan) {
-	this.modes = {
-		owner: false, // lvl = 5;
-		admin: false,
-		op: false,
-		halfop: false,
-		voice: false
-	}
-	this.channel = chan;
-	this.user = user;
+function NicklistUser(channelMember, chan) {
+    this.channel = chan;
+    this.channelMember = channelMember; // The domain ChannelMember object
+    this.id = 'nicklist-user-' + channelMember.id; // Stable DOM element ID for the <li>
+    this.userStableId = channelMember.id; // Store stable ID for easy lookup/class
 
 	this.makeHTML = function() {
-		var index = this.level; // this.level should be set by domain based on modes
-	/*	if(this.level == 0 && this.isRegistered){
-			index = 6;
-		}*/
-		var html = '<li id="'+this.id+'" class="'+this.user.id+'">'+ 
+		var index = this.channelMember.level; // Use derived level
+		var html = '<li id="'+this.id+'" class="'+this.userStableId+'" data-member-id="'+this.userStableId+'">'+ // Use stable NicklistUser ID for li id, stable user id for class, and data-member-id
 			'<table><tr id="'+this.id+'-toggleNickOpt">'+ 
 				'<td valign="top">'+ 
-					'<img class="chavatar" alt="' + (this.user.registered?language.registered:language.unRegistered) + '" src="'+disp.getAvatarIcon(this.user.nick, this.user.registered)+'" title="' + (this.user.registered?language.registered:language.unRegistered) + '" '+ 
+					'<img class="chavatar" alt="' + (this.channelMember.registered?language.registered:language.unRegistered) + '" src="'+disp.getAvatarIcon(this.channelMember.nick, this.channelMember.registered)+'" title="' + (this.channelMember.registered?language.registered:language.unRegistered) + '" '+ 
 					'id="'+this.id+'-avatarField">'+ 
 				'</td><td valign="top">';
 		if(index > 0){
-			html += '<img class="chrank" alt="'+alt[index]+'" src="'+(index>0?icons[index]:'')+'" title="'+(index?chStatusInfo[index]:'')+'" />';
+			html += '<img class="chrank" alt="'+alt[index]+'" src="'+icons[index]+'" title="'+chStatusInfo[index]+'" />';
 		} else {
 			html += '<span class="chrank"></span>';
 		}
 		html += '</td>'+ 
-				'<td valign="top" style="text-align:left;width:100%;" class="'+((this.user == ircEvents.emit('domain:getMeUser'))?'ownNick ':'')+'nickname">'+this.user.nick+'</td>'+ // Compare with domain's guser.me
+				'<td valign="top" style="text-align:left;width:100%;" class="'+((this.userStableId == guser.me.id)?'ownNick ':'')+'nickname">'+he(this.channelMember.nick)+'</td>'+ // Compare stable IDs for ownNick class
 			'</tr></table>'+ 
 			'<ul class="options" id="'+this.id+'-opt">'+ 
 				'<li class="nicklistAvatar"></li>'+ 
 				'<li id="' + this.id + '-openQuery" class="switchTab">' + language.query + '</li>'+ 
-				((this.user == ircEvents.emit('domain:getMeUser'))?'':'<li id="'+this.id+'-askIgnore">' + language.ignoreThis + '</li>')+ // Compare with domain's guser.me
+				((this.userStableId == guser.me.id)?'':'<li id="'+this.id+'-askIgnore">' + language.ignoreThis + '</li>')+ // Compare stable IDs
 				'<li><div style="width:100%;" id="'+this.id+'-toggleNickInfo">' + language.informations + '</div>'+ 
 					'<ul class="suboptions" id="'+this.id+'-opt-info'+'">'+ 
 						'<li id="'+this.id+'-doWhois">WHOIS</li>'+ 
 						'<li id="'+this.id+'-doNickservInfo">NickServ</li>'+ 
-						((this.user == ircEvents.emit('domain:getMeUser'))?'':'<li id="'+this.id+'-doCtcpVersion">' + language.softwareVersion + '</li>')+ // Compare with domain's guser.me
+						((this.userStableId == guser.me.id)?'':'<li id="'+this.id+'-doCtcpVersion">' + language.softwareVersion + '</li>')+ // Compare stable IDs
 					'</ul>'+ 
 				'</li>'+ 
 				'<li class="' + gateway.findChannel(this.channel).id + '-operActions" style="display:none;"><div style="width:100%;" id="'+this.id+'-toggleNickOptAdmin">' + language.channelAdministration + '</div>'+ 
@@ -187,77 +217,106 @@ function NicklistUser(user, chan) {
 			html +=		'<li id="'+this.id+'-showBan">' + language.banUser + '</li>';
 		} else if(mainSettings.timedBanMethod == 'ChanServ'){
 			html +=		'<li id="'+this.id+'-showBan">' + language.banUsingChanserv + '</li>';
-		} else 		
+		} else 
 		html += 		'<li id="'+this.id+'-givePrivileges">' + language.givePrivileges + '</li>'+ 
 						'<li id="'+this.id+'-takePrivileges">' + language.takePrivileges + '</li>'+ 
-					/*	'<li id="'+this.id+'-showBanUni">Banuj</li>'+*/ 
+					/*	'<li id="'+this.id+'-showBanUni">Banuj</li>*/'+ 
 					'</ul>'+ 
 				'</li>'+ 
 			'</ul>';
 		return html;
-		//}
 	}
+
+	// New method to refresh the HTML of an existing nicklist item without re-creating the <li> element
+	this.refreshHtmlInPlace = function() {
+        var $liElement = $('#' + this.id);
+        if ($liElement.length === 0) {
+            console.warn('NicklistUser: Cannot find DOM element for stable ID:', this.id);
+            return;
+        }
+
+        // Only update inner parts that are likely to change, leaving collapsible state intact
+        var index = this.channelMember.level; // Use derived level
+
+        // Update avatar and rank image (src, alt, title)
+        $liElement.find('.chavatar')
+            .attr('alt', (this.channelMember.registered?language.registered:language.unRegistered))
+            .attr('src', disp.getAvatarIcon(this.channelMember.nick, this.channelMember.registered))
+            .attr('title', (this.channelMember.registered?language.registered:language.unRegistered));
+        
+        var $chrank = $liElement.find('.chrank');
+        if(index > 0){
+            // If it was a span and now needs to be an img, or vice versa
+            if ($chrank.is('span')) {
+                $chrank.replaceWith('<img class="chrank" alt="'+alt[index]+'" src="'+icons[index]+'" title="'+chStatusInfo[index]+'" />');
+            } else { // Already an img, just update attributes
+                $chrank.attr('alt', alt[index])
+                       .attr('src', icons[index])
+                       .attr('title', chStatusInfo[index]);
+            }
+        } else {
+            // If it was an img and now needs to be a span
+            if ($chrank.is('img')) {
+                $chrank.replaceWith('<span class="chrank"></span>');
+            }
+        }
+
+
+        // Update nickname text and opacity (for away status)
+        $liElement.find('.nickname').html(he(this.channelMember.nick));
+        if(this.channelMember.away){
+            $liElement.find('.nickname').css('opacity', '0.3');
+        } else {
+            $liElement.find('.nickname').css('opacity', '');
+        }
+
+        // Update title attribute (full info tooltip)
+        this.showTitle(); // This updates the title attribute of the <li>
+        this.displayLoggedIn(); // This updates avatar and account info based on current user data
+        
+        // Update class for ownNick if needed
+        if (this.userStableId == guser.me.id) { // Compare stable IDs
+            $liElement.find('.nickname').addClass('ownNick');
+        } else {
+            $liElement.find('.nickname').removeClass('ownNick');
+        }
+	}
+
+
 	this.setActions = function() {
-		$('#'+this.id+'-toggleNickOpt').click(function(){ gateway.toggleNickOpt(this.id); }.bind(this));
-		$('#'+this.id+'-openQuery').click(function(){ gateway.openQuery(this.user.nick, this.user.id) }.bind(this));
-		$('#'+this.id+'-askIgnore').click(function(){ ignore.askIgnore(this.user); }.bind(this));
-		$('#'+this.id+'-doWhois').click(function(){
-			if(this.user == ircEvents.emit('domain:getMeUser')) // Compare with domain's guser.me
+		$('#'+this.id+'-toggleNickOpt').off('click').click(function(){ gateway.toggleNickOpt(this.id); }.bind(this));
+		$('#'+this.id+'-openQuery').off('click').click(function(){ gateway.openQuery(this.channelMember.nick, this.channelMember.id) }.bind(this));
+		$('#'+this.id+'-askIgnore').off('click').click(function(){ ignore.askIgnore(this.channelMember); }.bind(this));
+		$('#'+this.id+'-doWhois').off('click').click(function(){
+			if(this.userStableId == guser.me.id) // Compare stable IDs
 				gateway.displayOwnWhois = true; // This is a UI flag
-			ircEvents.emit('domain:requestWhois', { nick: this.user.nick, time: new Date() }); // Emit domain event
+			ircEvents.emit('domain:requestWhois', { nick: this.channelMember.nick, time: new Date() }); // Emit domain event
 			gateway.toggleNickOpt(this.id);
 		}.bind(this));
-		$('#'+this.id+'-toggleNickInfo').click(function(){ gateway.toggleNickOptInfo(this.id); }.bind(this));
-		$('#'+this.id+'-doNickservInfo').click(function(){
-			ircEvents.emit('domain:requestNickservInfo', { nick: this.user.nick, time: new Date() }); // Emit domain event
+		$('#'+this.id+'-toggleNickInfo').off('click').click(function(){ gateway.toggleNickOptInfo(this.id); }.bind(this));
+		$('#'+this.id+'-doNickservInfo').off('click').click(function(){
+			ircEvents.emit('domain:requestNickservInfo', { nick: this.channelMember.nick, time: new Date() }); // Emit domain event
 			gateway.toggleNickOpt(this.id);
 		}.bind(this));
-		$('#'+this.id+'-doCtcpVersion').click(function(){
-			ircEvents.emit('domain:requestCtcp', { nick: this.user.nick, ctcpType: 'VERSION', time: new Date() }); // Emit domain event
+		$('#'+this.id+'-doCtcpVersion').off('click').click(function(){
+			ircEvents.emit('domain:requestCtcp', { nick: this.channelMember.nick, ctcpType: 'VERSION', time: new Date() }); // Emit domain event
 			gateway.toggleNickOpt(this.id);
 		}.bind(this));
-		$('#'+this.id+'-toggleNickOptAdmin').click(function(){ gateway.toggleNickOptAdmin(this.id); }.bind(this));
-		$('#'+this.id+'-showKick').click(function(){ ircEvents.emit('ui:showKickDialog', { channel: this.channel, nick: this.user.nick }); }.bind(this)); // Emit UI event
-		$('#'+this.id+'-showBan').click(function(){ ircEvents.emit('ui:showBanDialog', { channel: this.channel, nick: this.user.nick }); }.bind(this)); // Emit UI event
-		$('#'+this.id+'-givePrivileges').click(function(){ ircEvents.emit('ui:showPrivilegesDialog', { channel: this.channel, nick: this.user.nick }); }.bind(this)); // Emit UI event
-		$('#'+this.id+'-takePrivileges').click(function(){ ircEvents.emit('ui:showPrivilegesAntiDialog', { channel: this.channel, nick: this.user.nick }); }.bind(this)); // Emit UI event
+		$('#'+this.id+'-toggleNickOptAdmin').off('click').click(function(){ gateway.toggleNickOptAdmin(this.id); }.bind(this));
+		$('#'+this.id+'-showKick').off('click').click(function(){ ircEvents.emit('ui:showKickDialog', { channel: this.channel, nick: this.channelMember.nick }); }.bind(this)); // Emit UI event
+		$('#'+this.id+'-showBan').off('click').click(function(){ ircEvents.emit('ui:showBanDialog', { channel: this.channel, nick: this.channelMember.nick }); }.bind(this)); // Emit UI event
+		$('#'+this.id+'-givePrivileges').off('click').click(function(){ ircEvents.emit('ui:showPrivilegesDialog', { channel: this.channel, nick: this.channelMember.nick }); }.bind(this)); // Emit UI event
+		$('#'+this.id+'-takePrivileges').off('click').click(function(){ ircEvents.emit('ui:showPrivilegesAntiDialog', { channel: this.channel, nick: this.channelMember.nick }); }.bind(this)); // Emit UI event
 		/*$('#'+this.id+'-showBanUni').click(function(){ gateway.showBan(this.channel, this.user.nick); }.bind(this));*/
-		$('#'+this.id+'-avatarField').error(function(){ ircEvents.emit('domain:disableAutoAvatar', { nick: this.user.nick }); }.bind(this)); // Emit domain event
+		$('#'+this.id+'-avatarField').off('error').error(function(){ ircEvents.emit('domain:disableAutoAvatar', { nick: this.channelMember.nick }); }.bind(this)); // Emit domain event, rebind error
+
+        // Oper actions visibility, now driven by current user's privileges
+        // This logic needs to be moved to gateway_display reacting to a domain event
+        // For now, it will remain conditionally displayed based on an external mechanism.
+        // It's not directly removed yet to avoid breaking other parts.
 	}
-	this.setMode = function(mode, setting) { // This function should be removed; NicklistUser should be re-rendered on domain mode change event
-		var oldLevel = this.level;
-		if(mode in this.modes) {
-			this.modes[mode] = setting;
-			if(this.modes.owner) {
-				this.level = 5;
-			} else if (this.modes.admin) {
-				this.level = 4;
-			} else if (this.modes.op) {
-				this.level = 3;
-			} else if (this.modes.halfop) {
-				this.level = 2;
-			} else if (this.modes.voice) {
-				this.level = 1;
-			} else {
-				this.level = 0;
-			}
-		}
-		if(this.user == ircEvents.emit('domain:getMeUser')){ // Compare with domain's guser.me
-			var chanId = gateway.findChannel(this.channel).id;
-			if(this.level >= 2){
-				$('#'+chanId+'-displayOperCss').remove();
-				var style = $('<style id="'+chanId+'-displayOperCss">.'+chanId+'-operActions { display:block !important; }</style>');
-				$('html > head').append(style);
-			} else {
-				$('#'+chanId+'-displayOperCss').remove();
-			}
-		}
-		if(this.level != oldLevel){
-			// This re-rendering logic should be handled by a higher-level nicklist update triggered by domain event
-			var nicklist = gateway.findChannel(this.channel).nicklist;
-			//nicklist.update(); // Trigger a full nicklist update
-		}
-	}
+	// `setMode` function removed entirely
+
 	this.remove = function() {
 		$('#'+this.id).remove();
 	}
@@ -266,56 +325,56 @@ function NicklistUser(user, chan) {
 	}
 	this.displayLoggedIn = function() {
 		var loggedIn = true;
-		if(this.account){
-			var regText = language.loggedInAs+this.account;
-		} else if(this.user.registered){
+		if(this.channelMember.account){
+			var regText = language.loggedInAs+this.channelMember.account;
+		} else if(this.channelMember.registered){
 			var regText = language.registered;
 		} else {
 			var regText = language.unRegistered;
 			loggedIn = false;
 		}
-		var nick = this.user.nick;
-		$('#'+this.id+' .chavatar').attr('alt', regText).attr('src', disp.getAvatarIcon(nick, loggedIn)).attr('title', regText).on('error', function(){ ircEvents.emit('domain:disableAutoAvatar', { nick: nick }); }); // Emit domain event
+		var nick = this.channelMember.nick;
+		$('#'+this.id+' .chavatar').attr('alt', regText).attr('src', disp.getAvatarIcon(nick, loggedIn)).attr('title', regText).off('error').error(function(){ ircEvents.emit('domain:disableAutoAvatar', { nick: nick }); }); // Emit domain event, rebind error
 		$('#'+this.id+'-opt .nicklistAvatar').html(gateway.getMeta(nick, 500));
 	}
 	this.showTitle = function() {
 		var text = '';
-		if(this.user.ident && this.user.host){
-			text = this.user.nick+'!'+this.user.ident+'@'+this.user.host;
-			if(this.user.realname){
+		if(this.channelMember.ident && this.channelMember.host){
+			text = this.channelMember.nick+'!'+this.channelMember.ident+'@'+this.channelMember.host;
+			if(this.channelMember.realname){
 				text += ' \n'+this.user.realname;
 			}
 		}
-		if(this.user.away){
+		if(this.channelMember.away){
 			if(text != ''){
-				text += ' \n';
+				text += '\n';
 			}
 			text += language.userIsAway;
-			if(this.user.away !== true){
-				text += ' (' + language.reason + ': '+this.user.away+')';
+			if(this.channelMember.away !== true){
+				text += ' (' + language.reason + ': '+this.channelMember.away+')';
 			}
 			$('#'+this.id+' .nickname').css('opacity', '0.3');
 		} else {
 			$('#'+this.id+' .nickname').css('opacity', '');
 		}
-		if(this.user.ircOp){
+		if(this.channelMember.ircOp){
 			if(text != ''){
 				text += '\n';
 			}
 			text += language.userIsIrcop;
 		}
-		if(this.user.bot){
+		if(this.channelMember.bot){
 			if(text != ''){
 				text += '\n';
 			}
 			text += language.userIsBot;
 		}
-		if(this.user.account){
+		if(this.channelMember.account){
 			if(text != ''){
 				text += '\n';
 			}
-			text += language.userIsLoggedIntoAccount+this.user.account;
-		} else if(this.user.registered){
+			text += language.userIsLoggedIntoAccount+this.channelMember.account;
+		} else if(this.channelMember.registered){
 			if(text != ''){
 				text += '\n';
 			}
@@ -326,8 +385,7 @@ function NicklistUser(user, chan) {
 		}
 		this.displayLoggedIn();
 	}
-	this.level = 0; // This should be set by the domain based on current modes
-	this.id = user.nick.replace(/[^a-z0-9A-Z]+/ig, '-').toLowerCase()+Math.round(Math.random()*10000);
+	// Removed `this.level = 0;` and `this.id = user.nick.replace(...)` from original constructor end.
 }
 
 function Query(nick) {
@@ -339,9 +397,9 @@ function Query(nick) {
 	this.scrollPos = 0;
 	this.scrollSaved = false;
 	this.newLines = false;
-	
+
 	this.typing = new typingHandler(this);
-	
+
 	this.toggleClass = function() {
 		if(this.ClassAdded) {
 			$('#'+this.id+'-tab').removeClass('newmsg');
@@ -362,7 +420,7 @@ function Query(nick) {
 			}
 			disp.titleBlinkInterval = setInterval(function(){
 				var title = document.title;
-				document.title = (title == newMessage ? (he(ircEvents.emit('domain:getMeUserNick'))+' @ '+mainSettings.networkName) : newMessage); // Get guser.nick via domain event
+				document.title = (title == newMessage ? (he(guser.me.nick)+' @ '+mainSettings.networkName) : newMessage);
 			}, 500);
 		}
 	}
@@ -383,7 +441,7 @@ function Query(nick) {
 		}
 		clearInterval(disp.titleBlinkInterval);
 		disp.titleBlinkInterval = false;
-		if(document.title == newMessage) document.title = he(ircEvents.emit('domain:getMeUserNick'))+' @ '+mainSettings.networkName; // Get guser.nick via domain event
+		if(document.title == newMessage) document.title = he(guser.me.nick)+' @ '+mainSettings.networkName;
 		$('#'+this.id+'-tab > a').css('font-weight', 'normal');
 		$('#'+this.id+'-tab > a').css('color', '#CECECE');
 		setTimeout("$('#"+this.id+"-tab').removeClass('newmsg')", 100);
@@ -478,7 +536,7 @@ function Query(nick) {
 	$('#'+this.id+'-window').vprintf(language.messagePatterns.startedQuery, [$$.niceTime(), he(this.name), this.name]);
 }
 
-function Channel(chan) {
+function ChannelTab(chan) {
 	this.name = chan;
 	this.id = this.name.replace(/^#/g,'').replace(/[^a-zA-Z0-9]+/g, '-').toLowerCase()+Math.round(Math.random()*100);
 	this.nicklist = new Nicklist(this.name, this.id);
@@ -564,9 +622,10 @@ function Channel(chan) {
 			if(disp.titleBlinkInterval){
 				clearInterval(disp.titleBlinkInterval);
 			}
+			document.title = he(guser.me.nick)+' @ '+mainSettings.networkName;
 			disp.titleBlinkInterval = setInterval(function(){
 				var title = document.title;
-				document.title = (title == newMessage ? (he(ircEvents.emit('domain:getMeUserNick'))+' @ '+mainSettings.networkName) : newMessage); // Get guser.nick via domain event
+				document.title = (title == newMessage ? (he(guser.me.nick)+' @ '+mainSettings.networkName) : newMessage);
 			}, 500);
 		}
 	}
@@ -597,8 +656,9 @@ function Channel(chan) {
 		}
 		clearInterval(disp.titleBlinkInterval);
 		disp.titleBlinkInterval = false;
-		if(document.title == newMessage) document.title = he(ircEvents.emit('domain:getMeUserNick'))+' @ '+mainSettings.networkName; // Get guser.nick via domain event
+		if(document.title == newMessage) document.title = he(guser.me.nick)+' @ '+mainSettings.networkName;
 		$('#'+this.id+'-tab > a').css('font-weight', 'normal');
+		$('#'+this.id+'-tab > a').css('color', '#CECECE');
 		setTimeout("$('#"+this.id+"-tab').removeClass('newmsg')", 100);
 		setTimeout("$('#"+this.id+"-tab').removeClass('newmsg')", 300);
 		setTimeout("$('#"+this.id+"-tab').removeClass('newmsg')", 600);
@@ -623,7 +683,7 @@ function Channel(chan) {
 	}
 	this.rejoin = function() {
 		this.left = false;
-		$('#'+this.id+'-window').vprintf(language.messagePatterns.joinOwn, [$$.niceTime(), ircEvents.emit('domain:getMeUserNick'), ircEvents.emit('domain:getMeUserIdent'), ircEvents.emit('domain:getMeUserHost'), this.name]); // Get guser.me properties via domain event
+		$('#'+this.id+'-window').vprintf(language.messagePatterns.joinOwn, [$$.niceTime(), guser.me.nick, guser.me.ident, guser.me.host, this.name]);
 		if(this.name == gateway.active) {
 			this.restoreScroll();
 		}
@@ -685,6 +745,13 @@ function Channel(chan) {
 							if(windowElements[j].getAttribute('data-time')){
 								hasTimestampedAfter = true;
 								break;
+							}
+							if (channelInfoStart !== -1) { // Found non-timestamped, now find previous
+								var prevElTime = windowElements[j-1].getAttribute('data-time');
+								var prevElMsgid = windowElements[j-1].getAttribute('data-msgid');
+								if (prevElTime || prevElMsgid) {
+									channelInfoStart = j;
+								}
 							}
 						}
 						// If no timestamped messages after, this is part of current join info
@@ -852,9 +919,10 @@ function Status() {
 			if(disp.titleBlinkInterval){
 				clearInterval(disp.titleBlinkInterval);
 			}
+			document.title = he(guser.me.nick)+' @ '+mainSettings.networkName;
 			disp.titleBlinkInterval = setInterval(function(){
 				var title = document.title;
-				document.title = (title == newMessage ? (he(ircEvents.emit('domain:getMeUserNick'))+' @ '+mainSettings.networkName) : newMessage); // Get guser.nick via domain event
+				document.title = (title == newMessage ? (he(guser.me.nick)+' @ '+mainSettings.networkName) : newMessage);
 			}, 500);
 		}
 	}
@@ -886,8 +954,9 @@ function Status() {
 		}
 		clearInterval(disp.titleBlinkInterval);
 		disp.titleBlinkInterval = false;
-		if(document.title == newMessage) document.title = he(ircEvents.emit('domain:getMeUserNick'))+' @ '+mainSettings.networkName; // Get guser.nick via domain event
+		if(document.title == newMessage) document.title = he(guser.me.nick)+' @ '+mainSettings.networkName;
 		$('#'+this.id+'-tab > a').css('font-weight', 'normal');
+		$('#'+this.id+'-tab > a').css('color', '#CECECE');
 		setTimeout("$('#"+this.id+"-tab').removeClass('newmsg')", 100);
 		setTimeout("$('#"+this.id+"-tab').removeClass('newmsg')", 300);
 		setTimeout("$('#"+this.id+"-tab').removeClass('newmsg')", 600);
@@ -942,7 +1011,7 @@ function typingHandler(tab){
 	this.tab = tab;
 	this.list = [];
 	this.start = function(user, time){
-		if(user == ircEvents.emit('domain:getMeUser')) // Compare with domain's guser.me
+		if(user == guser.me) // Compare with domain's guser.me
 			return;
 		var idx = this.findUser(user);
 		if(idx === false){
@@ -965,7 +1034,7 @@ function typingHandler(tab){
 	};
 	this.findUser = function(user){
 		for(var i=0; i<this.list.length; i++){
-			if(this.list[i].user == user)
+			if(this.list[i].user.id == user.id) // Compare stable user.id
 				return i;
 		}
 		return false;
@@ -1141,7 +1210,7 @@ function ListWindow() {
 	$('<span/>').attr('id', this.id+'-topic').hide().appendTo('#info');
 	$('<span/>').attr('id', this.id+'-tab-info').hide().appendTo('#tab-info');
 	$('#'+this.id+'-topic').html('<h1>' + language.channelListTitle + '</h1><h2></h2>');
-	$('<li/>').attr('id', this.id+'-tab').html('<a href="javascript:void(0);" class="switchTab" id="' + this.id + '-tab-switch">' + language.channelListTitle + '</a><a href="javascript:void(0);" id="' + this.id + '-tab-close"><div class="close" title="' + language.close + '"></div></a>').appendTo('#tabs');
+	$('<li/>').attr('id', this.id+'-tab').html('<a href="javascript:void(0);" id="' + this.id + '-tab-switch">' + language.channelListTitle + '</a><a href="javascript:void(0);" id="' + this.id + '-tab-close"><div class="close" title="' + language.close + '"></div></a>').appendTo('#tabs');
 	$('#'+this.id+'-tab-switch').click(function(){ ircEvents.emit('domain:requestSwitchTab', { tabName: this.name }); }.bind(this)); // Emit domain event
 	$('#'+this.id+'-tab-close').click(function(){ this.close(); }.bind(this));
 	$('#chstats').append('<div class="chstatswrapper" id="'+this.id+'-chstats"><span class="chstats-text symbolFont">' + language.channelListTitle + '</span></div>');

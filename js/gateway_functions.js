@@ -806,7 +806,7 @@ function onBlur() {
 function onFocus(){
 	clearInterval(disp.titleBlinkInterval);
 	disp.titleBlinkInterval = false;
-	if(document.title == newMessage) document.title = he(ircEvents.emit('domain:getMeUserNick'))+' @ PIRC.pl'; // Get guser.nick via domain event
+	if(document.title == newMessage) document.title = he(guser.me.nick)+' @ PIRC.pl';
 	disp.focused = true;
 	var act = gateway.getActive();
 	if(act){
@@ -960,7 +960,7 @@ var disp = {
 	},
 	'showAvatarSetting': function(){
 		if(!mainSettings.supportAvatars) return;
-		if(!ircEvents.emit('domain:getMeUserRegisteredStatus') || window.FormData === undefined || !mainSettings.avatarUploadUrl){ // Check guser.me.registered via domain event
+		if(!guser.me.registered || window.FormData === undefined || !mainSettings.avatarUploadUrl){ // Check guser.me.registered via domain event
 			var html =
 				'<div id="current-avatar">' +
 					'<div id="current-letter-avatar">' +
@@ -984,8 +984,8 @@ var disp = {
 			$('#submit-avatar').click(disp.submitAvatar);
 			$('#check-avatar-button').click(disp.checkAvatarUrl);
 			if(!settings._textSettingsValues['avatar']){
-				$('#letterAvatarExample').css('background-color',$$.nickColor(ircEvents.emit('domain:getMeUserNick'), true)); // Get guser.nick via domain event
-				$('#letterAvatarExampleContent').text(ircEvents.emit('domain:getMeUserNick').charAt(0)); // Get guser.nick via domain event
+				$('#letterAvatarExample').css('background-color',$$.nickColor(guser.me.nick, true));
+				$('#letterAvatarExampleContent').text(guser.me.nick.charAt(0));
 				$('#current-avatar-info').text(language.noAvatarSet);
 				$('#current-avatar-image').attr('src', '/styles/img/noavatar.png');
 				$('#current-letter-avatar').show();
@@ -1016,8 +1016,8 @@ var disp = {
 			$('#delete-avatar').click(disp.deleteAvatar);
 			$('#submit-avatar').click(disp.submitAvatar);
 			if(!settings._textSettingsValues['avatar']){
-				$('#letterAvatarExample').css('background-color',$$.nickColor(ircEvents.emit('domain:getMeUserNick'), true)); // Get guser.nick via domain event
-				$('#letterAvatarExampleContent').text(ircEvents.emit('domain:getMeUserNick').charAt(0)); // Get guser.nick via domain event
+				$('#letterAvatarExample').css('background-color',$$.nickColor(guser.me.nick, true));
+				$('#letterAvatarExampleContent').text(guser.me.nick.charAt(0));
 				$('#current-avatar-info').text(language.avatarNotSet);
 				$('#current-avatar-image').attr('src', '/styles/img/noavatar.png');
 				$('#current-letter-avatar').show();
@@ -1048,7 +1048,7 @@ var disp = {
 		$('#submit-avatar').show();
 	},
 	'submitAvatar': function() {
-		if(!ircEvents.emit('domain:getMeUserRegisteredStatus')){
+		if(!guser.me.registered){
 			var url = $('#avatar-url').val();
 			if(!url.startsWith('https://')){
 				$$.alert(language.addressMustStartWithHttps);
@@ -1103,7 +1103,7 @@ var disp = {
 		}
 	},
 	'deleteAvatar': function() {
-		if(!ircEvents.emit('domain:getMeUserRegisteredStatus')){
+		if(!guser.me.registered){
 			if(!confirm(language.areYouSureToDeleteAvatar + '"' +settings._textSettingsValues['avatar']+ '"?')){
 				return;
 			}
@@ -1900,7 +1900,7 @@ var $$ = {
 				if(ircEvents.emit('domain:getConnectStatus') != 'connected'){ // Check domain connect status
 					return;
 				}
-				if(sender.toLowerCase() == ircEvents.emit('domain:getMeUserNick').toLowerCase() && !gateway.displayOwnWhois){ // Get guser.nick via domain event
+				if(sender.toLowerCase() == guser.me.nick.toLowerCase() && !gateway.displayOwnWhois){
 					return;
 				}
 			case 'warning': case 'error': case 'confirm': case 'connect': case 'admin': case 'services': case 'ignore': case 'list': case 'alert': case 'emoticons': // nie wyświetlamy czasu

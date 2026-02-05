@@ -460,6 +460,10 @@ ircEvents.on('protocol:joinCommand', function(data) {
     var channelName = data.channelName;
     var user = msg.user; // User who joined
 
+    // Ensure the ChannelMemberList exists and add the user to it
+    var cml = users.addChannelMemberList(channelName);
+    cml.addMember(user); // user is the global user object already created/managed by users.js
+
     // The domain layer ensures the UI knows about the channel, if it doesn't already.
     // This is a UI concern triggered by a domain event.
     ircEvents.emit('domain:findOrCreateTab', { tabName: channelName, setActive: false, time: msg.time });
@@ -522,18 +526,29 @@ ircEvents.on('protocol:modeCommand', function(data) {
     var modeString = data.modeString; // "+o SomeNick" or "+m"
 
     if (target.startsWith('#') || target.startsWith('&')) { // Channel mode
-        var channel = gateway.findChannel(target);
-        if (channel) {
-            // Further parse modeString to apply individual modes and params
-            // For simplicity, emit raw mode string for now
-            ircEvents.emit('channel:modeChanged', { // Changed from 'channel:modeChanged' to 'channel:modesUpdated' to match rplChannelmodeis
-                channelName: channel.name,
-                channelId: channel.id,
-                modeString: modeString,
-                byNick: msg.user.nick,
-                raw: msg
-            });
-        }
+        var channelName = target;
+        // Emit general channel mode update for UI
+        ircEvents.emit('channel:modesUpdated', {
+            channelName: channelName,
+            modes: modeString, // Pass original modeString for now
+            byNick: msg.user.nick,
+            raw: msg
+        });
+
+        // Parse modeString for user-specific mode changes within the channel
+        var userModeChanges = parseChannelUserModes(modeString, channelName);
+        userModeChanges.forEach(change => {
+            var user = users.getExistingUser(change.nick); // Get domain user object
+            if (user) {
+                // This event will trigger the ChannelMemberList to update the ChannelMember
+                ircEvents.emit('domain:channelModeForUserChanged', {
+                    channelName: channelName,
+                    user: user, // Pass the user object
+                    modeChange: change, // Pass mode change details
+                    raw: msg
+                });
+            }
+        });
     } else { // User mode
         // Apply user modes to the user object directly or via domain event
         ircEvents.emit('user:modeChanged', {
@@ -550,18 +565,14 @@ ircEvents.on('protocol:nickCommand', function(data) {
     var oldNick = msg.user.nick;
     var newNick = data.newNick;
 
-    if (msg.user === guser.me) { // Own nick change
-        guser.changeNick(newNick);
+    // The users.changeNick function will update the global user list
+    // and emit the domain:userNickChanged event which ChannelMemberList listens to.
+    users.changeNick(oldNick, newNick);
+
+    // If it's our own nick change, emit specific event for UI
+    if (msg.user.id === guser.me.id) { // Compare stable IDs for own nick
         ircEvents.emit('user:myNickChanged', { oldNick: oldNick, newNick: newNick, raw: msg });
     }
-
-    // Emit a domain event that a nick has changed. The UI layer will listen to this
-    // to update all instances of the old nick to the new nick across its views.
-    ircEvents.emit('user:nickChanged', {
-        oldNick: oldNick,
-        newNick: newNick,
-        raw: msg
-    });
 });
 
 ircEvents.on('protocol:noticeCommand', function(data) {
@@ -603,6 +614,14 @@ ircEvents.on('protocol:partCommand', function(data) {
     var channelName = data.channelName;
     var partMessage = data.partMessage;
     var user = msg.user; // User who parted
+
+    var cml = users.getChannelMemberList(channelName);
+    if (cml) {
+        cml.removeMemberById(user.id); // Remove the ChannelMember
+        if (user === guser.me && cml.getAllMembers().length === 0) {
+            users.removeChannelMemberList(channelName); // Remove the ChannelMemberList if empty and self parted
+        }
+    }
 
     // Emit event that a user has parted from a channel for the UI to update its channel object.
     ircEvents.emit('channel:userParted', {
@@ -655,6 +674,10 @@ ircEvents.on('protocol:quitCommand', function(data) {
     var user = msg.user; // User who quit
 
     if (user) {
+        // Remove user from all ChannelMemberLists they were part of
+        users.channelMemberLists.forEach(function(cml) {
+            cml.removeMemberById(user.id);
+        });
         if (user === guser.me) { // Own quit
             ircEvents.emit('user:selfQuit', {
                 nick: user.nick,
@@ -1369,15 +1392,20 @@ ircEvents.on('protocol:rplWhoreply', function(data) {
 ircEvents.on('protocol:rplNamreply', function(data) {
     var msg = data.raw;
     var channelName = data.channelName;
-    var processedNames = [];
+
+    // Get or create ChannelMemberList for this channel
+    var cml = users.addChannelMemberList(channelName);
 
     data.names.forEach(nickEntry => {
         let modes = '';
         let nick = nickEntry;
 
-        // Extract modes/prefixes from nick (this parsing is domain-level)
-        if (isupport.PREFIX) { // Use ISUPPORT PREFIX if available
-            let prefixes = isupport.PREFIX.match(/\((.*?)\)(.*)/);
+        // Full parsing of modes/prefixes from nickEntry
+        let userChannelModes = {};
+        let userLevel = 0;
+
+        if (isupport.PREFIX) {
+            let prefixes = isupport.PREFIX.match(/\((.*?)\)(.+)/);
             if (prefixes) {
                 let modeChars = prefixes[1];
                 let prefixChars = prefixes[2];
@@ -1387,29 +1415,58 @@ ircEvents.on('protocol:rplNamreply', function(data) {
                         nick = nick.substring(1);
                     }
                 }
-            } else { // Fallback for common prefixes
+            } else { // Fallback for common prefixes if ISUPPORT is malformed
                 if (nick.startsWith('@')) { modes += 'o'; nick = nick.substring(1); }
                 else if (nick.startsWith('+')) { modes += 'v'; nick = nick.substring(1); }
             }
-
-            // Get or create domain-level user object (if not already handled by msg.user)
-            let user = users.getUser(nick); // Assuming this is domain-level
-            if (!user) {
-                user = new users.user(nick);
-            }
-            // Update user properties from NAMREPLY if available (ident, host are often missing here)
-            // This is a domain-level update to the user object's modes
-            // user.setIdent(ident); // Not available from NAMREPLY directly
-            // user.setHost(host);   // Not available from NAMREPLY directly
-
-            processedNames.push({ nick: nick, modes: modes, ident: user.ident, host: user.host });
         }
+        // Apply parsed modes to userChannelModes object
+        for (let i = 0; i < modes.length; i++) {
+            const modeChar = modes.charAt(i);
+            // Translate mode chars to meaningful properties (simplified)
+            if (modeChar === 'o') userChannelModes.op = true;
+            if (modeChar === 'v') userChannelModes.voice = true;
+            if (modeChar === 'h') userChannelModes.halfop = true; // Example
+            if (modeChar === 'a') userChannelModes.admin = true; // Example
+            if (modeChar === 'q') userChannelModes.owner = true; // Example
+        }
+        // Determine level based on modes (example logic)
+        if (userChannelModes.owner) userLevel = 5;
+        else if (userChannelModes.admin) userLevel = 4;
+        else if (userChannelModes.op) userLevel = 3;
+        else if (userChannelModes.halfop) userLevel = 2;
+        else if (userChannelModes.voice) userLevel = 1;
+
+        // Get or create domain-level user object (this object is global to all channels)
+        let user = users.getUser(nick); // users.getUser handles creation if it doesn't exist
+
+        // Temporarily assign channel-specific properties to the user object for ChannelMember creation
+        user.channelModes = userChannelModes;
+        user.level = userLevel;
+
+        cml.addMember(user); // Add to ChannelMemberList, which will read channelModes and level
+
+        // Clean up temporary properties from global user object if it was modified
+        delete user.channelModes;
+        delete user.level;
     });
 
-    // Emit a single event with the complete, structured names data
+    // The original event 'channel:namesReplyComplete' is no longer strictly needed for nicklist UI
+    // but may be used by other parts of the system. I will keep it for compatibility,
+    // using cml.getAllMembers() to construct the data.
     ircEvents.emit('channel:namesReplyComplete', {
         channelName: channelName,
-        users: processedNames,
+        users: cml.getAllMembers().map(member => ({
+            nick: member.nick,
+            // Reconstruct modes string for compatibility if needed by other listeners
+            modes: (member.channelModes.owner ? 'q' : '') +
+                   (member.channelModes.admin ? 'a' : '') +
+                   (member.channelModes.op ? 'o' : '') +
+                   (member.channelModes.halfop ? 'h' : '') +
+                   (member.channelModes.voice ? 'v' : ''),
+            ident: member.ident,
+            host: member.host
+        })),
         raw: msg
     });
 });
@@ -2625,7 +2682,45 @@ ircEvents.on('protocol:unhandledMessage', function(data) {
     });
 });
 
-// Placeholder listeners for new domain-level events (for ircCommand delegation)
+
+// Helper to parse mode strings (simplified for +o/-o)
+function parseChannelUserModes(modeString, channelName) {
+    var changes = [];
+    var isAdding = true; // true for '+', false for '-'
+
+    var parts = modeString.split(' ');
+    var currentModeArgIndex = 0; // Tracks the index in 'parts' for mode arguments
+
+    // Find the actual mode string part (e.g., "+o-v")
+    var modeSpecPart = parts[0];
+    var argsParts = parts.slice(1); // Arguments for the modes
+
+    for (var i = 0; i < modeSpecPart.length; i++) {
+        var char = modeSpecPart.charAt(i);
+        if (char === '+') {
+            isAdding = true;
+        } else if (char === '-') {
+            isAdding = false;
+        } else {
+            // Check if this mode takes an argument (a user nick)
+            // This is a simplification: real IRC mode parsing is complex with CHANMODES ISUPPORT.
+            // For now, assume o, v, h, a, q always take an argument (a nick)
+            if (['o', 'v', 'h', 'a', 'q'].includes(char)) {
+                if (currentModeArgIndex < argsParts.length) {
+                    var nickAffected = argsParts[currentModeArgIndex];
+                    changes.push({
+                        nick: nickAffected,
+                        mode: char,
+                        isAdding: isAdding,
+                        channelName: channelName
+                    });
+                    currentModeArgIndex++;
+                }
+            }
+        }
+    }
+    return changes;
+}
 
 ircEvents.on('domain:requestCap', function(data) {
     console.log('DOMAIN: Request CAP:', data.type, data.caps);
@@ -3466,3 +3561,42 @@ ircEvents.on('domain:parseIsupport', function() {
         }
     }
 });
+
+// Helper to parse mode strings (simplified for +o/-o)
+function parseChannelUserModes(modeString, channelName) {
+    var changes = [];
+    var isAdding = true; // true for '+', false for '-'
+
+    var parts = modeString.split(' ');
+    var currentModeArgIndex = 0; // Tracks the index in 'parts' for mode arguments
+
+    // Find the actual mode string part (e.g., "+o-v")
+    var modeSpecPart = parts[0];
+    var argsParts = parts.slice(1); // Arguments for the modes
+
+    for (var i = 0; i < modeSpecPart.length; i++) {
+        var char = modeSpecPart.charAt(i);
+        if (char === '+') {
+            isAdding = true;
+        } else if (char === '-') {
+            isAdding = false;
+        } else {
+            // Check if this mode takes an argument (a user nick)
+            // This is a simplification: real IRC mode parsing is complex with CHANMODES ISUPPORT.
+            // For now, assume o, v, h, a, q always take an argument (a nick)
+            if (['o', 'v', 'h', 'a', 'q'].includes(char)) {
+                if (currentModeArgIndex < argsParts.length) {
+                    var nickAffected = argsParts[currentModeArgIndex];
+                    changes.push({
+                        nick: nickAffected,
+                        mode: char,
+                        isAdding: isAdding,
+                        channelName: channelName
+                    });
+                    currentModeArgIndex++;
+                }
+            }
+        }
+    }
+    return changes;
+}

@@ -55,7 +55,9 @@ var scriptFiles = [
 	'/js/gateway_cmds.js',
 	'/js/gateway_def.js',          // Protocol/UI Coordination: Core gateway object, IRC parser, main connection logic, dispatches cmd:* events
 	'/js/gateway_domain.js',       // Domain Layer: Manages application state, listens to protocol events, emits high-level domain/client/user/channel events.
+
 	'/js/gateway_display.js',      // UI Layer: Listens to domain-level events and updates the display.
+	'/js/gateway_channel_domain.js', // Domain Layer: Channel and ChannelMember objects
 	'/js/gateway_users.js',
 	'/js/emoji.js',
 	'/js/g-emoji-element.js'

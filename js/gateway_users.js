@@ -1,5 +1,5 @@
 /* Copyright (c) 2020 k4be and the PIRC.pl Team
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
  * "Software"), to deal in the Software without restriction, including
@@ -21,13 +21,6 @@
  */
 
 var users = {
-	'updateNicklists': function(user){
-		for(c in gateway.channels) {
-			var nicklistUser = gateway.channels[c].nicklist.findUser(user);
-			if(nicklistUser)
-				nicklistUser.update();
-		}
-	},
 	'user': function(nick){
 		this.nick = nick;
 		this.id = nick.replace(/^#/g,'').replace(/[^a-zA-Z0-9]+/g, '-').toLowerCase()+Math.round(Math.random()*10000);
@@ -45,11 +38,11 @@ var users = {
 		this.metadata = {};
 		this.setIdent = function(ident){
 			this.ident = ident;
-			users.updateNicklists(this);
+			ircEvents.emit('domain:userUpdated', { user: this, updatedField: 'ident' });
 		};
 		this.setHost = function(host){
 			this.host = host;
-			users.updateNicklists(this);
+			ircEvents.emit('domain:userUpdated', { user: this, updatedField: 'host' });
 		};
 		this.setAccount = function(account){
 			this.account = account;
@@ -58,14 +51,14 @@ var users = {
 			} else if(account) {
 				this.setRegistered(true);
 			}
-			users.updateNicklists(this);
+			ircEvents.emit('domain:userUpdated', { user: this, updatedField: 'account' });
 		};
 		this.setNick = function(nick){
 			this.nick = nick;
 		};
 		this.setRealname = function(realname){
 			this.realname = realname;
-			users.updateNicklists(this);
+			ircEvents.emit('domain:userUpdated', { user: this, updatedField: 'realname' });
 		};
 		this.setMetadata = function(key, value){
 			if(value){
@@ -75,28 +68,30 @@ var users = {
 			}
 			if(key == 'avatar'){
 				this.disableAvatar = false;
-				users.updateNicklists(this);
+				ircEvents.emit('domain:userUpdated', { user: this, updatedField: 'avatar' });
 				if(value && this.nick == guser.nick){ // this is our own avatar
 					textSettingsValues['avatar'] = value;
-					disp.avatarChanged();
+					ircEvents.emit('domain:meAvatarMetadataUpdated', { user: this, avatarValue: value });
 				}
+			} else { // General metadata change
+				ircEvents.emit('domain:userUpdated', { user: this, updatedField: 'metadata', metadataKey: key });
 			}
 		};
 		this.setIrcOp = function(ircOp){
 			this.ircOp = ircOp;
-			users.updateNicklists(this);
+			ircEvents.emit('domain:userUpdated', { user: this, updatedField: 'ircOp' });
 		};
 		this.setBot = function(bot){
 			this.bot = bot;
-			users.updateNicklists(this);
+			ircEvents.emit('domain:userUpdated', { user: this, updatedField: 'bot' });
 		};
 		this.setAway = function(text){
 			this.away = text;
-			users.updateNicklists(this);
+			ircEvents.emit('domain:userUpdated', { user: this, updatedField: 'away' });
 		};
 		this.notAway = function(){
 			this.away = false;
-			users.updateNicklists(this);
+			ircEvents.emit('domain:userUpdated', { user: this, updatedField: 'away' });
 		};
 		this.setRegistered = function(registered){
 			this.registered = registered;
@@ -104,19 +99,13 @@ var users = {
 				this.setAccount(false);
 			}
 			if(this.nick == guser.nick){
-				if(registered){
-					$('#nickRegister').hide();
-					$('.nickRegistered').show();
-				} else {
-					$('#nickRegister').show();
-					$('.nickRegistered').hide();
-
-				}
+				ircEvents.emit('domain:meRegisteredStatusUpdated', { user: this, registered: registered });
 			}
-			users.updateNicklists(this);
+			ircEvents.emit('domain:userUpdated', { user: this, updatedField: 'registered' });
 		};
 	},
 	'list': {},
+	'channelMemberLists': new Map(),
 	'addUser': function(nick){
 		if(nick == '*'){
 			if('*' in users.list){
@@ -154,37 +143,53 @@ var users = {
 		var user = this.list[nick];
 		if(!user) return;
 		user.disableAvatar = true;
-		users.updateNicklists(user);
+		ircEvents.emit('domain:userUpdated', { user: user, updatedField: 'disableAvatar' });
 	},
 	'changeNick': function(oldNick, newNick, time){
 		if(!time)
 			time = new Date();
-		var user = users.getUser(oldNick);
-		users.list[newNick] = user;
+
+		var user = users.getExistingUser(oldNick);
+		if (!user) return;
+
 		delete users.list[oldNick];
 		user.setNick(newNick);
+		users.list[newNick] = user;
+
 		if(oldNick == guser.nick) { // changing own nick
 			guser.changeNick(newNick);
-			document.title = he(newNick)+' @ PIRC.pl';
+			ircEvents.emit('domain:meNickChanged', { oldNick: oldNick, newNick: newNick });
 		}
-		users.updateNicklists(user);
-		if(gateway.findQuery(oldNick)) {
-			gateway.findQuery(oldNick).changeNick(newNick);
-		}
-		for(c in gateway.channels) {
-			if (user != guser.me && !$('#showNickChanges').is(':checked')){
-				if(gateway.channels[c].nicklist.findUser(user)) {
-					gateway.channels[c].appendMessage(language.messagePatterns.nickChange, [$$.niceTime(time), he(oldNick), he(newNick)]);
-				}
-			}
-			gateway.channels[c].nicklist.changeNick(user);
-		}
+
+		// Emit a general user update event for any nicklist displays
+		// The `updatedField: 'nick'` would indicate the primary change
+		ircEvents.emit('domain:userUpdated', { user: user, updatedField: 'nick' });
+		// Emit a specific event for the nick change to trigger query/channel UI updates
+		ircEvents.emit('domain:userNickChanged', { oldNick: oldNick, newNick: newNick, time: time });
 	},
 	'knowOwnNick': function(){ // called once on connect (001)
 		var user = users.getUser('*');
 		users.list[guser.nick] = user;
 		delete users.list['*'];
 		user.setNick(guser.nick);
+	},
+	'getChannelMemberList': function(channelName) {
+		return users.channelMemberLists.get(channelName);
+	},
+	'addChannelMemberList': function(channelName) {
+		if (!users.channelMemberLists.has(channelName)) {
+			users.channelMemberLists.set(channelName, new ChannelMemberList(channelName));
+		}
+		return users.channelMemberLists.get(channelName);
+	},
+	'removeChannelMemberList': function(channelName) {
+		if (users.channelMemberLists.has(channelName)) {
+			var cml = users.channelMemberLists.get(channelName);
+			// Optionally, emit an event that the list is being removed
+            ircEvents.emit('domain:channelMemberListRemoved', { channelName: channelName });
+			users.channelMemberLists.delete(channelName);
+			return true;
+		}
+		return false;
 	}
 }
-
