@@ -328,42 +328,8 @@ var gateway = {
 			ircEvents.emit('domain:requestConnect', { force: true, initialMessage: language.reconnectingWait }); // Emit domain event
 		}, 500);
 	},
-	'iKnowIAmConnected': function() { // UI reaction to domain:connected
-		// pingIntervalID is managed by domain now
-		// gateway.setConnectedWhenIdentified = 1; // Handled by domain
-		ircEvents.emit('domain:setConnectedWhenIdentified'); // Signal domain layer
-		ircEvents.emit('domain:clearConnectTimeout'); // Clear connection timeout - now managed by domain
-		$$.closeDialog('connect', '1'); // UI action
-		$$.closeDialog('connect', 'reconnect'); // UI action
-		// gateway.firstConnect = 0; // Handled by domain
-		// nicklist show logic should be triggered by domain event if needed
-	},
-	'disconnected': function(text) { // UI reaction to domain:disconnected
-		ircEvents.emit('domain:clearConnectTimeout'); // Clear connection timeout - now managed by domain
-		if (gateway.websock) {
-		    gateway.websock.onerror = undefined;
-		    gateway.websock.onclose = undefined;
-		}
-		clearInterval(gateway.pingIntervalID); // Cleared here, but managed by domain interval
-		gateway.pingIntervalID = false;
-
-		ircEvents.emit('domain:connectionDisconnected', { reason: text, time: new Date() }); // Inform domain layer
-
-		gateway.updateHistory(); // UI-specific history update
-		// labelCallbacks, labelInfo, labelsToHide are managed by domain events
-		// guser.clear(), guser.nickservnick logic handled by domain events
-
-		if(ircEvents.emit('domain:getDisconnectMessageShown')) { // Check domain state
-			return;
-		}
-		ircEvents.emit('domain:setDisconnectMessageShown', { shown: true }); // Set domain state
-		// Loop through channels and append messages (UI action)
-		for(c in gateway.channels) {
-			gateway.channels[c].part(); // UI action (removes UI elements)
-			gateway.channels[c].appendMessage(language.messagePatterns.error, [$$.niceTime(), text]); // UI action
-		}
-		gateway.statusWindow.appendMessage(language.messagePatterns.error, [$$.niceTime(), text]); // UI action
-	},
+	// Removed iKnowIAmConnected: logic moved to domain:connected listener and UI client:connected listener
+	// Removed disconnected: logic moved to domain:connectionDisconnected listener and UI client:disconnected listeners
 	// Removed ping() method (now domain-driven)
 	'configureConnection': function(){ // Protocol/Connection layer
 		gateway.websock.onmessage = gateway.onRecv;

@@ -139,11 +139,38 @@
         });
 
         ircEvents.on('client:connected', function() {
-            gateway.iKnowIAmConnected(); // UI state update
+            // UI-only logic: close connection dialogs
+            $$.closeDialog('connect', '1');
+            $$.closeDialog('connect', 'reconnect');
         });
 
         ircEvents.on('client:disconnected', function(data) {
-            gateway.disconnected(data.reason); // UI state update
+            // UI-only logic: respond to disconnection
+            // Domain layer has already handled cleanup via domain:connectionDisconnected
+            console.log('UI: Client disconnected:', data.reason);
+        });
+
+        // Handlers for UI-specific tasks emitted by domain layer on disconnection
+        ircEvents.on('ui:updateHistory', function() {
+            gateway.updateHistory(); // UI-specific history update
+        });
+
+        ircEvents.on('ui:clearLabelCallbacks', function() {
+            // Clear gateway.labelCallbacks (UI-specific cleanup)
+            gateway.labelCallbacks = {};
+        });
+
+        ircEvents.on('ui:disconnectCleanupChannels', function(data) {
+            // Loop through channels and handle disconnection UI
+            for(c in gateway.channels) {
+                gateway.channels[c].part(); // UI action (removes UI elements)
+                gateway.channels[c].appendMessage(language.messagePatterns.error, [$$.niceTime(), data.reason]); // UI action
+            }
+        });
+
+        ircEvents.on('ui:statusWindowMessage', function(data) {
+            // Add message to status window
+            gateway.statusWindow.appendMessage(language.messagePatterns.error, [$$.niceTime(), data.reason]); // UI action
         });
 
         ircEvents.on('client:joinChannels', function() {

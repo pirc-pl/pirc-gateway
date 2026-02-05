@@ -737,6 +737,13 @@ ircEvents.on('protocol:rplWelcome', function(data) {
     ircEvents.emit('client:connected', { raw: msg });
 });
 
+// Domain logic for client:connected event
+ircEvents.on('client:connected', function(data) {
+    console.log('DOMAIN: Client connected, handling domain-level setup');
+    ircEvents.emit('domain:setConnectedWhenIdentified'); // Signal domain layer
+    ircEvents.emit('domain:clearConnectTimeout'); // Clear connection timeout
+});
+
 ircEvents.on('protocol:rplYourhost', function(data) {
     var msg = data.raw;
     ircEvents.emit('server:yourHost', {
@@ -2825,6 +2832,9 @@ ircEvents.on('domain:connectionDisconnected', function(data) {
         return;
     }
     domainDisconnectMessageShown = 1;
+
+    // Emit client:disconnected event for UI layer to listen to
+    ircEvents.emit('client:disconnected', { reason: data.reason });
 });
 
 ircEvents.on('domain:connectionInitiated', function() {
