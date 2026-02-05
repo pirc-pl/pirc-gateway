@@ -196,6 +196,13 @@ function setEnvironment(){
             }
         });
 
+        ircEvents.on('settings:changed:enableautomLogIn', function(data) {
+            if (data.newValue) { // If enableautomLogIn is checked
+                $('#save_password').prop('checked', true); // Check save_password
+                // Note: save_password needs to be added to settings definition for its value to persist
+            }
+        });
+
         ircEvents.on('settings:changed:biggerEmoji', function(data) {
             if (data.newValue) {
                 document.documentElement.style.setProperty('--emoji-scale', '3');
@@ -404,6 +411,9 @@ var readyFunc = function(){
 	}
 
 	settings.load();
+	var slang = settings.get('setLanguage');
+	if (!slang) slang = mainSettings.language;
+	setLanguage(slang);
 	$('.gateway-version').html(mainSettings.version);
 	$('.not-connected-text > h3').html(language.loading);
 	$('.not-connected-text > p').html(language.loadingWait);
@@ -983,7 +993,7 @@ var disp = {
 			$('#delete-avatar').click(disp.deleteAvatar);
 			$('#submit-avatar').click(disp.submitAvatar);
 			$('#check-avatar-button').click(disp.checkAvatarUrl);
-			if(!settings._textSettingsValues['avatar']){
+			if(!settings.get('avatar')){
 				$('#letterAvatarExample').css('background-color',$$.nickColor(guser.me.nick, true));
 				$('#letterAvatarExampleContent').text(guser.me.nick.charAt(0));
 				$('#current-avatar-info').text(language.noAvatarSet);
@@ -992,10 +1002,10 @@ var disp = {
 				$('#delete-avatar').hide();
 			} else {
 				$('#current-avatar-info').text(language.currentAvatar);
-				$('#current-avatar-image').attr('src', settings._textSettingsValues['avatar'].replace('{size}', '100'));
+				$('#current-avatar-image').attr('src', settings.get('avatar').replace('{size}', '100'));
 				$('#current-avatar-image').attr('alt', language.currentAvatar);
 				$('#current-letter-avatar').hide();
-				$('#avatar-url').val(settings._textSettingsValues['avatar']);
+				$('#avatar-url').val(settings.get('avatar'));
 				$('#delete-avatar').show();
 			}
 			$('#submit-avatar').hide();
@@ -1015,7 +1025,7 @@ var disp = {
 			$('#avatar-dialog').html(html);
 			$('#delete-avatar').click(disp.deleteAvatar);
 			$('#submit-avatar').click(disp.submitAvatar);
-			if(!settings._textSettingsValues['avatar']){
+			if(!settings.get('avatar')){
 				$('#letterAvatarExample').css('background-color',$$.nickColor(guser.me.nick, true));
 				$('#letterAvatarExampleContent').text(guser.me.nick.charAt(0));
 				$('#current-avatar-info').text(language.avatarNotSet);
@@ -1024,10 +1034,10 @@ var disp = {
 				$('#delete-avatar').hide();
 			} else {
 				$('#current-avatar-info').text(language.currentAvatar);
-				$('#current-avatar-image').attr('src', settings._textSettingsValues['avatar']);
+				$('#current-avatar-image').attr('src', settings.get('avatar'));
 				$('#current-avatar-image').attr('alt', language.currentAvatar);
 				$('#current-letter-avatar').hide();
-				$('#avatar-url').val(settings._textSettingsValues['avatar']);
+				$('#avatar-url').val(settings.get('avatar'));
 				$('#delete-avatar').show();
 			}
 			$('#submit-avatar').show();
@@ -1054,7 +1064,6 @@ var disp = {
 				$$.alert(language.addressMustStartWithHttps);
 				return;
 			}
-			settings._textSettingsValues['avatar'] = url;
 			settings.set('avatar', url);
 			disp.showAvatarSetting();
 			disp.avatarChanged();
@@ -1086,7 +1095,6 @@ var disp = {
 					data: fd,
 					success: function(data){
 						if(data['result'] == 'ok'){
-							settings._textSettingsValues['avatar'] = data['url'];
 							settings.set('avatar', data['url']);
 							disp.showAvatarSetting();
 							disp.avatarChanged();
@@ -1104,11 +1112,11 @@ var disp = {
 	},
 	'deleteAvatar': function() {
 		if(!guser.me.registered){
-			if(!confirm(language.areYouSureToDeleteAvatar + '"' +settings._textSettingsValues['avatar']+ '"?')){
+			if(!confirm(language.areYouSureToDeleteAvatar + '"' +settings.get('avatar')+ '"?')){
 				return;
 			}
-										settings._textSettingsValues['avatar'] = false;
-										settings.set('avatar', false);			disp.showAvatarSetting();
+			settings.set('avatar', false);
+			disp.showAvatarSetting();
 			disp.avatarChanged();
 		} else {
 			if(!confirm(language.deleteAvatarQ)){
@@ -1132,7 +1140,6 @@ var disp = {
 					},
 					success: function(data){
 						if(data['result'] == 'ok'){
-							settings._textSettingsValues['avatar'] = false;
 							settings.set('avatar', false);
 							disp.showAvatarSetting();
 							disp.avatarChanged();
@@ -1150,8 +1157,8 @@ var disp = {
 	},
 	'avatarChanged': function() {
 		disp.changeSettings();
-		if(settings._textSettingsValues['avatar']){
-			ircEvents.emit('domain:requestMetadataUpdate', { key: 'avatar', value: settings._textSettingsValues['avatar'] }); // Emit domain event
+		if(settings.get('avatar')){
+			ircEvents.emit('domain:requestMetadataUpdate', { key: 'avatar', value: settings.get('avatar') }); // Emit domain event
 		} else {
 			ircEvents.emit('domain:requestMetadataUpdate', { key: 'avatar', value: null }); // Emit domain event to clear
 		}

@@ -298,7 +298,7 @@ var gateway = {
 	'websock': 0,
 	// Removed connectStatus, joined, setConnectedWhenIdentified, firstConnect, userQuit, sasl, whowasExpect312, retrySasl, pingcnt
 	// Removed whoisData, smallListData, lasterror, label, labelProcessed, labelCallbacks, labelInfo, labelsToHide, batch
-	'connectTimeoutID': 0,
+	// Removed connectTimeoutID - now managed by domain layer
 	'pingIntervalID': false,
 	'whoChannelsIntervalID': false,
 	'disconnectMessageShown': 0,
@@ -332,20 +332,18 @@ var gateway = {
 		// pingIntervalID is managed by domain now
 		// gateway.setConnectedWhenIdentified = 1; // Handled by domain
 		ircEvents.emit('domain:setConnectedWhenIdentified'); // Signal domain layer
+		ircEvents.emit('domain:clearConnectTimeout'); // Clear connection timeout - now managed by domain
 		$$.closeDialog('connect', '1'); // UI action
 		$$.closeDialog('connect', 'reconnect'); // UI action
-		clearTimeout(gateway.connectTimeoutID);
-		gateway.connectTimeoutID = false;
 		// gateway.firstConnect = 0; // Handled by domain
 		// nicklist show logic should be triggered by domain event if needed
 	},
 	'disconnected': function(text) { // UI reaction to domain:disconnected
-		clearTimeout(gateway.connectTimeoutID);
+		ircEvents.emit('domain:clearConnectTimeout'); // Clear connection timeout - now managed by domain
 		if (gateway.websock) {
 		    gateway.websock.onerror = undefined;
 		    gateway.websock.onclose = undefined;
 		}
-		gateway.connectTimeoutID = false;
 		clearInterval(gateway.pingIntervalID); // Cleared here, but managed by domain interval
 		gateway.pingIntervalID = false;
 
@@ -389,9 +387,8 @@ var gateway = {
 		ircEvents.emit('domain:connectionInitiated'); // Inform domain layer
 
 		// gateway.userQuit = false; // Handled by domain
-		gateway.connectTimeoutID = setTimeout(function() {
-		    ircEvents.emit('domain:connectionTimeout'); // Emit domain event on timeout
-		}, 20000);
+		// Request domain layer to manage connection timeout
+		ircEvents.emit('domain:setConnectionTimeout', { duration: 20000 });
 		gateway.websock = new WebSocket(mainSettings.server);
 		gateway.websock.onopen = function(e){
 			gateway.configureConnection();
@@ -1690,16 +1687,14 @@ var gateway = {
 		console.warn('gateway.processNetjoin is domain logic and should be moved.');
 		ircEvents.emit('domain:processNetjoinEvents', { time: new Date() }); // Emit domain event
 	},
-	'processQuit': function(msg){ // Domain logic, needs to be moved to gateway_domain.js
-		console.warn('gateway.processQuit is domain logic and should be moved.');
-		ircEvents.emit('domain:processQuitCommand', { msg: msg, showPartQuit: settings.get('showPartQuit'), time: new Date() }); // Emit domain event
-		return true; // Keep old return for compatibility until fully removed
-	},
-	'processJoin': function(msg){ // Domain logic, needs to be moved to gateway_domain.js
-		console.warn('gateway.processJoin is domain logic and should be moved.');
-		ircEvents.emit('domain:processJoinCommand', { msg: msg, showPartQuit: settings.get('showPartQuit'), time: new Date() }); // Emit domain event
-	},
-	'findOrCreate': function(name, setActive){ // UI action, should trigger domain logic
+	       'processQuit': function(msg){ // Domain logic, needs to be moved to gateway_domain.js
+	               console.warn('gateway.processQuit is domain logic and should be moved.');
+	               ircEvents.emit('domain:processQuitCommand', { msg: msg, time: new Date() }); // Emit domain event
+	               return true; // Keep old return for compatibility until fully removed	},
+	       'processJoin': function(msg){ // Domain logic, needs to be moved to gateway_domain.js
+	               console.warn('gateway.processJoin is domain logic and should be moved.');
+	               ircEvents.emit('domain:processJoinCommand', { msg: msg, time: new Date() }); // Emit domain event
+	       },	'findOrCreate': function(name, setActive){ // UI action, should trigger domain logic
 		if(!name || name == ''){
 			return null;
 		}

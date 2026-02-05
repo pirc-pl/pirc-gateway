@@ -2880,6 +2880,22 @@ ircEvents.on('domain:connectionTimeoutExpired', function(data) {
     }
 });
 
+ircEvents.on('domain:clearConnectTimeout', function() {
+    console.log('DOMAIN: Clearing connect timeout.');
+    clearTimeout(domainConnectTimeoutID);
+    domainConnectTimeoutID = false;
+});
+
+ircEvents.on('domain:setConnectionTimeout', function(data) {
+    console.log('DOMAIN: Setting connection timeout for ' + (data.duration || 20000) + 'ms');
+    clearTimeout(domainConnectTimeoutID); // Clear any existing timeout
+    var duration = data.duration || 20000; // Default 20 seconds
+    domainConnectTimeoutID = setTimeout(function() {
+        console.log('DOMAIN: Connection timeout fired');
+        ircEvents.emit('domain:connectionTimeout');
+    }, duration);
+});
+
 ircEvents.on('domain:requestStopAndReconnect', function(data) {
     console.log('DOMAIN: Request Stop And Reconnect:', data.reason);
     ircEvents.emit('domain:connectionDisconnected', { reason: data.reason });
@@ -3092,10 +3108,9 @@ ircEvents.on('domain:requestKick', function(data) {
     ircCommand.channelKick(data.channel, data.nick, data.reason);
 });
 
-ircEvents.on('domain:requestQuit', function(data) {
-    console.log('DOMAIN: Request Quit:', data.message);
-    domainUserQuit = true; // Update domain state
-    ircCommand.quit(data.message);
+ircEvents.on('domain:setUserQuit', function(data) {
+    console.log('DOMAIN: Setting user quit status:', data.status);
+    domainUserQuit = data.status;
 });
 
 ircEvents.on('domain:requestListChannels', function(data) {
@@ -3431,7 +3446,6 @@ ircEvents.on('domain:processQuitCommand', function(data) {
         ident: msg.sender.ident,
         host: msg.sender.host,
         quitMessage: msg.text,
-        showPartQuit: data.showPartQuit, // Pass UI setting to UI for decision
         time: msg.time,
         isNetsplit: isNetsplit // Indicate if it's a netsplit
     });
@@ -3474,7 +3488,6 @@ ircEvents.on('domain:processJoinCommand', function(data) {
             ident: msg.sender.ident,
             host: msg.sender.host,
             channelName: channame,
-            showPartQuit: data.showPartQuit, // Pass UI setting to UI for decision
             time: msg.time
         });
     }
