@@ -614,43 +614,7 @@ ircEvents.on('cmd:354', function(msg) {	// RPL_WHOSPCRPL (WHOX)
 	}));
 });
 
-// Empty handlers for 361-365
-ircEvents.on('cmd:361', function(msg) {	// RPL_KILLDONE
-	ircEvents.emit('protocol:rplKilldone', protocolGeneric(msg, {
-		target: msg.args[0] || '',
-		nick: msg.args[1] || '',
-		message: msg.text
-	}));
-});
-ircEvents.on('cmd:362', function(msg) {	// RPL_CLOSING
-	ircEvents.emit('protocol:rplClosing', protocolGeneric(msg, {
-		target: msg.args[0] || '',
-		serverName: msg.args[1] || '',
-		message: msg.text
-	}));
-});
-ircEvents.on('cmd:363', function(msg) {	// RPL_CLOSEEND
-	ircEvents.emit('protocol:rplCloseend', protocolGeneric(msg, {
-		target: msg.args[0] || '',
-		message: msg.text
-	}));
-});
-ircEvents.on('cmd:364', function(msg) {	// RPL_LINKS
-	ircEvents.emit('protocol:rplLinks', protocolGeneric(msg, {
-		target: msg.args[0] || '',
-		linkName: msg.args[1] || '',
-		remoteServer: msg.args[2] || '',
-		hopCount: parseInt(msg.args[3], 10) || 0,
-		info: msg.text
-	}));
-});
-ircEvents.on('cmd:365', function(msg) {	// RPL_ENDOFLINKS
-	ircEvents.emit('protocol:rplEndoflinks', protocolGeneric(msg, {
-		target: msg.args[0] || '',
-		mask: msg.args[1] || '',
-		message: msg.text
-	}));
-});
+
 
 ircEvents.on('cmd:366', function(msg) {	// RPL_ENDOFNAMES
 	ircEvents.emit('protocol:rplEndofnames', protocolGeneric(msg, {
@@ -870,26 +834,31 @@ ircEvents.on('cmd:403', function(msg) {	// ERR_NOSUCHCHANNEL
 	}));
 });
 
+
+
 ircEvents.on('cmd:404', function(msg) {	// ERR_CANNOTSENDTOCHAN
-	if(msg.args[1].charAt(0) == '#') {
-		ircEvents.emit('protocol:error', {
-			command: msg.command,
-			channel: msg.args[1],
-			text: msg.text // Pass raw server message
-		});
-	} else if(gateway.findQuery(msg.args[1])){
-		ircEvents.emit('protocol:error', {
-			command: msg.command,
-			query: msg.args[1],
-			text: msg.text // Pass raw server message
-		});
-	} else {
-		ircEvents.emit('protocol:error', {
-			command: msg.command,
-			target: msg.args[1],
-			text: msg.text // Pass raw server message
-		});
-	}
+    var reasonText = msg.text;
+    var parsedReason = '';
+
+    if (reasonText.match(/You need voice \(\+v\) \(.*\)/)) {
+        parsedReason = 'needVoice';
+    } else if (reasonText.match(/You are banned \(.*\)/)) {
+        parsedReason = 'youreBanned';
+    } else if (reasonText.match(/Color is not permitted in this channel \(.*\)/)) {
+        parsedReason = 'colorsForbidden';
+    } else if (reasonText.match(/No external channel messages \(.*\)/)) {
+        parsedReason = 'noExternalMsgs';
+    } else if (reasonText.match(/You must have a registered nick \(\+r\) to talk on this channel \(.*\)/)) {
+        parsedReason = 'registeredNickRequired';
+    } else {
+        parsedReason = 'generic'; // Default to generic if no specific match
+    }
+
+    ircEvents.emit('protocol:errCannotSendToChan', protocolGeneric(msg, {
+        target: msg.args[1] || '',
+        reason: parsedReason,
+        message: msg.text // Keep raw message for potential detailed display in UI/domain if needed
+    }));
 });
 
 // 405 ERR_TOOMANYCHANNELS - falls through to cmdNotImplemented
@@ -969,57 +938,16 @@ ircEvents.on('cmd:447', function(msg) {	// ERR_NONICKCHANGE
 // ERR_FORBIDDENCHANNEL, ERR_NOTREGISTERED, ERR_HOSTILENAME, ERR_NOHIDING,
 // ERR_NOTFORHALFOPS, ERR_NEEDMOREPARAMS, ERR_ALREADYREGISTRED, ERR_NOPERMFORHOST, ERR_PASSWDMISMATCH
 
+
+
+
+
 ircEvents.on('cmd:465', function(msg) {	// ERR_YOUREBANNEDCREEP
-	ircEvents.emit('protocol:error', {
-		command: msg.command,
-		type: 'bannedCreep',
-		message: msg.text,
-		user: msg.user
-	});
+    ircEvents.emit('protocol:errYoureBannedCreep', protocolGeneric(msg, {
+        message: msg.text // Pass the message for the domain/UI to handle
+    }));
 });
 
-// Empty error handlers 466-471
-ircEvents.on('cmd:466', function(msg) {	// ERR_YOUWILLBEBANNED
-	ircEvents.emit('protocol:errYouwillbebanned', protocolGeneric(msg, {
-		target: msg.args[0] || '',
-		message: msg.text
-	}));
-});
-ircEvents.on('cmd:467', function(msg) {	// ERR_KEYSET
-	ircEvents.emit('protocol:errKeyset', protocolGeneric(msg, {
-		target: msg.args[0] || '',
-		channelName: msg.args[1] || '',
-		message: msg.text
-	}));
-});
-ircEvents.on('cmd:468', function(msg) {	// ERR_ONLYSERVERSCANCHANGE
-	ircEvents.emit('protocol:errOnlyserverscanchange', protocolGeneric(msg, {
-		target: msg.args[0] || '',
-		channelName: msg.args[1] || '',
-		message: msg.text
-	}));
-});
-ircEvents.on('cmd:469', function(msg) {	// ERR_LINKSET
-	ircEvents.emit('protocol:errLinkset', protocolGeneric(msg, {
-		target: msg.args[0] || '',
-		channelName: msg.args[1] || '',
-		message: msg.text
-	}));
-});
-ircEvents.on('cmd:470', function(msg) {	// ERR_LINKCHANNEL
-	ircEvents.emit('protocol:errLinkchannel', protocolGeneric(msg, {
-		target: msg.args[0] || '',
-		channelName: msg.args[1] || '',
-		message: msg.text
-	}));
-});
-ircEvents.on('cmd:471', function(msg) {	// ERR_CHANNELISFULL
-	ircEvents.emit('protocol:errChannelisfull', protocolGeneric(msg, {
-		target: msg.args[0] || '',
-		channelName: msg.args[1] || '',
-		message: msg.text
-	}));
-});
 
 ircEvents.on('cmd:472', function(msg) {	// ERR_UNKNOWNMODE
 	ircEvents.emit('protocol:errUnknownmode', protocolGeneric(msg, {
@@ -1061,20 +989,7 @@ ircEvents.on('cmd:477', function(msg) {	// ERR_NEEDREGGEDNICK
 	}));
 });
 
-// Empty error handlers 478-479
-ircEvents.on('cmd:478', function(msg) {	// ERR_BANLISTFULL
-	ircEvents.emit('protocol:errBanlistfull', protocolGeneric(msg, {
-		target: msg.args[0] || '',
-		channelName: msg.args[1] || '',
-		message: msg.text
-	}));
-});
-ircEvents.on('cmd:479', function(msg) {	// ERR_LINKFAIL
-	ircEvents.emit('protocol:errLinkfail', protocolGeneric(msg, {
-		target: msg.args[0] || '',
-		message: msg.text
-	}));
-});
+
 
 ircEvents.on('cmd:480', function(msg) {	// ERR_CANNOTKNOCK
 	ircEvents.emit('protocol:errCannotknock', protocolGeneric(msg, {
@@ -1106,12 +1021,7 @@ ircEvents.on('cmd:486', function(msg) {	// ERR_NONONREG
 	}));
 });
 
-ircEvents.on('cmd:487', function(msg) {	// ERR_NOTFORUSERS
-	ircEvents.emit('protocol:errNotforusers', protocolGeneric(msg, {
-		target: msg.args[0] || '',
-		message: msg.text
-	}));
-});
+
 
 ircEvents.on('cmd:489', function(msg) {	// ERR_SECUREONLYCHAN
 	ircEvents.emit('protocol:errSecureonlychan', protocolGeneric(msg, {
@@ -1121,25 +1031,7 @@ ircEvents.on('cmd:489', function(msg) {	// ERR_SECUREONLYCHAN
 	}));
 });
 
-// Empty error handlers 490-492
-ircEvents.on('cmd:490', function(msg) {	// ERR_NOSWEAR
-	ircEvents.emit('protocol:errNoswear', protocolGeneric(msg, {
-		target: msg.args[0] || '',
-		message: msg.text
-	}));
-});
-ircEvents.on('cmd:491', function(msg) {	// ERR_NOOPERHOST
-	ircEvents.emit('protocol:errNooperhost', protocolGeneric(msg, {
-		target: msg.args[0] || '',
-		message: msg.text
-	}));
-});
-ircEvents.on('cmd:492', function(msg) {	// ERR_NOCTCP
-	ircEvents.emit('protocol:errNoctcp', protocolGeneric(msg, {
-		target: msg.args[0] || '',
-		message: msg.text
-	}));
-});
+
 
 ircEvents.on('cmd:499', function(msg) {	// ERR_CHANOWNPRIVNEEDED
 	ircEvents.emit('protocol:errChanownprivneeded', protocolGeneric(msg, {
@@ -1149,81 +1041,7 @@ ircEvents.on('cmd:499', function(msg) {	// ERR_CHANOWNPRIVNEEDED
 	}));
 });
 
-// Empty error handlers 500-521
-ircEvents.on('cmd:500', function(msg) {	// ERR_TOOMANYJOINS
-	ircEvents.emit('protocol:errToomanyjoins', protocolGeneric(msg, {
-		target: msg.args[0] || '',
-		channelName: msg.args[1] || '',
-		message: msg.text
-	}));
-});
-ircEvents.on('cmd:501', function(msg) {	// ERR_UMODEUNKNOWNFLAG
-	ircEvents.emit('protocol:errUmodeunknownflag', protocolGeneric(msg, {
-		target: msg.args[0] || '',
-		mode: msg.args[1] || '',
-		message: msg.text
-	}));
-});
-ircEvents.on('cmd:502', function(msg) {	// ERR_USERSDONTMATCH
-	ircEvents.emit('protocol:errUsersdontmatch', protocolGeneric(msg, {
-		target: msg.args[0] || '',
-		message: msg.text
-	}));
-});
-ircEvents.on('cmd:511', function(msg) {	// ERR_SILELISTFULL
-	ircEvents.emit('protocol:errSilelistfull', protocolGeneric(msg, {
-		target: msg.args[0] || '',
-		message: msg.text
-	}));
-});
-ircEvents.on('cmd:512', function(msg) {	// ERR_TOOMANYWATCH
-	ircEvents.emit('protocol:errToomanywatch', protocolGeneric(msg, {
-		target: msg.args[0] || '',
-		message: msg.text
-	}));
-});
-ircEvents.on('cmd:513', function(msg) {	// ERR_NEEDPONG
-	ircEvents.emit('protocol:errNeedpong', protocolGeneric(msg, {
-		target: msg.args[0] || '',
-		message: msg.text
-	}));
-});
-ircEvents.on('cmd:514', function(msg) {	// ERR_TOOMANYDCC
-	ircEvents.emit('protocol:errToomanydcc', protocolGeneric(msg, {
-		target: msg.args[0] || '',
-		message: msg.text
-	}));
-});
-ircEvents.on('cmd:517', function(msg) {	// ERR_DISABLED
-	ircEvents.emit('protocol:errDisabled', protocolGeneric(msg, {
-		target: msg.args[0] || '',
-		message: msg.text
-	}));
-});
-ircEvents.on('cmd:518', function(msg) {	// ERR_NOINVITE
-	ircEvents.emit('protocol:errNoinvite', protocolGeneric(msg, {
-		target: msg.args[0] || '',
-		message: msg.text
-	}));
-});
-ircEvents.on('cmd:519', function(msg) {	// ERR_ADMONLY
-	ircEvents.emit('protocol:errAdmonly', protocolGeneric(msg, {
-		target: msg.args[0] || '',
-		message: msg.text
-	}));
-});
-ircEvents.on('cmd:520', function(msg) {	// ERR_OPERONLY
-	ircEvents.emit('protocol:errOperonly', protocolGeneric(msg, {
-		target: msg.args[0] || '',
-		message: msg.text
-	}));
-});
-ircEvents.on('cmd:521', function(msg) {	// ERR_LISTSYNTAX
-	ircEvents.emit('protocol:errListsyntax', protocolGeneric(msg, {
-		target: msg.args[0] || '',
-		message: msg.text
-	}));
-});
+
 
 ircEvents.on('cmd:531', function(msg) {	// ERR_CANTSENDTOUSER
 	ircEvents.emit('protocol:errCantsendtouser', protocolGeneric(msg, {
@@ -1233,85 +1051,7 @@ ircEvents.on('cmd:531', function(msg) {	// ERR_CANTSENDTOUSER
 	}));
 });
 
-// Empty handlers 597-609
-ircEvents.on('cmd:597', function(msg) {	// RPL_REAWAY
-	ircEvents.emit('protocol:rplReaway', protocolGeneric(msg, {
-		target: msg.args[0] || '',
-		message: msg.text
-	}));
-});
-ircEvents.on('cmd:598', function(msg) {	// RPL_GONEAWAY
-	ircEvents.emit('protocol:rplGoneaway', protocolGeneric(msg, {
-		target: msg.args[0] || '',
-		message: msg.text
-	}));
-});
-ircEvents.on('cmd:599', function(msg) {	// RPL_NOTAWAY
-	ircEvents.emit('protocol:rplNotaway', protocolGeneric(msg, {
-		target: msg.args[0] || '',
-		message: msg.text
-	}));
-});
-ircEvents.on('cmd:600', function(msg) {	// RPL_LOGON
-	ircEvents.emit('protocol:rplLogon', protocolGeneric(msg, {
-		target: msg.args[0] || '',
-		message: msg.text
-	}));
-});
-ircEvents.on('cmd:601', function(msg) {	// RPL_LOGOFF
-	ircEvents.emit('protocol:rplLogoff', protocolGeneric(msg, {
-		target: msg.args[0] || '',
-		message: msg.text
-	}));
-});
-ircEvents.on('cmd:602', function(msg) {	// RPL_WATCHOFF
-	ircEvents.emit('protocol:rplWatchoff', protocolGeneric(msg, {
-		target: msg.args[0] || '',
-		message: msg.text
-	}));
-});
-ircEvents.on('cmd:603', function(msg) {	// RPL_WATCHSTAT
-	ircEvents.emit('protocol:rplWatchstat', protocolGeneric(msg, {
-		target: msg.args[0] || '',
-		message: msg.text
-	}));
-});
-ircEvents.on('cmd:604', function(msg) {	// RPL_NOWON
-	ircEvents.emit('protocol:rplNowon', protocolGeneric(msg, {
-		target: msg.args[0] || '',
-		message: msg.text
-	}));
-});
-ircEvents.on('cmd:605', function(msg) {	// RPL_NOWOFF
-	ircEvents.emit('protocol:rplNowoff', protocolGeneric(msg, {
-		target: msg.args[0] || '',
-		message: msg.text
-	}));
-});
-ircEvents.on('cmd:606', function(msg) {	// RPL_WATCHLIST
-	ircEvents.emit('protocol:rplWatchlist', protocolGeneric(msg, {
-		target: msg.args[0] || '',
-		message: msg.text
-	}));
-});
-ircEvents.on('cmd:607', function(msg) {	// RPL_ENDOFWATCHLIST
-	ircEvents.emit('protocol:rplEndofwatchlist', protocolGeneric(msg, {
-		target: msg.args[0] || '',
-		message: msg.text
-	}));
-});
-ircEvents.on('cmd:608', function(msg) {	// RPL_CLEARWATCH
-	ircEvents.emit('protocol:rplClearwatch', protocolGeneric(msg, {
-		target: msg.args[0] || '',
-		message: msg.text
-	}));
-});
-ircEvents.on('cmd:609', function(msg) {	// RPL_NOWISAWAY
-	ircEvents.emit('protocol:rplNowisaway', protocolGeneric(msg, {
-		target: msg.args[0] || '',
-		message: msg.text
-	}));
-});
+
 
 ircEvents.on('cmd:671', function(msg) {	// RPL_WHOISSECURE
 	ircEvents.emit('protocol:rplWhoissecure', protocolGeneric(msg, {
@@ -1410,24 +1150,22 @@ ircEvents.on('cmd:906', function(msg) {	// ERR_SASLABORTED
 });
 
 ircEvents.on('cmd:972', function(msg) {	// ERR_CANNOTDOCOMMAND
-	ircEvents.emit('protocol:error', {
-		command: msg.command,
-		type: 'cannotDoCommand',
-		target: msg.args[1], // Assuming args[1] is the channel/target
-		message: msg.text,
-		user: msg.user
-	});
+    ircEvents.emit('protocol:errCannotDoCommand', protocolGeneric(msg, {
+        target: msg.args[1] || '',
+        message: msg.text // Pass the raw message for domain/UI to handle details
+    }));
 });
 
 ircEvents.on('cmd:974', function(msg) {	// ERR_CANNOTCHANGECHANMODE
-	ircEvents.emit('protocol:error', {
-		command: msg.command,
-		type: 'cannotChangeChanMode',
-		target: msg.args[1], // Assuming args[1] is the channel/target
-		message: msg.text,
-		user: msg.user
-	});
+    ircEvents.emit('protocol:errCannotChangeChanMode', protocolGeneric(msg, {
+        target: msg.args[1] || '',
+        message: msg.text // Pass the raw message for domain/UI to handle details
+    }));
 });
+
+
+
+
 
 // ============================================================================
 // CTCP HANDLERS

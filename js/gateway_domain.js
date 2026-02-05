@@ -143,24 +143,15 @@ ircEvents.on('client:processOwnChannelList', function(data) {
         channelNames.forEach( function(channame){
             var channel = channame.match(/#[^ ]*/);
             if(channel){
-                if(gateway.findChannel(channel[0])) { // gateway.findChannel is UI
-                    gateway.findChannel(channel[0]).rejoin(); // UI action
-                } else {
-                    ircEvents.emit('domain:findOrCreateTab', { tabName: channel[0], setActive: false, time: new Date() }); // Emit domain event
-                }
+                ircEvents.emit('domain:ensureChannelTabExists', { channelName: channel[0], time: new Date() });
+
                 ircCommand.channelNames(channel[0]);
                 ircCommand.channelTopic(channel[0]);
                 ircCommand.who(channel[0]);
             	}
             });
 
-            ircEvents.on('channel:requestChatHistory', function(data) {
-                    ircCommand.channelHistory(data.channelName, data.limit);
-                });
 
-                ircEvents.on('channel:requestWho', function(data) {
-                    ircCommand.who(data.channelName);
-                });
     }
 });
 
@@ -399,13 +390,13 @@ ircEvents.on('protocol:failCommand', function(data) {
 ircEvents.on('protocol:errorCommand', function(data) {
 	var msg = data.raw;
 	domainLastError = data.message; // Update domainLastError
-	ircEvents.emit('client:disconnected', { reason: data.message }); // Abstract gateway.disconnected
+	ircEvents.emit('connection:disconnected', { reason: data.message }); // Abstract gateway.disconnected
 
 	var expr = /^Closing Link: [^ ]+\[([^ ]+)\] \(User has been banned from/;
 	var match = expr.exec(data.message);
 	if(match){
 		// Re-emit as a domain-level error for global ban
-		ircEvents.emit('client:errorMessage', {
+		ircEvents.emit('error:globalBan', {
 			code: '465', // Using a generic error code for global ban as no specific code for it
 			type: 'globalBan',
 			message: data.message,
@@ -425,11 +416,11 @@ ircEvents.on('protocol:errorCommand', function(data) {
 	domainConnectStatus = 'disconnected'; // Use domainConnectStatus
 
 	if(data.message.match(/\(NickServ \(RECOVER command used by [^ ]+\)\)$/) || data.message.match(/\(NickServ \(Użytkownik [^ ]+\ użył komendy RECOVER\)\)\$/)){
-		ircEvents.emit('client:reconnectNeeded'); // This event is still relevant for the UI
+		ircEvents.emit('connection:reconnectNeeded'); // This event is still relevant for the UI
 		ircEvents.emit('nickserv:recoverCommandTriggered'); // This is a domain event
 	} else {
-		ircEvents.emit('client:serverDisconnected', { reason: data.message }); // This event is still relevant for the UI
-		ircEvents.emit('client:reconnectRequested'); // This is a domain event
+		ircEvents.emit('connection:serverDisconnected', { reason: data.message }); // This event is still relevant for the UI
+		ircEvents.emit('connection:reconnectRequested'); // This is a domain event
 	}
 });
 
@@ -469,33 +460,28 @@ ircEvents.on('protocol:joinCommand', function(data) {
     var channelName = data.channelName;
     var user = msg.user; // User who joined
 
-    var channel = gateway.findChannel(channelName);
-    if (!channel) {
-        // channel = gateway.findOrCreate(channelName); // This should be domain driven
-        ircEvents.emit('domain:findOrCreateTab', { tabName: channelName, setActive: false, time: msg.time });
-        channel = gateway.findChannel(channelName); // Re-find after domain creates it
-    }
-    if (channel && user) {
-        channel.addUser(user);
-        ircEvents.emit('channel:userJoined', {
-            channelName: channel.name,
-            channelId: channel.id,
+    // The domain layer ensures the UI knows about the channel, if it doesn't already.
+    // This is a UI concern triggered by a domain event.
+    ircEvents.emit('domain:findOrCreateTab', { tabName: channelName, setActive: false, time: msg.time });
+
+    // Emit event that a user has joined a channel for the UI to update its channel object.
+    ircEvents.emit('channel:userJoined', {
+        channelName: channelName,
+        nick: user.nick,
+        ident: user.ident,
+        host: user.host,
+        raw: msg
+    });
+
+    if (user === guser.me) { // If self joined
+        ircEvents.emit('user:selfJoinedChannel', {
+            channelName: channelName,
             nick: user.nick,
             ident: user.ident,
             host: user.host,
+            time: msg.time,
             raw: msg
         });
-        if (user === guser.me) { // If self joined
-            ircEvents.emit('user:selfJoinedChannel', {
-                channelName: channel.name,
-                channelId: channel.id,
-                nick: user.nick,
-                ident: user.ident,
-                host: user.host,
-                time: msg.time,
-                raw: msg
-            });
-        }
     }
 });
 
@@ -506,22 +492,15 @@ ircEvents.on('protocol:kickCommand', function(data) {
     var reason = data.reason;
     var byNick = msg.user.nick;
 
-    var channel = gateway.findChannel(channelName);
-    if (channel) {
-        var kickedUser = channel.findUser(kickedNick);
-        if (kickedUser) {
-            channel.removeUser(kickedUser);
-        }
-        ircEvents.emit('channel:userKicked', {
-            channelName: channel.name,
-            channelId: channel.id,
-            kickedNick: kickedNick,
-            byNick: byNick,
-            reason: reason,
-            isSelfKicked: (kickedNick === guser.nick), // Indicate if self was kicked
-            raw: msg
-        });
-    }
+    // Emit event that a user was kicked from a channel for the UI to update its channel object.
+    ircEvents.emit('channel:userKicked', {
+        channelName: channelName,
+        kickedNick: kickedNick,
+        byNick: byNick,
+        reason: reason,
+        isSelfKicked: (kickedNick === guser.nick), // Indicate if self was kicked
+        raw: msg
+    });
 });
 
 ircEvents.on('protocol:metadataCommand', function(data) {
@@ -573,12 +552,11 @@ ircEvents.on('protocol:nickCommand', function(data) {
 
     if (msg.user === guser.me) { // Own nick change
         guser.changeNick(newNick);
-        ircEvents.emit('client:myNickChanged', { oldNick: oldNick, newNick: newNick, raw: msg }); // Emit for UI
+        ircEvents.emit('user:myNickChanged', { oldNick: oldNick, newNick: newNick, raw: msg });
     }
 
-    // Update nick everywhere in domain state
-    gateway.changeNick(oldNick, newNick); // Assuming a global changeNick method
-
+    // Emit a domain event that a nick has changed. The UI layer will listen to this
+    // to update all instances of the old nick to the new nick across its views.
     ircEvents.emit('user:nickChanged', {
         oldNick: oldNick,
         newNick: newNick,
@@ -626,22 +604,18 @@ ircEvents.on('protocol:partCommand', function(data) {
     var partMessage = data.partMessage;
     var user = msg.user; // User who parted
 
-    var channel = gateway.findChannel(channelName);
-    if (channel && user) {
-        channel.removeUser(user);
-        if (user === guser.me) { // Own part
-            gateway.removeChannel(channel);
-            ircEvents.emit('user:selfPartedChannel', { // Specific event for UI
-                channelName: channel.name,
-                channelId: channel.id,
-                nick: user.nick,
-                partMessage: partMessage,
-                raw: msg
-            });
-        }
-        ircEvents.emit('channel:userParted', {
-            channelName: channel.name,
-            channelId: channel.id,
+    // Emit event that a user has parted from a channel for the UI to update its channel object.
+    ircEvents.emit('channel:userParted', {
+        channelName: channelName,
+        nick: user.nick,
+        partMessage: partMessage,
+        raw: msg
+    });
+
+    if (user === guser.me) { // If self parted
+        // Emit specific event for UI to handle its own channel removal
+        ircEvents.emit('user:selfPartedChannel', {
+            channelName: channelName,
             nick: user.nick,
             partMessage: partMessage,
             raw: msg
@@ -656,20 +630,19 @@ ircEvents.on('protocol:privmsgCommand', function(data) {
     var user = msg.user; // Sender
 
     if (target.startsWith('#') || target.startsWith('&')) { // Channel message
-        var channel = gateway.findChannel(target);
-        if (channel) {
-            ircEvents.emit('channel:message', {
-                channelName: channel.name,
-                channelId: channel.id,
-                nick: user.nick,
-                message: message,
-                raw: msg
-            });
-        }
-    } else { // Private message (query)
-        var query = gateway.findQuery(target) || gateway.findOrCreateQuery(user.nick);
-        ircEvents.emit('query:message', {
+        // Emit event that a message was sent to a channel for the UI to handle.
+        ircEvents.emit('channel:message', {
+            channelName: target, // Use target directly as channel name
             nick: user.nick,
+            message: message,
+            raw: msg
+        });
+    } else { // Private message (query)
+        // Emit event that a message was sent to a user for the UI to handle.
+        // The UI will be responsible for finding or creating the query tab.
+        ircEvents.emit('query:message', {
+            nick: user.nick, // Sender is the nick
+            targetNick: target, // Target of the message
             message: message,
             raw: msg
         });
@@ -682,28 +655,16 @@ ircEvents.on('protocol:quitCommand', function(data) {
     var user = msg.user; // User who quit
 
     if (user) {
-        // Collect channels the user was in to pass to UI for removal
-        var userChannels = [];
-        for (var c in gateway.channels) {
-            if (gateway.channels[c].findUser(user.nick)) {
-                userChannels.push({ name: gateway.channels[c].name, id: gateway.channels[c].id });
-            }
-        }
-
-        gateway.removeUserFromAllChannels(user);
-
         if (user === guser.me) { // Own quit
             ircEvents.emit('user:selfQuit', {
                 nick: user.nick,
                 quitMessage: quitMessage,
-                channels: userChannels, // Pass channels user was in
                 raw: msg
             });
         } else { // Other user quit
             ircEvents.emit('user:otherQuit', {
                 user: { nick: user.nick, ident: user.ident, host: user.host }, // Pass relevant user info
                 quitMessage: quitMessage,
-                channels: userChannels,
                 raw: msg
             });
         }
@@ -728,20 +689,14 @@ ircEvents.on('protocol:topicCommand', function(data) {
     var topic = data.topic;
     var user = msg.user; // Who set the topic
 
-    var channel = gateway.findChannel(channelName);
-    if (channel) {
-        channel.setTopic(topic);
-        channel.setTopicSetBy(user.nick); // Assuming user exists and nick is correct
-        channel.setTopicSetDate(msg.time.getTime() / 1000); // Convert Date to Unix timestamp
-        ircEvents.emit('channel:topicChanged', {
-            channelName: channel.name,
-            channelId: channel.id,
-            topic: topic,
-            setBy: user.nick,
-            setDate: msg.time.getTime() / 1000,
-            raw: msg
-        });
-    }
+    // Emit event that a channel's topic has changed for the UI to update its channel object.
+    ircEvents.emit('channel:topicChanged', {
+        channelName: channelName,
+        topic: topic,
+        setBy: user.nick,
+        setDate: msg.time.getTime() / 1000,
+        raw: msg
+    });
 });
 
 // Numeric handlers
@@ -1158,17 +1113,13 @@ ircEvents.on('protocol:rplEndoflist', function(data) {
 
 ircEvents.on('protocol:rplChannelmodeis', function(data) {
     var msg = data.raw;
-    var channel = gateway.findChannel(data.channelName);
-    if (channel) {
-        channel.setModes(data.modes, data.modeParams); // Assuming setModes handles string and array
-        ircEvents.emit('channel:modesUpdated', {
-            channelName: channel.name,
-            channelId: channel.id,
-            modes: data.modes,
-            modeParams: data.modeParams,
-            raw: msg
-        });
-    }
+    // Emit event that a channel's modes have been reported/updated for the UI to update its channel object.
+    ircEvents.emit('channel:modesUpdated', {
+        channelName: data.channelName,
+        modes: data.modes,
+        modeParams: data.modeParams,
+        raw: msg
+    });
 });
 
 ircEvents.on('protocol:rplCreationtime', function(data) {
@@ -1202,33 +1153,24 @@ ircEvents.on('protocol:rplWhoisloggedin', function(data) {
 
 ircEvents.on('protocol:rplNotopic', function(data) {
     var msg = data.raw;
-    var channel = gateway.findChannel(data.channelName);
-    if (channel) {
-        channel.setTopic(''); // No topic set
-        ircEvents.emit('channel:topic', {
-            channelName: channel.name,
-            channelId: channel.id,
-            topic: '',
-            setBy: '',
-            setDate: 0,
-            raw: msg
-        });
-    }
+    // Emit event that a channel has no topic for the UI to update its channel object.
+    ircEvents.emit('channel:topic', {
+        channelName: data.channelName,
+        topic: '',
+        setBy: '',
+        setDate: 0,
+        raw: msg
+    });
 });
 
 ircEvents.on('protocol:rplTopic', function(data) {
     var msg = data.raw;
-    var channel = gateway.findChannel(data.channelName);
-    if (channel) {
-        channel.setTopic(data.topic);
-        // Topic setter and time will come from RPL_TOPICWHOTIME
-        ircEvents.emit('channel:topic', {
-            channelName: channel.name,
-            channelId: channel.id,
-            topic: data.topic,
-            raw: msg
-        });
-    }
+    // Emit event that a channel's topic has been reported for the UI to update its channel object.
+    ircEvents.emit('channel:topic', {
+        channelName: data.channelName,
+        topic: data.topic,
+        raw: msg
+    });
 });
 
 ircEvents.on('protocol:rplTopicwhotime', function(data) {
@@ -1389,75 +1331,60 @@ ircEvents.on('protocol:rplVersion', function(data) {
 
 ircEvents.on('protocol:rplWhoreply', function(data) {
     var msg = data.raw;
-    var channel = gateway.findChannel(data.channelName);
-    if (channel) {
-        var user = channel.findUser(data.nick);
-        if (user) {
-            user.setIdent(data.ident);
-            user.setHost(data.host);
-            user.setServer(data.server); // Corrected
-            user.setRealname(data.realname); // Corrected
-            // Modes string from WHO REPLY is typically in data.flags, needs parsing if storing individual modes
-            // user.setModes(data.flags);
-            ircEvents.emit('user:infoUpdated', {
-                nick: data.nick,
-                channelName: channel.name,
-                ident: data.ident,
-                host: data.host,
-                server: data.server,
-                realname: data.realname,
-                flags: data.flags,
-                raw: msg
-            });
-        } else {
-            user = new users.user(data.nick);
-            user.setIdent(data.ident);
-            user.setHost(data.host);
-            user.setRealname(data.realname);
-            channel.addUser(user);
-            ircEvents.emit('channel:userJoined', {
-                channelName: channel.name,
-                channelId: channel.id,
-                nick: data.nick,
-                ident: data.ident,
-                host: data.host,
-                raw: msg
-            });
-            ircEvents.emit('user:infoUpdated', {
-                nick: data.nick,
-                channelName: channel.name,
-                ident: data.ident,
-                host: data.host,
-                server: data.server,
-                realname: data.realname,
-                flags: data.flags,
-                raw: msg
-            });
-        }
+    // Get domain-level user object. Assume users.getUser creates if not exists.
+    var user = users.getUser(data.nick);
+
+    // Update domain-level user properties
+    user.setIdent(data.ident);
+    user.setHost(data.host);
+    user.setServer(data.server);
+    user.setRealname(data.realname);
+    // user.setModes(data.flags); // This might require further parsing
+
+    // Emit event with updated user info for the UI
+    ircEvents.emit('user:infoUpdated', {
+        nick: data.nick,
+        channelName: data.channelName, // Pass channel name as context for UI
+        ident: data.ident,
+        host: data.host,
+        server: data.server,
+        realname: data.realname,
+        flags: data.flags,
+        raw: msg
+    });
+
+    // If a channel name is provided, signal the UI that the user is in this channel.
+    // The UI layer should handle idempotency (e.g., if the user is already listed).
+    if (data.channelName) {
+        ircEvents.emit('channel:userJoined', {
+            channelName: data.channelName,
+            nick: user.nick,
+            ident: user.ident,
+            host: user.host,
+            raw: msg
+        });
     }
 });
 
 ircEvents.on('protocol:rplNamreply', function(data) {
     var msg = data.raw;
-    var channel = gateway.findChannel(data.channelName);
-    if (channel) {
-        channel.clearUsers(); // Clear and rebuild user list from NAMES
-        var processedNames = [];
-        data.names.forEach(nickEntry => {
-            let modes = '';
-            let nick = nickEntry;
+    var channelName = data.channelName;
+    var processedNames = [];
 
-            // Extract modes/prefixes from nick
-            if (isupport.PREFIX) { // Use ISUPPORT PREFIX if available
-                let prefixes = isupport.PREFIX.match(/\((.*?)\)(.*)/);
-                if (prefixes) {
-                    let modeChars = prefixes[1];
-                    let prefixChars = prefixes[2];
-                    for (let i = 0; i < prefixChars.length; i++) {
-                        if (nick.startsWith(prefixChars[i])) {
-                            modes += modeChars[i];
-                            nick = nick.substring(1);
-                        }
+    data.names.forEach(nickEntry => {
+        let modes = '';
+        let nick = nickEntry;
+
+        // Extract modes/prefixes from nick (this parsing is domain-level)
+        if (isupport.PREFIX) { // Use ISUPPORT PREFIX if available
+            let prefixes = isupport.PREFIX.match(/\((.*?)\)(.*)/);
+            if (prefixes) {
+                let modeChars = prefixes[1];
+                let prefixChars = prefixes[2];
+                for (let i = 0; i < prefixChars.length; i++) {
+                    if (nick.startsWith(prefixChars[i])) {
+                        modes += modeChars[i];
+                        nick = nick.substring(1);
                     }
                 }
             } else { // Fallback for common prefixes
@@ -1465,32 +1392,26 @@ ircEvents.on('protocol:rplNamreply', function(data) {
                 else if (nick.startsWith('+')) { modes += 'v'; nick = nick.substring(1); }
             }
 
-            let user = gateway.findUser(nick);
+            // Get or create domain-level user object (if not already handled by msg.user)
+            let user = users.getUser(nick); // Assuming this is domain-level
             if (!user) {
                 user = new users.user(nick);
             }
-            channel.addUser(user);
-            channel.setUserModes(user, modes);
-            ircEvents.emit('channel:userJoined', {
-                channelName: channel.name,
-                channelId: channel.id,
-                nick: nick,
-                modes: modes,
-                raw: msg
-            });
-            processedNames.push({ nick: nick, modes: modes, ident: user.ident, host: user.host }); // Collect for names list
-        });
-        ircEvents.emit('channel:userListUpdated', {
-            channelName: channel.name,
-            channelId: channel.id,
-            raw: msg
-        });
-        ircEvents.emit('channel:namesReplyComplete', { // Emit consolidated names data
-            channelName: channel.name,
-            users: processedNames,
-            raw: msg
-        });
-    }
+            // Update user properties from NAMREPLY if available (ident, host are often missing here)
+            // This is a domain-level update to the user object's modes
+            // user.setIdent(ident); // Not available from NAMREPLY directly
+            // user.setHost(host);   // Not available from NAMREPLY directly
+
+            processedNames.push({ nick: nick, modes: modes, ident: user.ident, host: user.host });
+        }
+    });
+
+    // Emit a single event with the complete, structured names data
+    ircEvents.emit('channel:namesReplyComplete', {
+        channelName: channelName,
+        users: processedNames,
+        raw: msg
+    });
 });
 
 ircEvents.on('protocol:rplWhospcrpl', function(data) {
@@ -2748,13 +2669,16 @@ ircEvents.on('domain:endCapNegotiation', function() {
 
 ircEvents.on('domain:requestConnect', function(data) {
     console.log('DOMAIN: Request Connect:', data.status, data.initialMessage);
-    // Directly call gateway.connect as it's the protocol layer entry
-    // All relevant state will be updated by protocol:rplWelcome etc.
-    // This assumes gateway.connect is still available globally
+    // Call gateway.connect to initiate the connection. This is considered a domain-level action.
     gateway.connect(data.force);
-    // Update UI dialog
-    $$.closeDialog('connect', 'reconnect');
-    $$.displayDialog('connect', '1', language.connecting, data.initialMessage);
+
+    // Emit UI events to manage connection dialogs.
+    ircEvents.emit('ui:closeDialog', { dialogType: 'connect', dialogId: 'reconnect' });
+    ircEvents.emit('ui:displayConnectDialog', {
+        dialogId: '1',
+        titleKey: 'connecting', // Use a key, UI will fetch translation
+        message: data.initialMessage
+    });
 });
 
 ircEvents.on('domain:setConnectedWhenIdentified', function() {
@@ -2768,12 +2692,9 @@ ircEvents.on('domain:requestPing', function() {
     gateway.forceSend('PING :JavaScript'); // Protocol action
     if(domainPingCnt > 3) {
         domainConnectStatus = 'error';
-        ircEvents.emit('domain:connectionDisconnected', { reason: language.pingTimeout });
-        if($('#autoReconnect').is(':checked')){ // UI setting
-            ircEvents.emit('domain:requestReconnect');
-        } else {
-            $$.displayReconnect(); // UI action
-        }
+        ircEvents.emit('domain:connectionDisconnected', { reasonKey: 'pingTimeout' }); // Pass key instead of string
+        // Emit a UI event asking it to perform reconnect logic based on its settings
+        ircEvents.emit('ui:handleReconnectLogic', { type: 'pingTimeout' }); // Let UI decide based on its settings
         domainPingCnt = 0;
     }
 });
@@ -2781,7 +2702,7 @@ ircEvents.on('domain:requestPing', function() {
 ircEvents.on('domain:connectionDisconnected', function(data) {
     console.log('DOMAIN: Connection Disconnected:', data.reason);
     clearTimeout(domainConnectTimeoutID);
-    if (gateway.websock) {
+    if (gateway.websock) { // Assuming gateway.websock is a domain-level network interface
         gateway.websock.onerror = undefined;
         gateway.websock.onclose = undefined;
     }
@@ -2790,14 +2711,15 @@ ircEvents.on('domain:connectionDisconnected', function(data) {
     domainPingIntervalID = false;
 
     guser.clear(); // Clear domain user state
-    // gateway.updateHistory(); // This is UI, but might be triggered from domain now
 
-    // Clear label callbacks and info
-    for(label in gateway.labelCallbacks){
-        gateway.labelNotProcessed(label, null); // Call labelNotProcessed which clears callbacks
-    }
-    // gateway.labelCallbacks = {}; // Cleared by labelNotProcessed
-    // gateway.labelInfo = {}; // Cleared by labelNotProcessed
+    // Emit events for UI to handle various cleanups and messages
+    ircEvents.emit('ui:updateHistory'); // For gateway.updateHistory()
+    ircEvents.emit('ui:clearLabelCallbacks'); // For gateway.labelCallbacks cleanup
+    ircEvents.emit('ui:disconnectCleanupChannels', { reason: data.reason }); // For channel parts and append messages
+    ircEvents.emit('ui:statusWindowMessage', { messageKey: 'error', messageParams: [data.reason] }); // For status window message
+
+    // Domain-level cleanup of domainBatch
+    domainBatch = {}; // Clear domainBatch object directly
 
     if(guser.nickservnick != ''){
         irc.lastNick = guser.nick;
@@ -2808,12 +2730,6 @@ ircEvents.on('domain:connectionDisconnected', function(data) {
         return;
     }
     domainDisconnectMessageShown = 1;
-    // Loop through channels and tell UI to part/append message
-    for(c in gateway.channels) { // gateway.channels is UI list
-        gateway.channels[c].part(); // UI action
-        gateway.channels[c].appendMessage(language.messagePatterns.error, [$$.niceTime(), data.reason]); // UI action
-    }
-    gateway.statusWindow.appendMessage(language.messagePatterns.error, [$$.niceTime(), data.reason]); // UI action
 });
 
 ircEvents.on('domain:connectionInitiated', function() {
@@ -2838,12 +2754,10 @@ ircEvents.on('domain:websocketError', function(data) {
     setTimeout(function(){
         if(data.currentStatus != 'disconnected' && data.currentStatus != 'error' && data.currentStatus != 'banned'){
             domainConnectStatus = 'error';
-            ircEvents.emit('domain:connectionDisconnected', { reason: language.lostNetworkConnection });
-            if(data.autoReconnect){
-                ircEvents.emit('domain:requestReconnect');
-            } else {
-                $$.displayReconnect();
-            }
+            // Emit domain:connectionDisconnected with a reason key
+            ircEvents.emit('domain:connectionDisconnected', { reasonKey: 'lostNetworkConnection' });
+            // Emit a UI event to handle reconnect logic based on UI settings
+            ircEvents.emit('ui:handleReconnectLogic', { type: 'websocketError', autoReconnect: data.autoReconnect });
         }
     }, 1000);
 });
@@ -2851,14 +2765,23 @@ ircEvents.on('domain:websocketError', function(data) {
 ircEvents.on('domain:connectionTimeoutExpired', function(data) {
     console.log('DOMAIN: Connection Timeout Expired:', data.currentStatus);
     if(data.currentStatus != 'connected'){
-        var button = [ {
-            text: language.reconnect,
-            click: function(){
-                ircEvents.emit('domain:requestStopAndReconnect', { reason: language.connectingTookTooLong });
-            }
-        } ];
-        $$.closeDialog('connect', '1');
-        $$.displayDialog('connect', 'reconnect', language.connecting, '<p>' + language.connectingTooLong + '</p>', button);
+        // Emit UI event to close existing dialog (if any)
+        ircEvents.emit('ui:closeDialog', { dialogType: 'connect', dialogId: '1' });
+
+        // Emit UI event to display a reconnect dialog
+        ircEvents.emit('ui:displayReconnectPrompt', {
+            titleKey: 'connecting', // UI will translate
+            messageKey: 'connectingTooLong', // UI will translate
+            buttons: [
+                {
+                    textKey: 'reconnect', // UI will translate button text
+                    action: 'domain:requestStopAndReconnect', // Domain event to emit on click
+                    actionPayload: { reasonKey: 'connectingTookTooLong' } // Payload for the domain event
+                }
+            ],
+            dialogType: 'connect',
+            dialogId: 'reconnect'
+        });
     }
 });
 
@@ -2898,14 +2821,21 @@ ircEvents.on('domain:processConnectionStatusUpdate', function() {
                     domainRetrySasl = true;
                     ircCommand.performQuick('AUTHENTICATE', ['PLAIN']);
                     var date = new Date();
-                    gateway.statusWindow.appendMessage(language.messagePatterns.SaslAuthenticate, [$$.niceTime(date), language.SASLLoginAttempt]);
+                    ircEvents.emit('ui:statusWindowMessage', {
+                        messageKey: 'SaslAuthenticate',
+                        messageParams: [date.getTime(), 'SASLLoginAttempt'] // Pass raw date, UI to format, and key
+                    });
                 }
             }
         }
         if(domainConnectStatus == 'ghostAndNickSent' && guser.nick == guser.nickservnick){ //ghost się udał
             if(domainNickWasInUse){
-                var html = '<p>' + language.nickNoLongerInUse + '</p>';
-                $$.displayDialog('warning', 'warning', language.warning, html);
+                ircEvents.emit('ui:displayDialog', {
+                    dialogType: 'warning',
+                    dialogId: 'warning',
+                    titleKey: 'warning',
+                    messageKey: 'nickNoLongerInUse'
+                });
                 domainNickWasInUse = false;
             }
             domainConnectStatus = 'identified';
@@ -2921,21 +2851,15 @@ ircEvents.on('domain:processConnectionStatusUpdate', function() {
     if(domainConnectStatus == 'connected'){
         domainSetConnectedWhenIdentified = 0;
         if(!domainJoined) {
-            $('#input').focus(); // UI action
+            ircEvents.emit('ui:focusInput', { target: '#input' }); // Emit UI event for input focus
             ircEvents.emit('domain:requestJoinChannels'); // Request joining channels
             domainJoined = 1;
             domainDisconnectMessageShown = 0; //tutaj resetuję
-            // ustawianie usermode wg konfiguracji dopiero teraz
-            if(guser.umodes.R && !$('#setUmodeR').is(':checked')){ // UI setting
-                ircCommand.umode('-R');
-            } else if(!guser.umodes.R && $('#setUmodeR').is(':checked')){ // UI setting
-                ircCommand.umode('+R');
-            }
-            if(guser.umodes.D && !$('#setUmodeD').is(':checked')){ // UI setting
-                ircCommand.umode('-D');
-            } else if(!guser.umodes.D && $('#setUmodeD').is(':checked')){ // UI setting
-                ircCommand.umode('+D');
-            }
+            // Emit UI event to apply Umode settings based on configuration.
+            // The UI layer will handle querying its settings (e.g., from DOM) and emitting ircCommand.umode.
+            ircEvents.emit('ui:applyUmodeSettings', {
+                currentUmodes: guser.umodes // Pass current domain umodes for UI to compare
+            });
         }
     } else {
         domainJoined = 0;
@@ -2951,16 +2875,21 @@ ircEvents.on('domain:requestJoinChannel', function(data) {
 
 ircEvents.on('domain:requestJoinChannels', function(data) {
     console.log('DOMAIN: Request Join Channels:', data.channels);
-    var allChannels = [];
-    if (guser.channels && guser.channels.length > 0) {
-        allChannels = allChannels.concat(guser.channels);
+    var channelsToJoin = [];
+
+    // Prioritize channels passed in data. If not present, use guser.channels.
+    if (data.channels && data.channels.length > 0) {
+        channelsToJoin = channelsToJoin.concat(data.channels);
+    } else if (guser.channels && guser.channels.length > 0) {
+        channelsToJoin = channelsToJoin.concat(guser.channels);
     }
-    // gateway.channels is UI, we should rely on domain's channel list
-    // For now, assuming gateway.channels still has the domain objects
-    for(var i=0; i<gateway.channels.length; i++){
-        allChannels.push(gateway.channels[i].name);
+
+    // Ensure uniqueness of channel names.
+    channelsToJoin = [...new Set(channelsToJoin)];
+
+    if (channelsToJoin.length > 0) {
+        ircCommand.channelJoin(channelsToJoin);
     }
-    ircCommand.channelJoin(allChannels);
 });
 
 ircEvents.on('domain:requestNickChange', function(data) {
@@ -3006,13 +2935,11 @@ ircEvents.on('domain:updateConnectionParams', function(data) {
 
 ircEvents.on('domain:requestRemoveChannel', function(data) {
     console.log('DOMAIN: Request Remove Channel:', data.channelName);
-    var chan = gateway.findChannel(data.channelName); // UI lookup
-    if (chan) {
-        chan.part(); // UI action, marks as left
-        ircCommand.channelPart(data.channelName, language.leftChannel); // Protocol action
-        // UI cleanup should be triggered by domain event for channel removal
-        ircEvents.emit('channel:removed', { channelName: data.channelName });
-    }
+    // The domain layer initiates the protocol action to part the channel.
+    ircCommand.channelPart(data.channelName, 'leftChannel'); // Use key instead of string
+
+    // Emit event for UI to perform cleanup for the removed channel.
+    ircEvents.emit('channel:removed', { channelName: data.channelName });
 });
 
 ircEvents.on('domain:requestRemoveQuery', function(data) {
@@ -3023,7 +2950,7 @@ ircEvents.on('domain:requestRemoveQuery', function(data) {
 
 ircEvents.on('domain:requestRemoveListWindow', function(data) {
     console.log('DOMAIN: Request Remove List Window:', data.listName);
-    gateway.listWindow = null; // Clear UI reference
+    // The domain layer signals the UI to remove the list window.
     ircEvents.emit('listWindow:removed', { listName: data.listName });
 });
 
@@ -3246,113 +3173,20 @@ ircEvents.on('domain:processUserModes', function(data) {
     // No direct UI update here, UI should listen to user:modesUpdated from guser.setUmode
 });
 
-ircEvents.on('domain:processChannelModes', function(data) {
-    console.warn('DOMAIN: processChannelModes is still a stub. Needs full implementation.');
-    // This is where the complex parsing of channel mode changes (from gateway.parseChannelMode)
-    // and updating the domain's channel object should happen.
-    // It would then emit channel:modesUpdated, which the UI listens to.
-    var args = data.args;
-    var chan = data.channel;
-    var dispType = data.dispType; // 1 - joining, 0 - changed
-    var rawMsg = data.rawMsg;
-    // This is where the actual mode application logic should live
-    // Currently, original code directly updates UI channel.modes, which is bad.
-    // Need to access domain's channel object and update its modes here.
-    // And then emit event for UI.
 
-    var plus = true;
-    var nextarg = 1;
-    var infoText = ''; // For UI display
-    var dir = '';
-
-    for (var i=0; i<args[0].length; i++) {
-        var cchar = args[0][i];
-        switch(cchar){
-            case '+':
-                plus = true;
-                if(dispType == 1){
-                    dir = '';
-                } else {
-                    dir = language.hasSet;
-                }
-                break;
-            case '-':
-                if(dispType == 1) continue;
-                dir = language.hasRemoved;
-                plus = false;
-                break;
-            default:
-                var mtype = 'single';
-                if(modes.argBoth.indexOf(cchar) >= 0){
-                    mtype = 'both';
-                } else if(modes.argAdd.indexOf(cchar) >= 0){
-                    mtype = 'add';
-                } else if(modes.list.indexOf(cchar) >= 0){
-                    mtype = 'list';
-                } else if(modes.user.indexOf(cchar) >= 0){
-                    mtype = 'user';
-                }
-                
-                switch(mtype){
-                    case 'both': case 'list':
-                        infoText = infoText.apList(dir+getModeInfo(cchar, dispType)+(args[nextarg]?(' '+args[nextarg]):''));
-                        if(mtype != 'list'){
-                            // Update domain's channel mode
-                            // if(plus){ chan.modes[cchar] = args[nextarg]; } else { chan.modes[cchar] = false; }
-                        }
-                        nextarg++;
-                        break;
-                    case 'add':
-                        if(plus){
-                            // Update domain's channel mode
-                            // chan.modes[cchar] = args[nextarg];
-                            infoText = infoText.apList(dir+getModeInfo(cchar+'-add', dispType)+(args[nextarg]?(' '+args[nextarg]):''));
-                            nextarg++;
-                        } else {
-                            infoText = infoText.apList(dir+getModeInfo(cchar+'-remove', dispType));
-                            // chan.modes[cchar] = false;
-                        }
-                        break;
-                    case 'user':
-                        // Update domain's user mode on channel
-                        infoText = infoText.apList((plus?language.gave:language.taken)+getModeInfo(cchar, dispType)+(plus?language.forUser:'')+' <span class="modevictim">'+args[nextarg]+'</span>');
-                        nextarg++;
-                        break;
-                    default:
-                        // Update domain's channel mode
-                        // chan.modes[cchar] = plus;
-                        infoText = infoText.apList(dir+' '+getModeInfo(cchar, dispType));
-                        break;
-                }
-                break;
-        }
-    }
-    // Emit a generic event for UI that modes were updated, including the infoText
-    ircEvents.emit('channel:modesUpdated', { channelName: chan.name, byNick: rawMsg.user.nick, modeString: args[0], modeParams: args.slice(1), infoText: infoText, raw: rawMsg });
-});
 
 // --- Other Domain Logic ---
 
 ircEvents.on('domain:findOrCreateTab', function(data) {
-    console.log('DOMAIN: Find or Create Tab request:', data.tabName, data.setActive);
-    var tab = gateway.find(data.tabName); // UI lookup
-    if (!tab) {
-        if (data.tabName.charAt(0) == '#') {
-            tab = new Channel(data.tabName);
-            gateway.channels.push(tab);
-            gateway.sortChannelTabs(); // UI action
-        } else {
-            tab = new Query(data.tabName);
-            gateway.queries.push(tab);
-        }
-        // Signal UI that a new tab was created
-        ircEvents.emit('ui:tabCreated', { tabName: data.tabName, tabType: data.tabName.charAt(0) == '#' ? 'channel' : 'query' });
-    }
-    if (data.setActive) {
-        gateway.switchTab(data.tabName); // UI action
-    }
-    // Return the UI tab object to the caller (though event-driven, sometimes direct return is needed)
-    data.callback(tab); // Assuming a callback can be provided
+    console.log('DOMAIN: Request to Find or Create Tab:', data.tabName, 'Set Active:', data.setActive);
+    // The domain layer requests the UI layer to find or create a tab.
+    ircEvents.emit('ui:findOrCreateTab', {
+        tabName: data.tabName,
+        setActive: data.setActive,
+        time: data.time // Pass original time if needed
+    });
+    // Remove data.callback(tab) as domain layer should not receive UI objects.
+    // If a response is absolutely needed, it should be asynchronous via another event.
 });
 
 ircEvents.on('domain:tabSwitched', function(data) {
@@ -3363,9 +3197,14 @@ ircEvents.on('domain:tabSwitched', function(data) {
 });
 
 ircEvents.on('domain:findTab', function(data) {
-    console.log('DOMAIN: Find Tab request:', data.tabName);
-    var tab = gateway.find(data.tabName); // UI lookup
-    data.callback(tab); // Return via callback
+    console.log('DOMAIN: Request to Find Tab:', data.tabName);
+    // The domain layer requests the UI layer to find a tab.
+    ircEvents.emit('ui:findTab', {
+        tabName: data.tabName,
+        // If a response is needed, the UI should emit a domain-level event with the result (e.g., 'domain:tabFound', { exists: true/false })
+        // or a ui-level event with relevant UI information (e.g., 'ui:tabFoundInfo', { id: tab.id, type: tab.type })
+    });
+    // Removed data.callback(tab) as domain layer should not receive UI objects.
 });
 
 ircEvents.on('domain:isHistoryBatch', function(data) {
@@ -3395,60 +3234,33 @@ ircEvents.on('domain:addLabelToHide', function(data) {
 ircEvents.on('domain:processStorageEvent', function(data) {
     console.log('DOMAIN: Processing storage event:', data.evt.key);
     var evt = data.evt;
-    // This logic needs to manage cross-tab connection checks and join requests
+
     if(!evt.newValue){
         return;
     }
-    if(conn.waitForAlive && evt.key == 'checkAliveReply'){ // conn is global
+
+    if(conn.waitForAlive && evt.key == 'checkAliveReply'){
         conn.waitForAlive = false;
-        
-        var chan = guser.channels[0];
-        // UI logic, but domain needs to pass data for it
-        var html = language.alreadyConnectedAs + '<strong>'+he(evt.newValue)+'</strong>! ' + language.cantOpenMultipleInstances;
-        $('#not_connected_wrapper').fadeOut(400); // UI action
-        
+        // Signal UI to display the "already connected" message
+        ircEvents.emit('ui:displayAlreadyConnectedMessage', { nick: evt.newValue, suggestedChannel: guser.channels[0] });
+        // Clear storage after processing
         try {
-            localStorage.removeItem(evt.key); // Storage action
-            if(chan && chan != '#'){
-                html += '<br>' + language.goToTabToJoin + '<strong>'+chan+'</strong>.';
-                localStorage.setItem('reqChannelJoin', guser.channels[0]); // Storage action
+            localStorage.removeItem(evt.key);
+            // This is problematic. If guser.channels[0] is #, it should not set reqChannelJoin
+            if(guser.channels && guser.channels.length > 0 && guser.channels[0] != '#'){
+                localStorage.setItem('reqChannelJoin', guser.channels[0]);
             }
         } catch(e) {}
-
-        $$.displayDialog('connect', '0', language.alreadyConnected, html); // UI action
-    }
-    if(domainConnectStatus == 'connected'){
+    } else if(domainConnectStatus == 'connected'){
         try {
             if(evt.key == 'checkAlive'){
                 localStorage.removeItem(evt.key);
                 localStorage.setItem('checkAliveReply', guser.nick);
-            }
-            if(evt.key == 'reqChannelJoin'){
+            } else if(evt.key == 'reqChannelJoin'){
                 var chan = evt.newValue;
                 localStorage.removeItem(evt.key);
-                var alreadyJoined = false;
-                for(var i=0; i<gateway.channels.length; i++){ // gateway.channels is UI
-                    if(gateway.channels[i].name.toLowerCase() == chan.toLowerCase()){
-                        alreadyJoined = true;
-                        break;
-                    }
-                }
-                if(!alreadyJoined) {
-                    var html = language.otherTabWantsToJoin + '<strong>'+chan+'</strong>.';
-                    var button = [ {
-                        text: language.cancel,
-                        click: function(){
-                            $(this).dialog('close');
-                        }
-                    }, {
-                        text: language.join,
-                        click: function(){
-                            ircEvents.emit('domain:requestJoinChannel', { channelName: chan, time: new Date() }); // Emit domain event
-                            $(this).dialog('close');
-                        }
-                    } ];
-                    $$.displayDialog('confirm', 'join', language.confirm, html, button); // UI action
-                }
+                // Signal UI to check if channel is already joined and prompt for join
+                ircEvents.emit('ui:promptForChannelJoin', { channelName: chan });
             }
         } catch(e) {}
     }
@@ -3459,33 +3271,20 @@ ircEvents.on('domain:processNetsplitEvents', function(data) {
     domainQuitTimeout = false;
     if(data.quitQueue.length == 0) return;
     
-    // Process netsplit logic here (previously in gateway.processNetsplit)
-    for(c in gateway.channels){ // gateway.channels is UI
-        var nickNames = '';
-        var chan = gateway.channels[c];
-        var nicklist = chan.nicklist;
-        for(n in data.quitQueue){
-            var nick = data.quitQueue[n].sender.nick;
-            if(!domainNetJoinUsers[chan.name]){ // domainNetJoinUsers
-                domainNetJoinUsers[chan.name] = {};
-            }
-            domainNetJoinUsers[chan.name][nick] = (+new Date)/1000;
-            if(nicklist.findNick(nick)){ // UI nicklist
-                nicklist.removeNick(nick); // UI action
-                if(nickNames != ''){
-                    nickNames += ', ';
-                }
-                nickNames += nick;
-            }
-        }
-        if(nickNames != ''){
-            chan.appendMessage(language.messagePatterns.netsplit, [$$.niceTime(), nickNames]); // UI action
-        }
-    }
+    var quittingNicks = [];
     for(n in data.quitQueue){
         var nick = data.quitQueue[n].sender.nick;
+        quittingNicks.push(nick);
         users.delUser(nick); // Domain user management
     }
+    
+    // Emit a single UI event with all affected nicks.
+    // The UI will then iterate its channels, remove these nicks, and append netsplit messages.
+    ircEvents.emit('ui:handleNetsplitUsers', {
+        nicks: quittingNicks,
+        reasonKey: 'netsplit' // UI will translate
+    });
+
     domainQuitQueue = []; // Clear domain state
 });
 
@@ -3494,90 +3293,95 @@ ircEvents.on('domain:processNetjoinEvents', function(data) {
     domainNetJoinTimeout = false;
     if(data.netJoinQueue.length == 0) return;
     
-    // Process netjoin logic here (previously in gateway.processNetjoin)
-    for(c in gateway.channels){ // gateway.channels is UI
-        var nickNames = '';
-        var chan = gateway.channels[c];
-        var nicklist = chan.nicklist;
-        for(var n=0; n<data.netJoinQueue.length; n++){
-            try {
-                if(data.netJoinQueue[n].chan.toLowerCase() != chan.name.toLowerCase()){
-                    continue;
-                }
-            } catch(e) {
-                console.error(e);
-            }
-            var nick = data.netJoinQueue[n].nick;
-            if(nickNames != ''){
-                nickNames += ', ';
-            }
-            nickNames += nick;
+    // Group nicks by channel for UI event
+    var joinedNicksPerChannel = {};
+    for(var n=0; n<data.netJoinQueue.length; n++){
+        var entry = data.netJoinQueue[n];
+        if (!joinedNicksPerChannel[entry.chan]) {
+            joinedNicksPerChannel[entry.chan] = [];
         }
-        if(nickNames != ''){
-            chan.appendMessage(language.messagePatterns.netjoin, [$$.niceTime(), nickNames]); // UI action
-        }
+        joinedNicksPerChannel[entry.chan].push(entry.nick);
     }
+
+    // Emit a single UI event with all affected nicks per channel.
+    // The UI will then iterate its channels and append netjoin messages.
+    ircEvents.emit('ui:handleNetjoinUsers', {
+        joinedNicksPerChannel: joinedNicksPerChannel,
+        reasonKey: 'netjoin' // UI will translate
+    });
+
     domainNetJoinQueue = []; // Clear domain state
 });
 
 ircEvents.on('domain:processQuitCommand', function(data) {
     console.log('DOMAIN: Processing QUIT command:', data.msg.sender.nick);
     var msg = data.msg;
-    // Process QUIT logic here (previously in gateway.processQuit)
-    if(gateway.findQuery(msg.sender.nick)) { // UI lookup
-        if (!data.showPartQuit) { // UI setting
-            gateway.findQuery(msg.sender.nick).appendMessage(language.messagePatterns.quit, [$$.niceTime(), he(msg.sender.nick), he(msg.sender.ident), he(msg.sender.host), $$.colorize(msg.text)]); // UI action
-        }
-    }
+    var isNetsplit = false;
 
+    // Check for netsplit
     if(msg.text.match(/^[^ :]+\.[^ :]+ [^ :]+\.[^ :]+$/)){
         domainQuitQueue.push(msg); // Use domainQuitQueue
         if(domainQuitTimeout){
             clearTimeout(domainQuitTimeout);
         }
         domainQuitTimeout = setTimeout(function() { ircEvents.emit('domain:processNetsplitEvents', { quitQueue: domainQuitQueue }); }, 700);
-        return false;
+        isNetsplit = true;
     }
     
-    for(c in gateway.channels) { // UI channel list
-        if(gateway.channels[c].nicklist.findNick(msg.sender.nick)) { // UI nicklist lookup
-            gateway.channels[c].nicklist.removeNick(msg.sender.nick); // UI action
-            if (!data.showPartQuit) { // UI setting
-                gateway.channels[c].appendMessage(language.messagePatterns.quit, [$$.niceTime(), he(msg.sender.nick), he(msg.sender.ident), he(msg.sender.host), $$.colorize(msg.text)]); // UI action
-            }
-        }
+    // Emit UI event for all quit messages (query and channel).
+    // The UI will decide based on 'showPartQuit' if it should display.
+    // It will also handle removing from nicklists in all its channels/queries.
+    ircEvents.emit('ui:userQuitMessage', {
+        nick: msg.sender.nick,
+        ident: msg.sender.ident,
+        host: msg.sender.host,
+        quitMessage: msg.text,
+        showPartQuit: data.showPartQuit, // Pass UI setting to UI for decision
+        time: msg.time,
+        isNetsplit: isNetsplit // Indicate if it's a netsplit
+    });
+
+    if (!isNetsplit) {
+        users.delUser(msg.sender.nick); // Domain user management for non-netsplit quits
     }
-    return true;
+    
+    // The original code returned true/false. This event handler does not need to return.
+    // If a caller relies on it, it indicates a synchronous dependency that needs refactoring.
+    // Given it's an event handler, it should not return.
 });
 
 ircEvents.on('domain:processJoinCommand', function(data) {
     console.log('DOMAIN: Processing JOIN command:', data.msg.sender.nick, 'to', data.msg.args[0]);
     var msg = data.msg;
-    // Process JOIN logic here (previously in gateway.processJoin)
-    if('extended-join' in activeCaps){ // activeCaps is domain state
-        var channame = msg.args[0];
-    } else {
-        var channame = msg.text;
-    }
-    var chan = gateway.findChannel(channame); // UI lookup
-    var dlimit = (+new Date)/1000 - 300; // time check
-    if(!chan) return; // Only process if UI channel exists
+    var channame = msg.args[0]; // Assuming msg.args[0] is always the channel name for JOIN
 
+    var dlimit = (+new Date)/1000 - 300; // time check
     var netjoin = false;
-    if(domainNetJoinUsers[channame] && domainNetJoinUsers[channame][msg.sender.nick]){ // domainNetJoinUsers
+
+    // Domain-level netsplit tracking logic
+    if(domainNetJoinUsers[channame] && domainNetJoinUsers[channame][msg.sender.nick]){
         if(domainNetJoinUsers[channame][msg.sender.nick] > dlimit){
             netjoin = true;
         }
         delete domainNetJoinUsers[channame][msg.sender.nick];
     }
+
     if(netjoin){
         domainNetJoinQueue.push({'chan': channame, 'nick': msg.sender.nick}); // domainNetJoinQueue
         if(domainNetJoinTimeout){
             clearTimeout(domainNetJoinTimeout);
         }
         domainNetJoinTimeout = setTimeout(function() { ircEvents.emit('domain:processNetjoinEvents', { netJoinQueue: domainNetJoinQueue }); }, 700);
-    } else if (!data.showPartQuit) { // UI setting
-        chan.appendMessage(language.messagePatterns.join, [$$.niceTime(), he(msg.sender.nick), he(msg.sender.ident), he(msg.sender.host), channame]); // UI action
+    } else {
+        // Emit UI event for user join message
+        ircEvents.emit('ui:userJoinMessage', {
+            nick: msg.sender.nick,
+            ident: msg.sender.ident,
+            host: msg.sender.host,
+            channelName: channame,
+            showPartQuit: data.showPartQuit, // Pass UI setting to UI for decision
+            time: msg.time
+        });
     }
 });
 
@@ -3608,99 +3412,7 @@ ircEvents.on('domain:processUserModes', function(data) {
     // No direct UI update here, UI should listen to user:modesUpdated from guser.setUmode
 });
 
-ircEvents.on('domain:parseChannelMode', function(data) {
-    console.warn('DOMAIN: parseChannelMode event handler needs full implementation.');
-    var args = data.args;
-    var channelName = data.channelName;
-    var dispType = data.dispType; // 1 - joining a channel, 0 - changed when already on a channel
-    var rawMsg = data.rawMsg;
-    var chan = gateway.findChannel(channelName); // UI Channel object
 
-    if (!chan) {
-        console.error('DOMAIN: parseChannelMode - Channel not found:', channelName);
-        return;
-    }
-
-    var plus = true;
-    var nextarg = 1;
-    var infoText = '';
-    var dir = '';
-    // This logic should primarily update the domain's channel modes (e.g., chan.modes property)
-    // and emit relevant domain events. UI will listen to channel:modesUpdated
-    for (var i=0; i<args[0].length; i++) {
-        var cchar = args[0][i];
-        switch(cchar){
-            case '+':
-                plus = true;
-                if(dispType == 1){
-                    dir = '';
-                } else {
-                    dir = language.hasSet;
-                }
-                break;
-            case '-':
-                if(dispType == 1) continue;
-                dir = language.hasRemoved;
-                plus = false;
-                break;
-            default:
-                var mtype = 'single';
-                if(modes.argBoth.indexOf(cchar) >= 0){ // modes global config
-                    mtype = 'both';
-                } else if(modes.argAdd.indexOf(cchar) >= 0){
-                    mtype = 'add';
-                } else if(modes.list.indexOf(cchar) >= 0){
-                    mtype = 'list';
-                } else if(modes.user.indexOf(cchar) >= 0){
-                    mtype = 'user';
-                }
-                
-                switch(mtype){
-                    case 'both': case 'list':
-                        infoText = infoText.apList(dir+getModeInfo(cchar, dispType)+(args[nextarg]?(' '+args[nextarg]):''));
-                        if(mtype != 'list'){
-                            if(plus){
-                                chan.modes[cchar] = args[nextarg]; // Update UI channel modes
-                            } else {
-                                chan.modes[cchar] = false; // Update UI channel modes
-                            }
-                        }
-                        nextarg++;
-                        break;
-                    case 'add':
-                        if(plus){
-                            chan.modes[cchar] = args[nextarg]; // Update UI channel modes
-                            infoText = infoText.apList(dir+getModeInfo(cchar+'-add', dispType)+(args[nextarg]?(' '+args[nextarg]):''));
-                            nextarg++;
-                        } else {
-                            infoText = infoText.apList(dir+getModeInfo(cchar+'-remove', dispType));
-                            chan.modes[cchar] = false; // Update UI channel modes
-                        }
-                        break;
-                    case 'user':
-                        // This updates UI NicklistUser, needs to be more domain-driven
-                        infoText = infoText.apList((plus?language.gave:language.taken)+getModeInfo(cchar, dispType)+(plus?language.forUser:'')+' <span class="modevictim">'+args[nextarg]+'</span>');
-                        nextarg++;
-                        break;
-                    default:
-                        chan.modes[cchar] = plus; // Update UI channel modes
-                        infoText = infoText.apList(dir+' '+getModeInfo(cchar, dispType));
-                        break;
-                }
-                break;
-        }
-    }
-    // Emit event for UI to update display based on modes
-    ircEvents.emit('channel:modesUpdated', {
-        channelName: channelName,
-        channelId: chan.id,
-        modes: args[0], // Pass raw mode string for UI to parse
-        modeParams: args.slice(1),
-        byNick: rawMsg.user.nick, // Need to ensure rawMsg has user.nick
-        infoText: infoText, // Pre-formatted text for display
-        raw: rawMsg
-    });
-});
 
 ircEvents.on('domain:parseIsupport', function() {
     console.warn('DOMAIN: parseIsupport needs full implementation.');
