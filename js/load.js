@@ -52,9 +52,9 @@ var scriptFiles = [
 	'/js/gateway_user_commands.js',
 	'/js/gateway_tabs.js',
 	'/js/gateway_cmds.js',
-	'/js/gateway_def.js',          // Uses: encryptPassword (line 657)
-	'/js/gateway_domain.js', // New domain logic file
-	'/js/gateway_display.js',
+	'/js/gateway_def.js',          // Protocol/UI Coordination: Core gateway object, IRC parser, main connection logic, dispatches cmd:* events
+	'/js/gateway_domain.js',       // Domain Layer: Manages application state, listens to protocol events, emits high-level domain/client/user/channel events.
+	'/js/gateway_display.js',      // UI Layer: Listens to domain-level events and updates the display.
 	'/js/gateway_users.js',
 	'/js/emoji.js',
 	'/js/g-emoji-element.js'
@@ -229,4 +229,3 @@ $('#defaultStyle').remove(); // we can remove the default style now
 // Add preload hints for parallel downloading, then start loading scripts
 addPreloadHints();
 loadScriptsSequentially();
-
