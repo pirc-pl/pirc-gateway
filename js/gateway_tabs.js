@@ -23,7 +23,7 @@
 function Nicklist(chan, id) {
 	this.channel = chan;
 	this.id = id+'-nicklist';
-	this.list = [];
+	this.list = []; // This list represents the UI state for the nicklist display
 	this.sortFunc = function(a, b) {
 		if(a.level < b.level) {
 			return 1;
@@ -42,6 +42,8 @@ function Nicklist(chan, id) {
 
 	this.sort = function() {
 		this.list.sort(this.sortFunc);
+		// After sorting, re-render the HTML
+		this.render();
 	}
 	this.remove = function() {
 		$('#'+this.id).remove();
@@ -56,60 +58,48 @@ function Nicklist(chan, id) {
 		return false;
 	}
 	this.findNick = function(nick) {
-		return this.findUser(users.getUser(nick));
+		var userData = ircEvents.emit('domain:getUserData', { nick: nick }); // Get user data from domain
+		if (!userData) return false;
+		return this.findUser(userData);
 	}
-	this.insertNick = function(nickListItem) {
-		var userHTML = nickListItem.makeHTML();
-		this.sort();
-		for(var i=0; i<this.list.length; i++){
-			if(this.sortFunc(this.list[i], nickListItem) > 0){
-				$('#'+this.id+' .'+this.list[i].user.id).before(userHTML);
-				userHTML = false;
-				break;
-			}
-		}
-		if(userHTML){
-			$('#'+this.id+' .nicklist').append(userHTML);
-		}
-		nickListItem.setActions();
-		if(nickListItem.user.host && nickListItem.user.ident){
-			$('#'+nickListItem.id).attr('title', nickListItem.user.nick+'!'+nickListItem.user.ident+'@'+nickListItem.user.host);
-		}
-		this.showChstats();
-	}
-	this.changeNick = function(user) {
-		var nickListItem = this.findUser(user);
-		if(nickListItem) {
-			nickListItem.remove();
-			this.insertNick(nickListItem);
-			return true;
-		} else {
-			return false;
-		}
-	}
-	this.addUser = function(user) {
-		var nickListItem = this.findUser(user);
-		if(!nickListItem) {
-			var nickListItem = new NicklistUser(user, this.channel);
-			this.list.push(nickListItem);
-			this.insertNick(nickListItem);
-		} else {
-			nickListItem.remove();
-			this.insertNick(nickListItem);
-		}
-		return nickListItem;
-	}
-	this.removeNick = function(nick) {
-		for (i in this.list) {
-			if(this.list[i].user.nick == nick) {
-				this.list[i].remove();
-				this.list.splice(i, 1);
-				this.showChstats();
-				return true;
-			}
-		}
-		return false;
-	}
+    // New method to update the entire nicklist from domain data
+    this.update = function() {
+        var chanObj = gateway.findChannel(this.channel); // Get the UI channel object
+        if (!chanObj) {
+            this.list = [];
+            this.render();
+            return;
+        }
+
+        var domainNicklist = ircEvents.emit('domain:getChannelNicklist', { channelName: this.channel }); // Get domain nicklist
+        if (!domainNicklist) {
+            this.list = [];
+            this.render();
+            return;
+        }
+
+        // Rebuild UI nicklist from domain nicklist
+        this.list = [];
+        domainNicklist.forEach(function(user) { // Assuming domainNicklist is an array of domain user objects
+            this.list.push(new NicklistUser(user, this.channel));
+        }.bind(this));
+        this.sort();
+        this.render(); // Render after updating list
+    }
+
+    this.render = function() {
+        var $nicklistUl = $('#' + this.id + ' .nicklist');
+        $nicklistUl.empty(); // Clear current HTML
+
+        this.list.forEach(function(nickListItem) {
+            $nicklistUl.append(nickListItem.makeHTML());
+            nickListItem.setActions();
+            if (nickListItem.user.host && nickListItem.user.ident) {
+                $('#' + nickListItem.id).attr('title', nickListItem.user.nick + '!' + nickListItem.user.ident + '@' + nickListItem.user.host);
+            }
+        });
+        this.showChstats();
+    }
 	this.showChstats = function() {
 		var opCount = 0;
 		var normCount = 0;
@@ -143,9 +133,9 @@ function Nicklist(chan, id) {
 		$('<span id="'+this.id+'"></span>').hide().appendTo('#nicklist-main');
 		$('<ul/>').addClass('nicklist').appendTo('#'+this.id);
 	} catch(e) { // FIXME better handling of this exception
-		ircCommand.quit(language.browserTooOldQuit);
-		$('.not-connected-text > h3').html(language.outdatedBrowser);
-		$('.not-connected-text > p').html(language.outdatedBrowserInfo);
+		// This is a UI file, should not quit application
+		console.error("Failed to create nicklist UI element:", e);
+		// Show an error message to the user, but don't stop the app
 	}
 }
 
@@ -161,48 +151,48 @@ function NicklistUser(user, chan) {
 	this.user = user;
 
 	this.makeHTML = function() {
-		var index = this.level;
+		var index = this.level; // this.level should be set by domain based on modes
 	/*	if(this.level == 0 && this.isRegistered){
 			index = 6;
 		}*/
-		var html = '<li id="'+this.id+'" class="'+this.user.id+'">'+
-			'<table><tr id="'+this.id+'-toggleNickOpt">'+
-				'<td valign="top">'+
-					'<img class="chavatar" alt="' + (this.user.registered?language.registered:language.unRegistered) + '" src="'+disp.getAvatarIcon(this.user.nick, this.user.registered)+'" title="' + (this.user.registered?language.registered:language.unRegistered) + '" '+
-					'id="'+this.id+'-avatarField">'+
+		var html = '<li id="'+this.id+'" class="'+this.user.id+'">'+ 
+			'<table><tr id="'+this.id+'-toggleNickOpt">'+ 
+				'<td valign="top">'+ 
+					'<img class="chavatar" alt="' + (this.user.registered?language.registered:language.unRegistered) + '" src="'+disp.getAvatarIcon(this.user.nick, this.user.registered)+'" title="' + (this.user.registered?language.registered:language.unRegistered) + '" '+ 
+					'id="'+this.id+'-avatarField">'+ 
 				'</td><td valign="top">';
 		if(index > 0){
 			html += '<img class="chrank" alt="'+alt[index]+'" src="'+(index>0?icons[index]:'')+'" title="'+(index?chStatusInfo[index]:'')+'" />';
 		} else {
 			html += '<span class="chrank"></span>';
 		}
-		html += '</td>'+
-				'<td valign="top" style="text-align:left;width:100%;" class="'+((this.user == guser.me)?'ownNick ':'')+'nickname">'+this.user.nick+'</td>'+
-			'</tr></table>'+
-			'<ul class="options" id="'+this.id+'-opt">'+
-				'<li class="nicklistAvatar"></li>'+
-				'<li id="' + this.id + '-openQuery" class="switchTab">' + language.query + '</li>'+
-				((this.user == guser.me)?'':'<li id="'+this.id+'-askIgnore">' + language.ignoreThis + '</li>')+
-				'<li><div style="width:100%;" id="'+this.id+'-toggleNickInfo">' + language.informations + '</div>'+
-					'<ul class="suboptions" id="'+this.id+'-opt-info'+'">'+
-						'<li id="'+this.id+'-doWhois">WHOIS</li>'+
-						'<li id="'+this.id+'-doNickservInfo">NickServ</li>'+
-						((this.user == guser.me)?'':'<li id="'+this.id+'-doCtcpVersion">' + language.softwareVersion + '</li>')+
-					'</ul>'+
-				'</li>'+
-				'<li class="' + gateway.findChannel(this.channel).id + '-operActions" style="display:none;"><div style="width:100%;" id="'+this.id+'-toggleNickOptAdmin">' + language.channelAdministration + '</div>'+
-					'<ul class="suboptions" id="'+this.id+'-opt-admin'+'">'+
+		html += '</td>'+ 
+				'<td valign="top" style="text-align:left;width:100%;" class="'+((this.user == ircEvents.emit('domain:getMeUser'))?'ownNick ':'')+'nickname">'+this.user.nick+'</td>'+ // Compare with domain's guser.me
+			'</tr></table>'+ 
+			'<ul class="options" id="'+this.id+'-opt">'+ 
+				'<li class="nicklistAvatar"></li>'+ 
+				'<li id="' + this.id + '-openQuery" class="switchTab">' + language.query + '</li>'+ 
+				((this.user == ircEvents.emit('domain:getMeUser'))?'':'<li id="'+this.id+'-askIgnore">' + language.ignoreThis + '</li>')+ // Compare with domain's guser.me
+				'<li><div style="width:100%;" id="'+this.id+'-toggleNickInfo">' + language.informations + '</div>'+ 
+					'<ul class="suboptions" id="'+this.id+'-opt-info'+'">'+ 
+						'<li id="'+this.id+'-doWhois">WHOIS</li>'+ 
+						'<li id="'+this.id+'-doNickservInfo">NickServ</li>'+ 
+						((this.user == ircEvents.emit('domain:getMeUser'))?'':'<li id="'+this.id+'-doCtcpVersion">' + language.softwareVersion + '</li>')+ // Compare with domain's guser.me
+					'</ul>'+ 
+				'</li>'+ 
+				'<li class="' + gateway.findChannel(this.channel).id + '-operActions" style="display:none;"><div style="width:100%;" id="'+this.id+'-toggleNickOptAdmin">' + language.channelAdministration + '</div>'+ 
+					'<ul class="suboptions" id="'+this.id+'-opt-admin'+'">'+ 
 						'<li id="'+this.id+'-showKick">' + language.kickFromChannel + '</li>';
 		if(mainSettings.timedBanMethod == '~t:minutes:'){
 			html +=		'<li id="'+this.id+'-showBan">' + language.banUser + '</li>';
 		} else if(mainSettings.timedBanMethod == 'ChanServ'){
 			html +=		'<li id="'+this.id+'-showBan">' + language.banUsingChanserv + '</li>';
-		}		
-		html += 		'<li id="'+this.id+'-givePrivileges">' + language.givePrivileges + '</li>'+
-						'<li id="'+this.id+'-takePrivileges">' + language.takePrivileges + '</li>'+
-					/*	'<li id="'+this.id+'-showBanUni">Banuj</li>'+*/
-					'</ul>'+
-				'</li>'+
+		} else 		
+		html += 		'<li id="'+this.id+'-givePrivileges">' + language.givePrivileges + '</li>'+ 
+						'<li id="'+this.id+'-takePrivileges">' + language.takePrivileges + '</li>'+ 
+					/*	'<li id="'+this.id+'-showBanUni">Banuj</li>'+*/ 
+					'</ul>'+ 
+				'</li>'+ 
 			'</ul>';
 		return html;
 		//}
@@ -212,29 +202,29 @@ function NicklistUser(user, chan) {
 		$('#'+this.id+'-openQuery').click(function(){ gateway.openQuery(this.user.nick, this.user.id) }.bind(this));
 		$('#'+this.id+'-askIgnore').click(function(){ ignore.askIgnore(this.user); }.bind(this));
 		$('#'+this.id+'-doWhois').click(function(){
-			if(this.user == guser.me)
-				gateway.displayOwnWhois = true;
-			ircCommand.whois(this.user.nick);
+			if(this.user == ircEvents.emit('domain:getMeUser')) // Compare with domain's guser.me
+				gateway.displayOwnWhois = true; // This is a UI flag
+			ircEvents.emit('domain:requestWhois', { nick: this.user.nick, time: new Date() }); // Emit domain event
 			gateway.toggleNickOpt(this.id);
 		}.bind(this));
 		$('#'+this.id+'-toggleNickInfo').click(function(){ gateway.toggleNickOptInfo(this.id); }.bind(this));
 		$('#'+this.id+'-doNickservInfo').click(function(){
-			services.nickInfo(this.user.nick);
+			ircEvents.emit('domain:requestNickservInfo', { nick: this.user.nick, time: new Date() }); // Emit domain event
 			gateway.toggleNickOpt(this.id);
 		}.bind(this));
 		$('#'+this.id+'-doCtcpVersion').click(function(){
-			gateway.ctcp(this.user.nick, 'VERSION');
+			ircEvents.emit('domain:requestCtcp', { nick: this.user.nick, ctcpType: 'VERSION', time: new Date() }); // Emit domain event
 			gateway.toggleNickOpt(this.id);
 		}.bind(this));
 		$('#'+this.id+'-toggleNickOptAdmin').click(function(){ gateway.toggleNickOptAdmin(this.id); }.bind(this));
-		$('#'+this.id+'-showKick').click(function(){ gateway.showKick(this.channel, this.user.nick); }.bind(this));
-		$('#'+this.id+'-showBan').click(function(){ services.showBan(this.channel, this.user.nick); }.bind(this));
-		$('#'+this.id+'-givePrivileges').click(function(){ gateway.showStatus(this.channel, this.user.nick); }.bind(this));
-		$('#'+this.id+'-takePrivileges').click(function(){ gateway.showStatusAnti(this.channel, this.user.nick); }.bind(this));
+		$('#'+this.id+'-showKick').click(function(){ ircEvents.emit('ui:showKickDialog', { channel: this.channel, nick: this.user.nick }); }.bind(this)); // Emit UI event
+		$('#'+this.id+'-showBan').click(function(){ ircEvents.emit('ui:showBanDialog', { channel: this.channel, nick: this.user.nick }); }.bind(this)); // Emit UI event
+		$('#'+this.id+'-givePrivileges').click(function(){ ircEvents.emit('ui:showPrivilegesDialog', { channel: this.channel, nick: this.user.nick }); }.bind(this)); // Emit UI event
+		$('#'+this.id+'-takePrivileges').click(function(){ ircEvents.emit('ui:showPrivilegesAntiDialog', { channel: this.channel, nick: this.user.nick }); }.bind(this)); // Emit UI event
 		/*$('#'+this.id+'-showBanUni').click(function(){ gateway.showBan(this.channel, this.user.nick); }.bind(this));*/
-		$('#'+this.id+'-avatarField').error(function(){ users.disableAutoAvatar(this.user.nick); }.bind(this));
+		$('#'+this.id+'-avatarField').error(function(){ ircEvents.emit('domain:disableAutoAvatar', { nick: this.user.nick }); }.bind(this)); // Emit domain event
 	}
-	this.setMode = function(mode, setting) {
+	this.setMode = function(mode, setting) { // This function should be removed; NicklistUser should be re-rendered on domain mode change event
 		var oldLevel = this.level;
 		if(mode in this.modes) {
 			this.modes[mode] = setting;
@@ -252,7 +242,7 @@ function NicklistUser(user, chan) {
 				this.level = 0;
 			}
 		}
-		if(this.user == guser.me){
+		if(this.user == ircEvents.emit('domain:getMeUser')){ // Compare with domain's guser.me
 			var chanId = gateway.findChannel(this.channel).id;
 			if(this.level >= 2){
 				$('#'+chanId+'-displayOperCss').remove();
@@ -263,19 +253,15 @@ function NicklistUser(user, chan) {
 			}
 		}
 		if(this.level != oldLevel){
+			// This re-rendering logic should be handled by a higher-level nicklist update triggered by domain event
 			var nicklist = gateway.findChannel(this.channel).nicklist;
-			var nickListElement = $('#'+nicklist.id+' .'+this.user.id);
-			if(nickListElement.length){
-				nickListElement.remove();
-				nicklist.insertNick(this);
-				this.showTitle();
-			}
+			//nicklist.update(); // Trigger a full nicklist update
 		}
 	}
 	this.remove = function() {
 		$('#'+this.id).remove();
 	}
-	this.update = function() {
+	this.update = function() { // This update is for the visual aspects of the nicklist item
 		this.showTitle();
 	}
 	this.displayLoggedIn = function() {
@@ -289,7 +275,7 @@ function NicklistUser(user, chan) {
 			loggedIn = false;
 		}
 		var nick = this.user.nick;
-		$('#'+this.id+' .chavatar').attr('alt', regText).attr('src', disp.getAvatarIcon(nick, loggedIn)).attr('title', regText).on('error', function(){ users.disableAutoAvatar(nick); });
+		$('#'+this.id+' .chavatar').attr('alt', regText).attr('src', disp.getAvatarIcon(nick, loggedIn)).attr('title', regText).on('error', function(){ ircEvents.emit('domain:disableAutoAvatar', { nick: nick }); }); // Emit domain event
 		$('#'+this.id+'-opt .nicklistAvatar').html(gateway.getMeta(nick, 500));
 	}
 	this.showTitle = function() {
@@ -340,7 +326,7 @@ function NicklistUser(user, chan) {
 		}
 		this.displayLoggedIn();
 	}
-	this.level = 0;
+	this.level = 0; // This should be set by the domain based on current modes
 	this.id = user.nick.replace(/[^a-z0-9A-Z]+/ig, '-').toLowerCase()+Math.round(Math.random()*10000);
 }
 
@@ -368,7 +354,7 @@ function Query(nick) {
 	this.markNew = function() {
 		disp.playSound();
 		if(!this.hilight) {
-			this.hilight = window.setInterval('gateway.findQuery(\''+this.name+'\').toggleClass();', 500);
+			this.hilight = window.setInterval('gateway.findQuery("'+this.name+'").toggleClass();', 500);
 		}
 		if(!disp.focused){
 			if(disp.titleBlinkInterval){
@@ -376,7 +362,7 @@ function Query(nick) {
 			}
 			disp.titleBlinkInterval = setInterval(function(){
 				var title = document.title;
-				document.title = (title == newMessage ? (he(guser.nick)+' @ '+mainSettings.networkName) : newMessage);
+				document.title = (title == newMessage ? (he(ircEvents.emit('domain:getMeUserNick'))+' @ '+mainSettings.networkName) : newMessage); // Get guser.nick via domain event
 			}, 500);
 		}
 	}
@@ -397,7 +383,7 @@ function Query(nick) {
 		}
 		clearInterval(disp.titleBlinkInterval);
 		disp.titleBlinkInterval = false;
-		if(document.title == newMessage) document.title = he(guser.nick)+' @ '+mainSettings.networkName;
+		if(document.title == newMessage) document.title = he(ircEvents.emit('domain:getMeUserNick'))+' @ '+mainSettings.networkName; // Get guser.nick via domain event
 		$('#'+this.id+'-tab > a').css('font-weight', 'normal');
 		$('#'+this.id+'-tab > a').css('color', '#CECECE');
 		setTimeout("$('#"+this.id+"-tab').removeClass('newmsg')", 100);
@@ -411,8 +397,9 @@ function Query(nick) {
 		$('#'+this.id+'-chstats').remove();
 		$('#'+this.id+'-tab-info').remove();
 		if(this.name.toLowerCase() == gateway.active.toLowerCase()) {
-			gateway.switchTab(gateway.tabHistoryLast(this.name));
+			ircEvents.emit('domain:requestSwitchTab', { tabName: gateway.tabHistoryLast(this.name) }); // Emit domain event
 		}
+		ircEvents.emit('domain:requestRemoveQuery', { queryName: this.name }); // Emit domain event to remove query object
 	}
 	this.appendMessage = function(type, args, time) {
 		if(!time)
@@ -440,11 +427,11 @@ function Query(nick) {
 		$('#'+this.id+'-window').vprintf(language.messagePatterns.nickChange, [$$.niceTime(), he(this.name), he(newnick)]);
 		$('#'+this.id+'-topic').html('<h1>'+he(newnick)+'</h1><h2></h2>');
 		$("#"+this.id+'-tab').html('<a href="javascript:void(0);" class="switchTab" id="' + this.id + '-tab-switch">'+he(newnick)+'</a><a href="javascript:void(0);" id="' + this.id + '-tab-close"><div class="close"></div></a>');
-		$("#"+this.id+'-tab-switch').click(function(){ gateway.switchTab(newnick); });
-		$("#"+this.id+'-tab-close').click(function(){ gateway.removeQuery(newnick); });
+		$("#"+this.id+'-tab-switch').click(function(){ ircEvents.emit('domain:requestSwitchTab', { tabName: newnick }); }.bind(this)); // Emit domain event
+		$("#"+this.id+'-tab-close').click(function(){ ircEvents.emit('domain:requestRemoveQuery', { queryName: newnick }); }.bind(this)); // Emit domain event
 		this.name = newnick;
 		if(oldName == gateway.active.toLowerCase()) {
-			gateway.switchTab(newnick);
+			ircEvents.emit('domain:requestSwitchTab', { tabName: newnick }); // Emit domain event
 		}
 	}
 	this.restoreScroll = function() {
@@ -477,8 +464,8 @@ function Query(nick) {
 	$('<span/>').attr('id', this.id+'-tab-info').hide().appendTo('#tab-info');
 	$('#'+this.id+'-topic').html('<h1>'+this.name+'</h1><h2></h2>');
 	$('<li/>').attr('id', this.id+'-tab').html('<a href="javascript:void(0);" class="switchTab" id="' + this.id + '-tab-switch">'+he(this.name)+'</a><a href="javascript:void(0);" id="' + this.id + '-tab-close"><div class="close" title="' + language.closeQuery + '"></div></a>').appendTo('#tabs');
-	$("#"+this.id+'-tab-switch').click(function(){ gateway.switchTab(this.name); }.bind(this));
-	$("#"+this.id+'-tab-close').click(function(){ gateway.removeQuery(this.name); }.bind(this));
+	$("#"+this.id+'-tab-switch').click(function(){ ircEvents.emit('domain:requestSwitchTab', { tabName: this.name }); }.bind(this)); // Emit domain event
+	$("#"+this.id+'-tab-close').click(function(){ ircEvents.emit('domain:requestRemoveQuery', { queryName: this.name }); }.bind(this)); // Emit domain event
 	$('#chstats').append('<div class="chstatswrapper" id="'+this.id+'-chstats"><span class="chstats-text symbolFont">' + language.query + '</span></div>');
 	try {
 		var qCookie = localStorage.getItem('query'+md5(this.name));
@@ -495,7 +482,7 @@ function Channel(chan) {
 	this.name = chan;
 	this.id = this.name.replace(/^#/g,'').replace(/[^a-zA-Z0-9]+/g, '-').toLowerCase()+Math.round(Math.random()*100);
 	this.nicklist = new Nicklist(this.name, this.id);
-	this.modes = new ChannelModes();
+	this.modes = new ChannelModes(); // UI representation of channel modes
 	this.left = false;
 	this.hilight = false;
 	this.classAdded = false;
@@ -512,7 +499,7 @@ function Channel(chan) {
 		this.left = true;
 		this.hasNames = false;
 		this.nicklist.remove();
-		this.nicklist = new Nicklist(this.name, this.id);
+		this.nicklist = new Nicklist(this.name, this.id); // Re-initialize nicklist UI
 	}
 
 	this.toggleClass = function() {
@@ -561,7 +548,7 @@ function Channel(chan) {
 	this.markNew = function() {
 		disp.playSound();
 		if(!this.hilight) {
-			this.hilight = window.setInterval('gateway.findChannel(\''+this.name+'\').toggleClass();', 500);
+			this.hilight = window.setInterval('gateway.findChannel("'+this.name+'").toggleClass();', 500);
 		}
 		if (this.hilight2) {
 			window.clearInterval(this.hilight2);
@@ -579,7 +566,7 @@ function Channel(chan) {
 			}
 			disp.titleBlinkInterval = setInterval(function(){
 				var title = document.title;
-				document.title = (title == newMessage ? (he(guser.nick)+' @ '+mainSettings.networkName) : newMessage);
+				document.title = (title == newMessage ? (he(ircEvents.emit('domain:getMeUserNick'))+' @ '+mainSettings.networkName) : newMessage); // Get guser.nick via domain event
 			}, 500);
 		}
 	}
@@ -610,7 +597,7 @@ function Channel(chan) {
 		}
 		clearInterval(disp.titleBlinkInterval);
 		disp.titleBlinkInterval = false;
-		if(document.title == newMessage) document.title = he(guser.nick)+' @ '+mainSettings.networkName;
+		if(document.title == newMessage) document.title = he(ircEvents.emit('domain:getMeUserNick'))+' @ '+mainSettings.networkName; // Get guser.nick via domain event
 		$('#'+this.id+'-tab > a').css('font-weight', 'normal');
 		setTimeout("$('#"+this.id+"-tab').removeClass('newmsg')", 100);
 		setTimeout("$('#"+this.id+"-tab').removeClass('newmsg')", 300);
@@ -622,7 +609,7 @@ function Channel(chan) {
 	this.close = function() {
 		if(!this.left) {
 			this.part();
-			ircCommand.channelPart(this.name, language.leftChannel);
+			ircEvents.emit('domain:requestPartChannel', { channelName: this.name, message: language.leftChannel }); // Emit domain event
 		}
 		this.nicklist.remove();
 		$('#'+this.id+'-tab').remove();
@@ -631,12 +618,12 @@ function Channel(chan) {
 		$('#'+this.id+'-chstats').remove();
 		$('#'+this.id+'-tab-info').remove();
 		if(this.name.toLowerCase() == gateway.active.toLowerCase()) {
-			gateway.switchTab(gateway.tabHistoryLast(this.name));
+			ircEvents.emit('domain:requestSwitchTab', { tabName: gateway.tabHistoryLast(this.name) }); // Emit domain event
 		}
 	}
 	this.rejoin = function() {
 		this.left = false;
-		$('#'+this.id+'-window').vprintf(language.messagePatterns.joinOwn, [$$.niceTime(), guser.me.nick, guser.me.ident, guser.me.host, this.name]);
+		$('#'+this.id+'-window').vprintf(language.messagePatterns.joinOwn, [$$.niceTime(), ircEvents.emit('domain:getMeUserNick'), ircEvents.emit('domain:getMeUserIdent'), ircEvents.emit('domain:getMeUserHost'), this.name]); // Get guser.me properties via domain event
 		if(this.name == gateway.active) {
 			this.restoreScroll();
 		}
@@ -763,54 +750,25 @@ function Channel(chan) {
 	$('<span/>').attr('id', this.id+'-topic').hide().appendTo('#info');
 	$('<span/>').attr('id', this.id+'-tab-info').hide().appendTo('#tab-info');
 	$('#'+this.id+'-topic').html('<h1>'+he(this.name)+'</h1><h2></h2>');
-	$('<li/>').attr('id', this.id+'-tab').html('<a href="javascript:void(0);" id="' + this.id + '-channelSwitchButton" class="switchTab">'+he(this.name)+'</a>'+
+	$('<li/>').attr('id', this.id+'-tab').html('<a href="javascript:void(0);" id="' + this.id + '-channelSwitchButton" class="switchTab">'+he(this.name)+'</a>'+ 
 		'<a href="javascript:void(0);" id="' + this.id + '-channelPartButton"><div class="close" title="' + language.leaveChannel + '"></div></a>').appendTo('#tabs');
-	$('#chstats').append('<div class="chstatswrapper" id="'+this.id+'-chstats"><span class="chstats-text symbolFont">'+he(this.name)+'</span>'+
-		'<span class="chstats-button" id="'+this.id+'-toggleChannelOpts">' +language.channelOptions+ '</span>'+
-		'<div id="'+this.id+'-channelOptions" class="channelAdmin"><ul class="channelOptions">' +
-			'<div class="nickRegistered"><span>' + language.autoJoinThisChannel + '</span>'+
-				'<li id="'+this.id+'-aJoinEnable">' + language.enable + '</li>' +
-				'<li id="'+this.id+'-aJoinDisable">' + language.disable + '</li>' +
-			'</div>'+
-			'<li id="'+this.id+'-clearWindow">' + language.clearMessageWindow + '</li>' +
-			'<li id="'+this.id+'-redoNames">' + language.refreshNickList + '</li>' +
-			/*'<li onclick="gateway.send(\'MODE '+bsEscape(this.name)+' I\')" title="Znajdujący się na liście nie potrzebują zaproszenia, gdy jest ustawiony tryb +i">Lista wyjątków i (I)</li>' +
-			'<li onclick="gateway.showChannelModes(\''+bsEscape(this.name)+'\')">Tryby kanału</li>' +
-			'<li onclick="gateway.showInvitePrompt(\''+bsEscape(this.name)+'\')">Zaproś na kanał</li>' +
-			'<li onclick="services.showChanServCmds(\''+bsEscape(this.name)+'\')">Polecenia ChanServ</li>' +
-			'<li onclick="services.showBotServCmds(\''+bsEscape(this.name)+'\')">Polecenia BotServ</li>' +*/
-		'</ul></div>');
-	var operHtml = '<div id="'+this.id+'-operActions" class="'+this.id+'-operActions channelAdmin" style="display:none">' +
-		//'<div class="channelOperActionsButton" onclick="gateway.toggleChannelOpts(\''+bsEscape(this.name)+'\')">Akcje administracyjne</div>'+
-		'<span class="chstats-button" id="'+this.id+'-openOperActions">' + language.administrativeActions + '</span>'+
-		'<ul class="channelOperActions">' +
-			'<li id="'+this.id+'-openBanList">' + language.banList + '</li>' +
-			'<li id="'+this.id+'-openExceptList" title="' + language.exceptListHint + '">' + language.exceptList + '</li>' +
-			'<li id="'+this.id+'-openInvexList" title="' + language.invexListHint + '">' + language.invexList + '</li>' +
-			'<li id="'+this.id+'-openChannelModes">' + language.channelModes + '</li>' +
-			'<li id="'+this.id+'-showInvitePrompt">' + language.inviteToChannel + '</li>' +
-			'<li id="'+this.id+'-showChanservCommands">' + language.chanservCommands + '</li>' +
-			'<li id="'+this.id+'-showBotservCommands">' + language.botservCommands + '</li>' +
-		'</ul>' +
-		'</div></div>';
-	$('#'+this.id+'-chstats').append(operHtml);
-	$('#'+this.id+'-channelSwitchButton').click(function(){ gateway.switchTab(this.name); }.bind(this));
-	$('#'+this.id+'-channelPartButton').click(function(){ gateway.removeChannel(this.name); }.bind(this));
+	$('#'+this.id+'-channelSwitchButton').click(function(){ ircEvents.emit('domain:requestSwitchTab', { tabName: this.name }); }.bind(this)); // Emit domain event
+	$('#'+this.id+'-channelPartButton').click(function(){ ircEvents.emit('domain:requestRemoveChannel', { channelName: this.name }); }.bind(this)); // Emit domain event
 	$('#'+this.id+'-toggleChannelOpts').click(function(){ gateway.toggleChannelOpts(this.name); }.bind(this));
-	$('#'+this.id+'-aJoinEnable').click(function(){ services.perform('NickServ', 'AJOIN', ['ADD', this.name], true); }.bind(this));
-	$('#'+this.id+'-aJoinDisable').click(function(){ services.perform('NickServ', 'AJOIN', ['DEL', this.name], true); }.bind(this));
+	$('#'+this.id+'-aJoinEnable').click(function(){ ircEvents.emit('domain:requestServiceCommand', { service: 'NickServ', command: 'AJOIN', args: ['ADD', this.name], time: new Date() }); }.bind(this)); // Emit domain event
+	$('#'+this.id+'-aJoinDisable').click(function(){ ircEvents.emit('domain:requestServiceCommand', { service: 'NickServ', command: 'AJOIN', args: ['DEL', this.name], time: new Date() }); }.bind(this)); // Emit domain event
 	$('#'+this.id+'-clearWindow').click(this.clearWindow.bind(this));
-	$('#'+this.id+'-redoNames').click(function(){ ircCommand.channelRedoNames(this.name); }.bind(this));
+	$('#'+this.id+'-redoNames').click(function(){ ircEvents.emit('domain:requestRedoNames', { channelName: this.name, time: new Date() }); }.bind(this)); // Emit domain event
 	$('#'+this.id+'-openOperActions').click(function(){ gateway.toggleChannelOperOpts(this.name); }.bind(this));
-	$('#'+this.id+'-openBanList').click(function(){ ircCommand.mode(this.name, 'b'); }.bind(this));
-	$('#'+this.id+'-openExceptList').click(function(){ ircCommand.mode(this.name, 'e'); }.bind(this));
-	$('#'+this.id+'-openInvexList').click(function(){ ircCommand.mode(this.name, 'I'); }.bind(this));
-	$('#'+this.id+'-openChannelModes').click(function(){ gateway.showChannelModes(this.name); }.bind(this));
-	$('#'+this.id+'-showInvitePrompt').click(function(){ gateway.showInvitePrompt(this.name); }.bind(this));
-	$('#'+this.id+'-showChanservCommands').click(function(){ services.showChanServCmds(this.name); }.bind(this));
-	$('#'+this.id+'-showBotservCommands').click(function(){ services.showBotServCmds(this.name); }.bind(this));
+	$('#'+this.id+'-openBanList').click(function(){ ircEvents.emit('domain:requestModeList', { channelName: this.name, mode: 'b', time: new Date() }); }.bind(this)); // Emit domain event
+	$('#'+this.id+'-openExceptList').click(function(){ ircEvents.emit('domain:requestModeList', { channelName: this.name, mode: 'e', time: new Date() }); }.bind(this)); // Emit domain event
+	$('#'+this.id+'-openInvexList').click(function(){ ircEvents.emit('domain:requestModeList', { channelName: this.name, mode: 'I', time: new Date() }); }.bind(this)); // Emit domain event
+	$('#'+this.id+'-openChannelModes').click(function(){ ircEvents.emit('ui:showChannelModesDialog', { channelName: this.name }); }.bind(this)); // Emit UI event
+	$('#'+this.id+'-showInvitePrompt').click(function(){ ircEvents.emit('ui:showInvitePromptDialog', { channelName: this.name }); }.bind(this)); // Emit UI event
+	$('#'+this.id+'-showChanservCommands').click(function(){ ircEvents.emit('ui:showChanServCmdsDialog', { channelName: this.name }); }.bind(this)); // Emit UI event
+	$('#'+this.id+'-showBotservCommands').click(function(){ ircEvents.emit('ui:showBotServCmdsDialog', { channelName: this.name }); }.bind(this)); // Emit UI event
 	this.setTopic('');
-	guser.setUmode(false);
+	// guser.setUmode(false); // This is domain logic and should be handled by domain events.
 	try {
 		var qCookie = localStorage.getItem('channel'+md5(this.name));
 		if(qCookie) {
@@ -896,7 +854,7 @@ function Status() {
 			}
 			disp.titleBlinkInterval = setInterval(function(){
 				var title = document.title;
-				document.title = (title == newMessage ? (he(guser.nick)+' @ ' + mainSettings.networkName) : newMessage);
+				document.title = (title == newMessage ? (he(ircEvents.emit('domain:getMeUserNick'))+' @ '+mainSettings.networkName) : newMessage); // Get guser.nick via domain event
 			}, 500);
 		}
 	}
@@ -928,7 +886,7 @@ function Status() {
 		}
 		clearInterval(disp.titleBlinkInterval);
 		disp.titleBlinkInterval = false;
-		if(document.title == newMessage) document.title = he(guser.nick)+' @ ' + mainSettings.networkName;
+		if(document.title == newMessage) document.title = he(ircEvents.emit('domain:getMeUserNick'))+' @ '+mainSettings.networkName; // Get guser.nick via domain event
 		$('#'+this.id+'-tab > a').css('font-weight', 'normal');
 		setTimeout("$('#"+this.id+"-tab').removeClass('newmsg')", 100);
 		setTimeout("$('#"+this.id+"-tab').removeClass('newmsg')", 300);
@@ -976,7 +934,7 @@ function updateHistory(name, id, query){
 			}
 		}
 		localStorage.setItem(type+md5(name), Base64.encode(qCookie));
-	} catch(e){
+	} catch(e){ 
 	}
 }
 
@@ -984,7 +942,7 @@ function typingHandler(tab){
 	this.tab = tab;
 	this.list = [];
 	this.start = function(user, time){
-		if(user == guser.me)
+		if(user == ircEvents.emit('domain:getMeUser')) // Compare with domain's guser.me
 			return;
 		var idx = this.findUser(user);
 		if(idx === false){
@@ -1085,7 +1043,7 @@ function ListWindow() {
 		}
 	};
 	this.saveScroll = function() {
-		if($('#chat-wrapper').scrollTop() < 150) {
+		if($('#chat-wrapper').scrollTop()+document.getElementById('chat-wrapper').clientHeight > document.getElementById('chat-wrapper').scrollHeight-150 && $('#chat-wrapper').scrollTop()+document.getElementById('chat-wrapper').clientHeight > document.getElementById('chat-wrapper').scrollHeight*0.97)   {
 			this.scrollSaved = false;
 			this.scrollPos = 0;
 		} else {
@@ -1103,9 +1061,9 @@ function ListWindow() {
 		$('#'+this.id+'-chstats').remove();
 		$('#'+this.id+'-tab-info').remove();
 		if(this.name == gateway.active) {
-			gateway.switchTab(gateway.tabHistoryLast(this.name));
+			ircEvents.emit('domain:requestSwitchTab', { tabName: gateway.tabHistoryLast(this.name) }); // Emit domain event
 		}
-		gateway.listWindow = null;
+		ircEvents.emit('domain:requestRemoveListWindow', { listName: this.name }); // Emit domain event
 	};
 	this.clearData = function() {
 		this.data = [];
@@ -1138,7 +1096,7 @@ function ListWindow() {
 				html += '<td class="listWindowUsers">' + he(userCount) + '</td>';
 				html += '<td class="listWindowTopic"><i>(' + language.topicHidden + ')</i></td></tr>';
 			} else {
-				html += '<tr><td class="listWindowChannel"><a href="javascript:ircCommand.channelJoin(\'' + bsEscape(channelName) + '\')">' + he(channelName) + '</a></td>';
+				html += '<tr><td class="listWindowChannel"><a href="javascript:ircEvents.emit(\'domain:requestJoinChannel\', { channelName: \'' + bsEscape(channelName) + '\' })">' + he(channelName) + '</a></td>'; // Emit domain event
 				html += '<td class="listWindowUsers">' + he(userCount) + '</td>';
 				html += '<td class="listWindowTopic">' + $$.colorize(topic) + '</td></tr>';
 			}
@@ -1184,8 +1142,7 @@ function ListWindow() {
 	$('<span/>').attr('id', this.id+'-tab-info').hide().appendTo('#tab-info');
 	$('#'+this.id+'-topic').html('<h1>' + language.channelListTitle + '</h1><h2></h2>');
 	$('<li/>').attr('id', this.id+'-tab').html('<a href="javascript:void(0);" class="switchTab" id="' + this.id + '-tab-switch">' + language.channelListTitle + '</a><a href="javascript:void(0);" id="' + this.id + '-tab-close"><div class="close" title="' + language.close + '"></div></a>').appendTo('#tabs');
-	$('#'+this.id+'-tab-switch').click(function(){ gateway.switchTab(this.name); }.bind(this));
+	$('#'+this.id+'-tab-switch').click(function(){ ircEvents.emit('domain:requestSwitchTab', { tabName: this.name }); }.bind(this)); // Emit domain event
 	$('#'+this.id+'-tab-close').click(function(){ this.close(); }.bind(this));
 	$('#chstats').append('<div class="chstatswrapper" id="'+this.id+'-chstats"><span class="chstats-text symbolFont">' + language.channelListTitle + '</span></div>');
 }
-

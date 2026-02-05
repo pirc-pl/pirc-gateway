@@ -53,6 +53,8 @@ var scriptFiles = [
 	'/js/gateway_tabs.js',
 	'/js/gateway_cmds.js',
 	'/js/gateway_def.js',          // Uses: encryptPassword (line 657)
+	'/js/gateway_domain.js', // New domain logic file
+	'/js/gateway_display.js',
 	'/js/gateway_users.js',
 	'/js/emoji.js',
 	'/js/g-emoji-element.js'

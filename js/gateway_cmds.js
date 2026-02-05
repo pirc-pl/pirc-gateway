@@ -17,18 +17,18 @@
  * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
  * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
  * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
- * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. 
  */
 
 var ircCommand = {
 	'escapeTagValue': function(value){
 		// IRC message-tags escaping per spec
 		return value
-			.replace(/\\/g, '\\\\')
-			.replace(/;/g, '\\:')
-			.replace(/ /g, '\\s')
-			.replace(/\r/g, '\\r')
-			.replace(/\n/g, '\\n');
+			.replace(/\\/g, '\\')
+			.replace(/;/g, '\:')
+			.replace(/ /g, '\s')
+			.replace(/\r/g, '\r')
+			.replace(/\n/g, '\n');
 	},
 	'perform': function(command, args, text, tags){
 		ircCommand.send(command, args, text, tags);
@@ -43,7 +43,7 @@ var ircCommand = {
 	},
 	'send': function(command, args, text, tags){
 		var cmdString = '';
-		if(tags && 'message-tags' in activeCaps){ // checking only for message-tags, ignoring other tag capabilities, we'll need to change this if problems appear
+		if(tags && ircEvents.emit('domain:hasActiveCap', { cap: 'message-tags' })){ // Check activeCaps via domain event
 			cmdString += '@';
 			var first = true;
 			for(tagName in tags){
@@ -58,15 +58,16 @@ var ircCommand = {
 			}
 			cmdString += ' ';
 		}
-		if(tags && 'labeled-response' in activeCaps && 'label' in tags){
-			if(tags.label in gateway.labelInfo){
-				gateway.labelInfo[tags.label].cmd = command;
+		if(tags && ircEvents.emit('domain:hasActiveCap', { cap: 'labeled-response' }) && 'label' in tags){ // Check activeCaps via domain event
+			var labelInfo = ircEvents.emit('domain:getLabelInfo', { label: tags.label }); // Get labelInfo via domain event
+			if(labelInfo){
+				ircEvents.emit('domain:setLabelInfo', { label: tags.label, info: { cmd: command } }); // Set labelInfo via domain event
 			} else {
-				gateway.labelInfo[tags.label] = {'cmd': command};
+				ircEvents.emit('domain:setLabelInfo', { label: tags.label, info: { cmd: command } }); // Set labelInfo via domain event
 			}
 		}
 		if(!command){
-			if('message-tags' in activeCaps){
+			if(ircEvents.emit('domain:hasActiveCap', { cap: 'message-tags' })){ // Check activeCaps via domain event
 				command = 'TAGMSG';
 			} else return;
 		}
@@ -87,23 +88,23 @@ var ircCommand = {
 		} else {
 			var cmd = 'PRIVMSG';
 		}
-		var label = gateway.makeLabel();
-		gateway.labelCallbacks[label] = gateway.msgNotDelivered;
+		var label = ircEvents.emit('domain:generateLabel'); // Get label from domain
+		ircEvents.emit('domain:setLabelCallback', { label: label, callback: gateway.msgNotDelivered }); // Set callback via domain event
 		if(slow){
 			ircCommand.performSlow(cmd, [dest], text, {'label': label});
 		} else {
 			ircCommand.perform(cmd, [dest], text, {'label': label});
 		}
 		if(hide){
-			gateway.hideMessageWithLabel(label);
+			ircEvents.emit('domain:addLabelToHide', { label: label }); // Add to labelsToHide via domain event
 		} else {
 			gateway.insertMessage(cmd, dest, text, true, label);
-		}			
+		} 			
 	},
 	'sendAction': function(dest, text){
 		var ctcp = '\001' + 'ACTION ' + text + '\001';
-		var label = gateway.makeLabel();
-		gateway.labelCallbacks[label] = gateway.msgNotDelivered;
+		var label = ircEvents.emit('domain:generateLabel'); // Get label from domain
+		ircEvents.emit('domain:setLabelCallback', { label: label, callback: gateway.msgNotDelivered }); // Set callback via domain event
 		ircCommand.performSlow('PRIVMSG', [dest], ctcp, {'label': label});
 		gateway.insertMessage('ACTION', dest, text, true, label);
 	},
@@ -124,7 +125,7 @@ var ircCommand = {
 		var args = [channel];
 		if(lines)
 			args.push(lines);
-	//	var label = gateway.makeLabel();
+	//	var label = ircEvents.emit('domain:generateLabel'); // Get label from domain
 	//	var tags = {'label': label};
 		var tags = false;
 		ircCommand.send('HISTORY', args, false, tags);
@@ -146,9 +147,9 @@ var ircCommand = {
 	'channelJoin': function(channels, passwords){ // TODO obsługa haseł jeśli tablice
 		// Helper to request chat history for a channel
 		var requestHistoryForChannel = function(channame){
-			if('draft/chathistory' in activeCaps && 'CHATHISTORY' in isupport){
+			if(ircEvents.emit('domain:hasActiveCap', { cap: 'draft/chathistory' }) && ircEvents.emit('domain:hasIsupport', { key: 'CHATHISTORY' })){ // Check activeCaps & isupport via domain events
 				var limit = gateway.calculateHistoryLimit();
-				var isupportLimit = isupport['CHATHISTORY'];
+				var isupportLimit = ircEvents.emit('domain:getIsupportValue', { key: 'CHATHISTORY' }); // Get isupport value via domain event
 				if(isupportLimit != 0 && isupportLimit < limit){
 					limit = isupportLimit;
 				}
@@ -168,30 +169,30 @@ var ircCommand = {
 				channelString += channel;
 			}
 			// Add label if labeled-response is available, for history timing
-			if('labeled-response' in activeCaps){
-				var label = gateway.makeLabel();
+			if(ircEvents.emit('domain:hasActiveCap', { cap: 'labeled-response' })){ // Check activeCaps via domain event
+				var label = ircEvents.emit('domain:generateLabel'); // Get label from domain
 				var channelList = channelString.split(',');
-				gateway.labelInfo[label] = {'cmd': 'JOIN', 'channels': channelList};
+				ircEvents.emit('domain:setLabelInfo', { label: label, info: {'cmd': 'JOIN', 'channels': channelList} }); // Set labelInfo via domain event
 				// Set up callback BEFORE sending the command
-				gateway.labelCallbacks[label] = function(label, msg, batch){
+				ircEvents.emit('domain:setLabelCallback', { label: label, callback: function(label, msg, batch){ // Set callback via domain event
 					// Request history for all joined channels
 					for(var i=0; i<channelList.length; i++){
 						requestHistoryForChannel(channelList[i]);
 					}
-				};
+				}});
 				ircCommand.perform('JOIN', [channelString], false, {'label': label});
 			} else {
 				ircCommand.perform('JOIN', [channelString]);
 			}
 		} else {
 			// Add label if labeled-response is available, for history timing
-			if('labeled-response' in activeCaps){
-				var label = gateway.makeLabel();
-				gateway.labelInfo[label] = {'cmd': 'JOIN', 'channels': [channels]};
+			if(ircEvents.emit('domain:hasActiveCap', { cap: 'labeled-response' })){ // Check activeCaps via domain event
+				var label = ircEvents.emit('domain:generateLabel'); // Get label from domain
+				ircEvents.emit('domain:setLabelInfo', { label: label, info: {'cmd': 'JOIN', 'channels': [channels]} }); // Set labelInfo via domain event
 				// Set up callback BEFORE sending the command
-				gateway.labelCallbacks[label] = function(label, msg, batch){
+				ircEvents.emit('domain:setLabelCallback', { label: label, callback: function(label, msg, batch){ // Set callback via domain event
 					requestHistoryForChannel(channels);
-				};
+				}});
 				if(passwords){
 					ircCommand.perform('JOIN', [channels, passwords], false, {'label': label});
 				} else {
@@ -232,10 +233,10 @@ var ircCommand = {
 	},
 	'listChannels': function(text){
 		var args = text ? [text] : [];
-		if(!gateway.smallListLoading && 'labeled-response' in activeCaps) {
+		if(!ircEvents.emit('domain:getSmallListLoading') && ircEvents.emit('domain:hasActiveCap', { cap: 'labeled-response' })) { // Check domain state
 			// Use labeled-response for full list window
-			var label = gateway.makeLabel();
-			gateway.listWindowLabel = label;
+			var label = ircEvents.emit('domain:generateLabel'); // Get label from domain
+			ircEvents.emit('domain:setListWindowLabel', { label: label }); // Set list window label via domain event
 			gateway.getOrOpenListWindow();
 			ircCommand.perform('LIST', args, false, {'label': label});
 		} else {
@@ -279,7 +280,7 @@ var ircCommand = {
 		} else {
 			ircCommand.performQuick('QUIT');
 		}
-		gateway.connectStatus = 'disconnected';
+		ircEvents.emit('domain:setConnectStatus', { status: 'disconnected' }); // Set connectStatus via domain event
 		ircCommand.flushCmdQueue();
 	},
 	'pendingAwayReason': false,
@@ -329,4 +330,3 @@ var ircCommand = {
 		ircCommand.perform(false, [target], false, tags);
 	}
 };
-

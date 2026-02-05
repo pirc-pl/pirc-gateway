@@ -26,13 +26,13 @@ var commands = {
 		'nicks': true,
 		'custom': [],
 		'callback': function(command, input) {
-			clearTimeout(gateway.connectTimeoutID);
-			gateway.userQuit = true;
-			gateway.connectStatus = 'disconnected';
-			var button = [ {
+			ircEvents.emit('domain:clearConnectTimeout'); // Clear connectTimeoutID via domain event
+			ircEvents.emit('domain:setUserQuit', { status: true }); // Set userQuit via domain event
+			ircEvents.emit('domain:setConnectStatus', { status: 'disconnected' }); // Set connectStatus via domain event
+			var button = [ { 
 				text: language.reconnect,
 				click: function(){
-					gateway.reconnect();
+					ircEvents.emit('domain:requestReconnect'); // Request reconnect via domain event
 				}
 			} ];
 			$$.displayDialog('connect', 'reconnect', language.disconnected, '<p>' + language.disconnectOnRequest + '<p>', button);
@@ -89,8 +89,8 @@ var commands = {
 		'callback': function(command, input) {
 			if(command[1]) {
 				ircCommand.whois(command[1]);
-				if(command[1].toLowerCase() == guser.nick.toLowerCase()){
-					gateway.displayOwnWhois = true;
+				if(command[1].toLowerCase() == ircEvents.emit('domain:getMeUser').nick.toLowerCase()){ // Get guser.nick via domain event
+					gateway.displayOwnWhois = true; // UI flag
 				}
 			} else {
 				gateway.notEnoughParams("whois", language.youHaveToGiveQueryNick);
@@ -118,7 +118,7 @@ var commands = {
 		'custom': [],
 		'callback': function(command, input) {
 			if (command[1] != "") {
-				gateway.findOrCreate(command[1]);
+				ircEvents.emit('domain:findOrCreateTab', { tabName: command[1], setActive: true, time: new Date() }); // Emit domain event
 			} else {
 				gateway.notEnoughParams("query", language.youHaveToGivePMNick);
 			}
@@ -135,7 +135,7 @@ var commands = {
 				ircCommand.listChannels(input.substring(input.indexOf(' ')+1));
 			}
 			// Only show status message if list window is not being used
-			if(!('labeled-response' in activeCaps) && gateway.active != '--status'){
+			if(!ircEvents.emit('domain:hasActiveCap', { cap: 'labeled-response' }) && gateway.active != '--status'){ // Check activeCaps via domain event
 				gateway.getActive().appendMessage(language.messagePatterns.listShown, [$$.niceTime()]);
 			}
 		}
@@ -354,7 +354,7 @@ var commands = {
 							}
 						}
 						ircCommand.channelPart(command[1], reason);
-						gateway.removeChannel(command[1].toLowerCase())
+						// gateway.removeChannel(command[1].toLowerCase()) // This should be triggered by domain:requestPartChannel processing
 					}
 				} else {
 					if (gateway.getActive()) {
@@ -368,7 +368,7 @@ var commands = {
 							}
 						}
 						ircCommand.channelPart(gateway.active, reason);
-						gateway.removeChannel(gateway.active.toLowerCase())
+						// gateway.removeChannel(gateway.active.toLowerCase()) // This should be triggered by domain:requestPartChannel processing
 					} else {
 						gateway.notEnoughParams("part", language.youHaveToGivePartChan);
 					}
@@ -485,7 +485,7 @@ var commands = {
 			} else { //są argumenty
 				ignore.askIgnore(command[1]);
 		/*		if(command[3] != null){
-			//		gateway.notEnoughParams("ignore", "Za dużo parametrów.");
+			//			gateway.notEnoughParams("ignore", "Za dużo parametrów.");
 				}*/
 			}
 		}
@@ -631,7 +631,7 @@ var commands = {
 				if (!command[1].indexOf('-') == 0 && !command[1].indexOf('+') == 0) {
 					ircCommand.mode(command[1], input.slice(1).substr(command[0].length+1+command[1].length+1));
 				} else {
-					if (gateway.findChannel(gateway.active)) {
+					if (gateway.getActive()) {
 						ircCommand.mode(gateway.active, input.slice(1).substr(command[0].length+1));
 					} else {
 						gateway.notEnoughParams("mode", language.youHaveToGiveChanOrNick);
@@ -648,7 +648,7 @@ var commands = {
 		'custom': [],
 		'callback': function(command, input) {
 			var raw = input.slice(1).substr(command[0].length+1);
-			raw = raw.replace(/\\n/g, '\r\n') + '\r\n';
+			raw = raw.replace(/\n/g, '\r\n') + '\r\n';
 			data = irc.parseMessage(raw);
 			gateway.processData(data);
 		}

@@ -32,7 +32,7 @@ function setEnvironment(){
 			'/styles/img/owner.png',
 			'/styles/img/user-registered.png'
 		];
-		window.alt = [	'', '+', '%', '@', '&', '~', '' ];
+		window.alt = [ 	'', '+', '%', '@', '&', '~', '' ];
 		window.chStatusInfo = language.chStatusInfo;
 
 		window.reqChannel = '';
@@ -46,6 +46,7 @@ function setEnvironment(){
 		window.textSettings = [ 'avatar' ];
 		window.textSettingsValues = {};
 
+        // banData should be managed by the Domain Layer, but its structure is defined here
 		window.banData = {
 			'nick' : '',
 			'channel' : '',
@@ -98,7 +99,7 @@ function setEnvironment(){
 			':>':	'😏',
 			':|':	'😐',
 			':<':	'😒',
-			':((':	'😓',
+			':((': 	'😓',
 			':/':	'😕',
 			':c':	'😕',
 			':o':	'😕',
@@ -108,12 +109,12 @@ function setEnvironment(){
 			';*':	'😙',
 			':P':	'😛',
 			';p':	'😜',
-			':(':	'🙁',
+			':(': 	'🙁',
 			':)':	'🙂',
-			'(:':	'🙃',
+			'(':':	'🙃',
 			'<3':	'💗',
 			'-_-':	'😑',
-			';(':	'😢',
+			';(': 	'😢',
 			';)':	'😉'
 		};
 
@@ -122,7 +123,7 @@ function setEnvironment(){
 		var out1 = '';
 		var out2 = '';
 		for(i in emoji){
-			var expr = rxEscape(i)+'(($)|(\\s))';
+			var expr = rxEscape(i)+'(($)|(\s))';
 			var regex = new RegExp(expr, 'g');
 			emojiRegex.push([regex, emoji[i]]);
 			out1 += emoji[i] + ' ';
@@ -263,7 +264,7 @@ ircEvents.on('system:ready', fillColorSelector);
 
 var readyFunc = function(){
 	if(loaded) return;
-	if(!('mainSettings' in window)){ // someone forgot to load settings
+	if(!('mainSettings' in window)){
 		$('.not-connected-text > h3').html('Błąd / Error');
 		$('.not-connected-text > p').html('Niepoprawna konfiguracja aplikacji. Proszę skontaktować się z administratorem.<br>Invalid application configuration. Please contact administrator.');
 		return;
@@ -277,7 +278,7 @@ var readyFunc = function(){
 		$('.not-connected-text > p').html(language.outdatedBrowserInfo);
 		gateway = 0;
 		guser = 0;
-		cmd_binds = 0;
+		// cmd_binds = 0; // cmd_binds is now decoupled
 		$('div#wrapper').html('');
 	} else {
 		loaded = true;
@@ -321,13 +322,14 @@ function str2bool(b){
 }
 
 function he(text) { //HTML Escape
-	return $('<div/>').text(text).html().replace(/"/g, '&quot;');
+	return $('<div/>').text(text).html().replace(/\n/g, '\n').replace(/\r/g, '\r');
 }
 
 function bsEscape(text) { // escapowanie beksleszy i zakończeń stringa
-	text = text.replace(/\\/g, '\\\\');
-	text = text.replace(/'/g, '\\\'');
-	text = text.replace(/"/g, '\\\"');
+	text = text.replace(/\/g, '\\');
+	text = text.replace(/'/g, '\\'
+	); // Corrected escaping for single quote
+	text = text.replace(/"/g, '\"');
 	return text;
 }
 
@@ -515,7 +517,7 @@ function getThemeBackgroundColor() {
 
 	// Convert rgb/rgba to hex
 	if (bgColor.indexOf('rgb') === 0) {
-		var matches = bgColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+		var matches = bgColor.match(/rgba?(\d+),\s*(\d+),\s*(\d+)/);
 		if (matches) {
 			return rgbToHex(parseInt(matches[1]), parseInt(matches[2]), parseInt(matches[3]));
 		}
@@ -568,7 +570,7 @@ function adjustColorContrast(color, backgroundColor, minRatio) {
 }
 
 function rxEscape(text) { //backupowanie regex
-	return text.replace(/[.^$*+?()[{\\|]/g, '\\$&');
+	return text.replace(/[.^$*+?()[{\|]/g, '\\$&');
 }
 
 if (!String.prototype.isInList) {
@@ -635,7 +637,7 @@ function fillEmoticonSelector(){
 }
 
 function makeEmojiSelector(c){
-	return '<span><a class="charSelect" onclick="gateway.insertEmoji(\'' + c + '\')">' + emoji.addTags(c).text + '</a> </span>';
+	return '<span><a class="charSelect" onclick="gateway.insertEmoji(\' + c + '\')">' + emoji.addTags(c).text + '</a> </span>';
 }
 
 function saveSelectableEmoji(){
@@ -670,7 +672,7 @@ function onBlur() {
 function onFocus(){
 	clearInterval(disp.titleBlinkInterval);
 	disp.titleBlinkInterval = false;
-	if(document.title == newMessage) document.title = he(guser.nick)+' @ PIRC.pl';
+	if(document.title == newMessage) document.title = he(ircEvents.emit('domain:getMeUserNick'))+' @ PIRC.pl'; // Get guser.nick via domain event
 	disp.focused = true;
 	var act = gateway.getActive();
 	if(act){
@@ -872,7 +874,7 @@ var disp = {
 		} else {
 			$('#automLogIn').parent().parent().css('display', 'none');
 		}
-		if($('#biggerEmoji').is(':checked')){
+		if ($('#biggerEmoji').is(':checked')){
 			document.documentElement.style.setProperty('--emoji-scale', '3');
 		} else {
 			document.documentElement.style.setProperty('--emoji-scale', '1.8');
@@ -889,29 +891,28 @@ var disp = {
 			if($('#sendEmoji').is(':checked')){
 				$('#dispEmoji').prop('checked', true);
 			}
-		}
-		if(e.currentTarget.id == 'setUmodeD') {
+		} else if(e.currentTarget.id == 'setUmodeD') {
 			if($('#setUmodeD').is(':checked')){
 				$('#setUmodeR').prop('checked', true);
-				ircCommand.umode('+R');
-				if(!guser.umodes.D){
-					ircCommand.umode('+D');
+				ircEvents.emit('domain:requestUmodeChange', { mode: '+R' });
+				if(!ircEvents.emit('domain:getUserMode', { mode: 'D' })){
+					ircEvents.emit('domain:requestUmodeChange', { mode: '+D' });
 				}
 			} else {
-				if(guser.umodes.D){
-					ircCommand.umode('-D');
+				if(ircEvents.emit('domain:getUserMode', { mode: 'D' })){
+					ircEvents.emit('domain:requestUmodeChange', { mode: '-D' });
 				}
 			}
 		} else if(e.currentTarget.id == 'setUmodeR') {
 			if(!$('#setUmodeR').is(':checked')){
 				$('#setUmodeD').prop('checked', false);
-				ircCommand.umode('-D');
-				if(guser.umodes.R){
-					ircCommand.umode('-R');
+				ircEvents.emit('domain:requestUmodeChange', { mode: '-D' });
+				if(ircEvents.emit('domain:getUserMode', { mode: 'R' })){
+					ircEvents.emit('domain:requestUmodeChange', { mode: '-R' });
 				}
 			} else {
-				if(!guser.umodes.R){
-					ircCommand.umode('+R');
+				if(!ircEvents.emit('domain:getUserMode', { mode: 'R' })){
+					ircEvents.emit('domain:requestUmodeChange', { mode: '+R' });
 				}
 			}
 		} else if(e.currentTarget.id == 'setLanguage') {
@@ -943,7 +944,7 @@ var disp = {
 	},
 	'showAvatarSetting': function(){
 		if(!mainSettings.supportAvatars) return;
-		if(!guser.me.registered || window.FormData === undefined || !mainSettings.avatarUploadUrl){
+		if(!ircEvents.emit('domain:getMeUserRegisteredStatus') || window.FormData === undefined || !mainSettings.avatarUploadUrl){ // Check guser.me.registered via domain event
 			var html =
 				'<div id="current-avatar">' +
 					'<div id="current-letter-avatar">' +
@@ -954,24 +955,23 @@ var disp = {
 				'</div>' +
 				'<div id="set-avatar">' +
 					language.enterUrl + ' <input type="text" id="avatar-url" name="avatar-url" autocomplete="photo"> <button type="button" id="check-avatar-button" value="">' + language.check +  '</button><br>' +
-					'<button type="button" value="" id="submit-avatar">' + language.applySetting + '</button><br>' +
+					'<button type="button" id="submit-avatar" value="">' + language.applySetting + '</button><br>' +
 					language.avatarFileInfo + '<br>';
 				if(window.FormData === undefined){
 					html += language.browserTooOldForAvatars;
 				} else if(mainSettings.avatarUploadUrl) {
 					html += language.registerNickForAvatars;
 				}
-				html += '</div>';
+			html += '</div>';
 			$('#avatar-dialog').html(html);
 			$('#delete-avatar').click(disp.deleteAvatar);
 			$('#submit-avatar').click(disp.submitAvatar);
 			$('#check-avatar-button').click(disp.checkAvatarUrl);
 			if(!textSettingsValues['avatar']){
-				$('#letterAvatarExample').css('background-color',$$.nickColor(guser.nick, true));
-				$('#letterAvatarExampleContent').text(guser.nick.charAt(0));
+				$('#letterAvatarExample').css('background-color',$$.nickColor(ircEvents.emit('domain:getMeUserNick'), true)); // Get guser.nick via domain event
+				$('#letterAvatarExampleContent').text(ircEvents.emit('domain:getMeUserNick').charAt(0)); // Get guser.nick via domain event
 				$('#current-avatar-info').text(language.noAvatarSet);
 				$('#current-avatar-image').attr('src', '/styles/img/noavatar.png');
-				$('#current-avatar-image').attr('alt', language.noAvatarSet);
 				$('#current-letter-avatar').show();
 				$('#delete-avatar').hide();
 			} else {
@@ -995,17 +995,15 @@ var disp = {
 				'<div id="set-avatar">' +
 					language.selectAnImage + ' <input type="file" name="avatarFileToUpload" id="avatarFileToUpload"><br>' +
 					'<button type="submit" value="" id="submit-avatar" name="submit">' + language.applySetting + '</button><br>' +
-					language.youAcceptToStoreTheData + mainSettings.networkName + '.' +
-				'</div>';
+					language.youAcceptToStoreTheData + mainSettings.networkName + '.';
 			$('#avatar-dialog').html(html);
 			$('#delete-avatar').click(disp.deleteAvatar);
 			$('#submit-avatar').click(disp.submitAvatar);
 			if(!textSettingsValues['avatar']){
-				$('#letterAvatarExample').css('background-color',$$.nickColor(guser.nick, true));
-				$('#letterAvatarExampleContent').text(guser.nick.charAt(0));
+				$('#letterAvatarExample').css('background-color',$$.nickColor(ircEvents.emit('domain:getMeUserNick'), true)); // Get guser.nick via domain event
+				$('#letterAvatarExampleContent').text(ircEvents.emit('domain:getMeUserNick').charAt(0)); // Get guser.nick via domain event
 				$('#current-avatar-info').text(language.avatarNotSet);
 				$('#current-avatar-image').attr('src', '/styles/img/noavatar.png');
-				$('#current-avatar-image').attr('alt', language.avatarNotSet);
 				$('#current-letter-avatar').show();
 				$('#delete-avatar').hide();
 			} else {
@@ -1034,7 +1032,7 @@ var disp = {
 		$('#submit-avatar').show();
 	},
 	'submitAvatar': function() {
-		if(!guser.me.registered){
+		if(!ircEvents.emit('domain:getMeUserRegisteredStatus')){
 			var url = $('#avatar-url').val();
 			if(!url.startsWith('https://')){
 				$$.alert(language.addressMustStartWithHttps);
@@ -1053,8 +1051,9 @@ var disp = {
 			fd.append('fileToUpload', file);
 			fd.append('image-type', 'avatar');
 			$('#set-avatar').append('<br>' + language.processing);
-			var label = gateway.makeLabel();
-			gateway.labelCallbacks[label] = function(label, msg, batch){
+			var label = ircEvents.emit('domain:generateLabel'); // Get label from domain
+			// gateway.labelCallbacks[label] = function(label, msg, batch){ // Replaced with domain event
+			ircEvents.emit('domain:setLabelCallback', { label: label, callback: function(label, msg, batch){ // Emit domain event
 				if(!batch){
 					var jwt = msg.args[2];
 				} else {
@@ -1078,19 +1077,15 @@ var disp = {
 						}
 					},
 					error: function(){
-						$$.alert(language.failedToSendImage);
-					}
+									$$.alert(language.failedToSendImage);
+								}
 				});
-			};
-			var args = ['*'];
-			if(mainSettings.extjwtService){
-				args.push(mainSettings.extjwtService);
-			}
-			ircCommand.perform('EXTJWT', args, false, {'label': label});
+			}});
+			ircEvents.emit('domain:requestExtJwt', { service: mainSettings.extjwtService || '*', label: label }); // Emit domain event
 		}
 	},
 	'deleteAvatar': function() {
-		if(!guser.me.registered){
+		if(!ircEvents.emit('domain:getMeUserRegisteredStatus')){
 			if(!confirm(language.areYouSureToDeleteAvatar + '"' +textSettingsValues['avatar']+ '"?')){
 				return;
 			}
@@ -1101,8 +1096,9 @@ var disp = {
 			if(!confirm(language.deleteAvatarQ)){
 				return;
 			}
-			var label = gateway.makeLabel();
-			gateway.labelCallbacks[label] = function(label, msg, batch){
+			var label = ircEvents.emit('domain:generateLabel'); // Get label from domain
+			// gateway.labelCallbacks[label] = function(label, msg, batch){ // Replaced with domain event
+			ircEvents.emit('domain:setLabelCallback', { label: label, callback: function(label, msg, batch){ // Emit domain event
 				if(!batch){
 					var jwt = msg.args[2];
 				} else {
@@ -1126,23 +1122,19 @@ var disp = {
 						}
 					},
 					error: function(){
-						$$.alert(language.failedToDeleteImage);
-					}
+									$$.alert(language.failedToDeleteImage);
+								}
 				});
-			};
-			var args = ['*'];
-			if(mainSettings.extjwtService){
-				args.push(mainSettings.extjwtService);
-			}
-			ircCommand.perform('EXTJWT', args, false, {'label': label});
+			}});
+			ircEvents.emit('domain:requestExtJwt', { service: mainSettings.extjwtService || '*', label: label }); // Emit domain event
 		}
 	},
 	'avatarChanged': function() {
 		disp.changeSettings();
 		if(textSettingsValues['avatar']){
-			ircCommand.metadata('SET', '*', ['avatar', textSettingsValues['avatar']]);
+			ircEvents.emit('domain:requestMetadataUpdate', { key: 'avatar', value: textSettingsValues['avatar'] }); // Emit domain event
 		} else {
-			ircCommand.metadata('SET', '*', ['avatar']);
+			ircEvents.emit('domain:requestMetadataUpdate', { key: 'avatar', value: null }); // Emit domain event to clear
 		}
 	},
 	'getAvatarIcon': function(nick, isRegistered){
@@ -1171,14 +1163,14 @@ var disp = {
 		}
 		var html = topic +
 			'<p class="' + channel.id + '-operActions" style="display:none;">' +
-				'<b>' + language.changeChannelTopic + '</b><textarea name="topicEdit" id="topicEdit">'+channel.topic+'</textarea>' +
+				'<b>' + language.changeChannelTopic + '</b><textarea name="topicEdit" id="topicEdit">'+he(channel.topic)+'</textarea>' + // escaped channel.topic
 				'<button id="topic-change-button-' + channel.id + '">' + language.changeTopicSubmit + '</button><br>' +
 				language.youCanCopyCodesToTopic +
 			'</p>';
 		$$.closeDialog('confirm', 'topic');
 		$$.displayDialog('confirm', 'topic', language.topicOfChannel + channel.name, html);
 		$('#topic-change-button-' + channel.id).click(function(){
-			gateway.changeTopic(channel.name);
+			ircEvents.emit('domain:requestTopicChange', { channelName: channel.name, newTopic: $('#topicEdit').val() }); // Emit domain event
 		});
 	},
 	'playSound': function() {
@@ -1188,44 +1180,13 @@ var disp = {
 		var filename = '/styles/audio/served';
 		$('#sound').html('<audio autoplay="autoplay"><source src="' + filename + '.mp3" type="audio/mpeg" /><source src="' + filename + '.ogg" type="audio/ogg" /><embed hidden="true" autostart="true" loop="false" src="' + filename +'.mp3" /></audio>');
 	},
-	'insertLinebeI': function(mode, args){
-		var chanId = gateway.findChannel(args[1]).id;
-		var listName = disp.getNamebeI(mode);
-		if($$.getDialogSelector('list', 'list-'+mode+'-'+args[1]).length == 0){
-			var html = '<div class="beIListContents"><table><tr><th>' + language.mask + '</th><th>' + language.setBy + '</th><th>' + language.date + '</th>';
-			if(mode == 'b'){
-				html += '<th>' + language.appliesTo + '</th>';
-			}
-			html += '</tr></table></div>';
-			$$.displayDialog('list', 'list-'+mode+'-'+args[1], language.listOf+listName+language.onChannel+he(args[1]), html);
-		}
-		var html = '<tr><td>'+he(args[2])+'</td><td>'+he(args[3])+'</td><td>'+$$.parseTime(args[4])+'</td>';
-			if(mode == 'b'){
-				html += '<td>';
-				try {
-					var affected = localStorage.getItem('banmask-'+md5(args[2]));
-					if(affected){
-						html += he(affected);
-					}
-				} catch(e){}
-				html += '</td>';
-			}
-			html += '<td class="'+chanId+'-operActions button" style="display:none">' +
-			'<button id="un'+mode+'-'+chanId+'-'+md5(args[2])+'">' + language.remove + '</button>' +
-			'</td></tr>';
-		$('table', $$.getDialogSelector('list', 'list-'+mode+'-'+args[1])).append(html);
-		$('#un'+mode+'-'+chanId+'-'+md5(args[2])).click(function(){
-			ircCommand.mode(args[1], '-'+mode+' '+args[2]);
-			ircCommand.mode(args[1], mode);
-			$$.closeDialog('list', 'list-'+mode+'-'+args[1]);
-		});
+	'insertLinebeI': function(mode, args){ // This function is now superseded by event listeners in gateway_display.js
+	    console.warn('disp.insertLinebeI() is deprecated. Use channel:*ListEntry events instead.');
 	},
-	'endListbeI': function(mode, chan){
-		if($$.getDialogSelector('list', 'list-'+mode+'-'+chan).length == 0){
-			$$.displayDialog('list', 'list-'+mode+'-'+chan, language.listOf+disp.getNamebeI(mode)+language.onChannel+he(chan), language.listIsEmpty);
-		}
+	'endListbeI': function(mode, chan){ // This function is now superseded by event listeners in gateway_display.js
+	    console.warn('disp.endListbeI() is deprecated. Use channel:endOf*List events instead.');
 	},
-	'getNamebeI': function(mode){
+	'getNamebeI': function(mode){ // Still used by disp.insertLinebeI/endListbeI, so keep for now (or remove if those are fully gone)
 		var listName = mode;
 		switch(mode){
 			case 'b': listName = language.ofBans; break;
@@ -1239,7 +1200,7 @@ var disp = {
 		var html = '<div class="emojiSelector">';
 		var data = emoji.getAll();
 		for(var i=0; i<data.length; i++){
-			html += '<a class="charSelect" onclick="gateway.insertEmoji(\'' + data[i].text + '\')"><g-emoji fallback-src="/styles/emoji/' + data[i].code + '.png" class="emoji-wrapper">' + data[i].text + '</g-emoji></a> ';
+			html += '<a class="charSelect" onclick="gateway.insertEmoji(\' + data[i].text + '\')"><g-emoji fallback-src="/styles/emoji/' + data[i].code + '.png" class="emoji-wrapper">' + data[i].text + '</g-emoji></a> ';
 		}
 		html += '</div>';
 		$$.displayDialog('emoticons', 'allEmoticons', language.allEmoticons, html);
@@ -1379,7 +1340,7 @@ var disp = {
 
 		// Create summary element
 		var $summary = $('<div class="messageDiv event-group-summary" data-group-id="' + groupId + '">' +
-			'<span class="time">' + $$.niceTime() + '</span> &nbsp; ' +
+			'<span class="time">'+$$.niceTime()+'</span> &nbsp; ' +
 			'<span class="mode"><span class="symbolFont">⋯</span> ' + summaryText + ' ' +
 			'<a href="javascript:void(0)" class="event-group-toggle" id="show-' + groupId + '" style="display:inline">[' + language.expand + ']</a>' +
 			'<a href="javascript:void(0)" class="event-group-toggle" id="hide-' + groupId + '" style="display:none">[' + language.collapse + ']</a>' +
@@ -1408,22 +1369,19 @@ var disp = {
 		$('#hide-' + groupId).show();
 
 		// Auto-scroll if expanded events would be below the viewport
-		var $lastEvent = $groupedEvents.last();
-		if($lastEvent.length){
-			var $chatWrapper = $('#chat-wrapper');
-			var wrapperTop = $chatWrapper.offset().top;
-			var wrapperVisibleBottom = wrapperTop + $chatWrapper.innerHeight();
-			var eventBottom = $lastEvent.offset().top + $lastEvent.outerHeight();
-			if(eventBottom > wrapperVisibleBottom){
-				// Scroll to make the last event visible
-				$chatWrapper.scrollTop($chatWrapper.scrollTop() + (eventBottom - wrapperVisibleBottom));
-			}
+		var $chatWrapper = $('#chat-wrapper');
+		var wrapperTop = $chatWrapper.offset().top;
+		var wrapperVisibleBottom = wrapperTop + $chatWrapper.innerHeight();
+		var eventBottom = $groupedEvents.last().offset().top + $groupedEvents.last().outerHeight();
+		if(eventBottom > wrapperVisibleBottom){
+			// Scroll to make the last event visible
+			$chatWrapper.scrollTop($chatWrapper.scrollTop() + (eventBottom - wrapperVisibleBottom));
 		}
 	},
 	'collapseEventGroup': function(groupId){
 		$('.grouped-event[data-group-id="' + groupId + '"]').hide();
 		$('#show-' + groupId).show();
-		$('#hide-' + groupId).hide();
+		$('#hide-' + groupId).show();
 	},
 	'ungroupAllEvents': function(){
 		// Expand and remove all event groups
@@ -1496,7 +1454,7 @@ var $$ = {
 		if(codeOnly){
 			return color;
 		} else {
-			return 'style="color:' + color +'"';
+			return 'style="color:' + color + '"';
 		}
 	},
 	'colorize': function(message, strip) {
@@ -1654,7 +1612,7 @@ var $$ = {
 				case 4:  return '#C30003';
 				case 5:  return '#5F0002';
 				case 6:  return '#950093';
-				case 7:  return '#838900';
+				case 7:  return '#8800ab';
 				case 8:  return '#CED800';
 				case 9:  return '#07D800';
 				case 10: return '#00837E';
@@ -1768,7 +1726,7 @@ var $$ = {
 				case 98: return '#ffffff';
 				default: return '#666666';
 			}
-		//}
+		}
 	},
 	'parseImages': function(text, attrs) {
 		if(!attrs)
@@ -1780,8 +1738,8 @@ var $$ = {
 			rmatch.forEach(function(arg){
 				var rand = Math.floor(Math.random() * 10000).toString();
 				var imgurl = arg;
-				html += '<a id="a-img-' + rand + '"'+
-					' class="image_link"'+attrs+'><span id="show-'+rand+'" style="display:inline;">' + language.show + '</span><span id="hide-'+rand+'" style="display:none;">' + language.hide + '</span>' + language.aPicture + '</a>'+
+				html += '<a id="a-img-' + rand + '"'+ 
+					' class="image_link"'+attrs+'><span id="show-'+rand+'" style="display:inline;">' + language.show + '</span><span id="hide-'+rand+'" style="display:none;">' + language.hide + '</span>' + language.aPicture + '</a>'+ 
 					'<div style="display:none;" id="img-'+rand+'"><img id="imgc-'+rand+'" style="max-width:100%;" /></div>';
 				callbacks['a-img-' + rand] = function() {
 					disp.toggleImageView(rand, imgurl);
@@ -1795,12 +1753,12 @@ var $$ = {
 				var rmatch = rexpr.exec(arg);
 				if(rmatch[1]){
 					var rand = Math.floor(Math.random() * 10000).toString();
-					var imgurl = rmatch[1];
-					html += '<a id="a-video-' + rand + '"'+
-						' class="image_link"'+attrs+'><span id="show-'+rand+'" style="display:inline;">' + language.show + '</span><span id="hide-'+rand+'" style="display:none;">' + language.hide + '</span>' + language.aVideo + '</a>'+
+					var videoId = rmatch[1]; // Corrected to videoId
+					html += '<a id="a-video-' + rand + '"'+ 
+						' class="image_link"'+attrs+'><span id="show-'+rand+'" style="display:inline;">' + language.show + '</span><span id="hide-'+rand+'" style="display:none;">' + language.hide + '</span>' + language.aVideo + '</a>'+ 
 						'<div style="display:none;" id="img-'+rand+'"><iframe width="560" height="315" id="vid-'+rand+'" frameborder="0" allowfullscreen></iframe></div>';
 					callbacks['a-video-' + rand] = function() {
-						disp.toggleVideoView(rand, imgurl);
+						disp.toggleVideoView(rand, videoId);
 					};
 				}
 			});
@@ -1874,7 +1832,8 @@ var $$ = {
 					} else {
 						var append = '';
 						var link = $$.correctLink(currLink);
-						newText += '<a href="javascript:ircCommand.channelJoin(\''+bsEscape(link.link)+'\')"' + confirmChan + '>'+link.text+'</a>' + c + link.append;
+						// Emit domain event instead of direct ircCommand
+						newText += '<a href="javascript:ircEvents.emit(\'domain:requestJoinChannel\', { channelName: \''+bsEscape(link.link)+'\', time: new Date() })" ' + confirmChan + '>'+link.text+'</a>' + c + link.append;
 						state = stateText;
 					}
 					break;
@@ -1897,7 +1856,8 @@ var $$ = {
 		}
 		if(state == stateChannel){
 			var link = $$.correctLink(currLink);
-			newText += '<a href="javascript:ircCommand.channelJoin(\''+bsEscape(link.link)+'\')"' + confirmChan + '>'+link.text+'</a>' + link.append;
+			// Emit domain event instead of direct ircCommand
+			newText += '<a href="javascript:ircEvents.emit(\'domain:requestJoinChannel\', { channelName: \''+bsEscape(link.link)+'\', time: new Date() })" ' + confirmChan + '>'+link.text+'</a>' + link.append;
 		}
 		return newText;
 	},
@@ -1905,7 +1865,7 @@ var $$ = {
 		var button = [ {
 			text: language.reconnect,
 			click: function(){
-				gateway.reconnect();
+				ircEvents.emit('domain:requestReconnect'); // Emit domain event
 			}
 		} ];
 		$$.displayDialog('connect', 'reconnect', language.disconnected, language.lostNetworkConnection, button);
@@ -1918,10 +1878,10 @@ var $$ = {
 			attrs = '';
 		switch(type){ //specyficzne dla typu okna
 			case 'whois':
-				if(gateway.connectStatus != 'connected'){
+				if(ircEvents.emit('domain:getConnectStatus') != 'connected'){ // Check domain connect status
 					return;
 				}
-				if(sender.toLowerCase() == guser.nick.toLowerCase() && !gateway.displayOwnWhois){
+				if(sender.toLowerCase() == ircEvents.emit('domain:getMeUserNick').toLowerCase() && !gateway.displayOwnWhois){ // Get guser.nick via domain event
 					return;
 				}
 			case 'warning': case 'error': case 'confirm': case 'connect': case 'admin': case 'services': case 'ignore': case 'list': case 'alert': case 'emoticons': // nie wyświetlamy czasu
@@ -2008,7 +1968,7 @@ var $$ = {
 		$$.displayDialog('alert', 'alert', language.msgNotice, text, button);
 	},
 	'wildcardToRegex': function(regex){
-		regex = regex.replace(/[-[\]{}()+,.\\^$|#\s]/g, "\\$&");
+		regex = regex.replace(/[-[\]{}()+,.\\^$|#\s]/g, "\\$&\\");
 		regex = regex.replace(/[*?]/g, ".$&");
 		return '^'+regex+'$';
 	},
@@ -2042,9 +2002,8 @@ var $$ = {
 		}
 		return hours+':'+minutes;
 	}
-}
+};
 
 function escapeRegExp(string) { // my editor syntax colouring fails at this, so moved to the end
-	return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
+	return string.replace(/[.*+?^${}()|[\\]/g, '\\$&'); // $& means the whole matched string
 }
-

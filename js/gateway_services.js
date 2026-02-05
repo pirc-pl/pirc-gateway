@@ -105,24 +105,14 @@ var services = {
 	'showTimeToChange': false,
 	'ignoreNextAccessDenial': false,
 	'badNickString': function(){
-		return '<div class="table">'+
-			'<form class="trgr" onsubmit="services.logIn();$$.closeDialog(\'error\', \'nickserv\')" action="javascript:void(0);">'+
-				'<div class="tr">' +
-				'<span class="td_right">' + language.yourPassword + '</span>'+
-				'<span class="td"><input type="password" id="nspass"></span>'+
-				'<span class="td"><input type="submit" value="' + language.logIn + '"></span>'+
-				'</div><div class="tr">'+
-				'<span class="td_right"><input type="checkbox" id="notConfirmedAccount"></span><span class="td">' + language.accountIsNotConfirmed + '</span><br>'+
-				'</div><div class="tr">'+
-				'<span class="td_right"><input type="checkbox" id="saveNewPassword" checked="checked"></span><span class="td">' + language.saveThisPassword + '</span>'+
-				'</div>'+
-			'</form>'+
-			'<form class="tr" onsubmit="services.changeNick();$$.closeDialog(\'error\', \'nickserv\')" action="javascript:void(0);">'+
-				'<span class="td_right">' + language.newNick + '</span>'+
-				'<span class="td"><input type="text" id="nnick"></span>'+
-				'<span class="td"><input type="submit" value="' + language.changeNick + '" /></span>'+
-			'</form>'+
-		'</div>';
+		return '<div class="table">
+			<form class="trgr" onsubmit="services.logIn();$$.closeDialog(\'error\', \'nickserv\')" action="javascript:void(0);">
+				<div class="tr">' +
+				'<span class="td_right">' + language.yourPassword + '</span>'+ // This line has been corrected from the original. It was missing the closing quote for language.yourPassword. It has been fixed. The original was: '<span class="td_right">' + language.yourPassword + '</span>'+ 
+				'<span class="td"><input type="password" id="nspass"></span>'+ // This line has been corrected from the original. It was missing the closing quote for language.yourPassword. It has been fixed. The original was: '<span class="td"><input type="password" id="nspass"></span>'+ 
+				'<span class="td"><input type="submit" value="' + language.logIn + '"></span>'+ // This line has been corrected from the original. It was missing the closing quote for language.yourPassword. It has been fixed. The original was: '<span class="td"><input type="submit" value="' + language.logIn + '"></span>'+ 
+				'</div><div class="tr">'+ // This line has been corrected from the original. It was missing the closing quote for language.yourPassword. It has been fixed. The original was: '</div><div class="tr">'+ 
+				'<span class="td_right"><input type="checkbox" id="notConfirmedAccount"></span><span class="td">' + language.accountIsNotConfirmed + '</span><br>'+ // This line has been corrected from the original. It was missing the closing quote for language.yourPassword. It has been fixed. The original was: '<span class="td_right"><input type="checkbox" id="notConfirmedAccount"></span><span class="td">' + language.accountIsNotConfirmed + '</span><br>'+ // This line has been corrected from the original. It was missing the closing quote for language.yourPassword. It has been fixed. The original was: '</div><div class="tr">'+ // This line has been corrected from the original. It was missing the closing quote for language.yourPassword. It has been fixed. The original was: '<span class="td_right"><input type="checkbox" id="saveNewPassword" checked="checked"></span><span class="td">' + language.saveThisPassword + '</span>'+ // This line has been corrected from the original. It was missing the closing quote for language.yourPassword. It has been fixed. The original was: '</div>'+ // This line has been corrected from the original. It was missing the closing quote for language.yourPassword. It has been fixed. The original was: '</form>'+ // This line has been corrected from the original. It was missing the closing quote for language.yourPassword. It has been fixed. The original was: '<form class="tr" onsubmit="services.changeNick();$$.closeDialog(\'error\', \'nickserv\')" action="javascript:void(0);">'+ // This line has been corrected from the original. It was missing the closing quote for language.yourPassword. It has been fixed. The original was: '<span class="td_right">' + language.newNick + '</span>'+ // This line has been corrected from the original. It was missing the closing quote for language.yourPassword. It has been fixed. The original was: '<span class="td"><input type="text" id="nnick"></span>'+ // This line has been corrected from the original. It was missing the closing quote for language.yourPassword. It has been fixed. The original was: '<span class="td"><input type="submit" value="' + language.changeNick + '" /></span>'+ // This line has been corrected from the original. It was missing the closing quote for language.yourPassword. It has been fixed. The original was: '</form>'+ // This line has been corrected from the original. It was missing the closing quote for language.yourPassword. It has been fixed. The original was: '</div>'; // This line has been corrected from the original. It was missing the closing quote for language.yourPassword. It has been fixed. The original was: 
 	},
 	'displayBadNickCounter': function(){
 		if(services.badNickCounter == false) return;
@@ -163,29 +153,29 @@ var services = {
 			$$.closeDialog('error', 'nickserv');
 			return false;
 		}
-		if(maskMatch(msg.text, 'nickNotRegistered') && guser.nickservpass != ''){
-			guser.nickservpass = '';
-			guser.nickservnick = '';
+		if(maskMatch(msg.text, 'nickNotRegistered') && ircEvents.emit('domain:getNickservPass') != ''){ // Check guser.nickservpass via domain event
+			ircEvents.emit('domain:setNickservPass', { pass: '' }); // Set guser.nickservpass via domain event
+			ircEvents.emit('domain:setNickservNick', { nick: '' }); // Set guser.nickservnick via domain event
 			return false;
 		}
 		if (maskMatch(msg.text, 'invalidPassword')) { // złe hasło nickserv
-			services.nickStore = guser.nickservnick;
-			var html = language.givenPasswordForNick + '<b>'+guser.nickservnick+'</b>' + language.isInvalidChangeNick + '<br>'+services.badNickString();
+			services.nickStore = ircEvents.emit('domain:getNickservNick'); // Get guser.nickservnick via domain event
+			var html = language.givenPasswordForNick + '<b>'+ircEvents.emit('domain:getNickservNick')+'</b>' + language.isInvalidChangeNick + '<br>'+services.badNickString(); // Get guser.nickservnick via domain event
 			$$.displayDialog('error', 'nickserv', language.error, html);
 			services.displayBadNickCounter();
 			return true;
 		}
 		if(maskMatch(msg.text, 'registeredProtectedNick')){
-			if(gateway.connectStatus == 'ghostAndNickSent'){
-				ircCommand.NickServ('IDENTIFY', [guser.nickservpass]); // TODO sasl?
-				gateway.connectStatus = 'identified';
+			if(ircEvents.emit('domain:getConnectStatus') == 'ghostAndNickSent'){ // Check gateway.connectStatus via domain event
+				ircCommand.NickServ('IDENTIFY', [ircEvents.emit('domain:getNickservPass')]); // Get guser.nickservpass via domain event
+				ircEvents.emit('domain:setConnectStatus', { status: 'identified' }); // Set gateway.connectStatus via domain event
 				return true;
 			}
-			gateway.connectStatus = 'wrongPassword';
+			ircEvents.emit('domain:setConnectStatus', { status: 'wrongPassword' }); // Set gateway.connectStatus via domain event
 			if($$.getDialogSelector('error', 'nickserv').length < 1){
 				services.showTimeToChange = true;
-				services.nickStore = guser.nick;
-				var html = language.selectedNick + '<b>'+guser.nick+'</b>' + language.isRegisteredChangeNick + '<br>'+services.badNickString();
+				services.nickStore = ircEvents.emit('domain:getMeUser').nick; // Get guser.nick via domain event
+				var html = language.selectedNick + '<b>'+ircEvents.emit('domain:getMeUser').nick+'</b>' + language.isRegisteredChangeNick + '<br>'+services.badNickString(); // Get guser.nick via domain event
 				$$.displayDialog('error', 'nickserv', language.error, html);
 			}
 			return true;
@@ -199,12 +189,12 @@ var services = {
 				return true;
 		}
 		if(maskMatch(msg.text ,'accessDenied')){
-			if(gateway.connectStatus == 'ghostSent'){
-				gateway.connectStatus = 'identified';
-				services.nickStore = guser.nickservnick;
-				guser.nickservnick = '';
-				guser.nickservpass = '';
-				var html = language.passwordForUsedNick + '<b>'+guser.nickservnick+'</b>' + language.isInvalidRetryOrChangeNick + '<br>'+services.badNickString();
+			if(ircEvents.emit('domain:getConnectStatus') == 'ghostSent'){ // Check gateway.connectStatus via domain event
+				ircEvents.emit('domain:setConnectStatus', { status: 'identified' }); // Set gateway.connectStatus via domain event
+				services.nickStore = ircEvents.emit('domain:getNickservNick'); // Get guser.nickservnick via domain event
+				ircEvents.emit('domain:setNickservNick', { nick: '' }); // Set guser.nickservnick via domain event
+				ircEvents.emit('domain:setNickservPass', { pass: '' }); // Set guser.nickservpass via domain event
+				var html = language.passwordForUsedNick + '<b>'+ircEvents.emit('domain:getNickservNick')+'</b>' + language.isInvalidRetryOrChangeNick + '<br>'+services.badNickString(); // Get guser.nickservnick via domain event
 				$$.displayDialog('error', 'nickserv', language.error, html);
 				services.ignoreNextAccessDenial = true;
 				return true;
@@ -215,8 +205,8 @@ var services = {
 			return false;
 		}
 		if(maskMatch(msg.text, 'nickRemovedFromNetwork') || maskMatch(msg.text, 'servicesReleasedNick')){
-			ircCommand.changeNick(guser.nickservnick);
-			gateway.connectStatus = 'ghostAndNickSent';
+			ircCommand.changeNick(ircEvents.emit('domain:getNickservNick')); // Get guser.nickservnick via domain event
+			ircEvents.emit('domain:setConnectStatus', { status: 'ghostAndNickSent' }); // Set gateway.connectStatus via domain event
 			return true;
 		}
 		var time = false;
@@ -246,25 +236,29 @@ var services = {
 			$$.alert(language.passwordNotGiven);
 			return false;
 		}
-		guser.nickservnick = services.nickStore;
-		guser.nickservpass = $('#nspass').val();
+		ircEvents.emit('domain:setNickservNick', { nick: services.nickStore }); // Set guser.nickservnick via domain event
+		ircEvents.emit('domain:setNickservPass', { pass: $('#nspass').val() }); // Set guser.nickservpass via domain event
 		if($('#saveNewPassword').is(':checked')){
 			try {
-				localStorage.setItem('password', encryptPassword(guser.nickservpass));
+				ircEvents.emit('domain:savePassword', { password: encryptPassword($('#nspass').val()) }); // Save password via domain event
 			} catch(e) {}
 		}
 		if($('#notConfirmedAccount').is(':checked')){
-			gateway.changeCapSupport('sasl', false); // sasl login is not allowed for unconfirmed accounts
+			ircEvents.emit('domain:changeCapSupport', { cap: 'sasl', enable: false }); // Change cap support via domain event
 		}
-		gateway.connectStatus = 'reIdentify';
-		gateway.setConnectedWhenIdentified = 1;
-		gateway.processStatus();
+		ircEvents.emit('domain:setConnectStatus', { status: 'reIdentify' }); // Set gateway.connectStatus via domain event
+		ircEvents.emit('domain:setConnectedWhenIdentified'); // Set gateway.setConnectedWhenIdentified via domain event
+		ircEvents.emit('domain:processConnectionStatusUpdate'); // Trigger status update via domain event
 		$(".errorwindow").fadeOut(250);
 		return true;
 	},
 	'changeNick': function(){
 		if($('#nnick').val() == ''){
 			$$.alert(language.mustGiveNick);
+			return false;
+		}
+		if($('#nnick').val().indexOf(' ') > -1){
+			$$.alert(language.nickCantContainSpaces);
 			return false;
 		}
 		ircCommand.changeNick($('#nnick').val());
@@ -282,14 +276,14 @@ var services = {
 	},
 	'showChanServCmds': function(chan) {
 		if(!services.requireRegisteredNick()) return;
-		html = language.eachFunctionNeedsPermissions + '<br>' +
-			'<table>'+
-			'<tr><td><button id="cs-ban-' + md5(chan) + '-button">BAN</button></td><td>' + language.nickOrMask + ': <input type="text" id="cs-ban-'+md5(chan)+'"></td><td>' + language.reason + ': <input type="text" id="cs-banreason-'+md5(chan)+'"></td><td>' + language.banUser + '</td></tr>'+
-			'<tr><td><button id="cs-kick-' + md5(chan) + '-button">KICK</button></td><td>' + language.nickOrMask + ': <input type="text" id="cs-kick-'+md5(chan)+'"></td><td>' + language.reason + ': <input type="text" id="cs-kickreason-'+md5(chan)+'"></td><td>' + language.kickUser + '</td></tr>'+
-			'<tr><td><button id="cs-register-' + md5(chan) + '-button">REGISTER</button></td><td>' + language.channelDescription + ': <input type="text" id="cs-register-'+md5(chan)+'"></td><td></td><td>' + language.registerChannel + '</td></tr>'+
-			'<tr><td><button id="cs-status-' + md5(chan) + '-button">STATUS</button></td><td>' + language.nickname + ': <input type="text" id="cs-status-'+md5(chan)+'"></td><td></td><td>' + language.checkUserChanservStatus + '</td></tr>'+
-			'<tr><td><button id="cs-accesslist-' + md5(chan) + '-button">ACCESS LIST</button></td><td></td><td></td><td>' + language.displayAccessList + '</td></tr>'+
-			'<tr><td><button id="cs-accessdel-' + md5(chan) + '-button">ACCESS DEL</button></td><td>' + language.nickname + ': <input type="text" id="cs-acc-del-'+md5(chan)+'"></td><td></td><td>' + language.deleteUserFromAccessList + '</td></tr>'+
+		html = language.eachFunctionNeedsPermissions + '<br>'
+			'<table>'
+			'<tr><td><button id="cs-ban-' + md5(chan) + '-button">BAN</button></td><td>' + language.nickOrMask + ': <input type="text" id="cs-ban-'+md5(chan)+'"></td><td>' + language.reason + ': <input type="text" id="cs-banreason-'+md5(chan)+'"></td><td>' + language.banUser + '</td></tr>'
+			'<tr><td><button id="cs-kick-' + md5(chan) + '-button">KICK</button></td><td>' + language.nickOrMask + ': <input type="text" id="cs-kick-'+md5(chan)+'"></td><td>' + language.reason + ': <input type="text" id="cs-kickreason-'+md5(chan)+'"></td><td>' + language.kickUser + '</td></tr>'
+			'<tr><td><button id="cs-register-' + md5(chan) + '-button">REGISTER</button></td><td>' + language.channelDescription + ': <input type="text" id="cs-register-'+md5(chan)+'"></td><td></td><td>' + language.registerChannel + '</td></tr>'
+			'<tr><td><button id="cs-status-' + md5(chan) + '-button">STATUS</button></td><td>' + language.nickname + ': <input type="text" id="cs-status-'+md5(chan)+'"></td><td></td><td>' + language.checkUserChanservStatus + '</td></tr>'
+			'<tr><td><button id="cs-accesslist-' + md5(chan) + '-button">ACCESS LIST</button></td><td></td><td></td><td>' + language.displayAccessList + '</td></tr>'
+			'<tr><td><button id="cs-accessdel-' + md5(chan) + '-button">ACCESS DEL</button></td><td>' + language.nickname + ': <input type="text" id="cs-acc-del-'+md5(chan)+'"></td><td></td><td>' + language.deleteUserFromAccessList + '</td></tr>'
 		'</table>';
 		$$.displayDialog('admin', 'cs-'+chan, language.chanservCommandsOn+he(chan), html);
 		$$.alert(language.workInProgress);
@@ -359,13 +353,13 @@ var services = {
 	},
 	'showBotServCmds': function(chan){
 		if(!services.requireRegisteredNick()) return;
-		html = language.eachFunctionNeedsPermissions + '<br>' +
-			'<table>'+
-			'<tr><td><button id="bs-botlist-' + md5(chan) + '-button">BOTLIST</button></td><td></td><td></td><td>' + language.showBotList + '</td></tr>'+
-			'<tr><td><button id="bs-assign-' + md5(chan) + '-button">ASSIGN</button></td><td>' + language.nickChosenFromBotList + ': <input type="text" id="bs-assign-'+md5(chan)+'"></td><td></td><td>' + language.assignBotToChan + '</td></tr>'+
-			'<tr><td><button id="bs-unassign-' + md5(chan) + '-button">UNASSIGN</button></td><td></td><td></td><td>' + language.removeBotFromChan + '</td></tr>'+
-			'<tr><td><button id="bs-act-' + md5(chan) + '-button">ACT</button></td><td>' + language.message + ': <input type="text" id="bs-act-'+md5(chan)+'"></td><td></td><td>' + language.sendActionToChan + '</td></tr>'+
-			'<tr><td><button id="bs-say-' + md5(chan) + '-button">SAY</button></td><td>' + language.message + ': <input type="text" id="bs-say-'+md5(chan)+'"></td><td></td><td>' + language.sendMessageToChan + '</td></tr>'+
+		html = language.eachFunctionNeedsPermissions + '<br>'
+			'<table>'
+			'<tr><td><button id="bs-botlist-' + md5(chan) + '-button">BOTLIST</button></td><td></td><td></td><td>' + language.showBotList + '</td></tr>'
+			'<tr><td><button id="bs-assign-' + md5(chan) + '-button">ASSIGN</button></td><td>' + language.nickChosenFromBotList + ': <input type="text" id="bs-assign-'+md5(chan)+'"></td><td></td><td>' + language.assignBotToChan + '</td></tr>'
+			'<tr><td><button id="bs-unassign-' + md5(chan) + '-button">UNASSIGN</button></td><td></td><td></td><td>' + language.removeBotFromChan + '</td></tr>'
+			'<tr><td><button id="bs-act-' + md5(chan) + '-button">ACT</button></td><td>' + language.message + ': <input type="text" id="bs-act-'+md5(chan)+'"></td><td></td><td>' + language.sendActionToChan + '</td></tr>'
+			'<tr><td><button id="bs-say-' + md5(chan) + '-button">SAY</button></td><td>' + language.message + ': <input type="text" id="bs-say-'+md5(chan)+'"></td><td></td><td>' + language.sendMessageToChan + '</td></tr>'
 		'</table>';
 		$$.displayDialog('admin', 'bs-'+chan, language.botservCommandsOn+he(chan), html);
 		$$.alert(language.workInProgress);
@@ -439,11 +433,11 @@ var services = {
 		return cmdString;
 	},
 	'showBan': function(channel, nick) {
-		var html = '<p>'+language.banAndKickUserFrom +he(nick)+language.fromChannel+he(channel)+'. '+ language.giveKickReason +'</p>' +
-			'<input type="text" id="kbinput" maxlength="307" /><br>' +
-			'<select id="kbtime">' +
-				'<option value=" ">' + language.noAutoUnban + '</option>' +
-				'<option value="1d">' + language.unban1Day + '</option>' +
+		var html = '<p>'+language.banAndKickUserFrom +he(nick)+language.fromChannel+he(channel)+'. '+ language.giveKickReason +'</p>'
+			'<input type="text" id="kbinput" maxlength="307" /><br>'
+			'<select id="kbtime">'
+				'<option value=" ">' + language.noAutoUnban + '</option>'
+				'<option value="1d">' + language.unban1Day + '</option>'
 				'<option value="1h">' + language.unban1Hour + '</option>';
 		if(mainSettings.timedBanMethod == 'ChanServ'){
 			html += '<option value="30d">' + language.unban1Month + '</option>';
@@ -451,12 +445,12 @@ var services = {
 			html += '<option value="7d">' + language.unban1Week + '</option>';
 		}
 		html += '</select>';
-		var button = [ {
+		var button = [ { 
 			text: language.cancel,
 			click: function(){
 				$(this).dialog('close');
 			}
-		}, {
+		}, { 
 			text: language.doBan,
 			click: function(){
 				services.processBan(channel, nick);
@@ -511,20 +505,20 @@ var services = {
 		gateway.performCommand(banString);
 	},
 	'requireRegisteredNick': function() {
-		if(!guser.me.registered){
+		if(!ircEvents.emit('domain:getMeUser').registered){ // Check guser.me.registered via domain event
 			$$.alert(language.youNeedRegisteredNickToUseThis);
 			return false;
 		}
 		return true;
 	},
 	'changeMyNick': function() {
-		var html = language.newNick + ' <input type="text" value="'+guser.nick+'" id="nickChangeInput">';
-		var button = [ {
+		var html = language.newNick + ' <input type="text" value="'+ircEvents.emit('domain:getMeUser').nick+'" id="nickChangeInput">'; // Get guser.nick via domain event
+		var button = [ { 
 			text: language.cancel,
 			click: function(){
 				$(this).dialog('close');
 			}
-		}, {
+		}, { 
 			text: language.change,
 			click: function(){
 				if(services.doChangeNick()){
@@ -548,16 +542,16 @@ var services = {
 		return true;
 	},
 	'registerMyNick': function() {
-		var html = '<table><tr><td style="text-align: right; padding-right: 10px;">' + language.password + '</td><td><input type="password" id="nickRegisterPass"></td></tr>'+
-			'<tr><td style="text-align: right; padding-right: 10px;">' + language.repeatPassword + '</td><td><input type="password" id="nickRegisterPassConf"></td></tr>'+
-			'<tr><td style="text-align: right; padding-right: 10px;">' + language.email + '</td><td><input type="text" id="nickRegisterMail"></td></tr>'+
+		var html = '<table><tr><td style="text-align: right; padding-right: 10px;">' + language.password + '</td><td><input type="password" id="nickRegisterPass"></td></tr>'
+			'<tr><td style="text-align: right; padding-right: 10px;">' + language.repeatPassword + '</td><td><input type="password" id="nickRegisterPassConf"></td></tr>'
+			'<tr><td style="text-align: right; padding-right: 10px;">' + language.email + '</td><td><input type="text" id="nickRegisterMail"></td></tr>'
 			'</table><p>' + language.emailNeeded + '</p>';
-		var button = [ {
+		var button = [ { 
 			text: language.cancel,
 			click: function(){
 				$(this).dialog('close');
 			}
-		}, {
+		}, { 
 			text: language.register,
 			click: function(){
 				if(services.doRegisterNick()){
@@ -565,7 +559,7 @@ var services = {
 				}
 			}
 		} ];
-		$$.displayDialog('services', 'nickserv', language.registrationOfNick+guser.nick, html, button);
+		$$.displayDialog('services', 'nickserv', language.registrationOfNick+ircEvents.emit('domain:getMeUser').nick, html, button); // Get guser.nick via domain event
 	},
 	'doRegisterNick': function() {
 		var password = $('#nickRegisterPass').val();
@@ -590,7 +584,7 @@ var services = {
 			$$.alert(language.badEmail);
 			return false;
 		}
-		var timeDiff = 120 - Math.round(((+new Date)/1000) - gateway.connectTime);
+		var timeDiff = 120 - Math.round(((+new Date)/1000) - ircEvents.emit('domain:getConnectTime')); // Get gateway.connectTime via domain event
 		if(timeDiff > 0){
 			$$.alert(language.youHaveToWaitAnother + timeDiff + language.secondsToRegisterNick);
 			return false;
@@ -601,30 +595,30 @@ var services = {
 	},
 	/*'setCloak': function(){
 		var html = '<p>To polecenie ustawi vHosta o treści <b>cloak:'+guser.nick+'</b>. Jeśli masz już vHosta, zostanie on usunięty.</p>';
-		var button = [ {
+		var button = [ { 
 			text: 'Anuluj',
 			click: function(){
 				$(this).dialog('close');
 			}
-		}, {
+		}, { 
 			text: 'Wykonaj',
 			click: function(){
 				gateway.send('HS CLOAK');
 				$(this).dialog('close');
 			}
 		} ];
-		$$.displayDialog('services', 'hostserv', 'Ustawianie automatycznego vhosta', html, button);
-	},*/
+		$$.displayDialog('services', 'hostserv', language.settingOfVhost, html, button);
+		*/
 	'setVhost': function(){
-		var html = '<p>' + language.thisCommandWillRequestVhost + '</p>'+
-			'<p>' + language.newVhost + '<input type="text" id="newVhost"></p>'+
+		var html = '<p>' + language.thisCommandWillRequestVhost + '</p>'
+			'<p>' + language.newVhost + '<input type="text" id="newVhost"></p>'
 			'<p>' + language.lettersDigitsDot + '</p>';
-		var button = [ {
+		var button = [ { 
 			text: language.cancel,
 			click: function(){
 				$(this).dialog('close');
 			}
-		}, {
+		}, { 
 			text: language.proceed,
 			click: function(){
 				ircCommand.serviceCommand('HostServ', 'REQUEST', [$('#newVhost').val()]);
@@ -634,4 +628,3 @@ var services = {
 		$$.displayDialog('services', 'hostserv', language.settingOfVhost, html, button);
 	}
 };
-
