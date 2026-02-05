@@ -210,7 +210,7 @@ var mcolorInit = function(){
 	colorExampleApply();
 	html = '<tr><td  class="optionsCheckBox"><input type="checkbox" id="mcolorEnable" onchange="disp.changeSettings(event)" checked="checked" /></td><td class="info">' + language.enableMessageColoring + '</td></tr>';
 	$('#options-dialog table').prepend(html);
-	booleanSettings.push('mcolorEnable');
+	settings.registerBooleanSetting('mcolorEnable');
 	$('#nickColorPick').change(function(){
 		/*if($('#nickColorPick').val() != mcolor){
 			$('#nickColorInfo').text('Kliknij "Zatwierdź" aby zmienić');

@@ -40,7 +40,8 @@ function ChannelMember(user, channelName) {
 
     // Channel-specific properties, derived from user object as provided by protocol
     this.level = user.level || 0; // A numeric representation of rank/privileges
-    this.channelModes = user.channelModes || {}; // Object of modes, e.g., { op: true, voice: false }
+    // Deep copy channelModes to ensure each ChannelMember has its own independent object
+    this.channelModes = user.channelModes ? JSON.parse(JSON.stringify(user.channelModes)) : {};
 
     /**
      * Updates the ChannelMember's properties based on a new user object.
@@ -64,13 +65,15 @@ function ChannelMember(user, channelName) {
         if (this.registered !== newUser.registered) { this.registered = newUser.registered; changed = true; }
         if (this.away !== newUser.away) { this.away = newUser.away; changed = true; }
 
-        // Channel-specific properties
-        var newLevel = newUser.level || 0;
-        if (this.level !== newLevel) { this.level = newLevel; changed = true; }
-        var newModes = newUser.channelModes || {};
-        if (JSON.stringify(this.channelModes) !== JSON.stringify(newModes)) {
-            this.channelModes = newModes;
-            changed = true;
+        // Channel-specific properties (only update if explicitly provided)
+        if ('level' in newUser && newUser.level !== undefined) {
+            if (this.level !== newUser.level) { this.level = newUser.level; changed = true; }
+        }
+        if ('channelModes' in newUser && newUser.channelModes !== undefined) {
+            if (JSON.stringify(this.channelModes) !== JSON.stringify(newUser.channelModes)) {
+                this.channelModes = newUser.channelModes;
+                changed = true;
+            }
         }
 
         if (changed) {
@@ -103,15 +106,23 @@ function ChannelMemberList(channelName) {
         if (!this.findMemberById(user.id)) {
             var member = new ChannelMember(user, this.channelName);
             this.members.push(member);
+            console.log('[NICKLIST-DEBUG] Added', user.nick, 'to', this.channelName, 'total members:', this.members.length);
             // Sort to maintain order if needed, or sort on retrieval for UI
             this.members.sort(this._sortFunc);
 
-            ircEvents.emit('domain:channelMemberListChanged', {
-                channelName: this.channelName,
-                type: 'add',
-                member: member
-            });
+            // Only emit event if channel is not initializing
+            var isInitializing = typeof domainChannelsInitializing !== 'undefined' &&
+                                 domainChannelsInitializing[this.channelName.toLowerCase()];
+            if (!isInitializing) {
+                ircEvents.emit('domain:channelMemberListChanged', {
+                    channelName: this.channelName,
+                    type: 'add',
+                    member: member
+                });
+            }
             return member;
+        } else {
+            console.log('[NICKLIST-DEBUG] User', user.nick, 'already in', this.channelName, '- not adding duplicate');
         }
         return this.findMemberById(user.id);
     };
@@ -217,20 +228,20 @@ function ChannelMemberList(channelName) {
     // Event listeners for user-related domain events that might affect channel members
     // This is where domain layer listens to global user changes
     ircEvents.on('domain:userNickChanged', function(data) {
-        if (data.oldUser.id === data.newUser.id) { // Ensure it's the same stable user
-            var member = this.findMemberById(data.newUser.id);
-            if (member) {
-                // Delegate update to ChannelMember, which will emit its own event
-                member.update(data.newUser);
-                this.members.sort(this._sortFunc);
-                ircEvents.emit('domain:channelMemberListChanged', {
-                    channelName: this.channelName,
-                    type: 'nickChange',
-                    member: member,
-                    oldNick: data.oldNick,
-                    newNick: data.newNick
-                });
-            }
+        // Note: data.user.nick has already been updated to newNick
+        // Find member by user ID (which doesn't change on nick change)
+        var member = this.findMemberById(data.user.id);
+        if (member) {
+            // Delegate update to ChannelMember, which will emit its own event
+            member.update(data.user);
+            this.members.sort(this._sortFunc);
+            ircEvents.emit('domain:channelMemberListChanged', {
+                channelName: this.channelName,
+                type: 'nickChange',
+                member: member,
+                oldNick: data.oldNick,
+                newNick: data.newNick
+            });
         }
     }.bind(this));
 
@@ -284,15 +295,79 @@ function ChannelMemberList(channelName) {
         }
     }.bind(this));
 
+    // Generic listener for user updates (registration status, account, avatar, etc.)
+    // Supports both single field (updatedField) and multiple fields (updatedFields array)
+    ircEvents.on('domain:userUpdated', function(data) {
+        var member = this.findMemberById(data.user.id);
+        if (member) {
+            // Update the member - this will trigger a domain:channelMemberUpdated event
+            member.update(data.user);
+
+            // Normalize to array for easier processing
+            var fields = data.updatedFields || (data.updatedField ? [data.updatedField] : []);
+
+            // Determine the type of change for the list-level event
+            var changeType = 'update';
+            if (fields.indexOf('registered') !== -1) {
+                changeType = 'registeredChange';
+            } else if (fields.indexOf('account') !== -1) {
+                changeType = 'accountChange';
+            } else if (fields.indexOf('avatar') !== -1) {
+                changeType = 'avatarChange';
+            } else if (fields.indexOf('away') !== -1) {
+                changeType = 'awayChange';
+            }
+
+            ircEvents.emit('domain:channelMemberListChanged', {
+                channelName: this.channelName,
+                type: changeType,
+                member: member,
+                updatedFields: fields
+            });
+        }
+    }.bind(this));
+
     // Listen for channel-specific mode changes that might affect member levels/modes
-    // This assumes `gateway_domain.js` or `gateway_cmds.js` will emit events like:
-    // ircEvents.emit('domain:channelModeForUserChanged', { channelName: '#channel', user: userObjectWithNewModes });
+    // Data format: { channelName, user, modeChange: { mode, isAdding, nick } }
     ircEvents.on('domain:channelModeForUserChanged', function(data) {
         if (data.channelName === this.channelName) {
             var member = this.findMemberById(data.user.id);
-            if (member) {
-                member.update(data.user); // This will update channelModes and level, and emit its own event
-                this.members.sort(this._sortFunc);
+            if (member && data.modeChange) {
+                // Apply the mode change to the member's channelModes
+                // Use language.modes.chStatusNames to map mode chars to mode names
+                var modeName = language.modes.chStatusNames[data.modeChange.mode] || data.modeChange.mode;
+                if (modeName) {
+                    var oldModes = JSON.stringify(member.channelModes);
+                    var oldLevel = member.level;
+
+                    // Add or remove the mode
+                    if (data.modeChange.isAdding) {
+                        member.channelModes[modeName] = true;
+                    } else {
+                        delete member.channelModes[modeName];
+                    }
+
+                    // Recalculate level based on current modes
+                    if (member.channelModes.owner) member.level = 5;
+                    else if (member.channelModes.admin) member.level = 4;
+                    else if (member.channelModes.op) member.level = 3;
+                    else if (member.channelModes.halfop) member.level = 2;
+                    else if (member.channelModes.voice) member.level = 1;
+                    else member.level = 0;
+
+                    // Emit update event if anything changed
+                    if (oldModes !== JSON.stringify(member.channelModes) || oldLevel !== member.level) {
+                        ircEvents.emit('domain:channelMemberUpdated', {
+                            channelName: this.channelName,
+                            memberId: member.id,
+                            newMember: member,
+                            oldNick: member.nick,
+                            oldLevel: oldLevel,
+                            oldModes: JSON.parse(oldModes)
+                        });
+                        this.members.sort(this._sortFunc);
+                    }
+                }
             }
         }
     }.bind(this));

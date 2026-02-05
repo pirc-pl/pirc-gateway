@@ -44,6 +44,10 @@ var users = {
 			this.host = host;
 			ircEvents.emit('domain:userUpdated', { user: this, updatedField: 'host' });
 		};
+		this.setServer = function(server){
+			this.server = server;
+			// No event emission needed - server info is only used for WHOIS display
+		};
 		this.setAccount = function(account){
 			this.account = account;
 			if(!account && this.registered){
@@ -165,7 +169,9 @@ var users = {
 		// The `updatedField: 'nick'` would indicate the primary change
 		ircEvents.emit('domain:userUpdated', { user: user, updatedField: 'nick' });
 		// Emit a specific event for the nick change to trigger query/channel UI updates
-		ircEvents.emit('domain:userNickChanged', { oldNick: oldNick, newNick: newNick, time: time });
+		// Note: user.nick has already been updated to newNick at this point (line 156)
+		// oldNick/newNick strings provided for listeners that need to know what changed
+		ircEvents.emit('domain:userNickChanged', { user: user, oldNick: oldNick, newNick: newNick, time: time });
 	},
 	'knowOwnNick': function(){ // called once on connect (001)
 		var user = users.getUser('*');

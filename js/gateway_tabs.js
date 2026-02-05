@@ -23,14 +23,20 @@
 function Nicklist(chan, id) {
 	this.channel = chan;
 	this.id = id+'-nicklist';
+	console.log('[NICKLIST-DEBUG] Creating Nicklist instance for channel', chan, 'with DOM id', this.id);
 	this.uiMembers = new Map(); // Map of NicklistUser instances, indexed by ChannelMember.id
+	this._eventUnsubscribers = []; // Store unsubscribe functions for cleanup
+
     // Event listener for when the overall channel member list changes (add/remove)
-    ircEvents.on('domain:channelMemberListChanged', function(data) {
-        if (data.channelName !== this.channel) {
+    var unsubscribe1 = ircEvents.on('domain:channelMemberListChanged', function(data) {
+        console.log('[NICKLIST-DEBUG] Event received for channel', data.channelName, 'type:', data.type, 'this.channel:', this.channel);
+        if (data.channelName.toLowerCase() !== this.channel.toLowerCase()) {
+            console.log('[NICKLIST-DEBUG] Ignoring - not for this channel');
             return;
         }
 
         if (data.type === 'add') {
+            console.log('[NICKLIST-DEBUG] Adding member to UI:', data.member.nick, 'for channel', this.channel);
             this._addMemberToUI(data.member);
         } else if (data.type === 'remove') {
             this._removeMemberFromUI(data.memberId);
@@ -39,15 +45,18 @@ function Nicklist(chan, id) {
         }
         this.showChstats(); // Always refresh stats on list change
     }.bind(this));
+    this._eventUnsubscribers.push(unsubscribe1);
 
     // Event listener for when a specific channel member's properties are updated
-    ircEvents.on('domain:channelMemberUpdated', function(data) {
-        if (data.channelName !== this.channel) {
+    var unsubscribe2 = ircEvents.on('domain:channelMemberUpdated', function(data) {
+        if (data.channelName.toLowerCase() !== this.channel.toLowerCase()) {
             return;
         }
         this._updateMemberInUI(data.newMember, data.oldNick, data.oldLevel, data.oldModes);
         this.showChstats(); // Always refresh stats on member update
     }.bind(this));
+    this._eventUnsubscribers.push(unsubscribe2);
+
 	this.sortFunc = function(a, b) {
         // Note: a and b are NicklistUser instances. Read level and nick from their channelMember.
 		if(a.channelMember.level < b.channelMember.level) {
@@ -65,15 +74,26 @@ function Nicklist(chan, id) {
 		}
 	}
 
-    this._addMemberToUI = function(channelMember) {
+    this._addMemberToUI = function(channelMember, skipSortAndStats) {
+        // Check if already exists to avoid duplicates
+        if (this.uiMembers.has(channelMember.id)) {
+            console.log('[NICKLIST-DEBUG] Member', channelMember.nick, 'already in UI for', this.channel, '- skipping');
+            return;
+        }
+
+        console.log('[NICKLIST-DEBUG] Adding member', channelMember.nick, 'to UI nicklist for', this.channel);
         var nickListItem = new NicklistUser(channelMember, this.channel);
         this.uiMembers.set(channelMember.id, nickListItem);
 
         var $nicklistUl = $('#' + this.id + ' .nicklist');
         $nicklistUl.append(nickListItem.makeHTML());
         nickListItem.setActions();
-        this.sort(); // Re-sort to place the new member in correct position
-        this.showChstats();
+
+        // Only sort and update stats if not skipping (for efficiency during bulk add)
+        if (!skipSortAndStats) {
+            this.sort(); // Re-sort to place the new member in correct position
+            this.showChstats();
+        }
     };
 
     this._removeMemberFromUI = function(memberId) {
@@ -114,8 +134,34 @@ function Nicklist(chan, id) {
         $nicklistUl.append(sortedElements); // Append all at once for performance
 	}
 	this.remove = function() {
+		console.log('[NICKLIST-DEBUG] Removing Nicklist for', this.channel, 'cleaning up', this._eventUnsubscribers.length, 'event listeners');
+		// Unsubscribe from all events
+		this._eventUnsubscribers.forEach(function(unsubscribe) {
+			if (typeof unsubscribe === 'function') {
+				unsubscribe();
+			}
+		});
+		this._eventUnsubscribers = [];
+
 		$('#'+this.id).remove();
 		this.uiMembers.clear(); // Clear the map on remove
+	}
+
+	this.replaceAllMembers = function(members) {
+		// Clear existing members
+		this.uiMembers.clear();
+		var $nicklistUl = $('#' + this.id + ' .nicklist');
+		$nicklistUl.empty();
+
+		// Add all new members efficiently
+		if (members && members.length > 0) {
+			for (var i = 0; i < members.length; i++) {
+				this._addMemberToUI(members[i], true); // Skip sort/stats during bulk add
+			}
+			// Sort and update stats once after all members are added
+			this.sort();
+			this.showChstats();
+		}
 	}
 
 
@@ -175,12 +221,17 @@ function Nicklist(chan, id) {
 		console.error("Failed to create nicklist UI element:", e);
 		// Show an error message to the user, but don't stop the app
 	}
+
+    // Don't initialize members here - they will be added by the channel:channelCreation event handler
+    console.log('[NICKLIST-DEBUG] Nicklist created for', this.channel, '- members will be added by event handler');
 }
 
 function NicklistUser(channelMember, chan) {
     this.channel = chan;
     this.channelMember = channelMember; // The domain ChannelMember object
-    this.id = 'nicklist-user-' + channelMember.id; // Stable DOM element ID for the <li>
+    // Make DOM ID unique per channel by including sanitized channel name
+    var channelId = chan.replace(/^#/g,'').replace(/[^a-zA-Z0-9]+/g, '-').toLowerCase();
+    this.id = 'nicklist-user-' + channelId + '-' + channelMember.id; // Unique DOM element ID per channel
     this.userStableId = channelMember.id; // Store stable ID for easy lookup/class
 
 	this.makeHTML = function() {
@@ -217,13 +268,14 @@ function NicklistUser(channelMember, chan) {
 			html +=		'<li id="'+this.id+'-showBan">' + language.banUser + '</li>';
 		} else if(mainSettings.timedBanMethod == 'ChanServ'){
 			html +=		'<li id="'+this.id+'-showBan">' + language.banUsingChanserv + '</li>';
-		} else 
+		} else {
 		html += 		'<li id="'+this.id+'-givePrivileges">' + language.givePrivileges + '</li>'+ 
 						'<li id="'+this.id+'-takePrivileges">' + language.takePrivileges + '</li>'+ 
-					/*	'<li id="'+this.id+'-showBanUni">Banuj</li>*/'+ 
+					// '<li id="'+this.id+'-showBanUni">Banuj</li>'+
 					'</ul>'+ 
 				'</li>'+ 
 			'</ul>';
+	}
 		return html;
 	}
 
@@ -342,7 +394,7 @@ function NicklistUser(channelMember, chan) {
 		if(this.channelMember.ident && this.channelMember.host){
 			text = this.channelMember.nick+'!'+this.channelMember.ident+'@'+this.channelMember.host;
 			if(this.channelMember.realname){
-				text += ' \n'+this.user.realname;
+				text += ' \n'+this.channelMember.realname;
 			}
 		}
 		if(this.channelMember.away){
@@ -455,9 +507,9 @@ function Query(nick) {
 		$('#'+this.id+'-chstats').remove();
 		$('#'+this.id+'-tab-info').remove();
 		if(this.name.toLowerCase() == gateway.active.toLowerCase()) {
-			ircEvents.emit('domain:requestSwitchTab', { tabName: gateway.tabHistoryLast(this.name) }); // Emit domain event
+			gateway.switchTab(gateway.tabHistoryLast(this.name)); // Direct UI action
 		}
-		ircEvents.emit('domain:requestRemoveQuery', { queryName: this.name }); // Emit domain event to remove query object
+		gateway.removeQuery(this.name); // Direct UI action to clean up the queries array
 	}
 	this.appendMessage = function(type, args, time) {
 		if(!time)
@@ -485,11 +537,11 @@ function Query(nick) {
 		$('#'+this.id+'-window').vprintf(language.messagePatterns.nickChange, [$$.niceTime(), he(this.name), he(newnick)]);
 		$('#'+this.id+'-topic').html('<h1>'+he(newnick)+'</h1><h2></h2>');
 		$("#"+this.id+'-tab').html('<a href="javascript:void(0);" class="switchTab" id="' + this.id + '-tab-switch">'+he(newnick)+'</a><a href="javascript:void(0);" id="' + this.id + '-tab-close"><div class="close"></div></a>');
-		$("#"+this.id+'-tab-switch').click(function(){ ircEvents.emit('domain:requestSwitchTab', { tabName: newnick }); }.bind(this)); // Emit domain event
-		$("#"+this.id+'-tab-close').click(function(){ ircEvents.emit('domain:requestRemoveQuery', { queryName: newnick }); }.bind(this)); // Emit domain event
+		$("#"+this.id+'-tab-switch').click(function(){ gateway.switchTab(newnick); }.bind(this)); // Direct UI action
+		$("#"+this.id+'-tab-close').click(function(){ this.close(); }.bind(this)); // Direct UI action
 		this.name = newnick;
 		if(oldName == gateway.active.toLowerCase()) {
-			ircEvents.emit('domain:requestSwitchTab', { tabName: newnick }); // Emit domain event
+			gateway.switchTab(newnick); // Direct UI action
 		}
 	}
 	this.restoreScroll = function() {
@@ -522,8 +574,8 @@ function Query(nick) {
 	$('<span/>').attr('id', this.id+'-tab-info').hide().appendTo('#tab-info');
 	$('#'+this.id+'-topic').html('<h1>'+this.name+'</h1><h2></h2>');
 	$('<li/>').attr('id', this.id+'-tab').html('<a href="javascript:void(0);" class="switchTab" id="' + this.id + '-tab-switch">'+he(this.name)+'</a><a href="javascript:void(0);" id="' + this.id + '-tab-close"><div class="close" title="' + language.closeQuery + '"></div></a>').appendTo('#tabs');
-	$("#"+this.id+'-tab-switch').click(function(){ ircEvents.emit('domain:requestSwitchTab', { tabName: this.name }); }.bind(this)); // Emit domain event
-	$("#"+this.id+'-tab-close').click(function(){ ircEvents.emit('domain:requestRemoveQuery', { queryName: this.name }); }.bind(this)); // Emit domain event
+	$("#"+this.id+'-tab-switch').click(function(){ gateway.switchTab(this.name); }.bind(this)); // Direct UI action
+	$("#"+this.id+'-tab-close').click(function(){ this.close(); }.bind(this)); // Direct UI action
 	$('#chstats').append('<div class="chstatswrapper" id="'+this.id+'-chstats"><span class="chstats-text symbolFont">' + language.query + '</span></div>');
 	try {
 		var qCookie = localStorage.getItem('query'+md5(this.name));
@@ -558,6 +610,8 @@ function ChannelTab(chan) {
 		this.hasNames = false;
 		this.nicklist.remove();
 		this.nicklist = new Nicklist(this.name, this.id); // Re-initialize nicklist UI
+		// Clear channel stats display since we're no longer in the channel
+		$('#'+this.id+'-chstats .chstats-text').html('');
 	}
 
 	this.toggleClass = function() {
@@ -669,7 +723,7 @@ function ChannelTab(chan) {
 	this.close = function() {
 		if(!this.left) {
 			this.part();
-			ircEvents.emit('domain:requestPartChannel', { channelName: this.name, message: language.leftChannel }); // Emit domain event
+			ircEvents.emit('domain:requestRemoveChannel', { channelName: this.name, message: language.leftChannel }); // Emit domain event
 		}
 		this.nicklist.remove();
 		$('#'+this.id+'-tab').remove();
@@ -678,7 +732,7 @@ function ChannelTab(chan) {
 		$('#'+this.id+'-chstats').remove();
 		$('#'+this.id+'-tab-info').remove();
 		if(this.name.toLowerCase() == gateway.active.toLowerCase()) {
-			ircEvents.emit('domain:requestSwitchTab', { tabName: gateway.tabHistoryLast(this.name) }); // Emit domain event
+			gateway.switchTab(gateway.tabHistoryLast(this.name)); // Direct UI action
 		}
 	}
 	this.rejoin = function() {
@@ -689,20 +743,32 @@ function ChannelTab(chan) {
 		}
 	}
 
-	this.appendMessage = function(type, args, time) {
+	this.appendMessage = function(type, args, time, options) {
+		// options can contain: isHistory - whether this is a historical message
+		options = options || {};
 		if(!time)
 			time = new Date();
-		time = time.getTime();
+		var timeMs = time.getTime();
 		var rescroll = false;
 		var messageData = $.vsprintf(type, args);
-		var fullHeight = document.getElementById('chat-wrapper').scrollHeight;
-		var currHeight = $('#chat-wrapper').scrollTop() + $('#chat-wrapper').innerHeight();
-		if(this.name.toLowerCase() == gateway.active.toLowerCase() && currHeight > fullHeight-200) {
-			rescroll = true;
+
+		// Add data-time attribute to message div if not already present
+		var $messageData = $(messageData);
+		if($messageData.hasClass('messageDiv') && !$messageData.attr('data-time')){
+			$messageData.attr('data-time', timeMs);
+			messageData = $messageData.prop('outerHTML');
 		}
 
+		time = timeMs;
 		var appended = false;
-		var isHistoryBatch = gateway.historyBatchActive(this.name);
+		var isHistoryBatch = options.isHistory || false; // Use provided flag instead of querying domain
+
+		// Check if we should auto-scroll to bottom after insertion (only for non-history messages)
+		var fullHeight = document.getElementById('chat-wrapper').scrollHeight;
+		var currHeight = $('#chat-wrapper').scrollTop() + $('#chat-wrapper').innerHeight();
+		if(!isHistoryBatch && this.name.toLowerCase() == gateway.active.toLowerCase() && currHeight > fullHeight-200) {
+			rescroll = true;
+		}
 
 		// Save scroll position before inserting history (to maintain visible messages' position)
 		var oldScrollHeight = 0;
@@ -809,6 +875,18 @@ function ChannelTab(chan) {
 		$('#'+this.id+'-topic').unbind('click').click(disp.topicClick);
 		this.topic = topic;
 	}
+	this.setTopicSetBy = function(setBy) {
+		this.topicSetBy = setBy;
+		// Topic metadata is typically shown in channel info, not in the topic bar
+	}
+	this.setTopicSetDate = function(setDate) {
+		this.topicSetDate = setDate;
+		// Topic metadata is typically shown in channel info, not in the topic bar
+	}
+	this.setCreationTime = function(creationTime) {
+		this.creationTime = creationTime;
+		// Creation time is typically shown in channel info
+	}
 	this.clearWindow = function() {
 		$('#'+this.id+'-window').html(' ');
 	}
@@ -817,10 +895,33 @@ function ChannelTab(chan) {
 	$('<span/>').attr('id', this.id+'-topic').hide().appendTo('#info');
 	$('<span/>').attr('id', this.id+'-tab-info').hide().appendTo('#tab-info');
 	$('#'+this.id+'-topic').html('<h1>'+he(this.name)+'</h1><h2></h2>');
-	$('<li/>').attr('id', this.id+'-tab').html('<a href="javascript:void(0);" id="' + this.id + '-channelSwitchButton" class="switchTab">'+he(this.name)+'</a>'+ 
+	$('<li/>').attr('id', this.id+'-tab').html('<a href="javascript:void(0);" id="' + this.id + '-channelSwitchButton" class="switchTab">'+he(this.name)+'</a>'+
 		'<a href="javascript:void(0);" id="' + this.id + '-channelPartButton"><div class="close" title="' + language.leaveChannel + '"></div></a>').appendTo('#tabs');
-	$('#'+this.id+'-channelSwitchButton').click(function(){ ircEvents.emit('domain:requestSwitchTab', { tabName: this.name }); }.bind(this)); // Emit domain event
-	$('#'+this.id+'-channelPartButton').click(function(){ ircEvents.emit('domain:requestRemoveChannel', { channelName: this.name }); }.bind(this)); // Emit domain event
+	$('#chstats').append('<div class="chstatswrapper" id="'+this.id+'-chstats"><span class="chstats-text symbolFont">'+he(this.name)+'</span>'+
+		'<span class="chstats-button" id="'+this.id+'-toggleChannelOpts">' +language.channelOptions+ '</span>'+
+		'<div id="'+this.id+'-channelOptions" class="channelAdmin"><ul class="channelOptions">' +
+			'<div class="nickRegistered"><span>' + language.autoJoinThisChannel + '</span>'+
+				'<li id="'+this.id+'-aJoinEnable">' + language.enable + '</li>' +
+				'<li id="'+this.id+'-aJoinDisable">' + language.disable + '</li>' +
+			'</div>'+
+			'<li id="'+this.id+'-clearWindow">' + language.clearMessageWindow + '</li>' +
+			'<li id="'+this.id+'-redoNames">' + language.refreshNickList + '</li>' +
+		'</ul></div></div>');
+	var operHtml = '<div id="'+this.id+'-operActions" class="'+this.id+'-operActions channelAdmin" style="display:none">' +
+		'<span class="chstats-button" id="'+this.id+'-openOperActions">' + language.administrativeActions + '</span>'+
+		'<ul class="channelOperActions">' +
+			'<li id="'+this.id+'-openBanList">' + language.banList + '</li>' +
+			'<li id="'+this.id+'-openExceptList" title="' + language.exceptListHint + '">' + language.exceptList + '</li>' +
+			'<li id="'+this.id+'-openInvexList" title="' + language.invexListHint + '">' + language.invexList + '</li>' +
+			'<li id="'+this.id+'-openChannelModes">' + language.channelModes + '</li>' +
+			'<li id="'+this.id+'-showInvitePrompt">' + language.inviteToChannel + '</li>' +
+			'<li id="'+this.id+'-showChanservCommands">' + language.chanservCommands + '</li>' +
+			'<li id="'+this.id+'-showBotservCommands">' + language.botservCommands + '</li>' +
+		'</ul>' +
+		'</div>';
+	$('#'+this.id+'-chstats').append(operHtml);
+	$('#'+this.id+'-channelSwitchButton').click(function(){ gateway.switchTab(this.name); }.bind(this)); // Direct UI action
+	$('#'+this.id+'-channelPartButton').click(function(){ ircEvents.emit('domain:requestRemoveChannel', { channelName: this.name, message: language.leftChannel }); }.bind(this)); // Emit domain event
 	$('#'+this.id+'-toggleChannelOpts').click(function(){ gateway.toggleChannelOpts(this.name); }.bind(this));
 	$('#'+this.id+'-aJoinEnable').click(function(){ ircEvents.emit('domain:requestServiceCommand', { service: 'NickServ', command: 'AJOIN', args: ['ADD', this.name], time: new Date() }); }.bind(this)); // Emit domain event
 	$('#'+this.id+'-aJoinDisable').click(function(){ ircEvents.emit('domain:requestServiceCommand', { service: 'NickServ', command: 'AJOIN', args: ['DEL', this.name], time: new Date() }); }.bind(this)); // Emit domain event
@@ -1130,7 +1231,7 @@ function ListWindow() {
 		$('#'+this.id+'-chstats').remove();
 		$('#'+this.id+'-tab-info').remove();
 		if(this.name == gateway.active) {
-			ircEvents.emit('domain:requestSwitchTab', { tabName: gateway.tabHistoryLast(this.name) }); // Emit domain event
+			gateway.switchTab(gateway.tabHistoryLast(this.name)); // Direct UI action
 		}
 		ircEvents.emit('domain:requestRemoveListWindow', { listName: this.name }); // Emit domain event
 	};
@@ -1211,7 +1312,7 @@ function ListWindow() {
 	$('<span/>').attr('id', this.id+'-tab-info').hide().appendTo('#tab-info');
 	$('#'+this.id+'-topic').html('<h1>' + language.channelListTitle + '</h1><h2></h2>');
 	$('<li/>').attr('id', this.id+'-tab').html('<a href="javascript:void(0);" id="' + this.id + '-tab-switch">' + language.channelListTitle + '</a><a href="javascript:void(0);" id="' + this.id + '-tab-close"><div class="close" title="' + language.close + '"></div></a>').appendTo('#tabs');
-	$('#'+this.id+'-tab-switch').click(function(){ ircEvents.emit('domain:requestSwitchTab', { tabName: this.name }); }.bind(this)); // Emit domain event
+	$('#'+this.id+'-tab-switch').click(function(){ gateway.switchTab(this.name); }.bind(this)); // Direct UI action
 	$('#'+this.id+'-tab-close').click(function(){ this.close(); }.bind(this));
 	$('#chstats').append('<div class="chstatswrapper" id="'+this.id+'-chstats"><span class="chstats-text symbolFont">' + language.channelListTitle + '</span></div>');
 }

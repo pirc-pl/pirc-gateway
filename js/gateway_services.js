@@ -105,17 +105,28 @@ var services = {
 	'showTimeToChange': false,
 	'ignoreNextAccessDenial': false,
 	'badNickString': function(){
-		return '<div class="table">
-			<form class="trgr" onsubmit="services.logIn();$$.closeDialog(\'error\', \'nickserv\')" action="javascript:void(0);">
-				<div class="tr">' +
-				'<span class="td_right">' + language.yourPassword + '</span>'+ // This line has been corrected from the original. It was missing the closing quote for language.yourPassword. It has been fixed. The original was: '<span class="td_right">' + language.yourPassword + '</span>'+ 
-				'<span class="td"><input type="password" id="nspass"></span>'+ // This line has been corrected from the original. It was missing the closing quote for language.yourPassword. It has been fixed. The original was: '<span class="td"><input type="password" id="nspass"></span>'+ 
-				'<span class="td"><input type="submit" value="' + language.logIn + '"></span>'+ // This line has been corrected from the original. It was missing the closing quote for language.yourPassword. It has been fixed. The original was: '<span class="td"><input type="submit" value="' + language.logIn + '"></span>'+ 
-				'</div><div class="tr">'+ // This line has been corrected from the original. It was missing the closing quote for language.yourPassword. It has been fixed. The original was: '</div><div class="tr">'+ 
-				'<span class="td_right"><input type="checkbox" id="notConfirmedAccount"></span><span class="td">' + language.accountIsNotConfirmed + '</span><br>'+ // This line has been corrected from the original. It was missing the closing quote for language.yourPassword. It has been fixed. The original was: '<span class="td_right"><input type="checkbox" id="notConfirmedAccount"></span><span class="td">' + language.accountIsNotConfirmed + '</span><br>'+ // This line has been corrected from the original. It was missing the closing quote for language.yourPassword. It has been fixed. The original was: '</div><div class="tr">'+ // This line has been corrected from the original. It was missing the closing quote for language.yourPassword. It has been fixed. The original was: '<span class="td_right"><input type="checkbox" id="saveNewPassword" checked="checked"></span><span class="td">' + language.saveThisPassword + '</span>'+ // This line has been corrected from the original. It was missing the closing quote for language.yourPassword. It has been fixed. The original was: '</div>'+ // This line has been corrected from the original. It was missing the closing quote for language.yourPassword. It has been fixed. The original was: '</form>'+ // This line has been corrected from the original. It was missing the closing quote for language.yourPassword. It has been fixed. The original was: '<form class="tr" onsubmit="services.changeNick();$$.closeDialog(\'error\', \'nickserv\')" action="javascript:void(0);">'+ // This line has been corrected from the original. It was missing the closing quote for language.yourPassword. It has been fixed. The original was: '<span class="td_right">' + language.newNick + '</span>'+ // This line has been corrected from the original. It was missing the closing quote for language.yourPassword. It has been fixed. The original was: '<span class="td"><input type="text" id="nnick"></span>'+ // This line has been corrected from the original. It was missing the closing quote for language.yourPassword. It has been fixed. The original was: '<span class="td"><input type="submit" value="' + language.changeNick + '" /></span>'+ // This line has been corrected from the original. It was missing the closing quote for language.yourPassword. It has been fixed. The original was: '</form>'+ // This line has been corrected from the original. It was missing the closing quote for language.yourPassword. It has been fixed. The original was: '</div>'; // This line has been corrected from the original. It was missing the closing quote for language.yourPassword. It has been fixed. The original was: 
+		return '<div class="table">' +
+			'<form class="trgr" onsubmit="services.logIn();$$.closeDialog(\'error\', \'nickserv\')" action="javascript:void(0);">' +
+			'<div class="tr">' +
+			'<span class="td_right">' + language.yourPassword + '</span>' +
+			'<span class="td"><input type="password" id="nspass"></span>' +
+			'<span class="td"><input type="submit" value="' + language.logIn + '"></span>' +
+			'</div><div class="tr">' +
+			'<span class="td_right"><input type="checkbox" id="notConfirmedAccount"></span><span class="td">' + language.accountIsNotConfirmed + '</span><br>' +
+			'<span class="td_right"><input type="checkbox" id="saveNewPassword" checked="checked"></span><span class="td">' + language.saveThisPassword + '</span>' +
+			'</div>' +
+			'</form>' +
+			'<form class="tr" onsubmit="services.changeNick();$$.closeDialog(\'error\', \'nickserv\')" action="javascript:void(0);">' +
+			'<span class="td_right">' + language.newNick + '</span>' +
+			'<span class="td"><input type="text" id="nnick"></span>' +
+			'<span class="td"><input type="submit" value="' + language.changeNick + '" /></span>' +
+			'</form>' +
+			'</div>';
 	},
 	'displayBadNickCounter': function(){
-		if(services.badNickCounter == false) return;
+		if(services.badNickCounter == false) {
+			return;
+		}
 		var html = '<br>' + language.youHaveLimitedTimeToLogInHtml;
 		$$.displayDialog('error', 'nickserv', language.error, html);
 		if(services.badNickInterval){
@@ -130,6 +141,9 @@ var services = {
 			if(services.badNickCounter == 1){
 				text += language.second1;
 			} else if((services.badNickCounter < 10 || services.badNickCounter > 20) && services.badNickCounter%10 > 1 && services.badNickCounter%10 < 5){
+				text += language.second2;
+			} else if(services.badNickCounter > 1){
+				// For all other plural cases (including English 2+ seconds)
 				text += language.second2;
 			}
 			$('#nickserv_timer').text(text);
@@ -151,9 +165,11 @@ var services = {
 			services.badNickCounter = false;
 			services.showTimeToChange = false;
 			$$.closeDialog('error', 'nickserv');
+			// Trigger status update to transition from 'identified' to 'connected'
+			ircEvents.emit('domain:processConnectionStatusUpdate');
 			return false;
 		}
-		if(maskMatch(msg.text, 'nickNotRegistered') && ircEvents.emit('domain:getNickservPass') != ''){ // Check guser.nickservpass via domain event
+		if(maskMatch(msg.text, 'nickNotRegistered') && guser.me.nickservPass != ''){ // Check guser.nickservpass directly
 			ircEvents.emit('domain:setNickservPass', { pass: '' }); // Set guser.nickservpass via domain event
 			ircEvents.emit('domain:setNickservNick', { nick: '' }); // Set guser.nickservnick via domain event
 			return false;
@@ -166,7 +182,7 @@ var services = {
 			return true;
 		}
 		if(maskMatch(msg.text, 'registeredProtectedNick')){
-			if(ircEvents.emit('domain:getConnectStatus') == 'ghostAndNickSent'){ // Check gateway.connectStatus via domain event
+			if(domainConnectStatus == 'ghostAndNickSent'){ // Check domainConnectStatus directly
 				ircCommand.NickServ('IDENTIFY', [guser.me.nickservPass]);
 				ircEvents.emit('domain:setConnectStatus', { status: 'identified' }); // Set gateway.connectStatus via domain event
 				return true;
@@ -189,7 +205,7 @@ var services = {
 				return true;
 		}
 		if(maskMatch(msg.text ,'accessDenied')){
-			if(ircEvents.emit('domain:getConnectStatus') == 'ghostSent'){ // Check gateway.connectStatus via domain event
+			if(domainConnectStatus == 'ghostSent'){ // Check domainConnectStatus directly
 				ircEvents.emit('domain:setConnectStatus', { status: 'identified' }); // Set gateway.connectStatus via domain event
 				services.nickStore = guser.me.nickservNick;
 				ircEvents.emit('domain:setNickservNick', { nick: '' }); // Set guser.nickservnick via domain event
@@ -222,10 +238,20 @@ var services = {
 				$('#nickserv_timer').text(language.n20seconds);
 				services.badNickCounter = 19;
 			} else {
+				// Custom time format - try to parse seconds from the string
 				$('#nickserv_timer').text(match[1]);
+				// Try to extract number from string like "20 sekund(y)" or "60 seconds"
+				var timeMatch = match[1].match(/(\d+)/);
+				if(timeMatch && timeMatch[1]){
+					services.badNickCounter = parseInt(timeMatch[1], 10) - 1;
+				} else {
+					// Fallback: assume 20 seconds
+					services.badNickCounter = 19;
+				}
 			}
 			if(services.showTimeToChange){
 				services.displayBadNickCounter();
+			} else {
 			}
 			return true;
 		}
@@ -584,7 +610,7 @@ var services = {
 			$$.alert(language.badEmail);
 			return false;
 		}
-		var timeDiff = 120 - Math.round(((+new Date)/1000) - ircEvents.emit('domain:getConnectTime')); // Get gateway.connectTime via domain event
+		var timeDiff = 120 - Math.round(((+new Date)/1000) - getDomainConnectTime());
 		if(timeDiff > 0){
 			$$.alert(language.youHaveToWaitAnother + timeDiff + language.secondsToRegisterNick);
 			return false;

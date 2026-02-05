@@ -21,6 +21,29 @@
  */
 
 // ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+/**
+ * Merges IRC message data with command-specific properties
+ *
+ * This function creates protocol events for the domain layer by copying
+ * all message properties to the top level. Domain handlers should access
+ * data.user, data.time, etc. directly - NOT via data.raw.
+ *
+ * @param {Object} msg - The base IRC message object
+ * @param {Object} additionalData - Command-specific properties to add
+ * @returns {Object} Merged object with all properties
+ */
+function protocolGeneric(msg, additionalData) {
+	var result = Object.assign({}, msg);
+	if (additionalData) {
+		Object.assign(result, additionalData);
+	}
+	return result;
+}
+
+// ============================================================================
 // COMMAND HANDLERS
 // ============================================================================
 
@@ -47,8 +70,14 @@ ircEvents.on('cmd:AWAY', function(msg) {
 });
 
 ircEvents.on('cmd:BATCH', function(msg) {
+	var batchIdRaw = msg.args[0] || '';
+	var prefix = batchIdRaw.charAt(0);
+	var batchId = batchIdRaw.substring(1); // Strip +/- prefix
+
 	ircEvents.emit('protocol:batchCommand', protocolGeneric(msg, {
-		batchId: msg.args[0] || '',
+		batchId: batchId, // ID without prefix
+		isStart: prefix === '+',
+		isEnd: prefix === '-',
 		batchType: msg.args[1] || '',
 		batchArgs: msg.args.slice(2)
 	}));
@@ -57,9 +86,23 @@ ircEvents.on('cmd:BATCH', function(msg) {
 
 
 ircEvents.on('cmd:CAP', function(msg) {
+	var capText = msg.text || '';
+	var caps = capText.split(' ').filter(function(c) { return c.length > 0; });
+
+	// For ACK/NAK, parse each cap to determine if it's being enabled (+) or disabled (-)
+	var parsedCaps = caps.map(function(cap) {
+		if (cap.charAt(0) === '-') {
+			return { name: cap.substring(1), enabled: false };
+		} else {
+			return { name: cap, enabled: true };
+		}
+	});
+
 	ircEvents.emit('protocol:capCommand', protocolGeneric(msg, {
 		subcommand: msg.args[1] || '',
-		capText: msg.text
+		capText: capText, // Keep raw for LS/LIST parsing
+		caps: parsedCaps, // Structured list with enable/disable info
+		isMultiLine: (msg.args[2] === '*')
 	}));
 });
 
@@ -119,8 +162,12 @@ ircEvents.on('cmd:METADATA', function(msg) {
 });
 
 ircEvents.on('cmd:MODE', function(msg) {
+	var target = msg.args[0] || '';
+	var isChannel = target.charAt(0) === '#' || target.charAt(0) === '&';
+
 	ircEvents.emit('protocol:modeCommand', protocolGeneric(msg, {
-		target: msg.args[0] || '',
+		target: target,
+		isChannel: isChannel,
 		modeString: msg.args.slice(1).join(' ')
 	}));
 });
@@ -132,8 +179,32 @@ ircEvents.on('cmd:NICK', function(msg) {
 });
 
 ircEvents.on('cmd:NOTICE', function(msg) {
+	var target = msg.args[0] || '';
+	var isChannel = target.charAt(0) === '#' || target.charAt(0) === '&';
+
+	// Check for CTCP reply (format: \x01TYPE optional text\x01)
+	if (msg.text && msg.text.match(/^\001.*\001$/i)) {
+		var ctcpreg = msg.text.match(/^\001(([^ ]+)( (.*))?)\001$/i);
+		if (ctcpreg) {
+			var fullText = ctcpreg[1];     // "VERSION xchat 2.8.8"
+			var ctcpType = ctcpreg[2];     // "VERSION"
+			var ctcpText = ctcpreg[4] || ''; // "xchat 2.8.8"
+
+			ircEvents.emit('protocol:ctcpReply', protocolGeneric(msg, {
+				target: target,
+				ctcpType: ctcpType,
+				ctcpText: ctcpText,
+				fullText: fullText,
+				fromNick: msg.sender.nick
+			}));
+			return; // Don't process as regular NOTICE
+		}
+	}
+
+	// Regular NOTICE (not CTCP)
 	ircEvents.emit('protocol:noticeCommand', protocolGeneric(msg, {
-		target: msg.args[0] || '',
+		target: target,
+		isChannel: isChannel,
 		message: msg.text
 	}));
 });
@@ -158,10 +229,43 @@ ircEvents.on('cmd:PART', function(msg) {
 });
 
 ircEvents.on('cmd:PRIVMSG', function(msg) {
+	var target = msg.args[0] || '';
+	var isChannel = target.charAt(0) === '#' || target.charAt(0) === '&';
+
+	// Check for CTCP request (format: \x01TYPE optional text\x01)
+	if (msg.text && msg.text.match(/^\001.*\001$/i)) {
+		var space = msg.text.indexOf(' ');
+		var ctcpType, ctcpText;
+		if (space > -1) {
+			ctcpType = msg.text.substring(1, space);
+			ctcpText = msg.text.substring(space + 1, msg.text.length - 1);
+		} else {
+			ctcpType = msg.text.slice(1, -1);
+			ctcpText = '';
+		}
+		msg.ctcptext = ctcpText;
+
+		// Emit specific CTCP event (e.g., ctcp:VERSION, ctcp:ACTION)
+		ircEvents.emit('ctcp:' + ctcpType, msg);
+		return; // Don't process as regular PRIVMSG
+	}
+
+	// Regular PRIVMSG (not CTCP)
+	// Emit protocol event for domain layer processing
+	// Domain will emit abstracted message:received event for display
 	ircEvents.emit('protocol:privmsgCommand', protocolGeneric(msg, {
-		target: msg.args[0] || '',
-		message: msg.text
+		target: target,
+		dest: target,
+		text: msg.text,
+		isChannel: isChannel,
+		message: msg.text,
+		tags: msg.tags,
+		sender: msg.user,
+		time: msg.time
 	}));
+
+	// Display is now handled by domain layer via message:received event
+	// gateway.insertMessage('PRIVMSG', target, msg.text, false, false, msg.tags, msg.user, msg.time);
 });
 
 ircEvents.on('cmd:QUIT', function(msg) {
@@ -599,19 +703,42 @@ ircEvents.on('cmd:353', function(msg) {	// RPL_NAMREPLY
 });
 
 ircEvents.on('cmd:354', function(msg) {	// RPL_WHOSPCRPL (WHOX)
-	ircEvents.emit('protocol:rplWhospcrpl', protocolGeneric(msg, {
-		target: msg.args[0] || '',
-		queryType: msg.args[1] || '',
-		token: msg.args[2] || '',
-		nick: msg.args[3] || '',
-		ident: msg.args[4] || '',
-		host: msg.args[5] || '',
-		server: msg.args[6] || '',
-		realname: msg.args[7] || '',
-		account: msg.args[8] || '',
-		status: msg.args[9] || '',
-		gecos: msg.text || ''
-	}));
+	// Field order depends on the format string used in the WHOX request
+	// Check query type to determine field mapping
+	var queryType = msg.args[1] || '';
+	var data;
+
+	if (queryType === '101') {
+		// Our format "tuhanfr,101" requested: token, ident, host, account, nick, flags, realname
+		// But server actually returns: token, ident, host, nick, flags, account, realname
+		// Server appears to reorder fields: tuhnfar instead of tuhanfr
+		data = {
+			target: msg.args[0] || '',
+			queryType: queryType,
+			ident: msg.args[2] || '',
+			host: msg.args[3] || '',
+			nick: msg.args[4] || '',        // Server puts nick before account
+			status: msg.args[5] || '',      // Status flags
+			account: msg.args[6] || '',     // Account is after flags, not before nick
+			realname: msg.args[7] || msg.text || '',
+			gecos: msg.args[7] || msg.text || ''
+		};
+	} else {
+		// Default/legacy format or other query types
+		data = {
+			target: msg.args[0] || '',
+			queryType: queryType,
+			ident: msg.args[2] || '',
+			host: msg.args[3] || '',
+			nick: msg.args[4] || '',
+			status: msg.args[5] || '',
+			account: msg.args[6] || '',
+			realname: msg.text || '',
+			gecos: msg.text || ''
+		};
+	}
+
+	ircEvents.emit('protocol:rplWhospcrpl', protocolGeneric(msg, data));
 });
 
 
@@ -841,23 +968,23 @@ ircEvents.on('cmd:404', function(msg) {	// ERR_CANNOTSENDTOCHAN
     var parsedReason = '';
 
     if (reasonText.match(/You need voice \(\+v\) \(.*\)/)) {
-        parsedReason = 'needVoice';
+        parsedReason = 'voiceNeeded';
     } else if (reasonText.match(/You are banned \(.*\)/)) {
-        parsedReason = 'youreBanned';
+        parsedReason = 'banned';
     } else if (reasonText.match(/Color is not permitted in this channel \(.*\)/)) {
-        parsedReason = 'colorsForbidden';
+        parsedReason = 'noColor';
     } else if (reasonText.match(/No external channel messages \(.*\)/)) {
-        parsedReason = 'noExternalMsgs';
+        parsedReason = 'noExternal';
     } else if (reasonText.match(/You must have a registered nick \(\+r\) to talk on this channel \(.*\)/)) {
-        parsedReason = 'registeredNickRequired';
+        parsedReason = 'accountNeeded';
     } else {
         parsedReason = 'generic'; // Default to generic if no specific match
     }
 
     ircEvents.emit('protocol:errCannotSendToChan', protocolGeneric(msg, {
-        target: msg.args[1] || '',
+        channelName: msg.args[1] || '',
         reason: parsedReason,
-        message: msg.text // Keep raw message for potential detailed display in UI/domain if needed
+        message: msg.text // Keep raw message for detailed display if reason is generic
     }));
 });
 

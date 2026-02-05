@@ -76,7 +76,7 @@ lang.pl = {
 		'ctcpReply': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="notice"><span class="symbolFont">✯</span> <b>CTCP REPLY od %s:</b> %s</span></div>',
 		'chanListElement': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="notice"><span class="symbolFont">✯</span> <b><a href="#" onClick="ircCommand.channelJoin(\'%s\')">%s</a></b> (%s) - %s </span> </div>',
 		'chanListElementHidden': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="notice"><span class="symbolFont">✯</span> <b>(kanał ukryty)</b> (%s) - (temat ukryty) </span> </div>',
-		'error': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"> <span class="symbolFont">⮿</span> Rozłączono z serwerem: %s</span></div>',
+		'selfDisconnected': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"> <span class="symbolFont">⮿</span> Rozłączono z serwerem: %s</span></div>',
 		'existingConnection': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">✯</span> Połączenie już istnieje, dołączam się do niego.</span></div>',
 		'away': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">🍵</span> <span class="modeinfo">%s</span> otrzymał twoją wiadomość, ale jest teraz nieobecny: %s</span></div>',
 		'yourAwayEnabled': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">🍵</span> Jesteś teraz oznaczony jako nieobecny</span></div>',

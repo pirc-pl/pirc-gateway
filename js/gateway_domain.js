@@ -30,10 +30,12 @@ var saslInProgress = false;
 
 // Domain-specific state variables, previously in gateway_def.js
 var domainConnectStatus = 'disconnected';
+var domainConnectTime = 0; // Timestamp when connection was established
 var domainJoined = 0;
 var domainSetConnectedWhenIdentified = 0;
 var domainFirstConnect = 1;
 var domainUserQuit = false;
+var domainLabel = 0; // Label counter for labeled-response
 var domainSasl = false;
 var domainWhowasExpect312 = false; // Check if this is still needed as part of consolidated WHOIS
 var domainNickWasInUse = false;
@@ -47,6 +49,8 @@ var domainSmallListData = []; // Accumulator for small list data from RPL_LIST
 var domainLastError = '';
 var domainActiveTab = '--status'; // Domain's view of the currently active tab
 var domainTabHistory = ['--status']; // Domain's view of tab history for back navigation
+var domainChannelsInitializing = {}; // Track channels being initially joined (waiting for NAMES completion)
+var domainChannelsAwaitingInitialHistory = {}; // Track channels awaiting initial history (to distinguish from manual "load older")
 var domainConnectTimeoutID = 0;
 var domainPingIntervalID = false;
 var domainWhoChannelsIntervalID = false;
@@ -98,6 +102,7 @@ ircEvents.on('batch:chathistory', function(data){
 	batch.receivedMessages = 0;
 	batch.oldestMsgid = null;
 	batch.oldestTimestamp = null;
+	batch.isInitialHistory = false; // Will be set by the request
 
 	// Set callback to add the "load older" link when batch ends
 	batch.callback = function(batch, msg){
@@ -105,12 +110,21 @@ ircEvents.on('batch:chathistory', function(data){
 		var chan = gateway.findChannel(batch.args[0]);
 		if(!chan) return;
 
+		var channelKey = chan.name.toLowerCase();
+		var isInitialHistory = domainChannelsAwaitingInitialHistory[channelKey] || false;
+
+		// Clear the initial history flag
+		if(isInitialHistory){
+			delete domainChannelsAwaitingInitialHistory[channelKey];
+		}
+
 		ircEvents.emit('channel:chatHistoryStatsUpdated', {
 			channelName: chan.name,
 			channelId: chan.id,
 			receivedMessages: batch.receivedMessages,
 			oldestMsgid: batch.oldestMsgid,
-			oldestTimestamp: batch.oldestTimestamp
+			oldestTimestamp: batch.oldestTimestamp,
+			isInitialHistory: isInitialHistory
 		});
 	}
 });
@@ -168,12 +182,11 @@ ircEvents.on('channel:requestWho', function(data) {
 // ============================================================================
 
 ircEvents.on('protocol:accountCommand', function(data) {
-	var msg = data.raw;
-	// msg.user is available in the protocolGeneric wrapper
+	// data.user is available in the protocolGeneric wrapper
 	if(data.account === '*' || data.account === '0'){
-		msg.user.setAccount(false);
+		data.user.setAccount(false);
 	} else {
-		msg.user.setAccount(data.account);
+		data.user.setAccount(data.account);
 	}
 });
 
@@ -184,14 +197,13 @@ ircEvents.on('protocol:ackCommand', function(data) {
 });
 
 ircEvents.on('protocol:authenticateCommand', function(data) {
-	var msg = data.raw;
 	if(data.challenge === '+'){
 		// Emit a domain event to request authentication command, instead of direct ircCommand
 		ircEvents.emit('domain:requestIrcCommand', {
 			command: 'AUTHENTICATE',
 			args: [Base64.encode(guser.nickservnick + '\0' + guser.nickservnick + '\0' + guser.nickservpass)]
 		});
-		ircEvents.emit('auth:saslAuthenticating', { time: msg.time, nickservNick: guser.nickservnick });
+		ircEvents.emit('auth:saslAuthenticating', { time: data.time, nickservNick: guser.nickservnick });
 		domainConnectStatus = 'identified'; // Logical update
 	} else {
 		console.log('DOMAIN: Unexpected AUTHENTICATE response:', data.challenge);
@@ -199,52 +211,51 @@ ircEvents.on('protocol:authenticateCommand', function(data) {
 });
 
 ircEvents.on('protocol:awayCommand', function(data) {
-	var msg = data.raw;
-	// msg.user is available in the protocolGeneric wrapper
+	// data.user is available in the protocolGeneric wrapper
 	if(data.awayMessage === ''){
-		msg.user.notAway();
+		data.user.notAway();
 	} else {
-		msg.user.setAway(data.awayMessage);
+		data.user.setAway(data.awayMessage);
 	}
 });
 
 ircEvents.on('protocol:batchCommand', function(data) {
-	var msg = data.raw;
-	var name = data.batchId;
+	// Protocol layer provides: batchId (without prefix), isStart, isEnd, batchType, batchArgs
+	var batchId = data.batchId;
 	var type = data.batchType;
-	if(msg.args[0].charAt(0) == '-'){ // Batch end
-		var batch = domainBatch[name]; // Use domainBatch
+
+	if(data.isEnd){ // Batch end
+		var batch = domainBatch[batchId];
 		if(!batch){
-			console.error('BATCH "' + name + '" ended but not started!');
+			console.warn('BATCH "' + batchId + '" ended but not started');
 			return;
 		}
 		if(batch.callback){
-			batch.callback(batch, msg);
+			batch.callback(batch, data);
 		}
-		delete domainBatch[name]; // Use domainBatch
-		msg.isBatchEnd = true;
-		msg.batch = batch;
-	} else if(msg.args[0].charAt(0) == '+'){ // Batch start
-		var batch = new ircBatch(name, type, data.batchArgs, msg);
-		domainBatch[name] = batch; // Use domainBatch
-		if('label' in msg.tags){
-			batch.label = msg.tags.label;
+		delete domainBatch[batchId];
+		data.isBatchEnd = true;
+		data.batch = batch;
+	} else if(data.isStart){ // Batch start
+		var batch = new ircBatch(batchId, type, data.batchArgs, data);
+		domainBatch[batchId] = batch;
+		if('label' in data.tags){
+			batch.label = data.tags.label;
 		}
 		// Emit batch start event
-		ircEvents.emit('batch:' + type, {msg: msg, batch: batch});
-		msg.isBatchStart = true;
+		ircEvents.emit('batch:' + type, {msg: data, batch: batch});
+		data.isBatchStart = true;
 	} else {
-		console.error('Unknown batch argument!');
+		console.error('Unknown batch type - neither start nor end');
 		return;
 	}
 });
 
 ircEvents.on('protocol:capCommand', function(data) {
-	var msg = data.raw;
 	switch(data.subcommand){
 		case 'LS': case 'NEW':
 			// Parse available capabilities from server
-			if (data.raw.args[2] == '*') // Check raw message for the "*" indicating multi-line CAP LS
+			if (data.isMultiLine) // Check for multi-line CAP LS indicator
 				capInProgress = true;
 			else
 				capInProgress = false;
@@ -306,21 +317,18 @@ ircEvents.on('protocol:capCommand', function(data) {
 			break;
 		case 'ACK':
 			var newCapsParsed = {};
-			var newCaps = data.capText.split(' ');
-			for(var i=0; i<newCaps.length; i++){
-				var cap = newCaps[i];
-				var add = true;
+			// Protocol layer provides parsed caps with enabled/disabled info
+			for(var i=0; i<data.caps.length; i++){
+				var cap = data.caps[i];
+				var capName = cap.name;
+				var enabled = cap.enabled;
 
-				if(cap.charAt(0) == '-'){
-					add = false;
-					cap = cap.substr(1);
+				if(!(capName in activeCaps) && enabled){ // add capability
+					activeCaps[capName] = serverCaps[capName];
+					newCapsParsed[capName] = serverCaps[capName];
 				}
-				if(!(cap in activeCaps) && add){ // add capability
-					activeCaps[cap] = serverCaps[cap];
-					newCapsParsed[cap] = serverCaps[cap];
-				}
-				if(cap in activeCaps && !add){ // remove capability
-					delete activeCaps[cap];
+				if(capName in activeCaps && !enabled){ // remove capability
+					delete activeCaps[capName];
 				}
 			}
 			// Check for any metadata capability (draft/metadata-2, draft/metadata-notify-2, or draft/metadata)
@@ -333,7 +341,7 @@ ircEvents.on('protocol:capCommand', function(data) {
 			}
 			if(guser.nickservpass != '' && guser.nickservnick != '' && 'sasl' in newCapsParsed){
 				// Emit domain event to perform authentication
-				ircEvents.emit('domain:requestSaslAuthenticate', { mechanism: 'PLAIN', time: msg.time, nickservNick: guser.nickservnick, nickservPass: guser.nickservpass });
+				ircEvents.emit('domain:requestSaslAuthenticate', { mechanism: 'PLAIN', time: data.time, nickservNick: guser.nickservnick, nickservPass: guser.nickservpass });
 				saslInProgress = true;
 			} else {
 				if (!capInProgress && !saslInProgress)
@@ -357,20 +365,17 @@ ircEvents.on('protocol:capCommand', function(data) {
 });
 
 ircEvents.on('protocol:chghostCommand', function(data) {
-	var msg = data.raw;
-	// msg.user is available in protocolGeneric
-	msg.user.setIdent(data.newIdent);
-	msg.user.setHost(data.newHost);
+	// data.user is available in protocolGeneric
+	data.user.setIdent(data.newIdent);
+	data.user.setHost(data.newHost);
     ircEvents.emit('user:hostChanged', {
-        nick: msg.user.nick,
+        nick: data.user.nick,
         ident: data.newIdent,
-        host: data.newHost,
-        raw: msg
+        host: data.newHost
     });
 });
 
 ircEvents.on('protocol:failCommand', function(data) {
-	var msg = data.raw;
 	console.log('DOMAIN: FAIL', data.failedCommand, data.failCode, data.description);
 
 	// Handle specific FAIL types
@@ -382,13 +387,11 @@ ircEvents.on('protocol:failCommand', function(data) {
     ircEvents.emit('server:failMessage', {
         command: data.failedCommand,
         code: data.failCode,
-        description: data.description,
-        raw: msg
+        description: data.description
     });
 });
 
 ircEvents.on('protocol:errorCommand', function(data) {
-	var msg = data.raw;
 	domainLastError = data.message; // Update domainLastError
 	ircEvents.emit('connection:disconnected', { reason: data.message }); // Abstract gateway.disconnected
 
@@ -400,7 +403,6 @@ ircEvents.on('protocol:errorCommand', function(data) {
 			code: '465', // Using a generic error code for global ban as no specific code for it
 			type: 'globalBan',
 			message: data.message,
-			raw: msg
 		});
 		return;
 	}
@@ -414,6 +416,7 @@ ircEvents.on('protocol:errorCommand', function(data) {
 	}
 
 	domainConnectStatus = 'disconnected'; // Use domainConnectStatus
+	domainConnectTime = 0; // Reset connection time
 
 	if(data.message.match(/\(NickServ \(RECOVER command used by [^ ]+\)\)$/) || data.message.match(/\(NickServ \(Użytkownik [^ ]+\ użył komendy RECOVER\)\)\$/)){
 		ircEvents.emit('connection:reconnectNeeded'); // This event is still relevant for the UI
@@ -425,114 +428,135 @@ ircEvents.on('protocol:errorCommand', function(data) {
 });
 
 ircEvents.on('protocol:extjwtCommand', function(data) {
-	var msg = data.raw;
-	if(!msg.batch){
+	if(!data.batch){
 		return; // labelNotProcessed handler will take full care of that
 	}
-	if(msg.args[2] == '*'){ // Check raw args as data.arg might be processed
-		var tokenData = msg.args[3];
+	if(data.args[2] == '*'){ // Check raw args as data.arg might be processed
+		var tokenData = data.args[3];
 	} else {
-		var tokenData = msg.args[2];
+		var tokenData = data.args[2];
 	}
-	if(!('extjwtContent' in msg.batch)){
-		msg.batch.extjwtContent = tokenData;
+	if(!('extjwtContent' in data.batch)){
+		data.batch.extjwtContent = tokenData;
 	} else {
-		msg.batch.extjwtContent += tokenData;
+		data.batch.extjwtContent += tokenData;
 	}
 	// Actual batch output data is handled by the labelNotProcessed handler too
 });
 
 ircEvents.on('protocol:inviteCommand', function(data) {
-    var msg = data.raw;
-    // msg.user, data.targetNick, data.channelName are available
+    // data.user, data.targetNick, data.channelName are available
     // Domain logic for invite command - maybe log it or store for later UI display
-    console.log(`DOMAIN: ${msg.user.nick} invited ${data.targetNick} to ${data.channelName}`);
+    console.log(`DOMAIN: ${data.user.nick} invited ${data.targetNick} to ${data.channelName}`);
     ircEvents.emit('channel:invited', {
-        byNick: msg.user.nick,
+        byNick: data.user.nick,
         targetNick: data.targetNick,
-        channelName: data.channelName,
-        raw: msg
+        channelName: data.channelName
     });
 });
 
 ircEvents.on('protocol:joinCommand', function(data) {
-    var msg = data.raw;
     var channelName = data.channelName;
-    var user = msg.user; // User who joined
+    var user = data.user; // User who joined
 
-    // Ensure the ChannelMemberList exists and add the user to it
-    var cml = users.addChannelMemberList(channelName);
-    cml.addMember(user); // user is the global user object already created/managed by users.js
+    if (user === guser.me) { // If WE joined - create channel state
+        // Create ChannelMemberList for channels WE are in
+        var cml = users.addChannelMemberList(channelName);
+        console.log('[NICKLIST-DEBUG] Created ChannelMemberList for', channelName, 'current member count:', cml.members.length);
+        // Don't add ourselves here - NAMES reply will include us with proper channel modes
 
-    // The domain layer ensures the UI knows about the channel, if it doesn't already.
-    // This is a UI concern triggered by a domain event.
-    ircEvents.emit('domain:findOrCreateTab', { tabName: channelName, setActive: false, time: msg.time });
-
-    // Emit event that a user has joined a channel for the UI to update its channel object.
-    ircEvents.emit('channel:userJoined', {
-        channelName: channelName,
-        nick: user.nick,
-        ident: user.ident,
-        host: user.host,
-        raw: msg
-    });
-
-    if (user === guser.me) { // If self joined
-        ircEvents.emit('user:selfJoinedChannel', {
+        // Mark this channel as initializing (waiting for NAMES completion)
+        domainChannelsInitializing[channelName.toLowerCase()] = {
             channelName: channelName,
-            nick: user.nick,
-            ident: user.ident,
-            host: user.host,
-            time: msg.time,
-            raw: msg
-        });
+            joinTime: data.time
+        };
+
+        // Don't emit UI event yet - wait for NAMES to complete
+
+        // Request channel modes
+        ircCommand.mode(channelName, '');
+
+        // Request WHO/WHOX to get account info for all users
+        if (typeof isupport !== 'undefined' && 'WHOX' in isupport) {
+            ircCommand.whox(channelName, "tuhanfr,101");
+        } else {
+            ircCommand.who(channelName);
+        }
+    } else { // Someone else joined
+        // Only track if we're already in the channel
+        var cml = users.getChannelMemberList(channelName);
+        if (cml) {
+            // We're in this channel - add the user to our member list
+            cml.addMember(user);
+
+            ircEvents.emit('channel:userJoined', {
+                channelName: channelName,
+                nick: user.nick,
+                ident: user.ident,
+                host: user.host,
+                time: data.time
+            });
+
+            // If extended-join is not available, request WHO for this user to get account info
+            if (typeof activeCaps !== 'undefined' && !('extended-join' in activeCaps)) {
+                ircCommand.who(user.nick);
+            }
+        } else {
+            // Server protocol violation: received JOIN for channel we're not in
+            console.error('Server protocol violation: Received JOIN for', channelName, 'from', user.nick, 'but we are not a member of this channel');
+
+            // Optionally show in status window
+            ircEvents.emit('server:userJoinedOtherChannel', {
+                channelName: channelName,
+                nick: user.nick,
+                ident: user.ident,
+                host: user.host,
+                time: data.time
+            });
+        }
     }
 });
 
-ircEvents.on('protocol:kickCommand', function(data) {
-    var msg = data.raw;
-    var channelName = data.channelName;
-    var kickedNick = data.kickedNick;
-    var reason = data.reason;
-    var byNick = msg.user.nick;
-
-    // Emit event that a user was kicked from a channel for the UI to update its channel object.
-    ircEvents.emit('channel:userKicked', {
-        channelName: channelName,
-        kickedNick: kickedNick,
-        byNick: byNick,
-        reason: reason,
-        isSelfKicked: (kickedNick === guser.nick), // Indicate if self was kicked
-        raw: msg
-    });
-});
-
 ircEvents.on('protocol:metadataCommand', function(data) {
-    var msg = data.raw;
     // Handle METADATA protocol events
     // data.target, data.key, data.subCommand, data.value
+    var target = data.target;
+    var key = data.key;
+    var value = data.value;
+
+    if (target.charAt(0) === '#') { // Channel metadata
+        // Channel metadata handling (if needed in future)
+    } else { // User metadata
+        var user = users.getUser(target);
+        user.setMetadata(key, value);
+        // Emit specific metadata event for legacy compatibility
+        ircEvents.emit('metadata:' + key, {
+            user: user,
+            key: key,
+            value: value
+        });
+    }
+
+    // Emit general metadata updated event
     ircEvents.emit('metadata:updated', {
         target: data.target,
         key: data.key,
         subCommand: data.subCommand,
-        value: data.value,
-        raw: msg
+        value: data.value
     });
 });
 
 ircEvents.on('protocol:modeCommand', function(data) {
-    var msg = data.raw;
     var target = data.target; // Channel or user nick
     var modeString = data.modeString; // "+o SomeNick" or "+m"
 
-    if (target.startsWith('#') || target.startsWith('&')) { // Channel mode
+    if (data.isChannel) { // Protocol layer determines if target is a channel
         var channelName = target;
         // Emit general channel mode update for UI
         ircEvents.emit('channel:modesUpdated', {
             channelName: channelName,
             modes: modeString, // Pass original modeString for now
-            byNick: msg.user.nick,
-            raw: msg
+            byNick: data.user.nick
         });
 
         // Parse modeString for user-specific mode changes within the channel
@@ -544,8 +568,7 @@ ircEvents.on('protocol:modeCommand', function(data) {
                 ircEvents.emit('domain:channelModeForUserChanged', {
                     channelName: channelName,
                     user: user, // Pass the user object
-                    modeChange: change, // Pass mode change details
-                    raw: msg
+                    modeChange: change // Pass mode change details
                 });
             }
         });
@@ -554,15 +577,13 @@ ircEvents.on('protocol:modeCommand', function(data) {
         ircEvents.emit('user:modeChanged', {
             nick: target,
             modeString: modeString,
-            byNick: msg.user.nick,
-            raw: msg
+            byNick: data.user.nick,
         });
     }
 });
 
 ircEvents.on('protocol:nickCommand', function(data) {
-    var msg = data.raw;
-    var oldNick = msg.user.nick;
+    var oldNick = data.user.nick;
     var newNick = data.newNick;
 
     // The users.changeNick function will update the global user list
@@ -570,50 +591,105 @@ ircEvents.on('protocol:nickCommand', function(data) {
     users.changeNick(oldNick, newNick);
 
     // If it's our own nick change, emit specific event for UI
-    if (msg.user.id === guser.me.id) { // Compare stable IDs for own nick
-        ircEvents.emit('user:myNickChanged', { oldNick: oldNick, newNick: newNick, raw: msg });
+    if (data.user.id === guser.me.id) { // Compare stable IDs for own nick
+        ircEvents.emit('user:myNickChanged', { oldNick: oldNick, newNick: newNick });
     }
 });
 
 ircEvents.on('protocol:noticeCommand', function(data) {
-    var msg = data.raw;
-    // Domain logic: decide where to route/store this notice
-    ircEvents.emit('client:notice', {
-        from: msg.user ? msg.user.nick : msg.prefix, // Sender could be server or user
-        target: data.target,
-        message: data.message,
-        raw: msg
-    });
+    // Domain layer: determine message state and emit abstracted event
+    // Extract only necessary fields from tags - don't pass raw tags to UI
+    var tags = data.tags || {};
+    var sender = data.user || { nick: data.prefix, ident: '', host: '', server: true };
+
+    // Use server-provided timestamp if available (e.g., from history), otherwise use local time
+    var messageTime = tags.time ? new Date(tags.time) : (data.time || new Date());
+
+    var messageState = {
+        messageType: 'NOTICE',     // Message type
+        text: data.message,
+        dest: data.target,
+        sender: sender,
+        time: messageTime,
+
+        // Abstracted tag fields
+        msgid: tags.msgid || null,
+        serverTime: tags.time || null,
+        label: tags.label || null,
+
+        // Abstracted state
+        isHidden: false,
+        isHistory: false,
+        isOutgoing: false,
+        isPending: false,
+        isEcho: false,
+        labelToReplace: null,
+        shouldSkipDisplay: false
+    };
+
+    // Check if message should be hidden
+    if(messageState.label && domainLabelsToHide.indexOf(messageState.label) !== -1){
+        messageState.isHidden = true;
+        return;
+    }
+
+    // Check if this is from a chat history batch
+    var historyBatch = null;
+    if(tags.batch && tags.batch in domainBatch){
+        var batch = domainBatch[tags.batch];
+        if(batch.type == 'chathistory') {
+            messageState.isHistory = true;
+            historyBatch = batch;
+        } else {
+            // Check parent batches
+            for(var i=0; i<batch.parents.length; i++){
+                if(batch.parents[i].type == 'chathistory'){
+                    messageState.isHistory = true;
+                    historyBatch = batch.parents[i];
+                    break;
+                }
+            }
+        }
+    }
+
+    // Track message stats in history batch
+    if(historyBatch){
+        historyBatch.receivedMessages = (historyBatch.receivedMessages || 0) + 1;
+        // Track oldest message for "load older" reference
+        if(!historyBatch.oldestMsgid && tags.msgid){
+            historyBatch.oldestMsgid = tags.msgid;
+        }
+        if(!historyBatch.oldestTimestamp && tags.time){
+            historyBatch.oldestTimestamp = tags.time;
+        }
+    }
+
+    // Emit abstracted message event
+    ircEvents.emit('message:received', messageState);
 });
 
 ircEvents.on('protocol:pingCommand', function(data) {
-    var msg = data.raw;
     // Domain logic for PING: respond with PONG
     ircEvents.emit('domain:requestIrcCommand', {
         command: 'PONG',
-        args: [data.token],
-        raw: msg
+        args: [data.token]
     });
     ircEvents.emit('server:pingReceived', { // For debugging/monitoring
-        token: data.token,
-        raw: msg
+        token: data.token
     });
 });
 
 ircEvents.on('protocol:pongCommand', function(data) {
-    var msg = data.raw;
     // Domain logic for PONG: record latency, etc.
     ircEvents.emit('server:pongReceived', {
-        token: data.token,
-        raw: msg
+        token: data.token
     });
 });
 
 ircEvents.on('protocol:partCommand', function(data) {
-    var msg = data.raw;
     var channelName = data.channelName;
     var partMessage = data.partMessage;
-    var user = msg.user; // User who parted
+    var user = data.user; // User who parted
 
     var cml = users.getChannelMemberList(channelName);
     if (cml) {
@@ -627,8 +703,10 @@ ircEvents.on('protocol:partCommand', function(data) {
     ircEvents.emit('channel:userParted', {
         channelName: channelName,
         nick: user.nick,
+        ident: user.ident,
+        host: user.host,
         partMessage: partMessage,
-        raw: msg
+        time: data.time
     });
 
     if (user === guser.me) { // If self parted
@@ -636,42 +714,189 @@ ircEvents.on('protocol:partCommand', function(data) {
         ircEvents.emit('user:selfPartedChannel', {
             channelName: channelName,
             nick: user.nick,
-            partMessage: partMessage,
-            raw: msg
+            partMessage: partMessage
+        });
+    }
+});
+
+ircEvents.on('protocol:kickCommand', function(data) {
+    var channelName = data.channelName;
+    var kickedNick = data.kickedNick;
+    var reason = data.reason || '';
+    var kicker = data.user; // User who performed the kick
+
+    // Get the user object for the kicked user
+    var kickedUser = users.getExistingUser(kickedNick);
+    if (!kickedUser) {
+        console.warn('DOMAIN: KICK received for unknown user:', kickedNick);
+        return;
+    }
+
+    // Remove kicked user from channel member list
+    var cml = users.getChannelMemberList(channelName);
+    if (cml) {
+        cml.removeMemberById(kickedUser.id);
+        if (kickedUser === guser.me && cml.getAllMembers().length === 0) {
+            users.removeChannelMemberList(channelName);
+        }
+    }
+
+    // Emit event that a user was kicked from a channel
+    ircEvents.emit('channel:userKicked', {
+        channelName: channelName,
+        kickedNick: kickedUser.nick,
+        kickedIdent: kickedUser.ident,
+        kickedHost: kickedUser.host,
+        kickerNick: kicker.nick,
+        kickerIdent: kicker.ident,
+        kickerHost: kicker.host,
+        reason: reason,
+        time: data.time
+    });
+
+    // If we were kicked, emit specific event for UI cleanup
+    if (kickedUser === guser.me) {
+        ircEvents.emit('user:selfKickedFromChannel', {
+            channelName: channelName,
+            kickerNick: kicker.nick,
+            reason: reason
         });
     }
 });
 
 ircEvents.on('protocol:privmsgCommand', function(data) {
-    var msg = data.raw;
-    var target = data.target;
-    var message = data.message;
-    var user = msg.user; // Sender
+    // Domain layer: determine message state and emit abstracted event
+    // Extract only necessary fields from tags - don't pass raw tags to UI
+    var tags = data.tags || {};
 
-    if (target.startsWith('#') || target.startsWith('&')) { // Channel message
-        // Emit event that a message was sent to a channel for the UI to handle.
-        ircEvents.emit('channel:message', {
-            channelName: target, // Use target directly as channel name
-            nick: user.nick,
-            message: message,
-            raw: msg
-        });
-    } else { // Private message (query)
-        // Emit event that a message was sent to a user for the UI to handle.
-        // The UI will be responsible for finding or creating the query tab.
-        ircEvents.emit('query:message', {
-            nick: user.nick, // Sender is the nick
-            targetNick: target, // Target of the message
-            message: message,
-            raw: msg
-        });
+    // Use server-provided timestamp if available (e.g., from history), otherwise use local time
+    var messageTime = tags.time ? new Date(tags.time) : data.time;
+
+    var messageState = {
+        messageType: 'PRIVMSG',    // Message type
+        text: data.text,
+        dest: data.dest,
+        sender: data.sender,
+        time: messageTime,
+
+        // Abstracted tag fields - UI doesn't need to know about IRC tags
+        msgid: tags.msgid || null,           // For deduplication
+        serverTime: tags.time || null,       // Server-provided timestamp
+        label: tags.label || null,           // For labeled-response tracking
+
+        // Abstracted state - UI should not need to check caps/batches
+        isHidden: false,           // Should this message be hidden? (password, etc.)
+        isHistory: false,          // Is this from chat history batch?
+        isOutgoing: false,         // Is this our own message?
+        isPending: false,          // Is this awaiting delivery confirmation?
+        isEcho: false,             // Is this an echo-message confirmation?
+        labelToReplace: null,      // If echo, which label to replace
+        shouldSkipDisplay: false   // Should UI skip displaying? (waiting for echo)
+    };
+
+    // Check if message should be hidden (contains password, etc.)
+    if(messageState.label && domainLabelsToHide.indexOf(messageState.label) !== -1){
+        messageState.isHidden = true;
+        gateway.labelProcessed = true;
+        // Don't emit display event for hidden messages
+        return;
     }
+
+    // Check if this is from a chat history batch
+    var historyBatch = null;
+    if(tags.batch && tags.batch in domainBatch){
+        var batch = domainBatch[tags.batch];
+        if(batch.type == 'chathistory') {
+            messageState.isHistory = true;
+            historyBatch = batch;
+        } else {
+            // Check parent batches
+            for(var i=0; i<batch.parents.length; i++){
+                if(batch.parents[i].type == 'chathistory'){
+                    messageState.isHistory = true;
+                    historyBatch = batch.parents[i];
+                    break;
+                }
+            }
+        }
+    }
+
+    // Track message stats in history batch
+    if(historyBatch){
+        historyBatch.receivedMessages = (historyBatch.receivedMessages || 0) + 1;
+        // Track oldest message for "load older" reference
+        if(!historyBatch.oldestMsgid && tags.msgid){
+            historyBatch.oldestMsgid = tags.msgid;
+        }
+        if(!historyBatch.oldestTimestamp && tags.time){
+            historyBatch.oldestTimestamp = tags.time;
+        }
+    }
+
+    // Check if this is our own message
+    if(data.sender === guser.me || data.sender.nick === guser.me.nick){
+        messageState.isOutgoing = true;
+
+        // If we have echo-message but not labeled-response, skip displaying outgoing (wait for echo)
+        if(!('labeled-response' in activeCaps) && ('echo-message' in activeCaps)){
+            messageState.shouldSkipDisplay = true;
+            return; // Don't display, wait for echo
+        }
+
+        // If we have both capabilities and this message has a label, check if it's an echo
+        if(messageState.label && ('labeled-response' in activeCaps) && ('echo-message' in activeCaps)){
+            // Check if this is an echo (received from server) or our local pending message
+            // Echo messages come from protocol:privmsgCommand, while pending messages come from domain:outgoingMessage
+            // We can detect echo by checking if this came from the protocol layer (has batch support data)
+            // Actually, simpler: if we're receiving a PRIVMSG with our label from protocol, it's an echo
+            // Local pending messages are emitted from domain:outgoingMessage, not protocol
+
+            // Check if this is from the protocol layer (has certain protocol-only data)
+            var isFromProtocol = ('tags' in data) || ('raw' in data);
+
+            if(isFromProtocol){
+                // This is an echo from the server
+                messageState.isEcho = true;
+                messageState.labelToReplace = messageState.label;
+                gateway.labelProcessed = true;
+                messageState.isPending = false;
+            } else {
+                // This is our local pending message
+                messageState.isPending = true;
+            }
+        }
+    }
+
+    // Emit abstracted message event with all necessary metadata
+    ircEvents.emit('message:received', messageState);
+});
+
+ircEvents.on('domain:outgoingMessage', function(data) {
+    // Handle outgoing messages sent by the user (display as pending while waiting for echo)
+    // This creates the "pending" display that will be replaced by the echo-message
+    var messageState = {
+        messageType: data.messageType,
+        dest: data.dest,
+        text: data.text,
+        sender: data.sender,
+        time: data.time,
+        isOutgoing: true,
+        isPending: ('labeled-response' in activeCaps) && ('echo-message' in activeCaps),
+        label: data.label,
+        isEcho: false,
+        labelToReplace: null,
+        msgid: null,
+        isHidden: false,
+        isHistory: false
+    };
+
+    // Emit message:received event for UI display
+    ircEvents.emit('message:received', messageState);
 });
 
 ircEvents.on('protocol:quitCommand', function(data) {
-    var msg = data.raw;
     var quitMessage = data.quitMessage;
-    var user = msg.user; // User who quit
+    var user = data.user; // User who quit
 
     if (user) {
         // Remove user from all ChannelMemberLists they were part of
@@ -681,60 +906,52 @@ ircEvents.on('protocol:quitCommand', function(data) {
         if (user === guser.me) { // Own quit
             ircEvents.emit('user:selfQuit', {
                 nick: user.nick,
-                quitMessage: quitMessage,
-                raw: msg
+                quitMessage: quitMessage
             });
         } else { // Other user quit
             ircEvents.emit('user:otherQuit', {
                 user: { nick: user.nick, ident: user.ident, host: user.host }, // Pass relevant user info
-                quitMessage: quitMessage,
-                raw: msg
+                quitMessage: quitMessage
             });
         }
     }
 });
 
 ircEvents.on('protocol:setnameCommand', function(data) {
-    var msg = data.raw;
-    if (msg.user === guser.me) { // Own realname change
+    if (data.user === guser.me) { // Own realname change
         guser.setRealname(data.newRealname);
     }
     ircEvents.emit('user:realnameChanged', {
-        nick: msg.user.nick,
-        newRealname: data.newRealname,
-        raw: msg
+        nick: data.user.nick,
+        newRealname: data.newRealname
     });
 });
 
 ircEvents.on('protocol:topicCommand', function(data) {
-    var msg = data.raw;
     var channelName = data.channelName;
     var topic = data.topic;
-    var user = msg.user; // Who set the topic
+    var user = data.user; // Who set the topic
 
     // Emit event that a channel's topic has changed for the UI to update its channel object.
     ircEvents.emit('channel:topicChanged', {
         channelName: channelName,
         topic: topic,
         setBy: user.nick,
-        setDate: msg.time.getTime() / 1000,
-        raw: msg
+        setDate: data.time.getTime() / 1000
     });
 });
 
 // Numeric handlers
 
 ircEvents.on('protocol:rplWelcome', function(data) {
-    var msg = data.raw;
     // Update client state after successful connection and welcome message
     domainConnectStatus = '001';
     ircEvents.emit('client:welcome', {
         target: data.welcomeTarget,
-        message: data.message,
-        raw: msg
+        message: data.message
     });
     // Explicitly emit client:connected after welcome for UI
-    ircEvents.emit('client:connected', { raw: msg });
+    ircEvents.emit('client:connected', {});
 });
 
 // Domain logic for client:connected event
@@ -745,96 +962,81 @@ ircEvents.on('client:connected', function(data) {
 });
 
 ircEvents.on('protocol:rplYourhost', function(data) {
-    var msg = data.raw;
     ircEvents.emit('server:yourHost', {
         hostTarget: data.hostTarget,
-        message: data.message,
-        raw: msg
+        message: data.message
     });
 });
 
 ircEvents.on('protocol:rplCreated', function(data) {
-    var msg = data.raw;
     ircEvents.emit('server:createdInfo', {
         createdTarget: data.createdTarget,
-        message: data.message,
-        raw: msg
+        message: data.message
     });
 });
 
 ircEvents.on('protocol:rplMyinfo', function(data) {
-    var msg = data.raw;
     // Store this info in a global/domain state if needed
     // gateway.serverInfo = { ... }; // This should be managed directly within domain or via properties
     ircEvents.emit('server:myInfo', {
         serverName: data.serverName,
         version: data.version,
         userModes: data.userModes,
-        channelModes: data.channelModes,
-        raw: msg
+        channelModes: data.channelModes
     });
 });
 
 ircEvents.on('protocol:rplIsupport', function(data) {
-    var msg = data.raw;
     // Parse and store ISUPPORT tokens
     data.tokens.forEach(token => {
         let [key, value] = token.split('=');
         isupport[key] = value || true;
     });
     ircEvents.emit('server:isupportUpdated', {
-        isupport: isupport,
-        raw: msg
+        isupport: isupport
     });
 });
 
 ircEvents.on('protocol:rplUmodes', function(data) {
-    var msg = data.raw;
     // Apply umode changes to the current user (guser.me)
     if (guser.me && data.target === guser.me.nick) {
         guser.me.setModes(data.umodes); // Assuming setModes method on user object
         ircEvents.emit('user:modesUpdated', {
             nick: guser.me.nick,
-            modes: data.umodes,
-            raw: msg
+            modes: data.umodes
         });
     }
 });
 
 ircEvents.on('protocol:rplNone', function(data) {
-    var msg = data.raw;
     // Generic empty numeric, usually safe to ignore or log
     console.log('DOMAIN: RPL_NONE received:', data.message);
     ircEvents.emit('server:genericMessage', {
         type: 'none',
-        message: data.message,
-        raw: msg
+        message: data.message
     });
 });
 
 ircEvents.on('protocol:rplAway', function(data) {
-    var msg = data.raw;
-    var user = gateway.findUser(data.awayNick);
+    var user = users.getUser(data.awayNick);
     if (user) {
         user.setAway(data.awayMessage);
         ircEvents.emit('user:awayStatusChanged', {
             nick: user.nick,
             awayMessage: data.awayMessage,
-            isAway: true,
-            raw: msg
+            isAway: true
         });
     }
 });
 
 ircEvents.on('protocol:rplUserhost', function(data) {
-    var msg = data.raw;
     // Parse reply and update user info
     var parts = data.reply.match(/([^=]+)=([^@]+)@(.*)/);
     if (parts) {
         var nick = parts[1];
         var ident = parts[2];
         var host = parts[3];
-        var user = gateway.findUser(nick);
+        var user = users.getUser(nick);
         if (user) {
             user.setIdent(ident);
             user.setHost(host);
@@ -842,102 +1044,81 @@ ircEvents.on('protocol:rplUserhost', function(data) {
                 nick: nick,
                 ident: ident,
                 host: host,
-                raw: msg
             });
         }
-    });
+    }
+});
 
 ircEvents.on('protocol:rplIson', function(data) {
-    var msg = data.raw;
     // Update status of nicks that are on IRC
     data.nicks.forEach(nick => {
-        var user = gateway.findUser(nick);
+        var user = users.getUser(nick);
         if (user) {
-            user.setOnline(true);
+            // Online status is ISON-specific, not stored permanently
             ircEvents.emit('user:onlineStatusChanged', {
                 nick: nick,
-                isOnline: true,
-                raw: msg
+                isOnline: true
             });
         }
     });
 });
 
 ircEvents.on('protocol:rplText', function(data) {
-    var msg = data.raw;
     // Generic text message from server, often for notices or errors
     ircEvents.emit('server:genericMessage', {
         type: 'text',
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplUnaway', function(data) {
-    var msg = data.raw;
     if (guser.me) {
         guser.me.notAway();
         ircEvents.emit('user:awayStatusChanged', {
             nick: guser.me.nick,
             isAway: false,
-            raw: msg
         });
     }
 });
 
 ircEvents.on('protocol:rplNowaway', function(data) {
-    var msg = data.raw;
     if (guser.me) {
         guser.me.setAway(data.message);
         ircEvents.emit('user:awayStatusChanged', {
             nick: guser.me.nick,
             awayMessage: data.message,
             isAway: true,
-            raw: msg
         });
     }
 });
 
 ircEvents.on('protocol:rplWhoisregnick', function(data) {
-    var msg = data.raw;
-    var user = gateway.findUser(data.nick);
-    if (user) {
-        user.setRegistered(true); // Assuming setRegistered method
-        ircEvents.emit('user:registrationStatusChanged', {
-            nick: user.nick,
-            isRegistered: true,
-            raw: msg
-        });
-    }
+    // WHOIS-specific data - don't update permanent user state
+    // Only accumulate for WHOIS display
+    domainWhoisData.isRegistered = true;
 });
 
 ircEvents.on('protocol:rplRulesstart', function(data) {
-    var msg = data.raw;
     ircEvents.emit('server:rulesStart', {
         target: data.target,
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplEndofrules', function(data) {
-    var msg = data.raw;
     ircEvents.emit('server:endOfRules', {
         target: data.target,
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplWhoishelpop', function(data) {
-    var msg = data.raw;
-    var user = gateway.findUser(data.nick);
+    var user = users.getUser(data.nick);
     if (user) {
-        user.setHelpop(true); // Assuming setHelpop method
+        // Helpop status is WHOIS-specific, not stored permanently
         ircEvents.emit('user:helpopStatusChanged', {
             nick: user.nick,
             isHelpop: true,
-            raw: msg
         });
     }
 });
@@ -945,85 +1126,41 @@ ircEvents.on('protocol:rplWhoishelpop', function(data) {
 // Accumulator for WHOIS data
 // domainWhoisData global for domain
 ircEvents.on('protocol:rplWhoisuser', function(data) {
-    var msg = data.raw;
-    var user = gateway.findUser(data.nick);
-    if (user) {
-        user.setIdent(data.ident);
-        user.setHost(data.host);
-        user.setRealname(data.realname);
-        ircEvents.emit('user:infoUpdated', {
-            nick: user.nick,
-            ident: data.ident,
-            host: data.host,
-            realname: data.realname,
-            raw: msg
-        });
-        domainWhoisData.nick = user.nick;
-        domainWhoisData.ident = data.ident;
-        domainWhoisData.host = data.host;
-        domainWhoisData.realname = data.realname;
-        domainWhoisData.isWhowas = false; // This is not a WHOWAS query
-    } else {
-        // Create user if not found during WHOIS
-        var newUser = new users.user(data.nick);
-        newUser.setIdent(data.ident);
-        newUser.setHost(data.host);
-        newUser.setRealname(data.realname);
-        // Add to global user list implicitly via gateway.findUser later or explicitly if needed
-        ircEvents.emit('user:infoUpdated', {
-            nick: data.nick,
-            ident: data.ident,
-            host: data.host,
-            realname: data.realname,
-            raw: msg
-        });
-        domainWhoisData.nick = data.nick;
-        domainWhoisData.ident = data.ident;
-        domainWhoisData.host = data.host;
-        domainWhoisData.realname = data.realname;
-        domainWhoisData.isWhowas = false;
-    }
+    // WHOIS-specific data - don't update permanent user state
+    // Only accumulate for WHOIS display
+    domainWhoisData.nick = data.nick;
+    domainWhoisData.ident = data.ident;
+    domainWhoisData.host = data.host;
+    domainWhoisData.realname = data.realname;
+    domainWhoisData.isWhowas = false;
 });
 
 ircEvents.on('protocol:rplWhoisserver', function(data) {
-    var msg = data.raw;
-    var user = gateway.findUser(data.nick);
-    if (user) {
-        user.setServer(data.server); // Assuming setServer method
-        ircEvents.emit('user:serverInfoUpdated', {
-            nick: user.nick,
-            server: data.server,
-            serverInfo: data.serverInfo,
-            raw: msg
-        });
-        domainWhoisData.server = data.server;
-        domainWhoisData.serverInfo = data.serverInfo;
-    }
+    // WHOIS-specific data - don't update permanent user state
+    // Only accumulate for WHOIS display
+    domainWhoisData.server = data.server;
+    domainWhoisData.serverInfo = data.serverInfo;
 });
 
 ircEvents.on('protocol:rplWhoisoperator', function(data) {
-    var msg = data.raw;
-    var user = gateway.findUser(data.nick);
+    var user = users.getUser(data.nick);
     if (user) {
-        user.setOperator(true); // Assuming setOperator method
+        // Operator status is WHOIS-specific, not stored permanently
         ircEvents.emit('user:operatorStatusChanged', {
             nick: user.nick,
             isOperator: true,
-            raw: msg
         });
         domainWhoisData.operatorInfo = data.message;
     }
 });
 
 ircEvents.on('protocol:rplWhowasuser', function(data) {
-    var msg = data.raw;
     // This is information about a user who is no longer online
     ircEvents.emit('user:whowasInfo', {
         nick: data.nick,
         ident: data.ident,
         host: data.host,
         realname: data.realname,
-        raw: msg
     });
     domainWhoisData.nick = data.nick;
     domainWhoisData.ident = data.ident;
@@ -1033,26 +1170,21 @@ ircEvents.on('protocol:rplWhowasuser', function(data) {
 });
 
 ircEvents.on('protocol:rplEndofwho', function(data) {
-    var msg = data.raw;
     ircEvents.emit('channel:endOfWho', {
         target: data.target,
         query: data.query,
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplWhoisidle', function(data) {
-    var msg = data.raw;
-    var user = gateway.findUser(data.nick);
+    var user = users.getUser(data.nick);
     if (user) {
-        user.setIdleTime(data.idleSeconds); // Assuming setIdleTime method
-        user.setSignOnTime(data.signOn);   // Assuming setSignOnTime method
+        // Idle and signon time are WHOIS-specific, stored in domainWhoisData
         ircEvents.emit('user:idleInfoUpdated', {
             nick: user.nick,
             idleSeconds: data.idleSeconds,
             signOn: data.signOn,
-            raw: msg
         });
         domainWhoisData.idleTime = data.idleSeconds;
         domainWhoisData.signedOn = data.signOn;
@@ -1060,43 +1192,37 @@ ircEvents.on('protocol:rplWhoisidle', function(data) {
 });
 
 ircEvents.on('protocol:rplEndofwhois', function(data) {
-    var msg = data.raw;
+    console.log('[WHOIS-DEBUG] End of WHOIS for', data.nick, 'accumulated data:', domainWhoisData);
     ircEvents.emit('user:endOfWhois', {
         nick: data.nick,
-        raw: msg
     });
     ircEvents.emit('user:whoisComplete', { // Emit consolidated WHOIS data
         nick: data.nick,
         data: domainWhoisData,
-        raw: msg
     });
     domainWhoisData = {}; // Clear accumulator
 });
 
 ircEvents.on('protocol:rplWhoischannels', function(data) {
-    var msg = data.raw;
-    var user = gateway.findUser(data.nick);
+    var user = users.getUser(data.nick);
     if (user) {
-        // This list might contain channel names with prefixes
-        user.setChannels(data.channels); // Assuming setChannels method on user object
+        // Channel list is WHOIS-specific, stored in domainWhoisData
         ircEvents.emit('user:channelsUpdated', {
             nick: user.nick,
             channels: data.channels,
-            raw: msg
         });
         domainWhoisData.channels = data.channels;
     }
 });
 
 ircEvents.on('protocol:rplWhoisspecial', function(data) {
-    var msg = data.raw;
-    var user = gateway.findUser(data.nick);
+    var user = users.getUser(data.nick);
     if (user) {
-        user.setSpecialStatus(data.message); // Assuming setSpecialStatus
+        // Special status is WHOIS-specific info like "is a Network Administrator"
+        // No need to store on user object, just emit for UI display
         ircEvents.emit('user:specialStatusUpdated', {
             nick: user.nick,
             status: data.message,
-            raw: msg
         });
         domainWhoisData.specialInfo = data.message;
     }
@@ -1104,16 +1230,13 @@ ircEvents.on('protocol:rplWhoisspecial', function(data) {
 
 // domainSmallListData global for domain
 ircEvents.on('protocol:rplListstart', function(data) {
-    var msg = data.raw;
     ircEvents.emit('server:listStart', {
         message: data.message,
-        raw: msg
     });
     domainSmallListData = []; // Initialize accumulator
 });
 
 ircEvents.on('protocol:rplList', function(data) {
-    var msg = data.raw;
     // Accumulate channel list information
     domainSmallListData.push({
         channel: data.channel,
@@ -1124,36 +1247,29 @@ ircEvents.on('protocol:rplList', function(data) {
         channel: data.channel,
         visibleUsers: data.visibleUsers,
         topic: data.topic,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplEndoflist', function(data) {
-    var msg = data.raw;
     ircEvents.emit('server:endOfList', {
         message: data.message,
-        raw: msg
     });
     ircEvents.emit('list:smallListComplete', { // Emit consolidated list data
         smallListData: domainSmallListData.map(item => [item.channel, item.visibleUsers, item.topic]),
-        raw: msg
     });
     domainSmallListData = []; // Clear accumulator
 });
 
 ircEvents.on('protocol:rplChannelmodeis', function(data) {
-    var msg = data.raw;
     // Emit event that a channel's modes have been reported/updated for the UI to update its channel object.
     ircEvents.emit('channel:modesUpdated', {
         channelName: data.channelName,
         modes: data.modes,
         modeParams: data.modeParams,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplCreationtime', function(data) {
-    var msg = data.raw;
     var channel = gateway.findChannel(data.channelName);
     if (channel) {
         channel.setCreationTime(data.creationTime);
@@ -1161,88 +1277,63 @@ ircEvents.on('protocol:rplCreationtime', function(data) {
             channelName: channel.name,
             channelId: channel.id,
             creationTime: data.creationTime,
-            raw: msg
         });
         domainWhoisData.creationTime = data.creationTime; // Add to WHOIS data
     }
 });
 
 ircEvents.on('protocol:rplWhoisloggedin', function(data) {
-    var msg = data.raw;
-    var user = gateway.findUser(data.nick);
-    if (user) {
-        user.setAccount(data.account);
-        ircEvents.emit('user:loggedInAccount', {
-            nick: user.nick,
-            account: data.account,
-            raw: msg
-        });
-        domainWhoisData.account = data.account; // Add to WHOIS data
-    }
+    // WHOIS-specific data - don't update permanent user state
+    // Only accumulate for WHOIS display
+    domainWhoisData.account = data.account;
 });
 
 ircEvents.on('protocol:rplNotopic', function(data) {
-    var msg = data.raw;
     // Emit event that a channel has no topic for the UI to update its channel object.
     ircEvents.emit('channel:topic', {
         channelName: data.channelName,
         topic: '',
         setBy: '',
         setDate: 0,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplTopic', function(data) {
-    var msg = data.raw;
     // Emit event that a channel's topic has been reported for the UI to update its channel object.
     ircEvents.emit('channel:topic', {
         channelName: data.channelName,
         topic: data.topic,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplTopicwhotime', function(data) {
-    var msg = data.raw;
-    var channel = gateway.findChannel(data.channelName);
-    if (channel) {
-        channel.setTopicSetBy(data.setBy);
-        channel.setTopicSetDate(data.setDate);
-        ircEvents.emit('channel:topicInfoUpdated', { // Specific event for just this info
-            channelName: channel.name,
-            channelId: channel.id,
-            setBy: data.setBy,
-            setDate: data.setDate,
-            raw: msg
-        });
-    }
+    // Emit event for UI to update topic metadata
+    ircEvents.emit('channel:topicInfoUpdated', {
+        channelName: data.channelName,
+        setBy: data.setBy,
+        setDate: data.setDate,
+    });
 });
 
 ircEvents.on('protocol:rplListsyntax', function(data) {
-    var msg = data.raw;
     ircEvents.emit('server:listsyntaxInfo', {
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplWhoisbot', function(data) {
-    var msg = data.raw;
-    var user = gateway.findUser(data.nick);
+    var user = users.getUser(data.nick);
     if (user) {
-        user.setIsBot(true);
+        // Bot status is WHOIS-specific, stored in domainWhoisData
         ircEvents.emit('user:isBot', {
             nick: user.nick,
             isBot: true,
-            raw: msg
         });
         domainWhoisData.isBot = true; // Add to WHOIS data
     }
 });
 
 ircEvents.on('protocol:rplInvitlist', function(data) {
-    var msg = data.raw;
     var channel = gateway.findChannel(data.channelName);
     if (channel) {
         // Store or process invite list entry
@@ -1252,67 +1343,56 @@ ircEvents.on('protocol:rplInvitlist', function(data) {
             usermask: data.usermask,
             setBy: data.setBy,
             setDate: data.setDate,
-            raw: msg
         });
     }
 });
 
 ircEvents.on('protocol:rplEndofinvitelist', function(data) {
-    var msg = data.raw;
     var channel = gateway.findChannel(data.channelName);
     if (channel) {
         ircEvents.emit('channel:endOfInviteList', {
             channelName: channel.name,
             channelId: channel.id,
             message: data.message,
-            raw: msg
         });
     }
 });
 
 ircEvents.on('protocol:rplUserip', function(data) {
-    var msg = data.raw;
-    var user = gateway.findUser(data.nick);
+    var user = users.getUser(data.nick);
     if (user) {
-        user.setIpAddress(data.userIp);
+        // IP address is WHOIS-specific, stored in domainWhoisData
         ircEvents.emit('user:ipAddressUpdated', {
             nick: user.nick,
             ipAddress: data.userIp,
-            raw: msg
         });
     }
 });
 
 ircEvents.on('protocol:rplInviting', function(data) {
-    var msg = data.raw;
     // The server is telling us that `byNick` invited `nick` to `channel`
     ircEvents.emit('client:invited', {
-        byNick: msg.user.nick, // Assuming msg.user is the inviter
+        byNick: data.user.nick, // Assuming data.user is the inviter
         targetNick: data.nick,
         channelName: data.channelName,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplSummoning', function(data) {
-    var msg = data.raw;
     ircEvents.emit('user:summoned', {
         nick: data.nick,
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplWhoiscountry', function(data) {
-    var msg = data.raw;
-    var user = gateway.findUser(data.nick);
+    var user = users.getUser(data.nick);
     if (user) {
-        user.setCountry(data.countryCode, data.countryName);
+        // Country is WHOIS-specific, stored in domainWhoisData
         ircEvents.emit('user:countryInfoUpdated', {
             nick: user.nick,
             countryCode: data.countryCode,
             countryName: data.countryName,
-            raw: msg
         });
         domainWhoisData.countryCode = data.countryCode; // Add to WHOIS data
         domainWhoisData.countryName = data.countryName; // Add to WHOIS data
@@ -1320,7 +1400,6 @@ ircEvents.on('protocol:rplWhoiscountry', function(data) {
 });
 
 ircEvents.on('protocol:rplExceptlist', function(data) {
-    var msg = data.raw;
     var channel = gateway.findChannel(data.channelName);
     if (channel) {
         // Store or process except list entry
@@ -1330,37 +1409,31 @@ ircEvents.on('protocol:rplExceptlist', function(data) {
             exceptionMask: data.exceptionMask,
             setBy: data.setBy,
             setDate: data.setDate,
-            raw: msg
         });
     }
 });
 
 ircEvents.on('protocol:rplEndofexceptlist', function(data) {
-    var msg = data.raw;
     var channel = gateway.findChannel(data.channelName);
     if (channel) {
         ircEvents.emit('channel:endOfExceptList', {
             channelName: channel.name,
             channelId: channel.id,
             message: data.message,
-            raw: msg
         });
     }
 });
 
 ircEvents.on('protocol:rplVersion', function(data) {
-    var msg = data.raw;
     ircEvents.emit('server:versionInfo', {
-        serverName: msg.prefix, // From msg.prefix
+        serverName: data.prefix, // From data.prefix
         version: data.version,
         debugLevel: data.debugLevel,
         comments: data.comments,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplWhoreply', function(data) {
-    var msg = data.raw;
     // Get domain-level user object. Assume users.getUser creates if not exists.
     var user = users.getUser(data.nick);
 
@@ -1380,7 +1453,6 @@ ircEvents.on('protocol:rplWhoreply', function(data) {
         server: data.server,
         realname: data.realname,
         flags: data.flags,
-        raw: msg
     });
 
     // If a channel name is provided, signal the UI that the user is in this channel.
@@ -1391,26 +1463,28 @@ ircEvents.on('protocol:rplWhoreply', function(data) {
             nick: user.nick,
             ident: user.ident,
             host: user.host,
-            raw: msg
         });
     }
 });
 
 ircEvents.on('protocol:rplNamreply', function(data) {
-    var msg = data.raw;
     var channelName = data.channelName;
 
     // Get or create ChannelMemberList for this channel
     var cml = users.addChannelMemberList(channelName);
+    console.log('[NICKLIST-DEBUG] NAMES for', channelName, 'adding', data.names.length, 'users, current count:', cml.members.length);
 
     data.names.forEach(nickEntry => {
         let modes = '';
         let nick = nickEntry;
+        let ident = '';
+        let host = '';
 
         // Full parsing of modes/prefixes from nickEntry
         let userChannelModes = {};
         let userLevel = 0;
 
+        // Strip channel status prefixes (@, +, etc.)
         if (isupport.PREFIX) {
             let prefixes = isupport.PREFIX.match(/\((.*?)\)(.+)/);
             if (prefixes) {
@@ -1425,6 +1499,17 @@ ircEvents.on('protocol:rplNamreply', function(data) {
             } else { // Fallback for common prefixes if ISUPPORT is malformed
                 if (nick.startsWith('@')) { modes += 'o'; nick = nick.substring(1); }
                 else if (nick.startsWith('+')) { modes += 'v'; nick = nick.substring(1); }
+            }
+        }
+
+        // Parse nick!ident@host if server sent extended format
+        let exclamIdx = nick.indexOf('!');
+        if (exclamIdx !== -1) {
+            let atIdx = nick.indexOf('@', exclamIdx);
+            if (atIdx !== -1) {
+                ident = nick.substring(exclamIdx + 1, atIdx);
+                host = nick.substring(atIdx + 1);
+                nick = nick.substring(0, exclamIdx);
             }
         }
         // Apply parsed modes to userChannelModes object
@@ -1446,6 +1531,10 @@ ircEvents.on('protocol:rplNamreply', function(data) {
 
         // Get or create domain-level user object (this object is global to all channels)
         let user = users.getUser(nick); // users.getUser handles creation if it doesn't exist
+
+        // Set ident and host if provided in extended NAMES format
+        if (ident) user.setIdent(ident);
+        if (host) user.setHost(host);
 
         // Temporarily assign channel-specific properties to the user object for ChannelMember creation
         user.channelModes = userChannelModes;
@@ -1474,115 +1563,171 @@ ircEvents.on('protocol:rplNamreply', function(data) {
             ident: member.ident,
             host: member.host
         })),
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplWhospcrpl', function(data) {
-    var msg = data.raw;
-    var user = gateway.findUser(data.nick);
+    // Normalize account field: "*", "0", and empty string mean not logged in
+    var account = (data.account === '*' || data.account === '0' || data.account === '') ? false : data.account;
+
+    // Parse status flags (format: [H|G][*][@|+|etc])
+    // H = here (not away), G = gone (away), * = IRC operator, B = bot
+    // Note: Channel status prefixes (@, +, etc.) are handled by NAMES/MODE, not WHO
+    var isAway = data.status && data.status.charAt(0) === 'G'; // First char indicates away status
+    var isIrcOp = data.status && data.status.indexOf('*') !== -1;
+    var isBot = data.status && data.status.indexOf('B') !== -1;
+
+    var user = users.getUser(data.nick);
     if (user) {
         user.setIdent(data.ident);
         user.setHost(data.host);
-        user.setRealname(data.realname);
-        user.setAccount(data.account);
-        user.setSpecialStatus(data.status); // Assuming special status maps to mode flags
-        user.setGecos(data.gecos); // Assuming setGecos exists
+        // Use gecos if available (from msg.text), otherwise use realname (from args[7])
+        user.setRealname(data.gecos || data.realname);
+        user.setAccount(account);
+        // Set away status based on H/G flag
+        if (isAway) {
+            user.setAway(true); // Match old code behavior
+        } else {
+            user.notAway();
+        }
+        // Set IRC operator status
+        if (user.ircOp !== isIrcOp) {
+            user.setIrcOp(isIrcOp);
+        }
+        // Set bot status
+        if (user.bot !== isBot) {
+            user.setBot(isBot);
+        }
 
         ircEvents.emit('user:extendedInfoUpdated', {
             nick: user.nick,
             ident: data.ident,
             host: data.host,
             server: data.server,
-            realname: data.realname,
-            account: data.account,
+            realname: data.gecos || data.realname,
+            account: account,
             status: data.status,
-            gecos: data.gecos,
-            raw: msg
+            away: isAway,
+            ircOp: isIrcOp,
+            bot: isBot
         });
     } else {
         var newUser = new users.user(data.nick);
         newUser.setIdent(data.ident);
         newUser.setHost(data.host);
-        newUser.setRealname(data.realname);
-        newUser.setAccount(data.account);
-        newUser.setSpecialStatus(data.status);
-        newUser.setGecos(data.gecos);
+        newUser.setRealname(data.gecos || data.realname);
+        newUser.setAccount(account);
+        if (isAway) {
+            newUser.setAway('away');
+        }
+        if (isIrcOp) {
+            newUser.setIrcOp(isIrcOp);
+        }
+        if (isBot) {
+            newUser.setBot(isBot);
+        }
         ircEvents.emit('user:extendedInfoUpdated', {
             nick: data.nick,
             ident: data.ident,
             host: data.host,
             server: data.server,
-            realname: data.realname,
-            account: data.account,
+            realname: data.gecos || data.realname,
+            account: account,
             status: data.status,
-            gecos: data.gecos,
-            raw: msg
+            away: isAway,
+            ircOp: isIrcOp,
+            bot: isBot
         });
     }
 });
 
 ircEvents.on('protocol:rplKilldone', function(data) {
-    var msg = data.raw;
     ircEvents.emit('server:killConfirmed', {
         nick: data.nick,
-        reason: data.message, // msg.text in protocolGeneric
-        raw: msg
+        reason: data.message, // data.text in protocolGeneric
     });
 });
 
 ircEvents.on('protocol:rplClosing', function(data) {
-    var msg = data.raw;
     ircEvents.emit('server:closingConnection', {
         server: data.serverName,
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplCloseend', function(data) {
-    var msg = data.raw;
     ircEvents.emit('server:closeCommandEnded', {
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplLinks', function(data) {
-    var msg = data.raw;
     ircEvents.emit('server:linkInfo', {
         linkName: data.linkName,
         remoteServer: data.remoteServer,
         hopCount: data.hopCount,
         info: data.info,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplEndoflinks', function(data) {
-    var msg = data.raw;
     ircEvents.emit('server:endOfLinksList', {
         mask: data.mask,
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplEndofnames', function(data) {
-    var msg = data.raw;
-    var channel = gateway.findChannel(data.channelName);
-    if (channel) {
-        ircEvents.emit('channel:endOfNamesList', {
-            channelName: channel.name,
-            channelId: channel.id,
-            message: data.message,
-            raw: msg
-        });
+    var channelName = data.channelName;
+    var channelKey = channelName.toLowerCase();
+
+    // Check if this channel is being initially joined
+    if (domainChannelsInitializing[channelKey]) {
+        // Get the complete member list from domain
+        var cml = users.getChannelMemberList(channelName);
+        if (cml) {
+            var members = cml.getAllMembers(); // Get all ChannelMember objects
+
+            // Emit channel:channelCreation with complete initial data
+            ircEvents.emit('channel:channelCreation', {
+                channelName: channelName,
+                members: members, // Complete member list with all privileges
+                joinTime: domainChannelsInitializing[channelKey].joinTime,
+                // Include our own user info for the join message
+                nick: guser.me.nick,
+                ident: guser.me.ident,
+                host: guser.me.host
+            });
+
+            // Automatically request chat history if server supports it
+            // Emit event for UI to calculate limit and request history
+            if (('draft/chathistory' in activeCaps) && ('CHATHISTORY' in isupport)) {
+                // Mark channel as awaiting initial history
+                domainChannelsAwaitingInitialHistory[channelKey] = true;
+                ircEvents.emit('channel:requestInitialHistory', {
+                    channelName: channelName,
+                    maxLimit: isupport['CHATHISTORY'] // Server's max limit (0 = unlimited)
+                });
+            }
+
+            // Remove from initializing list
+            delete domainChannelsInitializing[channelKey];
+        }
+    } else {
+        // This is a NAMES refresh (not initial join)
+        // Emit channel:memberListReplace to tell UI to rebuild nicklist
+        var cml = users.getChannelMemberList(channelName);
+        if (cml) {
+            var members = cml.getAllMembers();
+            ircEvents.emit('channel:memberListReplace', {
+                channelName: channelName,
+                members: members
+            });
+        }
     }
 });
 
 ircEvents.on('protocol:rplBanlist', function(data) {
-    var msg = data.raw;
     var channel = gateway.findChannel(data.channelName);
     if (channel) {
         ircEvents.emit('channel:banListEntry', {
@@ -1591,114 +1736,86 @@ ircEvents.on('protocol:rplBanlist', function(data) {
             banmask: data.banmask,
             setBy: data.setBy,
             setAt: data.setAt,
-            raw: msg
         });
     }
 });
 
 ircEvents.on('protocol:rplEndofbanlist', function(data) {
-    var msg = data.raw;
     var channel = gateway.findChannel(data.channelName);
     if (channel) {
         ircEvents.emit('channel:endOfBanList', {
             channelName: channel.name,
             channelId: channel.id,
             message: data.message,
-            raw: msg
         });
     }
 });
 
 ircEvents.on('protocol:rplEndofwhowas', function(data) {
-    var msg = data.raw;
     ircEvents.emit('user:endOfWhowas', {
         nick: data.nick,
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplInfo', function(data) {
-    var msg = data.raw;
     ircEvents.emit('server:infoMessage', {
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplMotd', function(data) {
-    var msg = data.raw;
     ircEvents.emit('server:motdLine', {
         line: data.line,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplInfostart', function(data) {
-    var msg = data.raw;
     ircEvents.emit('server:infoStart', {
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplEndofinfo', function(data) {
-    var msg = data.raw;
     ircEvents.emit('server:endOfInfo', {
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplMotdstart', function(data) {
-    var msg = data.raw;
     var serverNameMatch = data.message.match(/^- ([^ ]+) Message of the day -/);
     var serverName = serverNameMatch ? serverNameMatch[1] : '';
     ircEvents.emit('server:motdStart', {
         server: serverName,
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplEndofmotd', function(data) {
-    var msg = data.raw;
     ircEvents.emit('server:endOfMotd', {
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplWhoishost', function(data) {
-    var msg = data.raw;
-    var user = gateway.findUser(data.nick);
-    if (user) {
-        user.setHost(data.host);
-        ircEvents.emit('user:hostInfoUpdated', {
-            nick: user.nick,
-            host: data.host,
-            raw: msg
-        });
-        domainWhoisData.host = data.host; // Add to WHOIS data
-    }
+    // WHOIS-specific data - don't update permanent user state
+    // Only accumulate for WHOIS display (actual host for opers)
+    domainWhoisData.hostInfo = data.host;
 });
 
 ircEvents.on('protocol:rplWhoismodes', function(data) {
-    var msg = data.raw;
-    var user = gateway.findUser(data.nick);
+    var user = users.getUser(data.nick);
     if (user) {
-        user.setModes(data.modes); // Assuming `modes` is a string like '+i'
+        // User modes are WHOIS-specific, stored in domainWhoisData
         ircEvents.emit('user:whoisModes', {
             nick: user.nick,
             modes: data.modes,
-            raw: msg
         });
         domainWhoisData.userModes = data.modes; // Add to WHOIS data
     }
 });
 
 ircEvents.on('protocol:rplYoureoper', function(data) {
-    var msg = data.raw;
     // Assume current user (guser.me) is the oper
     if (guser.me) {
         guser.me.setOperator(true);
@@ -1706,42 +1823,34 @@ ircEvents.on('protocol:rplYoureoper', function(data) {
     ircEvents.emit('user:isOperator', {
         nick: guser.me ? guser.me.nick : null,
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplRehashing', function(data) {
-    var msg = data.raw;
     ircEvents.emit('server:rehashingConfig', {
         configFile: data.configFile,
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplYoureservice', function(data) {
-    var msg = data.raw;
     if (guser.me) {
         guser.me.setService(true); // Assuming `setService` method
     }
     ircEvents.emit('user:isService', {
         nick: guser.me ? guser.me.nick : null,
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplMyportis', function(data) {
-    var msg = data.raw;
     ircEvents.emit('server:myPortInfo', {
         port: data.port,
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplNotoperanymore', function(data) {
-    var msg = data.raw;
     if (guser.me) {
         guser.me.setOperator(false);
     }
@@ -1749,141 +1858,125 @@ ircEvents.on('protocol:rplNotoperanymore', function(data) {
         nick: guser.me ? guser.me.nick : null,
         isOperator: false,
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplQlist', function(data) {
-    var msg = data.raw;
     // Q list entries
     ircEvents.emit('server:qlistEntry', {
         channel: data.channelName,
         mask: data.mask,
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplEndofqlist', function(data) {
-    var msg = data.raw;
     ircEvents.emit('server:endOfQlist', {
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplAlist', function(data) {
-    var msg = data.raw;
     // A list entries (admin list)
     ircEvents.emit('server:alistEntry', {
         channel: data.channelName,
         mask: data.mask,
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplEndofalist', function(data) {
-    var msg = data.raw;
     ircEvents.emit('server:endOfAlist', {
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplTime', function(data) {
-    var msg = data.raw;
     ircEvents.emit('server:serverTime', {
-        server: msg.prefix,
+        server: data.prefix,
         time: data.serverTime,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplUsersstart', function(data) {
-    var msg = data.raw;
     ircEvents.emit('server:usersStart', {
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplUsers', function(data) {
-    var msg = data.raw;
     // User info for USERS command
     ircEvents.emit('server:usersEntry', {
         username: data.username,
         tty: data.tty,
         host: data.host,
         nick: data.nick,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplEndofusers', function(data) {
-    var msg = data.raw;
     ircEvents.emit('server:endOfUsers', {
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplNousers', function(data) {
-    var msg = data.raw;
     ircEvents.emit('server:noUsers', {
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplHosthidden', function(data) {
-    var msg = data.raw;
-    if (guser.me) {
-        guser.me.setHiddenHost(data.hiddenHost);
-    }
+    // RPL_HOSTHIDDEN - server confirming hidden host is active
+    // Just emit event for UI to display the message
     ircEvents.emit('user:hostHidden', {
         nick: guser.me ? guser.me.nick : null,
         hiddenHost: data.hiddenHost,
         message: data.message,
-        raw: msg
+        time: data.time
     });
 });
 
 ircEvents.on('protocol:errNosuchnick', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:errorMessage', {
         code: '401',
         type: 'noSuchNick',
         message: data.message,
         target: data.nick,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:errNosuchserver', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:errorMessage', {
         code: '402',
         type: 'noSuchServer',
         message: data.message,
         target: data.serverName,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:errNosuchchannel', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:errorMessage', {
         code: '403',
         type: 'noSuchChannel',
         message: data.message,
         target: data.channelName,
-        raw: msg
+    });
+});
+
+ircEvents.on('protocol:errCannotSendToChan', function(data) {
+    // ERR_CANNOTSENDTOCHAN (404) - cannot send to channel
+    console.log('[LABEL-DEBUG] protocol:errCannotSendToChan handler, tags.label:', data.tags ? data.tags.label : 'no tags');
+    // Emit channel-specific error event for UI display
+    ircEvents.emit('channel:errorMessage', {
+        channelName: data.channelName,
+        reason: data.reason, // voiceNeeded, banned, noColor, noExternal, accountNeeded, or generic
+        message: data.message, // Raw message for generic case
+        time: data.time
     });
 });
 
 ircEvents.on('protocol:error', function(data) { // Original generic protocol:error handler
-    var msg = data.raw;
     // This handler will catch generic protocol errors that don't have a specific numeric or command.
     // Also captures ERR_CANNOTSENDTOCHAN (404) re-emitted as protocol:error by cmd_binds.
     var errorType = 'genericError';
@@ -1901,483 +1994,391 @@ ircEvents.on('protocol:error', function(data) { // Original generic protocol:err
         type: errorType,
         message: data.text,
         target: target,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:errWasnosuchnick', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:errorMessage', {
         code: '406',
         type: 'wasNoSuchNick',
         message: data.message,
         target: data.nick,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:errNorecipient', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:errorMessage', {
         code: '411',
         type: 'noRecipient',
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:errErroneusnickname', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:errorMessage', {
         code: '432',
         type: 'erroneousNickname',
         message: data.message,
         nick: data.nick,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:errNicknameinuse', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:errorMessage', {
         code: '433',
         type: 'nicknameInUse',
         message: data.message,
         nick: data.nick,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:errNotonchannel', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:errorMessage', {
         code: '442',
         type: 'notOnChannel',
         message: data.message,
         channel: data.channelName,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:errUseronchannel', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:errorMessage', {
         code: '443',
         type: 'userOnChannel',
         message: data.message,
         nick: data.nick,
         channel: data.channelName,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:errNonickchange', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:errorMessage', {
         code: '447',
         type: 'noNickChange',
         message: data.message,
         nick: data.nick,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:errYouwillbebanned', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:errorMessage', {
         code: '466',
         type: 'youWillBeBanned',
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:errKeyset', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:errorMessage', {
         code: '467',
         type: 'keySet',
         message: data.message,
         channel: data.channelName,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:errOnlyserverscanchange', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:errorMessage', {
         code: '468',
         type: 'onlyServersCanChange',
         message: data.message,
         channel: data.channelName,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:errLinkset', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:errorMessage', {
         code: '469',
         type: 'linkSet',
         message: data.message,
         channel: data.channelName,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:errLinkchannel', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:errorMessage', {
         code: '470',
         type: 'linkChannel',
         message: data.message,
         channel: data.channelName,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:errChannelisfull', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:errorMessage', {
         code: '471',
         type: 'channelIsFull',
         message: data.message,
         channel: data.channelName,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:errUnknownmode', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:errorMessage', {
         code: '472',
         type: 'unknownMode',
         message: data.message,
         mode: data.mode,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:errInviteonlychan', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:errorMessage', {
         code: '473',
         type: 'inviteOnlyChan',
         message: data.message,
         channel: data.channelName,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:errBannedfromchan', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:errorMessage', {
         code: '474',
         type: 'bannedFromChan',
         message: data.message,
         channel: data.channelName,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:errBadchannelkey', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:errorMessage', {
         code: '475',
         type: 'badChannelKey',
         message: data.message,
         channel: data.channelName,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:errNeedreggednick', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:errorMessage', {
         code: '477',
         type: 'needReggedNick',
         message: data.message,
         channel: data.channelName,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:errBanlistfull', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:errorMessage', {
         code: '478',
         type: 'banListFull',
         message: data.message,
         channel: data.channelName,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:errLinkfail', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:errorMessage', {
         code: '479',
         type: 'linkFail',
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:errCannotknock', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:errorMessage', {
         code: '480',
         type: 'cannotKnock',
         message: data.message,
         channel: data.channelName,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:errNoprivileges', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:errorMessage', {
         code: '481',
         type: 'noPrivileges',
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:errChanoprivsneeded', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:errorMessage', {
         code: '482',
         type: 'chanOpPrivsNeeded',
         message: data.message,
         channel: data.channelName,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:errNononreg', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:errorMessage', {
         code: '486',
         type: 'noNonreg',
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:errNotforusers', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:errorMessage', {
         code: '487',
         type: 'notForUsers',
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:errSecureonlychan', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:errorMessage', {
         code: '489',
         type: 'secureOnlyChan',
         message: data.message,
         channel: data.channelName,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:errNoswear', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:errorMessage', {
         code: '490',
         type: 'noSwear',
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:errNooperhost', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:errorMessage', {
         code: '491',
         type: 'noOperHost',
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:errNoctcp', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:errorMessage', {
         code: '492',
         type: 'noCtcp',
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:errChanownprivneeded', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:errorMessage', {
         code: '499',
         type: 'chanOwnPrivNeeded',
         message: data.message,
         channel: data.channelName,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:errToomanyjoins', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:errorMessage', {
         code: '500',
         type: 'tooManyJoins',
         message: data.message,
         channel: data.channelName,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:errUmodeunknownflag', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:errorMessage', {
         code: '501',
         type: 'uModeUnknownFlag',
         message: data.message,
         mode: data.mode,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:errUsersdontmatch', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:errorMessage', {
         code: '502',
         type: 'usersDontMatch',
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:errSilelistfull', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:errorMessage', {
         code: '511',
         type: 'sileListFull',
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:errToomanywatch', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:errorMessage', {
         code: '512',
         type: 'tooManyWatch',
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:errNeedpong', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:errorMessage', {
         code: '513',
         type: 'needPong',
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:errToomanydcc', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:errorMessage', {
         code: '514',
         type: 'tooManyDcc',
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:errDisabled', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:errorMessage', {
         code: '517',
         type: 'disabled',
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:errNoinvite', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:errorMessage', {
         code: '518',
         type: 'noInvite',
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:errAdmonly', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:errorMessage', {
         code: '519',
         type: 'admOnly',
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:errOperonly', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:errorMessage', {
         code: '520',
         type: 'operOnly',
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:errListsyntax', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:errorMessage', {
         code: '521',
         type: 'listSyntax',
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:errCantsendtouser', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:errorMessage', {
         code: '531',
         type: 'cantSendToUser',
         message: data.message,
         nick: data.nick,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplReaway', function(data) {
-    var msg = data.raw;
     ircEvents.emit('user:reAway', {
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplGoneaway', function(data) {
-    var msg = data.raw;
     ircEvents.emit('user:goneAway', {
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplNotaway', function(data) {
-    var msg = data.raw;
     if (guser.me) { // Ensure current user exists before updating
         guser.me.notAway();
     }
@@ -2385,308 +2386,285 @@ ircEvents.on('protocol:rplNotaway', function(data) {
         nick: guser.me ? guser.me.nick : null,
         isAway: false,
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplLogon', function(data) {
-    var msg = data.raw;
     ircEvents.emit('user:loggedIn', {
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplLogoff', function(data) {
-    var msg = data.raw;
     ircEvents.emit('user:loggedOut', {
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplWatchoff', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:watchOff', {
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplWatchstat', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:watchStatus', {
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplNowon', function(data) {
-    var msg = data.raw;
-    var user = gateway.findUser(data.nick); // Find user by nick from protocolGeneric
+    var user = users.getUser(data.nick); // Find user by nick from protocolGeneric
     if (user) {
-        user.setOnline(true);
+        // Online status from JOIN, not stored permanently
         ircEvents.emit('user:onlineStatusChanged', {
             nick: user.nick,
             isOnline: true,
             message: data.message,
-            raw: msg
         });
     }
 });
 
 ircEvents.on('protocol:rplNowoff', function(data) {
-    var msg = data.raw;
-    var user = gateway.findUser(data.nick); // Find user by nick from protocolGeneric
+    var user = users.getUser(data.nick); // Find user by nick from protocolGeneric
     if (user) {
-        user.setOnline(false);
+        // Online status from QUIT, not stored permanently
         ircEvents.emit('user:onlineStatusChanged', {
             nick: user.nick,
             isOnline: false,
             message: data.message,
-            raw: msg
         });
     }
 });
 
 ircEvents.on('protocol:rplWatchlist', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:watchListEntry', {
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplEndofwatchlist', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:endOfWatchList', {
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplClearwatch', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:clearWatch', {
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplNowisaway', function(data) {
-    var msg = data.raw;
     ircEvents.emit('user:nowIsAway', {
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplWhoissecure', function(data) {
-    var msg = data.raw;
-    var user = gateway.findUser(data.nick);
+    var user = users.getUser(data.nick);
     if (user) {
-        user.setSecure(true); // Assuming setSecure method
+        // Secure connection is WHOIS-specific, stored in domainWhoisData
     }
     ircEvents.emit('user:isSecure', {
         nick: data.nick,
         message: data.message,
-        raw: msg
     });
     domainWhoisData.isSecure = true; // Add to WHOIS data
 });
 
 ircEvents.on('protocol:errMlockrestricted', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:errorMessage', {
         code: '742',
         type: 'mlockRestricted',
         message: data.message,
         channel: data.channelName,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplKeyvalue', function(data) {
-    var msg = data.raw;
     ircEvents.emit('metadata:keyValue', {
         target: data.target,
         key: data.key,
         value: data.value,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplMetadataend', function(data) {
-    var msg = data.raw;
     ircEvents.emit('metadata:end', {
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplKeynotset', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:errorMessage', { // Emitting as an error, as it indicates something went wrong
         code: '766',
         type: 'metadataKeyNotSet',
         message: data.message,
         target: data.target,
         key: data.key,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplMetadatasubok', function(data) {
-    var msg = data.raw;
     ircEvents.emit('metadata:subscriptionOk', {
         target: data.target,
         key: data.key,
         message: data.message,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:errMetadatasynclater', function(data) {
-    var msg = data.raw;
     ircEvents.emit('client:errorMessage', {
         code: '774',
         type: 'metadataSyncLater',
         message: data.message,
         delayMs: data.delayMs,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:rplLoggedin', function(data) {
-    var msg = data.raw;
     ircEvents.emit('auth:loggedIn', {
         nick: data.nick,
         account: data.account,
         message: data.message,
-        raw: msg
     });
     ircEvents.emit('auth:saslLoggedIn', { // Emit for consistency with display
         nick: data.nick,
         account: data.account,
-        time: msg.time
+        time: data.time
     });
     ircEvents.emit('auth:userIdentifiedViaNickserv', { // Emit for consistency with display
         nick: data.nick,
         account: data.account,
-        time: msg.time
+        time: data.time
     });
 });
 
 ircEvents.on('protocol:rplLoggedout', function(data) {
-    var msg = data.raw;
     ircEvents.emit('auth:loggedOut', {
         nick: data.nick,
         message: data.message,
-        raw: msg
     });
     ircEvents.emit('auth:saslLoggedOut', { // Emit for consistency with display
         nick: data.nick,
         message: data.message,
-        time: msg.time
+        time: data.time
     });
 });
 
 ircEvents.on('protocol:rplSaslsuccess', function(data) {
-    var msg = data.raw;
     ircEvents.emit('auth:saslSuccess', {
         message: data.message,
-        raw: msg
     });
     saslInProgress = false; // Reset SASL state
+    domainRetrySasl = false;
+    // Some servers send only 903, not 900, so send CAP END here to finalize registration
+    if (!capInProgress) {
+        ircCommand.performQuick('CAP', ['END']);
+    }
+    // Trigger status update to transition from 'identified' to 'connected'
+    ircEvents.emit('domain:processConnectionStatusUpdate');
 });
 
 ircEvents.on('protocol:errSaslfail', function(data) {
-    var msg = data.raw;
     ircEvents.emit('auth:saslFail', {
         message: data.message,
-        raw: msg
     });
     saslInProgress = false; // Reset SASL state
+    // End capability negotiation on SASL failure to finalize registration
+    ircCommand.performQuick('CAP', ['END']);
 });
 
 ircEvents.on('protocol:errSaslaborted', function(data) {
-    var msg = data.raw;
     ircEvents.emit('auth:saslAborted', {
         message: data.message,
-        raw: msg
     });
     saslInProgress = false; // Reset SASL state
+    // End capability negotiation on SASL abort to finalize registration
+    ircCommand.performQuick('CAP', ['END']);
 });
 
 ircEvents.on('protocol:error', function(data) {
-    var msg = data.raw;
     // Generic error handling, for things like 404, 465, 972, 974 etc.
     // The specific `command` and `type` fields help categorize.
     var errorType = data.type || 'genericError';
-    if(msg.command == '404') { // ERR_CANNOTSENDTOCHAN from cmd_binds
+    if(data.command == '404') { // ERR_CANNOTSENDTOCHAN from cmd_binds
         errorType = 'cannotSendToChan';
-    } else if (msg.command == '465') { // ERR_YOUREBANNEDCREEP from cmd_binds
+    } else if (data.command == '465') { // ERR_YOUREBANNEDCREEP from cmd_binds
         errorType = 'bannedCreep';
-    } else if (msg.command == '972') { // ERR_CANNOTDOCOMMAND from cmd_binds
+    } else if (data.command == '972') { // ERR_CANNOTDOCOMMAND from cmd_binds
         errorType = 'cannotDoCommand';
-    } else if (msg.command == '974') { // ERR_CANNOTCHANGECHANMODE from cmd_binds
+    } else if (data.command == '974') { // ERR_CANNOTCHANGECHANMODE from cmd_binds
         errorType = 'cannotChangeChanMode';
     }
     ircEvents.emit('client:errorMessage', {
-        code: msg.command, // Use original command as code if numeric not available
+        code: data.command, // Use original command as code if numeric not available
         type: errorType,
         target: data.target || data.channel || data.query,
         message: data.text,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:ctcpAction', function(data) {
-    var msg = data.raw;
     ircEvents.emit('ctcp:action', {
-        sender: msg.user.nick,
+        sender: data.user.nick,
         target: data.target,
         message: data.text,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:ctcpVersionRequest', function(data) {
-    var msg = data.raw;
+    // Auto-reply to VERSION requests
+    var versionString = 'VERSION ' + (mainSettings.version || 'PIRC Gateway');
+    ircCommand.sendCtcpReply(data.requestedBy, versionString);
+
     ircEvents.emit('ctcp:versionRequest', {
         sender: data.requestedBy,
         target: data.target,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:ctcpUserinfoRequest', function(data) {
-    var msg = data.raw;
+    // Auto-reply to USERINFO requests
+    ircCommand.sendCtcpReply(data.requestedBy, 'USERINFO ' + guser.nick);
+
     ircEvents.emit('ctcp:userinfoRequest', {
         sender: data.requestedBy,
         target: data.target,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:ctcpRefererRequest', function(data) {
-    var msg = data.raw;
     ircEvents.emit('ctcp:refererRequest', {
         sender: data.requestedBy,
         target: data.target,
-        raw: msg
     });
 });
 
 ircEvents.on('protocol:unhandledMessage', function(data) {
-    var msg = data.raw;
     console.log('DOMAIN: Unhandled protocol message:', data.command, data.args, data.text);
     ircEvents.emit('client:unhandledMessage', {
         command: data.command,
         args: data.args,
         text: data.text,
-        raw: msg
     });
+});
+
+ircEvents.on('domain:labelNotProcessed', function(data) {
+    // Handle labels that weren't processed by any command handler
+    // This typically happens when we send a message expecting an echo-message response,
+    // but receive an error or unexpected response instead
+    var label = data.label;
+
+    console.log('[LABEL-DEBUG] domain:labelNotProcessed fired, label:', label, 'msg command:', data.msg ? data.msg.command : 'no msg');
+
+    if (label) {
+        // Mark the sent message as undelivered
+        // msgNotDelivered checks echo-message capability and safely handles unknown labels
+        console.log('[LABEL-DEBUG] Calling msgNotDelivered for label:', label);
+        gateway.msgNotDelivered(label, data.msg);
+    }
 });
 
 
@@ -2771,22 +2749,32 @@ ircEvents.on('domain:endCapNegotiation', function() {
 
 ircEvents.on('domain:requestConnect', function(data) {
     console.log('DOMAIN: Request Connect:', data.status, data.initialMessage);
-    // Call gateway.connect to initiate the connection. This is considered a domain-level action.
     gateway.connect(data.force);
-
-    // Emit UI events to manage connection dialogs.
-    ircEvents.emit('ui:closeDialog', { dialogType: 'connect', dialogId: 'reconnect' });
-    ircEvents.emit('ui:displayConnectDialog', {
-        dialogId: '1',
-        titleKey: 'connecting', // Use a key, UI will fetch translation
-        message: data.initialMessage
-    });
 });
 
 ircEvents.on('domain:setConnectedWhenIdentified', function() {
     console.log('DOMAIN: Set Connected When Identified');
     domainSetConnectedWhenIdentified = 1;
 });
+
+// Label generation function - called directly, not via events
+function generateLabel() {
+    domainLabel++;
+    return domainLabel.toString();
+}
+
+// Domain state getter functions - provide controlled access to domain state
+function getDomainConnectStatus() {
+    return domainConnectStatus;
+}
+
+function getDomainConnectTime() {
+    return domainConnectTime;
+}
+
+function hasActiveCap(capName) {
+    return capName in activeCaps;
+}
 
 ircEvents.on('domain:requestPing', function() {
     console.log('DOMAIN: Request Ping');
@@ -2802,7 +2790,9 @@ ircEvents.on('domain:requestPing', function() {
 });
 
 ircEvents.on('domain:connectionDisconnected', function(data) {
-    console.log('DOMAIN: Connection Disconnected:', data.reason);
+    // Normalize reason: accept either reasonKey (for translation) or reason (for direct text)
+    var reasonText = data.reasonKey ? language[data.reasonKey] : data.reason;
+    console.log('DOMAIN: Connection Disconnected:', reasonText);
     clearTimeout(domainConnectTimeoutID);
     if (gateway.websock) { // Assuming gateway.websock is a domain-level network interface
         gateway.websock.onerror = undefined;
@@ -2817,8 +2807,8 @@ ircEvents.on('domain:connectionDisconnected', function(data) {
     // Emit events for UI to handle various cleanups and messages
     ircEvents.emit('ui:updateHistory'); // For gateway.updateHistory()
     ircEvents.emit('ui:clearLabelCallbacks'); // For gateway.labelCallbacks cleanup
-    ircEvents.emit('ui:disconnectCleanupChannels', { reason: data.reason }); // For channel parts and append messages
-    ircEvents.emit('ui:statusWindowMessage', { messageKey: 'error', messageParams: [data.reason] }); // For status window message
+    ircEvents.emit('ui:disconnectCleanupChannels', { reason: reasonText }); // For channel parts and append messages
+    ircEvents.emit('ui:statusWindowMessage', { reason: reasonText }); // For status window message
 
     // Domain-level cleanup of domainBatch
     domainBatch = {}; // Clear domainBatch object directly
@@ -2834,7 +2824,7 @@ ircEvents.on('domain:connectionDisconnected', function(data) {
     domainDisconnectMessageShown = 1;
 
     // Emit client:disconnected event for UI layer to listen to
-    ircEvents.emit('client:disconnected', { reason: data.reason });
+    ircEvents.emit('client:disconnected', { reason: reasonText });
 });
 
 ircEvents.on('domain:connectionInitiated', function() {
@@ -2855,40 +2845,13 @@ ircEvents.on('domain:connectionTimeout', function() {
 });
 
 ircEvents.on('domain:websocketError', function(data) {
-    console.error('DOMAIN: WebSocket Error:', data.event, 'Current Status:', data.currentStatus);
-    setTimeout(function(){
-        if(data.currentStatus != 'disconnected' && data.currentStatus != 'error' && data.currentStatus != 'banned'){
-            domainConnectStatus = 'error';
-            // Emit domain:connectionDisconnected with a reason key
-            ircEvents.emit('domain:connectionDisconnected', { reasonKey: 'lostNetworkConnection' });
-            // Emit a UI event to handle reconnect logic based on UI settings
-            ircEvents.emit('ui:handleReconnectLogic', { type: 'websocketError', autoReconnect: data.autoReconnect });
-        }
-    }, 1000);
-});
-
-ircEvents.on('domain:connectionTimeoutExpired', function(data) {
-    console.log('DOMAIN: Connection Timeout Expired:', data.currentStatus);
-    if(data.currentStatus != 'connected'){
-        // Emit UI event to close existing dialog (if any)
-        ircEvents.emit('ui:closeDialog', { dialogType: 'connect', dialogId: '1' });
-
-        // Emit UI event to display a reconnect dialog
-        ircEvents.emit('ui:displayReconnectPrompt', {
-            titleKey: 'connecting', // UI will translate
-            messageKey: 'connectingTooLong', // UI will translate
-            buttons: [
-                {
-                    textKey: 'reconnect', // UI will translate button text
-                    action: 'domain:requestStopAndReconnect', // Domain event to emit on click
-                    actionPayload: { reasonKey: 'connectingTookTooLong' } // Payload for the domain event
-                }
-            ],
-            dialogType: 'connect',
-            dialogId: 'reconnect'
-        });
+    console.error('DOMAIN: WebSocket Error:', data.event, 'Current Status:', domainConnectStatus);
+    if(domainConnectStatus != 'disconnected' && domainConnectStatus != 'error' && domainConnectStatus != 'banned'){
+        domainConnectStatus = 'error';
+        ircEvents.emit('domain:connectionDisconnected', { reasonKey: 'lostNetworkConnection' });
     }
 });
+
 
 ircEvents.on('domain:clearConnectTimeout', function() {
     console.log('DOMAIN: Clearing connect timeout.');
@@ -2913,6 +2876,25 @@ ircEvents.on('domain:requestStopAndReconnect', function(data) {
     setTimeout(function() { ircEvents.emit('domain:requestReconnect'); }, 500);
 });
 
+ircEvents.on('domain:setNickservNick', function(data) {
+    console.log('DOMAIN: Set NickServ Nick:', data.nick);
+    guser.nickservnick = data.nick;
+});
+
+ircEvents.on('domain:setNickservPass', function(data) {
+    console.log('DOMAIN: Set NickServ Pass: [REDACTED]');
+    guser.nickservpass = data.pass;
+});
+
+ircEvents.on('domain:savePassword', function(data) {
+    console.log('DOMAIN: Saving encrypted password to localStorage');
+    try {
+        localStorage.setItem('password', data.password);
+    } catch(e) {
+        console.error('DOMAIN: Failed to save password:', e);
+    }
+});
+
 ircEvents.on('domain:setConnectStatus', function(data) {
     console.log('DOMAIN: Set Connect Status:', data.status);
     domainConnectStatus = data.status;
@@ -2921,7 +2903,6 @@ ircEvents.on('domain:setConnectStatus', function(data) {
 // Domain logic for processStatus (previously gateway.processStatus())
 ircEvents.on('domain:processConnectionStatusUpdate', function() {
     // This event is emitted after data is received. Now check connection status.
-    console.log('DOMAIN: Processing connection status update. Current status:', domainConnectStatus);
 
     if(guser.nickservpass != '' && guser.nickservnick != ''){
         if(domainConnectStatus == '001') {
@@ -2941,11 +2922,7 @@ ircEvents.on('domain:processConnectionStatusUpdate', function() {
                 } else {
                     domainRetrySasl = true;
                     ircCommand.performQuick('AUTHENTICATE', ['PLAIN']);
-                    var date = new Date();
-                    ircEvents.emit('ui:statusWindowMessage', {
-                        messageKey: 'SaslAuthenticate',
-                        messageParams: [date.getTime(), 'SASLLoginAttempt'] // Pass raw date, UI to format, and key
-                    });
+                    // Note: SASL authentication status is shown via auth:* events
                 }
             }
         }
@@ -2968,6 +2945,7 @@ ircEvents.on('domain:processConnectionStatusUpdate', function() {
     }
     if(domainConnectStatus == 'identified' && domainSetConnectedWhenIdentified == 1){ //podłączony, a szare tło schowane już wcześniej
         domainConnectStatus = 'connected';
+        domainConnectTime = (+new Date)/1000; // Store connection timestamp
     }
     if(domainConnectStatus == 'connected'){
         domainSetConnectedWhenIdentified = 0;
@@ -2995,17 +2973,27 @@ ircEvents.on('domain:requestJoinChannel', function(data) {
 });
 
 ircEvents.on('domain:requestJoinChannels', function(data) {
-    console.log('DOMAIN: Request Join Channels:', data.channels);
+    console.log('DOMAIN: Request Join Channels');
     var channelsToJoin = [];
 
-    // Prioritize channels passed in data. If not present, use guser.channels.
-    if (data.channels && data.channels.length > 0) {
+    // Prioritize channels passed in data. If not present, use guser.channels and gateway.channels.
+    if (data && data.channels && data.channels.length > 0) {
         channelsToJoin = channelsToJoin.concat(data.channels);
-    } else if (guser.channels && guser.channels.length > 0) {
-        channelsToJoin = channelsToJoin.concat(guser.channels);
+    } else {
+        if (guser.channels && guser.channels.length > 0) {
+            channelsToJoin = channelsToJoin.concat(guser.channels);
+        }
+        if (gateway.channels && gateway.channels.length > 0) {
+            // Extract channel names from ChannelTab objects
+            for (var i = 0; i < gateway.channels.length; i++) {
+                var chan = gateway.channels[i];
+                var chanName = (chan instanceof ChannelTab) ? chan.name : chan;
+                channelsToJoin.push(chanName);
+            }
+        }
     }
 
-    // Ensure uniqueness of channel names.
+    // Ensure uniqueness of channel names (now all are strings).
     channelsToJoin = [...new Set(channelsToJoin)];
 
     if (channelsToJoin.length > 0) {
@@ -3057,7 +3045,8 @@ ircEvents.on('domain:updateConnectionParams', function(data) {
 ircEvents.on('domain:requestRemoveChannel', function(data) {
     console.log('DOMAIN: Request Remove Channel:', data.channelName);
     // The domain layer initiates the protocol action to part the channel.
-    ircCommand.channelPart(data.channelName, 'leftChannel'); // Use key instead of string
+    // message parameter should be provided by UI layer (already translated)
+    ircCommand.channelPart(data.channelName, data.message || ''); // Use provided message or empty string
 
     // Emit event for UI to perform cleanup for the removed channel.
     ircEvents.emit('channel:removed', { channelName: data.channelName });
@@ -3091,6 +3080,21 @@ ircEvents.on('domain:requestCapLs', function(data) {
 ircEvents.on('domain:requestUser', function(data) {
     console.log('DOMAIN: Request USER:', data.username, data.mode, data.unused, data.realname);
     ircCommand.performQuick('USER', [data.username, data.mode, data.unused], data.realname);
+});
+
+ircEvents.on('domain:requestWhois', function(data) {
+    console.log('DOMAIN: Request WHOIS:', data.nick);
+    ircCommand.whois(data.nick);
+});
+
+ircEvents.on('domain:requestNickservInfo', function(data) {
+    console.log('DOMAIN: Request NickServ Info:', data.nick);
+    services.nickInfo(data.nick);
+});
+
+ircEvents.on('domain:requestCtcp', function(data) {
+    console.log('DOMAIN: Request CTCP:', data.nick, data.ctcpType);
+    gateway.ctcp(data.nick, data.ctcpType);
 });
 
 ircEvents.on('domain:requestCtcpCommand', function(data) {
@@ -3131,8 +3135,22 @@ ircEvents.on('domain:requestListChannels', function(data) {
 });
 
 ircEvents.on('domain:requestChatHistory', function(data) {
-    console.log('DOMAIN: Request Chat History:', data.channelName, data.type, data.reference, data.limit);
-    ircCommand.chathistory(data.type, data.channelName, data.reference, undefined, data.limit);
+    console.log('DOMAIN: Request Chat History:', data.channelName, data.type, 'msgid:', data.msgid, 'timestamp:', data.timestamp, data.limit);
+
+    // Format reference for CHATHISTORY protocol
+    var reference;
+    if(data.type === 'LATEST'){
+        reference = '*'; // Special case for initial history
+    } else if(data.msgid){
+        reference = 'msgid=' + data.msgid;
+    } else if(data.timestamp){
+        reference = 'timestamp=' + data.timestamp;
+    } else {
+        console.error('DOMAIN: No msgid or timestamp provided for CHATHISTORY request');
+        return;
+    }
+
+    ircCommand.chathistory(data.type, data.channelName, reference, undefined, data.limit);
 });
 
 ircEvents.on('domain:requestRedoNames', function(data) {
@@ -3144,6 +3162,15 @@ ircEvents.on('domain:requestRedoNames', function(data) {
 
 ircEvents.on('domain:requestSendMessage', function(data) {
     console.log('DOMAIN: Request Send Message:', data.target, data.message);
+
+    // Clear typing status for this target when message is sent
+    // Per spec: sending a message clears typing status (no notification needed)
+    if(domainLastTypingActivity[data.target]){
+        clearTimeout(domainLastTypingActivity[data.target].timeoutId);
+        delete domainLastTypingActivity[data.target];
+        console.log('DOMAIN: Cleared typing status for', data.target, '(message sent)');
+    }
+
     ircCommand.sendMessage(data.target, data.message);
 });
 
@@ -3171,27 +3198,8 @@ ircEvents.on('domain:requestExtJwt', function(data) {
 
 // --- UI-Related Domain Events ---
 
-ircEvents.on('domain:findOrCreateTab', function(data) {
-    console.log('DOMAIN: Find or Create Tab:', data.tabName, 'Set Active:', data.setActive);
-    // This calls gateway.findOrCreate which manages UI tab objects
-    var tab = gateway.findOrCreate(data.tabName, data.setActive);
-    // Emit a UI event if necessary to signal tab creation
-    if (tab && !gateway.find(data.tabName)) { // If it was newly created
-        ircEvents.emit('ui:tabCreated', { tabName: data.tabName, tabType: data.tabName.charAt(0) == '#' ? 'channel' : 'query' });
-    }
-});
-
 ircEvents.on('domain:tabSwitched', function(data) {
-    console.log('DOMAIN: Tab Switched: Old:', data.oldTab, 'New:', data.newTab);
     domainActiveTab = data.newTab;
-    // domainTabHistory.push(data.newTab); // gateway.tabHistory is UI
-    // Additional domain logic related to active tab can go here
-});
-
-ircEvents.on('domain:findTab', function(data) {
-    console.log('DOMAIN: Find Tab:', data.tabName);
-    var tab = gateway.find(data.tabName); // UI lookup
-    return tab; // Returns the UI object
 });
 
 // --- Domain State Helpers ---
@@ -3225,9 +3233,9 @@ ircEvents.on('domain:removeActiveCap', function(data) {
 // --- Typing Activity ---
 
 ircEvents.on('domain:processTypingActivity', function(data) {
-    console.log('DOMAIN: Processing Typing Activity:', data.window.name, data.inputValue, data.time);
-    var currentWindowName = data.window.name;
+    var currentWindowName = data.windowName; // Use windowName directly (string), not window.name
     var currentInputValue = data.inputValue;
+    console.log('DOMAIN: Processing Typing Activity:', currentWindowName, currentInputValue, data.time);
 
     // This logic previously in gateway.inputKeypress()
     if(currentInputValue == ''){
@@ -3296,36 +3304,6 @@ ircEvents.on('domain:processUserModes', function(data) {
 
 
 // --- Other Domain Logic ---
-
-ircEvents.on('domain:findOrCreateTab', function(data) {
-    console.log('DOMAIN: Request to Find or Create Tab:', data.tabName, 'Set Active:', data.setActive);
-    // The domain layer requests the UI layer to find or create a tab.
-    ircEvents.emit('ui:findOrCreateTab', {
-        tabName: data.tabName,
-        setActive: data.setActive,
-        time: data.time // Pass original time if needed
-    });
-    // Remove data.callback(tab) as domain layer should not receive UI objects.
-    // If a response is absolutely needed, it should be asynchronous via another event.
-});
-
-ircEvents.on('domain:tabSwitched', function(data) {
-    console.log('DOMAIN: Tab Switched (Domain): Old:', domainActiveTab, 'New:', data.newTab);
-    domainActiveTab = data.newTab;
-    // Update tab history if needed here, or keep it UI specific
-    // domainTabHistory.push(data.newTab); // This is UI list, should probably stay there
-});
-
-ircEvents.on('domain:findTab', function(data) {
-    console.log('DOMAIN: Request to Find Tab:', data.tabName);
-    // The domain layer requests the UI layer to find a tab.
-    ircEvents.emit('ui:findTab', {
-        tabName: data.tabName,
-        // If a response is needed, the UI should emit a domain-level event with the result (e.g., 'domain:tabFound', { exists: true/false })
-        // or a ui-level event with relevant UI information (e.g., 'ui:tabFoundInfo', { id: tab.id, type: tab.type })
-    });
-    // Removed data.callback(tab) as domain layer should not receive UI objects.
-});
 
 ircEvents.on('domain:isHistoryBatch', function(data) {
     var result = false;
@@ -3434,12 +3412,12 @@ ircEvents.on('domain:processNetjoinEvents', function(data) {
 });
 
 ircEvents.on('domain:processQuitCommand', function(data) {
-    console.log('DOMAIN: Processing QUIT command:', data.msg.sender.nick);
+    console.log('DOMAIN: Processing QUIT command:', data.data.sender.nick);
     var msg = data.msg;
     var isNetsplit = false;
 
     // Check for netsplit
-    if(msg.text.match(/^[^ :]+\.[^ :]+ [^ :]+\.[^ :]+$/)){
+    if(data.text.match(/^[^ :]+\.[^ :]+ [^ :]+\.[^ :]+$/)){
         domainQuitQueue.push(msg); // Use domainQuitQueue
         if(domainQuitTimeout){
             clearTimeout(domainQuitTimeout);
@@ -3448,20 +3426,10 @@ ircEvents.on('domain:processQuitCommand', function(data) {
         isNetsplit = true;
     }
     
-    // Emit UI event for all quit messages (query and channel).
-    // The UI will decide based on 'showPartQuit' if it should display.
-    // It will also handle removing from nicklists in all its channels/queries.
-    ircEvents.emit('ui:userQuitMessage', {
-        nick: msg.sender.nick,
-        ident: msg.sender.ident,
-        host: msg.sender.host,
-        quitMessage: msg.text,
-        time: msg.time,
-        isNetsplit: isNetsplit // Indicate if it's a netsplit
-    });
-
+    // Note: UI already listens to user:otherQuit event emitted from protocol:quitCommand handler
+    // No need for redundant ui: event here. Domain logic is handled above by users.delUser()
     if (!isNetsplit) {
-        users.delUser(msg.sender.nick); // Domain user management for non-netsplit quits
+        users.delUser(data.sender.nick); // Domain user management for non-netsplit quits
     }
     
     // The original code returned true/false. This event handler does not need to return.
@@ -3470,37 +3438,30 @@ ircEvents.on('domain:processQuitCommand', function(data) {
 });
 
 ircEvents.on('domain:processJoinCommand', function(data) {
-    console.log('DOMAIN: Processing JOIN command:', data.msg.sender.nick, 'to', data.msg.args[0]);
+    console.log('DOMAIN: Processing JOIN command:', data.data.sender.nick, 'to', data.data.args[0]);
     var msg = data.msg;
-    var channame = msg.args[0]; // Assuming msg.args[0] is always the channel name for JOIN
+    var channame = data.args[0]; // Assuming data.args[0] is always the channel name for JOIN
 
     var dlimit = (+new Date)/1000 - 300; // time check
     var netjoin = false;
 
     // Domain-level netsplit tracking logic
-    if(domainNetJoinUsers[channame] && domainNetJoinUsers[channame][msg.sender.nick]){
-        if(domainNetJoinUsers[channame][msg.sender.nick] > dlimit){
+    if(domainNetJoinUsers[channame] && domainNetJoinUsers[channame][data.sender.nick]){
+        if(domainNetJoinUsers[channame][data.sender.nick] > dlimit){
             netjoin = true;
         }
-        delete domainNetJoinUsers[channame][msg.sender.nick];
+        delete domainNetJoinUsers[channame][data.sender.nick];
     }
 
     if(netjoin){
-        domainNetJoinQueue.push({'chan': channame, 'nick': msg.sender.nick}); // domainNetJoinQueue
+        domainNetJoinQueue.push({'chan': channame, 'nick': data.sender.nick}); // domainNetJoinQueue
         if(domainNetJoinTimeout){
             clearTimeout(domainNetJoinTimeout);
         }
         domainNetJoinTimeout = setTimeout(function() { ircEvents.emit('domain:processNetjoinEvents', { netJoinQueue: domainNetJoinQueue }); }, 700);
-    } else {
-        // Emit UI event for user join message
-        ircEvents.emit('ui:userJoinMessage', {
-            nick: msg.sender.nick,
-            ident: msg.sender.ident,
-            host: msg.sender.host,
-            channelName: channame,
-            time: msg.time
-        });
     }
+    // Note: UI already listens to channel:userJoined event emitted from protocol:joinCommand handler
+    // No need for redundant ui: event here
 });
 
 
@@ -3508,27 +3469,12 @@ ircEvents.on('domain:processJoinCommand', function(data) {
 
 ircEvents.on('domain:requestOpenQuery', function(data) {
     console.log('DOMAIN: Request Open Query:', data.nick);
-    ircEvents.emit('domain:findOrCreateTab', { tabName: data.nick, setActive: true, time: new Date() });
+    // Emit semantic event - UI will create query tab
+    ircEvents.emit('user:queryRequested', { nick: data.nick, setActive: true });
 });
 
 
 // --- Mode Parsing ---
-
-ircEvents.on('domain:processUserModes', function(data) {
-    console.log('DOMAIN: Processing User Modes:', data.modes);
-    var modes = data.modes;
-    var plus = false;
-    for(var i=0; i<modes.length; i++){
-        var c = modes.charAt(i);
-        switch(c){
-            case '+': plus = true; break;
-            case '-': plus = false; break;
-            case ' ': return;
-            default: guser.setUmode(c, plus); break; // guser is domain state
-        }
-    }
-    // No direct UI update here, UI should listen to user:modesUpdated from guser.setUmode
-});
 
 
 

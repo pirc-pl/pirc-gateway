@@ -118,7 +118,7 @@ var commands = {
 		'custom': [],
 		'callback': function(command, input) {
 			if (command[1] != "") {
-				ircEvents.emit('domain:findOrCreateTab', { tabName: command[1], setActive: true, time: new Date() }); // Emit domain event
+				gateway.findOrCreate(command[1], true); // true = set active
 			} else {
 				gateway.notEnoughParams("query", language.youHaveToGivePMNick);
 			}
@@ -134,10 +134,7 @@ var commands = {
 			} else {
 				ircCommand.listChannels(input.substring(input.indexOf(' ')+1));
 			}
-			// Only show status message if list window is not being used
-			if(!ircEvents.emit('domain:hasActiveCap', { cap: 'labeled-response' }) && gateway.active != '--status'){ // Check activeCaps via domain event
-				gateway.getActive().appendMessage(language.messagePatterns.listShown, [$$.niceTime()]);
-			}
+			// Message display is now handled by domain:listCommandProcessed event listener in gateway_display.js
 		}
 	},
 	'cs': {
@@ -478,7 +475,7 @@ var commands = {
 							var ignoreType = language.privateDiscussionSmall;
 						}
 						var ignoreMask = data[i][1];
-						gateway.statusWindow.appendMessage(language.messagePatterns.ignoreListItem, [$$.niceTime(), ignoreType, ignoreMask]);
+						gateway.statusWindow.appendMessage(language.messagePatterns.ignoreListItem, [$$.niceTime(), ignoreType, he(ignoreMask)]);
 					}
 					gateway.statusWindow.appendMessage(language.messagePatterns.ignoreListEnd, [$$.niceTime()]);
 				}

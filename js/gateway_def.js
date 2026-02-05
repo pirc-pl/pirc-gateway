@@ -95,7 +95,7 @@ var irc = {
 			if('label' in this.tags)
 				return this.tags.label;
 			if('batch' in this.tags){
-				var batch = ircEvents.emit('domain:getBatchObject', { batchId: this.tags.batch }); // Access domainBatch via event
+				var batch = domainBatch[this.tags.batch]; // Access domainBatch via event
 				if(!batch)
 					return null;
 				if(batch.label)
@@ -297,8 +297,9 @@ var irc = {
 var gateway = {
 	'websock': 0,
 	// Removed connectStatus, joined, setConnectedWhenIdentified, firstConnect, userQuit, sasl, whowasExpect312, retrySasl, pingcnt
-	// Removed whoisData, smallListData, lasterror, label, labelProcessed, labelCallbacks, labelInfo, labelsToHide, batch
+	// Removed whoisData, smallListData, lasterror, label, labelCallbacks, labelInfo, labelsToHide, batch
 	// Removed connectTimeoutID - now managed by domain layer
+	'labelProcessed': false, // Track if current label was processed
 	'pingIntervalID': false,
 	'whoChannelsIntervalID': false,
 	'disconnectMessageShown': 0,
@@ -325,7 +326,10 @@ var gateway = {
 		}
 		gateway.websock = false;
 		setTimeout(function(){
-			ircEvents.emit('domain:requestConnect', { force: true, initialMessage: language.reconnectingWait }); // Emit domain event
+			ircEvents.emit('domain:setConnectStatus', { status: 'disconnected' });
+			$$.closeDialog('connect', 'reconnect');
+			$$.displayDialog('connect', '1', language.connecting, language.reconnectingWait);
+			gateway.connect(true);
 		}, 500);
 	},
 	// Removed iKnowIAmConnected: logic moved to domain:connected listener and UI client:connected listener
@@ -380,13 +384,13 @@ var gateway = {
 		gateway.commandProcessing = true;
 		for (i in data.packets) {
 			// gateway.labelProcessed = false; // Managed by domain
-			ircEvents.emit('domain:setLabelProcessed', { status: false }); // Set domain state
+			gateway.labelProcessed = false; // Set domain state
 			try {
 				var msg = data.packets[i];
 				if(!msg || !msg.command) continue;
 				console.log('→', ircLog.filterIncoming(msg));
 				if(msg.tags && 'batch' in msg.tags && msg.tags.batch){
-					var batchObj = ircEvents.emit('domain:getBatchObject', { batchId: msg.tags.batch }); // Access domainBatch via event
+					var batchObj = domainBatch[msg.tags.batch]; // Access domainBatch via event
 					if (batchObj) {
 						msg.batch = batchObj;
 					}
@@ -405,7 +409,7 @@ var gateway = {
 				if('label' in msg.tags){
 					var label = msg.tags.label;
 				} else {
-					var batchObj = ircEvents.emit('domain:getBatchObject', { batchId: msg.tags.batch }); // Access domainBatch
+					var batchObj = domainBatch[msg.tags.batch]; // Access domainBatch
 					if(!batchObj || !batchObj.label)
 						continue;
 					var label = batchObj.getLabel(); // Domain method
@@ -414,7 +418,7 @@ var gateway = {
 					batch = batchObj;
 				}
 				// if(!gateway.labelProcessed){ // Managed by domain
-				if(!ircEvents.emit('domain:getLabelProcessedStatus')){
+				if(!gateway.labelProcessed){
 					ircEvents.emit('domain:labelNotProcessed', { label: label, msg: msg, batch: batch }); // Emit domain event
 				}
 				// Clearing callbacks/info/labelsToHide via domain events
@@ -426,7 +430,7 @@ var gateway = {
 	'sockError': function(e) { // Protocol/Connection layer
 		console.error('WebSocket error!');
 		setTimeout(function(){
-			ircEvents.emit('domain:websocketError', { event: e, currentStatus: ircEvents.emit('domain:getConnectStatus'), autoReconnect: settings.get('autoReconnect') }); // Emit domain event
+			ircEvents.emit('domain:websocketError', { event: e, currentStatus: domainConnectStatus, autoReconnect: settings.get('autoReconnect') }); // Emit domain event
 		}, 1000);
 	},
 	'onRecv': function(sdata) { // Protocol layer: entry point from websocket
@@ -474,8 +478,7 @@ var gateway = {
 			if(nickInput == ''){ $$.alert(language.mustGiveNick); return false; }
 			if(chanInput == ''){ $$.alert(language.mustGiveChannel); return false; }
 			if(chanInput.charAt(0) != '#'){ chanInput = '#' + chanInput; $('#nschan').val(chanInput); }
-			if(!nickInput.match(/^[[\[\^\|0-9a-z_
-`\{\}\[\]\-]+\$/i)) { $$.alert(language.badCharsInNick); return false; }
+			if(!nickInput.match(/^[\[\^\|0-9a-z_`\{\}\[\]\-]+$/i)) { $$.alert(language.badCharsInNick); return false; }
 			if(nickInput.match(/^[0-9-]/)){
 				$$.alert(language.badNickStart);
 				return false;
@@ -529,7 +532,7 @@ var gateway = {
 		gateway.toSend.push(data);
 	},
 	'send': function(data) { // Protocol layer
-		if(gateway.websock.readyState === gateway.websock.OPEN && (gateway.sendDelayCnt < 3 || ircEvents.emit('domain:getConnectStatus') != 'connected')){
+		if(gateway.websock.readyState === gateway.websock.OPEN && (gateway.sendDelayCnt < 3 || domainConnectStatus != 'connected')){
 			gateway.forceSend(data);
 			gateway.sendDelayCnt++;
 		} else {
@@ -943,9 +946,9 @@ var gateway = {
 	},
 	'notEnoughParams': function(command, reason) { // UI action
 		if(gateway.getActive()) {
-			gateway.getActive().appendMessage(language.messagePatterns.notEnoughParams, [$$.niceTime(), command, reason]);
+			gateway.getActive().appendMessage(language.messagePatterns.notEnoughParams, [$$.niceTime(), he(command), reason]);
 		} else {
-			gateway.statusWindow.appendMessage(language.messagePatterns.notEnoughParams, [$$.niceTime(), command, reason]);
+			gateway.statusWindow.appendMessage(language.messagePatterns.notEnoughParams, [$$.niceTime(), he(command), reason]);
 		}
 	},
 	'callCommand': function(command, input, alias) { // Delegates to user_commands.js
@@ -1127,7 +1130,7 @@ var gateway = {
 			$$.displayDialog('error', 'ignore', language.error, html, button);
 			return;
 		}
-		ircEvents.emit('domain:requestOpenQuery', { nick: nick }); // Emit domain event
+		gateway.findOrCreate(nick, true); // Direct UI action - create and activate query tab
 		if(id){
 			gateway.toggleNickOpt(id); // UI action
 		}
@@ -1426,14 +1429,14 @@ var gateway = {
 	},
 	*/
 	'getActive': function() { // UI helper
-		var activeTabName = ircEvents.emit('domain:getActiveTab'); // Get active tab from domain
-		if(activeTabName == '--status') {
+		// gateway.active is UI state, access it directly
+		if(gateway.active == '--status') {
 			return false;
-		} else if(gateway.findChannel(activeTabName)) {
-			return gateway.findChannel(activeTabName);
-		} else if(gateway.findQuery(activeTabName)) {
-			return gateway.findQuery(activeTabName);
-		} else if(gateway.listWindow && activeTabName == gateway.listWindow.name) {
+		} else if(gateway.findChannel(gateway.active)) {
+			return gateway.findChannel(gateway.active);
+		} else if(gateway.findQuery(gateway.active)) {
+			return gateway.findQuery(gateway.active);
+		} else if(gateway.listWindow && gateway.active == gateway.listWindow.name) {
 			return false;
 		} else {
 			return false;
@@ -1653,27 +1656,38 @@ var gateway = {
 		console.warn('gateway.processNetjoin is domain logic and should be moved.');
 		ircEvents.emit('domain:processNetjoinEvents', { time: new Date() }); // Emit domain event
 	},
-	       'processQuit': function(msg){ // Domain logic, needs to be moved to gateway_domain.js
-	               console.warn('gateway.processQuit is domain logic and should be moved.');
-	               ircEvents.emit('domain:processQuitCommand', { msg: msg, time: new Date() }); // Emit domain event
-	               return true; // Keep old return for compatibility until fully removed	},
-	       'processJoin': function(msg){ // Domain logic, needs to be moved to gateway_domain.js
-	               console.warn('gateway.processJoin is domain logic and should be moved.');
-	               ircEvents.emit('domain:processJoinCommand', { msg: msg, time: new Date() }); // Emit domain event
-	       },	'findOrCreate': function(name, setActive){ // UI action, should trigger domain logic
+	'processQuit': function(msg){ // Domain logic, needs to be moved to gateway_domain.js
+		console.warn('gateway.processQuit is domain logic and should be moved.');
+		ircEvents.emit('domain:processQuitCommand', { msg: msg, time: new Date() }); // Emit domain event
+		return true; // Keep old return for compatibility until fully removed
+	},
+	'processJoin': function(msg){ // Domain logic, needs to be moved to gateway_domain.js
+		console.warn('gateway.processJoin is domain logic and should be moved.');
+		ircEvents.emit('domain:processJoinCommand', { msg: msg, time: new Date() }); // Emit domain event
+	},
+	'findOrCreate': function(name, setActive){ // UI action - creates UI tabs directly
 		if(!name || name == ''){
 			return null;
 		}
-		var callbackHandled = false;
-		ircEvents.emit('domain:findOrCreateTab', { tabName: name, setActive: setActive, time: new Date(), callback: function(tab) {
-			// This callback ensures the UI tab exists after domain processing
-			callbackHandled = true;
-		}});
-		// Synchronous return, assumes UI object is created by domain.findOrCreateTab and available via gateway.find
-		// This will be problematic if domain:findOrCreateTab is asynchronous or doesn't immediately create.
-		// For now, relies on gateway.find(name) after emit.
-		if (!callbackHandled) console.warn("domain:findOrCreateTab callback not handled synchronously.");
-		return gateway.find(name);
+		var tab;
+		if(name.charAt(0) == '#'){ // Channel
+			tab = gateway.findChannel(name);
+			if(!tab) {
+				tab = new ChannelTab(name);
+				gateway.channels.push(tab);
+				gateway.sortChannelTabs();
+			}
+		} else { // Query
+			tab = gateway.findQuery(name);
+			if(!tab) {
+				tab = new Query(name);
+				gateway.queries.push(tab);
+			}
+		}
+		if(setActive){
+			gateway.switchTab(name);
+		}
+		return tab;
 	},
 	'find': function(name){ // UI helper
 		if(!name || name == ''){
@@ -1694,7 +1708,7 @@ var gateway = {
 			gateway.listWindow = new ListWindow();
 		}
 		gateway.listWindow.clearData();
-		ircEvents.emit('domain:requestSwitchTab', { tabName: gateway.listWindow.name, time: new Date() }); // Emit domain event
+		gateway.switchTab(gateway.listWindow.name); // Direct UI action
 		return gateway.listWindow;
 	},
 	'toggleChanList': function() { // UI action, emits domain event
@@ -1740,8 +1754,13 @@ var gateway = {
 		console.warn('gateway.parseUmodes is domain logic and should be moved.');
 		ircEvents.emit('domain:processUserModes', { modes: modes, time: new Date() }); // Emit domain event
 	},
-	'getUmodeString': function(){ // UI helper, displays current umode (should be pulled from domain)
-		var modeString = ircEvents.emit('domain:getUmodeString'); // Get from domain
+	'getUmodeString': function(){ // UI helper, displays current umode
+		var modeString = '';
+		if(guser.umodes){
+			for(var mode in guser.umodes){
+				if(guser.umodes[mode]) modeString += mode;
+			}
+		}
 		if(!modeString) modeString = language.none; // Fallback
 		return modeString;
 	},
@@ -1807,7 +1826,7 @@ var gateway = {
 		var items = (e.clipboardData || e.originalEvent.clipboardData).items;
 	},
 	'inputKeypress': function(e){ // UI action, emits domain event
-		if(!ircEvents.emit('domain:hasActiveCap', { cap: 'message-tags' })) return; // activeCaps is domain state, check via event
+		if(!('message-tags' in activeCaps)) return; // Check activeCaps directly
 		if($('#input').val().length > 0 && $('#input').val().charAt(0) == '/') return; // typing a command
 		if(!gateway.getActive()) return;
 		
@@ -1819,10 +1838,10 @@ var gateway = {
 		if(avatar) {
 			meta = '<img src="' + he(avatar) + '" alt="'+he(nick)+'" onerror="this.src=\'/styles/img/noavatar.png\';">';
 		} else {
-			var userData = ircEvents.emit('domain:getUserData', { nick: nick }); // Get user data from domain
-			if(!userData) userData = { metadata: {} };
-			if('display-name' in userData.metadata){
-				var dispNick = he(userData.metadata['display-name']);
+			var user = users.getUser(nick);
+			if(!user.metadata) user.metadata = {};
+			if('display-name' in user.metadata){
+				var dispNick = he(user.metadata['display-name']);
 			} else {
 				var dispNick = he(nick);
 			}
@@ -1832,17 +1851,15 @@ var gateway = {
 	},
 	'getAvatarUrl': function(nick, size){ // UI helper
 		if(!size) size = 200;
-		var userData = ircEvents.emit('domain:getUserData', { nick: nick }); // Get user data from domain
-		if (!userData) return false;
-
-		if(userData.disableAvatar) return false;
+		var user = users.getUser(nick);
+		if(user.disableAvatar) return false;
 		var avatar = false;
-		if('avatar' in userData.metadata){
-			avatar = userData.metadata['avatar'].replace('{size}', size.toString());
+		if('avatar' in user.metadata){
+			avatar = user.metadata['avatar'].replace('{size}', size.toString());
 		}
 		if(!avatar){
 			var expr = /^~?[su]id([0-9]+)$/;
-			var avmatch = expr.exec(userData.ident);
+			var avmatch = expr.exec(user.ident);
 			if(avmatch){
 				var irccloudUrl = 'https://static.irccloud-cdn.com/avatar-redirect/s' + size.toString() + '/' + avmatch[1];
 			//	if(ImageExists(irccloudUrl)){
@@ -1852,27 +1869,26 @@ var gateway = {
 		}
 		return avatar;
 	},
-	'getMsgid': function(tags){ // Domain helper, possibly belongs in gateway_domain
-		return ircEvents.emit('domain:getMsgid', { tags: tags }); // Get from domain
+	'getMsgid': function(tags){ // Extract msgid from tags
+		return (tags && tags.msgid) ? tags.msgid : '';
 	},
-	'makeLabel': function(){ // Domain helper, possibly belongs in gateway_domain
-		return ircEvents.emit('domain:generateLabel'); // Get from domain
+	'makeLabel': function(){ // Domain helper - calls global generateLabel function
+		return generateLabel(); // Direct call to global function
 	},
 	'calculateHistoryLimit': function(){ // UI helper
 		var chatWrapper = $('#chat-wrapper');
 		if(!chatWrapper.length){
-			return 50; // Fallback to default if wrapper not found
+			return 20; // Fallback to conservative default if wrapper not found
 		}
 
 		var availableHeight = chatWrapper.innerHeight();
 		if(!availableHeight || availableHeight < 100){
-			return 50; // Fallback if height seems wrong
+			return 20; // Fallback if height seems wrong
 		}
 
 		var activeWindow = null;
-		var activeTabName = ircEvents.emit('domain:getActiveTab'); // Get from domain
-		if(activeTabName){
-			var activeTab = gateway.find(activeTabName);
+		if(gateway.active){ // UI state, access directly
+			var activeTab = gateway.find(gateway.active);
 			if(activeTab){
 				activeWindow = $('#' + activeTab.id + '-window');
 			}
@@ -1884,83 +1900,108 @@ var gateway = {
 			}).first();
 		}
 
-		var avgMessageHeight = 50; // Default estimate in pixels
+		var avgMessageHeight = 80; // Default estimate in pixels (more realistic than 50)
+		var measuredMessages = 0;
 
+		// Try to measure from active/found window
 		if(activeWindow && activeWindow.length){
 			var messages = activeWindow.find('.messageDiv').slice(0, 10);
+			console.log('History limit: Found', messages.length, 'messages in active window for measurement');
 			if(messages.length > 0){
 				var heights = [];
 				messages.each(function(){
-					heights.push($(this).outerHeight(true));
+					var h = $(this).outerHeight(true);
+					heights.push(h);
+					console.log('History limit: Message height:', h);
 				});
 				if(heights.length > 0){
 					var sum = heights.reduce(function(a, b){ return a + b; }, 0);
 					avgMessageHeight = sum / heights.length;
+					measuredMessages = heights.length;
+					console.log('History limit: Calculated average from active window:', avgMessageHeight);
 				}
+			}
+		} else {
+			console.log('History limit: No active window found for measurement');
+		}
+
+		// If we couldn't get enough measurements, try Status window
+		if(measuredMessages < 3 && gateway.statusWindow){
+			console.log('History limit: Not enough measurements (', measuredMessages, '), trying Status window');
+			var statusWindow = $('#' + gateway.statusWindow.id + '-window');
+			if(statusWindow && statusWindow.length){
+				var messages = statusWindow.find('.messageDiv').filter(':visible').slice(0, 10);
+				console.log('History limit: Found', messages.length, 'visible messages in Status window');
+				if(messages.length >= 3){
+					var heights = [];
+					messages.each(function(){
+						var h = $(this).outerHeight(true);
+						// Only use reasonable heights (skip collapsed/hidden elements)
+						if(h > 15){
+							heights.push(h);
+						}
+					});
+					if(heights.length >= 3){
+						var sum = heights.reduce(function(a, b){ return a + b; }, 0);
+						avgMessageHeight = sum / heights.length;
+						measuredMessages = heights.length;
+						console.log('History limit: Used Status window for measurements, average:', avgMessageHeight);
+					} else {
+						console.log('History limit: Status window measurements too small, using default');
+					}
+				}
+			} else {
+				console.log('History limit: Status window not found');
 			}
 		}
 
 		var estimatedCount = Math.floor(availableHeight / avgMessageHeight * 1.5);
 		var limit = Math.max(10, Math.min(estimatedCount, 200));
 
-		console.log('Calculated history limit:', limit, 'based on height:', availableHeight, 'avg msg height:', avgMessageHeight);
+		console.log('Calculated history limit:', limit, 'based on height:', availableHeight, 'avg msg height:', avgMessageHeight, 'measured from', measuredMessages, 'messages');
 		return limit;
 	},
-	'insertMessage': function(cmd, dest, text, ownMsg, label, tags, sender, time){ // UI action
-		if(tags && 'label' in tags && ircEvents.emit('domain:isLabelHidden', { label: tags.label })){ // Check domain state
-			ircEvents.emit('domain:setLabelProcessed', { status: true }); // Set domain state
-			return; // hidden message, likely contains a password
-		}
+	'insertMessage': function(cmd, dest, text, ownMsg, label, sender, time, options){ // UI action
+		// options can contain: attrs, addClass, isHistory, msgid - provided by abstracted event
+		options = options || {};
 		if(!time)
 			time = new Date();
-		var attrs = 'data-time="' + time.getTime() + '"';
-		var addClass = '';
-		// activeCaps state check should be done by domain layer
-		if(ownMsg && !ircEvents.emit('domain:hasActiveCap', { cap: 'labeled-response' }) && ircEvents.emit('domain:hasActiveCap', { cap: 'echo-message' })) return;
-		if(ownMsg){ // I'm sending this and it's not echo-message
-			if(label){
-				attrs += ' data-label="' + label + '"';
-				addClass = 'notDelivered';
-			}
-		} else {
-			if('label' in tags){ // we're using labeled-response and this is our echo-message
-				$('[data-label="'+tags.label+'"]').remove(); // removing temporary display
-				ircEvents.emit('domain:setLabelProcessed', { status: true }); // Set domain state
-			}
-			if('msgid' in tags){
-				attrs += ' data-msgid="' + tags.msgid + '"';
-			}
-		}
-		
+		var attrs = options.attrs || ('data-time="' + time.getTime() + '"');
+		var addClass = options.addClass || '';
+		// Note: All domain state checks (caps, labels, batches) are now done in domain layer
+		// UI receives abstracted message:received events with all necessary metadata
+
 		if(!sender) sender = guser.me;
-		
+
 		if(sender == guser.me && text.charAt(0) == '\001') return; // don't display own ctcp requests/replies, this is confirmed to be called when sending requests and NOT for actions
-		
+
 		var meta = gateway.getMeta(sender.nick, 100);
 		var images = $$.parseImages(text, attrs);
 		var message = $$.colorize(text);
 		var nickComments = '';
 		var nick = sender.nick;
-		var msgid = ircEvents.emit('domain:getMsgid', { tags: tags }); // Get msgid from domain
+		var msgid = options.msgid || ''; // Get msgid from abstracted options
 		var tab = null;
 		var channel = false;
-		
-		if(msgid.length > 0 && $('[data-msgid="'+msgid+'"]').length > 0) return; //we already received this message and this is a history entry
+
+		// Deduplication: if duplicate msgid exists, remove old message (new one takes precedence)
+		if(msgid.length > 0){
+			var existingMsg = $('[data-msgid="'+msgid+'"]');
+			if(existingMsg.length > 0){
+				console.log('[DEDUP] Removing duplicate message with msgid:', msgid);
+				existingMsg.remove();
+			}
+		}
 		
 		if(dest.charAt(0) == '#'){
-			var tabCallback; // Need a callback to receive the tab object
-            ircEvents.emit('domain:findOrCreateTab', { tabName: dest, setActive: false, time: new Date(), callback: function(foundTab) {
-                tabCallback = foundTab;
-            }});
-            tab = tabCallback; // Synchronous return assumed for now
-			// tab = gateway.findOrCreate(dest); // This calls domain:findOrCreateTab
+			tab = gateway.findOrCreate(dest);
 			tab.typing.stop(sender);
 			channel = true;
 		}
 
 		var nickInfo = '';
 		if(sender.account){
-			nickInfo = language.loggedInAs + sender.account;
+			nickInfo = language.loggedInAs + he(sender.account);
 		} else if(sender.registered) { // possible if the server does not send account name
 			nickInfo = language.loggedIn;
 		} else {
@@ -1971,16 +2012,18 @@ var gateway = {
 			nickInfo += language.userIsBot;
 		}
 		if(channel){
-			// gateway.isHistoryBatch(tags) needs to be domain
-			if(ircEvents.emit('domain:isHistoryBatch', { tags: tags })){
+			// Check if this is a history message using abstracted flag
+			if(options.isHistory){
 				if(nickInfo.length > 0) nickInfo += '\n';
 				nickInfo += language.historyEntry;
 			}
 		}
-		var userMetadata = ircEvents.emit('domain:getUserData', { nick: sender.nick }); // Get user data from domain
-		if(userMetadata && 'display-name' in userMetadata.metadata){
-			nick = he(userMetadata.metadata['display-name']);
+		var user = users.getUser(sender.nick);
+		if('display-name' in user.metadata){
+			nick = he(user.metadata['display-name']);
 			nickComments = ' <span class="realNick" title="' + language.realNickname + '">(' + he(sender.nick) + ')</span>';
+		} else {
+			nick = he(sender.nick);
 		}
 		if(nickInfo.length > 0)
 			nick = '<span title="' + nickInfo + '">' + nick + '</span>';
@@ -2001,7 +2044,8 @@ var gateway = {
 		}
 
 		if(cmd == 'NOTICE' && channel){ // channel notice
-			tab.appendMessage(language.messagePatterns.notice, [addClass, attrs, $$.niceTime(time), he(sender.nick), he(sender.ident), he(sender.host), message]);
+			var appendOptions = options.isHistory ? {isHistory: true} : {};
+			tab.appendMessage(language.messagePatterns.notice, [addClass, attrs, $$.niceTime(time), he(sender.nick), he(sender.ident), he(sender.host), he(message)], time, appendOptions);
 			if(hlmatch && gateway.active != tab.name) {
 				tab.markBold();
 			}
@@ -2014,8 +2058,7 @@ var gateway = {
 				} else {
 					var qname = sender.nick;
 				}
-				// gateway.find(qname) needs to be domain
-				var foundTab = ircEvents.emit('domain:findTab', { tabName: qname }); // Check via domain event
+				var foundTab = gateway.find(qname); // UI operation, call directly
 				if(
 						((sender.nick == guser.me.nick && dest.isInList(servicesNicks))
 						|| (dest == guser.me.nick && sender.nick.isInList(servicesNicks)))				&& !foundTab){
@@ -2024,26 +2067,21 @@ var gateway = {
 						$$.displayDialog('notice', 'service', language.networkServiceMessage, html, false, attrs);
 						return;
 					} else if($("#noticeDisplay").val() == 2){ // status
-						gateway.statusWindow.appendMessage(language.messagePatterns.yourServiceCommand, [addClass, attrs, $$.niceTime(time), guser.nick, dest, message], time);
+						gateway.statusWindow.appendMessage(language.messagePatterns.yourServiceCommand, [addClass, attrs, $.niceTime(time), he(guser.nick), he(dest), he(message)], time);
 						return;
 					} else { // query
 						// default behavior
 					}
 				}
-				var tabCallback;
-                ircEvents.emit('domain:findOrCreateTab', { tabName: qname, setActive: false, time: new Date(), callback: function(foundTab) {
-                    tabCallback = foundTab;
-                }});
-                tab = tabCallback; // Synchronous return assumed for now
-				// tab = gateway.findOrCreate(qname); // This calls domain:findOrCreateTab
+				tab = gateway.findOrCreate(qname);
 				tab.typing.stop(sender);
 			} else {
 				var qname = dest;
 			}
 			if(cmd != 'ACTION'){
 				var messageDiv;
-				// gateway.isHistoryBatch(tags) needs to be domain
-				var isHistoryBatch = ircEvents.emit('domain:isHistoryBatch', { tags: tags });
+				var isHistoryBatch = options.isHistory || false; // Use abstracted flag from domain layer
+				console.log('[BATCH-DEBUG] insertMessage:', {dest: dest, text: text.substring(0,30), isHistoryBatch: isHistoryBatch});
 				if(isHistoryBatch){
 					// For history messages, find the message immediately BEFORE this one chronologically
 					// (not the last one in DOM order, which would be a newer message)
@@ -2063,12 +2101,25 @@ var gateway = {
 					messageDiv = $('#'+tab.id+'-window div.messageDiv:not(".msgRepeat"):last');
 				}
 				var messageClass = 'msgNormal';
-				if(messageDiv.length && messageDiv.hasClass('sender'+md5(sender.nick)) && messageDiv[0].getAttribute('data-time') <= time.getTime()){ // last message was by the same sender and is not newer that the received one
+				var senderClass = 'sender'+md5(sender.nick);
+				var shouldBundle = messageDiv.length && messageDiv.hasClass(senderClass) && messageDiv[0].getAttribute('data-time') <= time.getTime();
+				console.log('[BUNDLE-DEBUG]', {
+					hasPrevious: messageDiv.length > 0,
+					senderClass: senderClass,
+					hasSenderClass: messageDiv.hasClass(senderClass),
+					prevTime: messageDiv[0] ? messageDiv[0].getAttribute('data-time') : 'N/A',
+					currentTime: time.getTime(),
+					shouldBundle: shouldBundle,
+					sender: sender.nick
+				});
+				if(shouldBundle){ // last message was by the same sender and is not newer that the received one
 					messageDiv.find('span.msgText').append('<span class="msgRepeatBlock ' + addClass + '" ' + attrs + '><br><span class="time">'+$$.niceTime(time)+'</span> &nbsp;'+message+'</span>');
 					messageClass = 'msgRepeat';
+					console.log('[BUNDLE-DEBUG] Bundling message with previous');
 				} else {
+					console.log('[BUNDLE-DEBUG] Creating new message div');
 					// activeCaps needs to be domain
-					if(ircEvents.emit('domain:hasActiveCap', { cap: 'labeled-response' }) && ircEvents.emit('domain:hasActiveCap', { cap: 'echo-message' }) && ownMsg){
+					if(('labeled-response' in activeCaps) && ('echo-message' in activeCaps) && ownMsg){
 						// the message will be re-sent anyway
 					} else {
 						tab.markingSwitch = !tab.markingSwitch;
@@ -2082,11 +2133,17 @@ var gateway = {
 				message = '<span class="time msgRepeatBlock">'+$$.niceTime(time)+'</span> &nbsp;' + message;
 			}
 			messageClass += ' ' + addClass;
+			// Prepare options for appendMessage
+			var appendOptions = {};
+			if(options.isHistory){
+				appendOptions.isHistory = true;
+			}
+
 			if(hlmatch) { // highlighted
 				if(cmd != 'ACTION'){
-						tab.appendMessage(language.messagePatterns.channelMsgHilight, ['sender'+md5(sender.nick) + ' ' + messageClass, attrs, meta, $$.niceTime(time), nick, nickComments, message], time);
+						tab.appendMessage(language.messagePatterns.channelMsgHilight, ['sender'+md5(sender.nick) + ' ' + messageClass, attrs, meta, $$.niceTime(time), nick , nickComments, message], time, appendOptions);
 				} else {
-						tab.appendMessage(language.messagePatterns.channelActionHilight, [addClass, attrs, $$.niceTime(time), nick, message], time);
+						tab.appendMessage(language.messagePatterns.channelActionHilight, [addClass, attrs, $$.niceTime(time), nick, message], time, appendOptions);
 				}
 				if(messageClass.indexOf('msgRepeat') > -1){
 					messageDiv.find('span.nick').addClass('repeat-hilight');
@@ -2096,9 +2153,9 @@ var gateway = {
 				}
 			} else { // not highlighted or query
 				if(cmd != 'ACTION'){
-						tab.appendMessage((sender.nick == guser.me.nick)?language.messagePatterns.yourMsg:language.messagePatterns.channelMsg, ['sender'+md5(sender.nick) + ' ' + messageClass, attrs, meta, $$.niceTime(time), $$.nickColor(sender.nick), nick, nickComments, message], time);
+						tab.appendMessage((sender.nick == guser.me.nick)?language.messagePatterns.yourMsg:language.messagePatterns.channelMsg, ['sender'+md5(sender.nick) + ' ' + messageClass, attrs, meta, $$.niceTime(time), $$.nickColor(sender.nick), nick , nickComments, message], time, appendOptions);
 				} else {
-						tab.appendMessage((sender.nick == guser.me.nick)?language.messagePatterns.yourAction:language.messagePatterns.channelAction, [addClass, attrs, $$.niceTime(time), $$.nickColor(sender.nick), nick, message], time);
+						tab.appendMessage((sender.nick == guser.me.nick)?language.messagePatterns.yourAction:language.messagePatterns.channelAction, [addClass, attrs, $$.niceTime(time), $$.nickColor(sender.nick), nick, message], time, appendOptions);
 				}
 				if(gateway.active.toLowerCase() != qname.toLowerCase() || !disp.focused) {
 					if(channel){
@@ -2109,22 +2166,17 @@ var gateway = {
 				}
 			}
 
-			tab.appendMessage('%s', [images.html], time);
+			tab.appendMessage('%s', [images.html], time, options);
 			$$.applyCallbacks(images.callbacks);
 			return;
 		}
 		if(cmd == 'NOTICE'){ // private notice
 			if(ownMsg){
 				if($("#noticeDisplay").val() == 2) { // notice in status window
-					gateway.statusWindow.appendMessage(language.messagePatterns.yourNotice, [addClass, attrs, $$.niceTime(), dest, message], time);
+					gateway.statusWindow.appendMessage(language.messagePatterns.yourNotice, [addClass, attrs, $$.niceTime(), he(dest), he(message)], time);
 				} else if($("#noticeDisplay").val() == 1) { // notice in a query window
-					var tabCallback;
-                    ircEvents.emit('domain:findOrCreateTab', { tabName: command[1], setActive: false, time: new Date(), callback: function(foundTab) {
-                        tabCallback = foundTab;
-                    }});
-                    var query = tabCallback; // Synchronous return assumed for now
-					// var query = gateway.findOrCreate(command[1]);
-					query.appendMessage(language.messagePatterns.yourNotice, [addClass, attrs, $$.niceTime(), dest, message], time);
+					var query = gateway.findOrCreate(command[1]);
+					query.appendMessage(language.messagePatterns.yourNotice, [addClass, attrs, $$.niceTime(), he(dest), he(message)], time);
 				} else if($("#noticeDisplay").val() == 0) { // notice in pop-up
 					var html = "<span class=\"notice\">[<b>" + sender.nick + " → " + dest + "</b>]</span> " + message;
 					$$.displayDialog('notice', dest, language.privateNoticeFrom+' '+dest, html, false, attrs);
@@ -2138,7 +2190,7 @@ var gateway = {
 					var qname = sender.nick;
 				}
 				// gateway.find(qname) needs to be domain
-				var foundTab = ircEvents.emit('domain:findTab', { tabName: qname });
+				var foundTab = gateway.findQuery(qname);
 				if(
 						((sender.nick == guser.me.nick && dest.isInList(servicesNicks))
 						|| (dest == guser.me.nick && sender.nick.isInList(servicesNicks)))				&& !foundTab){
@@ -2147,18 +2199,13 @@ var gateway = {
 						$$.displayDialog('notice', 'service', language.networkServiceMessage, html, false, attrs);
 						return;
 					} else if($("#noticeDisplay").val() == 2){ // status
-						gateway.statusWindow.appendMessage(language.messagePatterns.yourServiceCommand, [addClass, attrs, $$.niceTime(time), guser.nick, dest, message], time);
+						gateway.statusWindow.appendMessage(language.messagePatterns.yourServiceCommand, [addClass, attrs, $.niceTime(time), he(guser.nick), he(dest), he(message)], time);
 						return;
 					} else { // query
 						// default behavior
 					}
 				}
-				var tabCallback;
-                ircEvents.emit('domain:findOrCreateTab', { tabName: qname, setActive: false, time: new Date(), callback: function(foundTab) {
-                    tabCallback = foundTab;
-                }});
-                tab = tabCallback; // Synchronous return assumed for now
-				// tab = gateway.findOrCreate(qname); // This calls domain:findOrCreateTab
+				tab = gateway.findOrCreate(qname);
 				tab.typing.stop(sender);
 			} else { // sent by server
 				var expressions = [/^Your "real name" is now set to be/, / invited [^ ]+ into the channel.$/]; // TODO should this look like this?
@@ -2179,9 +2226,9 @@ var gateway = {
 				if(match){
 					var chan = gateway.findChannel(match[1]); // UI lookup
 					if(chan){
-						chan.appendMessage(language.messagePatterns.knocked, [$$.niceTime(time), match[1]], time);
+						chan.appendMessage(language.messagePatterns.knocked, [$$.niceTime(time), he(match[1])], time);
 					} else {
-						gateway.statusWindow.appendMessage(language.messagePatterns.knocked, [$$.niceTime(time), match[1]], time);
+						gateway.statusWindow.appendMessage(language.messagePatterns.knocked, [$$.niceTime(time), he(match[1])], time);
 					}
 					return;
 				}
@@ -2218,21 +2265,42 @@ var gateway = {
 	},
 	'msgNotDelivered': function(label, msg){ // Domain logic
 		// activeCaps is domain state - needs to be passed via domain event listener to UI or a domain-exposed accessor
-		if(!ircEvents.emit('domain:hasActiveCap', { cap: 'echo-message' }))
+		console.log('[LABEL-DEBUG] msgNotDelivered called with label:', label, 'echo-message cap:', ('echo-message' in activeCaps));
+		if(!('echo-message' in activeCaps))
 			return;
 		var sel = $('[data-label="'+label+'"]'); // UI selector
+		console.log('[LABEL-DEBUG] Found', sel.length, 'element(s) with data-label="'+label+'"');
 		sel.addClass('msgDeliveryFailed'); // UI action
 		sel.prop('title', language.messageNotDelivered); // UI action
+		console.log('[LABEL-DEBUG] Added msgDeliveryFailed class to', sel.length, 'element(s)');
 	},
-	'isHistoryBatch': function(tags){ // Domain helper
-		return ircEvents.emit('domain:isHistoryBatch', { tags: tags });
+	'isHistoryBatch': function(tags){ // Domain helper - accesses domainBatch directly (layering violation, acceptable for now)
+		return gateway.findBatchOfType(tags, 'chathistory');
 	},
-	'historyBatchActive': function(chan){ // Domain helper
-		return ircEvents.emit('domain:historyBatchActive', { channelName: chan });
+	'historyBatchActive': function(chan){ // Domain helper - accesses domainBatch directly (layering violation, acceptable for now)
+		// Check if there's an active chathistory batch for this channel
+		for(var batchId in domainBatch){
+			var batch = domainBatch[batchId];
+			if(batch.type == 'chathistory' && batch.args && batch.args[0] && batch.args[0].toLowerCase() == chan.toLowerCase()){
+				console.log('[BATCH-DEBUG] historyBatchActive: true for', chan, 'batchId:', batchId);
+				return true;
+			}
+			// Also check parent batches
+			if(batch.parents){
+				for(var i=0; i<batch.parents.length; i++){
+					if(batch.parents[i].type == 'chathistory' && batch.parents[i].args && batch.parents[i].args[0] && batch.parents[i].args[0].toLowerCase() == chan.toLowerCase()){
+						console.log('[BATCH-DEBUG] historyBatchActive: true for', chan, 'in parent batch');
+						return true;
+					}
+				}
+			}
+		}
+		console.log('[BATCH-DEBUG] historyBatchActive: false for', chan);
+		return false;
 	},
 	'loadOlderHistory': function(channel){ // UI action, emits domain event
 		// activeCaps is domain state - needs to be passed via domain event listener to UI or a domain-exposed accessor
-		if(!ircEvents.emit('domain:hasActiveCap', { cap: 'draft/chathistory' })){
+		if(!('draft/chathistory' in activeCaps)){
 			console.log('CHATHISTORY not available');
 			return;
 		}
@@ -2244,29 +2312,49 @@ var gateway = {
 		}
 
 		var loadOlderButton = $('#' + chan.id + '-window .loadOlderButton'); // UI lookup
-		var reference = loadOlderButton.attr('data-reference'); // UI data
+		var msgid = loadOlderButton.attr('data-msgid') || null; // UI data
+		var timestamp = loadOlderButton.attr('data-timestamp') || null; // UI data
 
 		loadOlderButton.remove(); // UI action
 
-		if(!reference){
+		if(!msgid && !timestamp){
 			console.log('No reference point found for loading older history');
 			return;
 		}
 
 		var limit = gateway.calculateHistoryLimit(); // UI calculation
 		// isupport is global, but effectively domain config
-		if(ircEvents.emit('domain:hasIsupport', { key: 'CHATHISTORY' })){
-			var isupportLimit = ircEvents.emit('domain:getIsupportValue', { key: 'CHATHISTORY' });
+		if('CHATHISTORY' in isupport){
+			var isupportLimit = isupport['CHATHISTORY'];
 			if(isupportLimit != 0 && isupportLimit < limit){
 				limit = isupportLimit;
 			}
 		}
 
-		console.log('Requesting history BEFORE', reference, 'limit', limit);
-		ircEvents.emit('domain:requestChatHistory', { channelName: channel, type: 'BEFORE', reference: reference, limit: limit, time: new Date() }); // Emit domain event
+		console.log('Requesting history BEFORE msgid:', msgid, 'timestamp:', timestamp, 'limit:', limit);
+		ircEvents.emit('domain:requestChatHistory', { channelName: channel, type: 'BEFORE', msgid: msgid, timestamp: timestamp, limit: limit, time: new Date() }); // Emit domain event
 	},
-	'findBatchOfType': function(tags, type){ // Domain helper
-		return ircEvents.emit('domain:findBatchOfType', { tags: tags, type: type });
+	'findBatchOfType': function(tags, type){ // Domain helper - accesses global domainBatch (layering violation, acceptable for now)
+		if(!tags || !('batch' in tags)){
+			console.log('[BATCH-DEBUG] No batch in tags, type requested:', type);
+			return null;
+		}
+		var batch = domainBatch[tags.batch];
+		if(!batch){
+			console.log('[BATCH-DEBUG] Batch', tags.batch, 'not found in domainBatch');
+			return null;
+		}
+		console.log('[BATCH-DEBUG] Checking batch', tags.batch, 'type:', batch.type, 'looking for:', type);
+		if(batch.type == type)
+			return batch;
+		if(batch.parents){
+			for(var i=0; i<batch.parents.length; i++){
+				if(batch.parents[i].type == type)
+					return batch.parents[i];
+			}
+		}
+		console.log('[BATCH-DEBUG] Batch type mismatch, returning null');
+		return null;
 	},
 	'processIncomingTags': function(ircmsg){ // Domain logic
 		ircEvents.emit('domain:processIncomingTags', { ircmsg: ircmsg });

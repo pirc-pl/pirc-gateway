@@ -1,7 +1,20 @@
 // js/settings.js
 
 var settings = (function() {
-    var booleanSettings = [ 'showPartQuit', 'showNickChanges', 'tabsListBottom', 'showUserHostnames', 'autoReconnect', 'displayLinkWarning', 'blackTheme', 'newMsgSound', 'autoDisconnect', 'coloredNicks', 'showMode', 'dispEmoji', 'sendEmoji', 'monoSpaceFont', 'automLogIn', 'setUmodeD', 'setUmodeR', 'noAvatars', 'biggerEmoji', 'groupEvents', 'shortModeDisplay', 'sortChannelsByJoinOrder' ];
+    var booleanSettings = [ 'showPartQuit', 'showNickChanges', 'tabsListBottom', 'showUserHostnames', 'autoReconnect', 'displayLinkWarning', 'blackTheme', 'newMsgSound', 'autoDisconnect', 'coloredNicks', 'showMode', 'dispEmoji', 'sendEmoji', 'monoSpaceFont', 'automLogIn', 'enableautomLogIn', 'save_password', 'setUmodeD', 'setUmodeR', 'noAvatars', 'biggerEmoji', 'groupEvents', 'shortModeDisplay', 'sortChannelsByJoinOrder' ];
+    // Default values for boolean settings (settings not listed here default to false)
+    var booleanDefaults = {
+        'showPartQuit': true,
+        'showNickChanges': true,
+        'showUserHostnames': true,
+        'autoReconnect': true,
+        'displayLinkWarning': true,
+        'newMsgSound': true,
+        'coloredNicks': true,
+        'showMode': true,
+        'dispEmoji': true,
+        'sendEmoji': true
+    };
     var comboSettings = [ 'noticeDisplay', 'setLanguage' ];
     var numberSettings = [ 'backlogCount' ];
     var numberSettingsMinMax = {
@@ -43,10 +56,40 @@ var settings = (function() {
     }
 
     return {
+        registerBooleanSetting: function(key) {
+            if (!booleanSettings.includes(key)) {
+                booleanSettings.push(key);
+            }
+        },
+
+        registerComboSetting: function(key) {
+            if (!comboSettings.includes(key)) {
+                comboSettings.push(key);
+            }
+        },
+
+        registerNumberSetting: function(key, minMaxDeflt) {
+            if (!numberSettings.includes(key)) {
+                numberSettings.push(key);
+                if (minMaxDeflt) {
+                    numberSettingsMinMax[key] = minMaxDeflt;
+                }
+            }
+        },
+
+        registerTextSetting: function(key) {
+            if (!textSettings.includes(key)) {
+                textSettings.push(key);
+            }
+        },
+
         get: function(key) {
             var value = localStorage.getItem(key);
             if (value === null) {
-                if (booleanSettings.includes(key)) return false;
+                if (booleanSettings.includes(key)) {
+                    // Return default value if specified, otherwise false
+                    return booleanDefaults[key] !== undefined ? booleanDefaults[key] : false;
+                }
                 if (numberSettings.includes(key) && numberSettingsMinMax[key]) return numberSettingsMinMax[key]['deflt'];
                 return null;
             }
@@ -166,6 +209,7 @@ var settings = (function() {
                 $('#automLogIn').parent().parent().css('display', 'none');
             }
         },
-        _textSettingsValues: textSettingsValues
+        _textSettingsValues: textSettingsValues,
+        backlogLength: 15  // Cached value for backlogCount, updated by changeSettings()
     };
 })();

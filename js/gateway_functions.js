@@ -104,7 +104,7 @@ function setEnvironment(){
 			';p':	'😜',
 			':(': 	'🙁',
 			':)':	'🙂',
-			'(':':	'🙃',
+			'(:':	'🙃',
 			'<3':	'💗',
 			'-_-':	'😑',
 			';(': 	'😢',
@@ -121,10 +121,6 @@ function setEnvironment(){
 			emojiRegex.push([regex, emoji[i]]);
 			out1 += emoji[i] + ' ';
 			out2 += i + ' ';
-		}
-
-		window.settings = {
-			'backlogLength': 15
 		}
 
         // New event listeners for settings changes
@@ -470,10 +466,9 @@ function he(text) { //HTML Escape
 }
 
 function bsEscape(text) { // escapowanie beksleszy i zakończeń stringa
-	text = text.replace(/\/g, '\\');
-	text = text.replace(/'/g, '\\'
-	); // Corrected escaping for single quote
-	text = text.replace(/"/g, '\"');
+	text = text.replace(/\\/g, '\\\\');
+	text = text.replace(/'/g, '\\\'');
+	text = text.replace(/"/g, '\\\"');
 	return text;
 }
 
@@ -714,7 +709,7 @@ function adjustColorContrast(color, backgroundColor, minRatio) {
 }
 
 function rxEscape(text) { //backupowanie regex
-	return text.replace(/[.^$*+?()[{\|]/g, '\\$&');
+	return text.replace(/[.^$*+?()[\\\]|]/g, '\\$&');
 }
 
 if (!String.prototype.isInList) {
@@ -781,7 +776,7 @@ function fillEmoticonSelector(){
 }
 
 function makeEmojiSelector(c){
-	return '<span><a class="charSelect" onclick="gateway.insertEmoji(\' + c + '\')">' + emoji.addTags(c).text + '</a> </span>';
+	return '<span><a class="charSelect" onclick="gateway.insertEmoji(\'' + c + '\')">' + emoji.addTags(c).text + '</a> </span>';
 }
 
 function saveSelectableEmoji(){
@@ -816,7 +811,7 @@ function onBlur() {
 function onFocus(){
 	clearInterval(disp.titleBlinkInterval);
 	disp.titleBlinkInterval = false;
-	if(document.title == newMessage) document.title = he(guser.me.nick)+' @ PIRC.pl';
+	if(document.title == window.newMessage) document.title = he(guser.me.nick)+' @ PIRC.pl';
 	disp.focused = true;
 	var act = gateway.getActive();
 	if(act){
@@ -1226,7 +1221,7 @@ var disp = {
 		var html = '<div class="emojiSelector">';
 		var data = emoji.getAll();
 		for(var i=0; i<data.length; i++){
-			html += '<a class="charSelect" onclick="gateway.insertEmoji(\' + data[i].text + '\')"><g-emoji fallback-src="/styles/emoji/' + data[i].code + '.png" class="emoji-wrapper">' + data[i].text + '</g-emoji></a> ';
+			html += '<a class="charSelect" onclick="gateway.insertEmoji(\'' + data[i].text + '\')"><g-emoji fallback-src="/styles/emoji/' + data[i].code + '.png" class="emoji-wrapper">' + data[i].text + '</g-emoji></a> ';
 		}
 		html += '</div>';
 		$$.displayDialog('emoticons', 'allEmoticons', language.allEmoticons, html);
@@ -1468,14 +1463,14 @@ var $$ = {
 		ircEvents.emit('nick:color', colorData);
 		color = colorData.color;
 
-	// Sanitize and adjust color for contrast with current theme background
-	if(color){
-		color = sanitizeColor(color);
+		// Sanitize and adjust color for contrast with current theme background
 		if(color){
-			var backgroundColor = getThemeBackgroundColor();
-			color = adjustColorContrast(color, backgroundColor, 4.5);
+			color = sanitizeColor(color);
+			if(color){
+				var backgroundColor = getThemeBackgroundColor();
+				color = adjustColorContrast(color, backgroundColor, 4.5);
+			}
 		}
-	}
 
 		if(codeOnly){
 			return color;
@@ -1503,10 +1498,10 @@ var $$ = {
 			message = $$.parseLinks(message);
 			if(settings.get('dispEmoji')){
 				// Check if message is emoji-only with ≤5 emoji for auto-enlargement
-			var enlargeEmoji = emoji.isTextEmojiOnly(message);
-			var emojiResult = emoji.addTags(message, enlargeEmoji);
-			message = emojiResult.text;
-			// Note: enlargeEmoji already applied during addTags if ≤5
+				var enlargeEmoji = emoji.isTextEmojiOnly(message);
+				var emojiResult = emoji.addTags(message, enlargeEmoji);
+				message = emojiResult.text;
+				// Note: enlargeEmoji already applied during addTags if ≤5
 			}
 		}
 		var length = message.length;
@@ -1752,7 +1747,6 @@ var $$ = {
 				case 98: return '#ffffff';
 				default: return '#666666';
 			}
-		}
 	},
 	'parseImages': function(text, attrs) {
 		if(!attrs)
@@ -1904,9 +1898,8 @@ var $$ = {
 			attrs = '';
 		switch(type){ //specyficzne dla typu okna
 			case 'whois':
-				if(ircEvents.emit('domain:getConnectStatus') != 'connected'){ // Check domain connect status
-					return;
-				}
+				// Connection status check removed - domainConnectStatus is not accessible from UI layer
+				// If we can receive WHOIS replies, we're connected enough to display them
 				if(sender.toLowerCase() == guser.me.nick.toLowerCase() && !gateway.displayOwnWhois){
 					return;
 				}
