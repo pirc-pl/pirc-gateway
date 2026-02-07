@@ -1768,6 +1768,39 @@
             }
         });
 
+        // Handle topic changes (when someone actively changes the topic)
+        ircEvents.on('channel:topicChanged', function(data) {
+            var channelName = data.channelName;
+            var channame = channelName.toLowerCase();
+            var channel = gateway.findChannel(channame);
+
+            if (!channel) {
+                return; // Channel tab not found
+            }
+
+            // Update the channel topic
+            channel.setTopic(data.topic);
+            channel.setTopicSetBy(data.setBy);
+            channel.setTopicSetDate(data.setDate);
+
+            // Display appropriate message based on whether topic was set or removed
+            if (data.topic && data.topic.trim()) {
+                // Topic was changed
+                channel.appendMessage(language.messagePatterns.changeTopic, [
+                    $$.niceTime(),
+                    he(data.setBy),
+                    $$.colorize(data.topic)
+                ]);
+            } else {
+                // Topic was removed
+                channel.appendMessage(language.messagePatterns.deleteTopic, [
+                    $$.niceTime(),
+                    he(data.setBy),
+                    he(channelName)
+                ]);
+            }
+        });
+
         ircEvents.on('channel:topicInfoUpdated', function(data) {
             var channelName = data.channelName;
             var channame = channelName.toLowerCase();
@@ -2074,6 +2107,112 @@
         //     gateway.displayGlobalBanInfo(data.text); // Pure UI function
         // });
 
+        // Handle all error messages from the domain layer
+        ircEvents.on('client:errorMessage', function(data) {
+            var time = data.time || new Date();
+
+            // Map error types to user-friendly message patterns
+            var errorMappings = {
+                // User/Server lookup errors
+                'noSuchNick': {
+                    pattern: language.messagePatterns.noSuchNick,
+                    params: [$$.niceTime(time), he(data.target || data.nick)]
+                },
+                'noSuchChannel': {
+                    pattern: language.messagePatterns.noSuchChannel,
+                    params: [$$.niceTime(time), he(data.target || data.channel)]
+                },
+
+                // Nickname errors
+                'nicknameInUse': {
+                    pattern: language.messagePatterns.nickInUse,
+                    params: [$$.niceTime(time), he(data.nick)]
+                },
+
+                // Channel membership errors
+                'notOnChannel': {
+                    pattern: language.messagePatterns.notOnChannel,
+                    params: [$$.niceTime(time), he(data.channel || data.channelName)]
+                },
+                'userOnChannel': {
+                    pattern: language.messagePatterns.alreadyOnChannel,
+                    params: [$$.niceTime(time), he(data.nick), he(data.channel || data.channelName)]
+                },
+
+                // Channel join errors
+                'channelIsFull': {
+                    pattern: language.messagePatterns.cannotJoin,
+                    params: [$$.niceTime(time), he(data.channel), language.channelIsFull || 'channel is full']
+                },
+                'inviteOnlyChan': {
+                    pattern: language.messagePatterns.cannotJoin,
+                    params: [$$.niceTime(time), he(data.channel), language.inviteRequiredShort]
+                },
+                'bannedFromChan': {
+                    pattern: language.messagePatterns.cannotJoin,
+                    params: [$$.niceTime(time), he(data.channel), language.youreBanned]
+                },
+                'badChannelKey': {
+                    pattern: language.messagePatterns.cannotJoin,
+                    params: [$$.niceTime(time), he(data.channel), language.passwordRequired]
+                },
+                'needReggedNick': {
+                    pattern: language.messagePatterns.cannotJoin,
+                    params: [$$.niceTime(time), he(data.channel), language.registeredNickRequiredForChan]
+                },
+                'secureOnlyChan': {
+                    pattern: language.messagePatterns.cannotJoin,
+                    params: [$$.niceTime(time), he(data.channel), language.SSLRequired]
+                },
+
+                // Message send errors
+                'cantSendToUser': {
+                    pattern: language.messagePatterns.cannotSendToUser,
+                    params: [$$.niceTime(time), he(data.nick || data.target), data.message || '']
+                },
+
+                // Permission errors
+                'noPrivileges': {
+                    pattern: language.messagePatterns.noPerms,
+                    params: [$$.niceTime(time)]
+                },
+                'chanOpPrivsNeeded': {
+                    pattern: language.messagePatterns.noPerms,
+                    params: [$$.niceTime(time)]
+                },
+                'chanOwnPrivNeeded': {
+                    pattern: language.messagePatterns.noPerms,
+                    params: [$$.niceTime(time)]
+                },
+
+                // Mode errors
+                'unknownMode': {
+                    pattern: language.messagePatterns.invalidMode,
+                    params: [$$.niceTime(time), he(data.mode || '')]
+                },
+
+                // Command/parameter errors
+                'notEnoughParameters': {
+                    pattern: language.messagePatterns.notEnoughParameters,
+                    params: [$$.niceTime(time), he(data.command || '')]
+                }
+            };
+
+            // Get the appropriate mapping
+            var mapping = errorMappings[data.type];
+
+            if (mapping && mapping.pattern) {
+                // Display using the mapped message pattern
+                gateway.statusWindow.appendMessage(mapping.pattern, mapping.params);
+            } else {
+                // Fallback for unmapped error types - use generic unimplemented error pattern
+                gateway.statusWindow.appendMessage(language.messagePatterns.unimplementedError, [
+                    $$.niceTime(time),
+                    data.message || data.type || 'Unknown error'
+                ]);
+            }
+        });
+
         ircEvents.on('client:reconnectNeeded', function() {
             $$.displayReconnect(); // Pure UI function
         });
@@ -2270,12 +2409,33 @@ ircEvents.on('client:notice', function(data) {
             }
         });
 
-        // Clean up operActions CSS when we leave a channel
+        // Clean up operActions CSS and display message when we leave a channel
         ircEvents.on('user:selfPartedChannel', function(data) {
             var channel = gateway.findChannel(data.channelName);
+            var channelHash = md5(data.channelName);
+
             if (channel) {
+                // Display partOwn message in the channel before closing
+                channel.appendMessage(language.messagePatterns.partOwn, [
+                    $$.niceTime(),
+                    he(data.channelName),
+                    channelHash
+                ]);
+
                 $('#'+channel.id+'-displayOperCss').remove();
             }
+
+            // Also display in status window
+            gateway.statusWindow.appendMessage(language.messagePatterns.partOwn, [
+                $$.niceTime(),
+                he(data.channelName),
+                channelHash
+            ]);
+
+            // Set up click handler for rejoin link
+            $('.channelRejoin-'+channelHash).click(function(){
+                ircCommand.channelJoin(data.channelName);
+            });
         });
 
         ircEvents.on('domain:meNickChanged', function(data) {
