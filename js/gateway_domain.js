@@ -3580,3 +3580,35 @@ function parseChannelUserModes(modeString, channelName) {
     }
     return changes;
 }
+
+// ==========================================
+// DOMAIN ACCESSORS FOR UI LAYER
+// ==========================================
+// Minimal domain accessor for UI layer - UI should prefer receiving data via events
+var domain = {
+    // Check if a user object represents the current user
+    isOwnUser: function(user) {
+        if (!user) return false;
+        return user === guser.me || (user.nick && user.nick === guser.me.nick);
+    }
+};
+
+// ==========================================
+// UI REQUEST HANDLERS
+// ==========================================
+
+// Handle UI request to load older chat history
+ircEvents.on('domain:requestHistoryBefore', function(data) {
+    // Check if CHATHISTORY is supported
+    if(!('CHATHISTORY' in isupport)) {
+        console.log('CHATHISTORY not supported by server');
+        return;
+    }
+
+    // Cap the limit based on server support
+    var serverLimit = parseInt(isupport['CHATHISTORY']) || 100;
+    var actualLimit = Math.min(data.limit || 100, serverLimit);
+
+    // Send the CHATHISTORY request
+    gateway.send('CHATHISTORY', ['BEFORE', data.channel, data.beforeMsgid || '*', actualLimit.toString()]);
+});
