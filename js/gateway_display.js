@@ -1108,6 +1108,418 @@
     };
 
     // ==========================================
+    // PUBLIC UI DIALOGS AND SYSTEM FUNCTIONS
+    // ==========================================
+
+    var uiDialogs = {
+        // Initialize system - show connecting dialog
+        initSys: function() {
+            var html = language.connectingWaitHtml;
+            $$.displayDialog('connect', '1', language.connecting, html);
+        },
+
+        // Initialize connection with user-provided or saved credentials
+        initialize: function() {
+            var nickInput, chanInput, passInput;
+
+            if(settings.get('automLogIn')){
+                if(conn.my_nick == '' || conn.my_reqChannel == ''){
+                    $$.alert(language.errorLoadingData);
+                    return false;
+                }
+                nickInput = conn.my_nick;
+                chanInput = conn.my_reqChannel;
+                passInput = conn.my_pass;
+            } else {
+                nickInput = $('#nsnick').val();
+                chanInput = $('#nschan').val();
+                passInput = $('#nspass').val();
+                // Validation checks
+                if(nickInput == ''){ $$.alert(language.mustGiveNick); return false; }
+                if(chanInput == ''){ $$.alert(language.mustGiveChannel); return false; }
+                if(chanInput.charAt(0) != '#'){ chanInput = '#' + chanInput; $('#nschan').val(chanInput); }
+                if(!nickInput.match(/^[\[\^\|0-9a-z_`\{\}\[\]\-]+$/i)) { $$.alert(language.badCharsInNick); return false; }
+                if(nickInput.match(/^[0-9-]/)){
+                    $$.alert(language.badNickStart);
+                    return false;
+                }
+                if(!chanInput.match(/^[#,a-z0-9_\.\-\\]+$/i)) { $$.alert(language.badCharsInChan); return false; }
+                if(passInput.match(/[ ]+/i)) { $$.alert(language.spaceInPassword); return false; }
+            }
+
+            if(settings.get('enableautomLogIn')){
+                settings.set('automLogIn', true);
+                var button = [ {
+                    text: 'OK',
+                    click: function(){ $(this).dialog('close'); }
+                } ];
+                $$.displayDialog('connect', '2', language.information, language.youCanDisableAutoconnect, button);
+            }
+
+            // Emit domain event to update user info before connecting
+            ircEvents.emit('domain:updateConnectionParams', {
+                nick: nickInput,
+                channels: [ chanInput ],
+                nickservNick: nickInput,
+                nickservPass: passInput,
+                savePassword: settings.get('save_password')
+            });
+
+            try {
+                if(chanInput){ localStorage.setItem('channel', chanInput); }
+                if(nickInput){ localStorage.setItem('nick', nickInput); }
+                if(settings.get('save_password')){
+                    if(nickInput && passInput){
+                        localStorage.setItem('password', encryptPassword(passInput));
+                    }
+                }
+            } catch(e) {}
+
+            try {
+                window.history.pushState('', guser.nick+ ' @ '+mainSettings.networkName, '/'+chanInput.substr(1)+'/'+nickInput+'/');
+            } catch(e) {}
+            uiDialogs.initSys();
+            gateway.connect(false);
+
+            return true;
+        },
+
+        // Handle channel password dialog submission
+        chanPassword: function(chan) {
+            if($('#chpass').val() == ''){
+                $$.alert(language.passwordNotGiven);
+                return false;
+            }
+            ircEvents.emit('domain:requestJoinChannel', { channelName: chan, password: $('#chpass').val(), time: new Date() });
+            $(".errorwindow").fadeOut(250);
+            return true;
+        },
+
+        // Change topic dialog
+        changeTopic: function(channel) {
+            if(!confirm(language.areYouSureToChangeTopicOf+channel+'? '+language.itCantBeUndone)){
+                return false;
+            }
+            var newTopic = $('#topicEdit').val().replace(/\n/g, ' ');
+            ircEvents.emit('domain:requestTopicChange', { channelName: channel, newTopic: newTopic, time: new Date() });
+            $$.closeDialog('confirm', 'topic');
+            return true;
+        },
+
+        // Show status dialog for adding privileges
+        showStatus: function(channel, nick) {
+            var html = '<p>' + language.giveForNick + '<strong>'+he(nick)+'</strong>' + language.temporaryPrivilegesOnChan + '<strong>'+he(channel)+'</strong>:</p>' +
+                '<select id="admopts-add-'+md5(channel)+'">' +
+                    '<option value="-">' + language.selectOption + '</option>'+
+                    '<option value="+v">' + language.voicePrivilege + '</option>'+
+                    '<option value="+h">' + language.halfopPrivilege + '</option>'+
+                    '<option value="+o">' + language.opPrivilege + '</option>'+
+                    '<option value="+a">' + language.sopPrivilege + '</option>'+
+                    '<option value="+q">' + language.founderPrivilege + '</option>'+
+                '</select>' +
+                '<p>' + language.giveForNick + '<strong>'+he(nick)+'</strong>' + language.chanservPrivilegesOnChan + '<strong>'+he(channel)+'</strong><br>' + language.youNeedServicePrivileges + ':</p>' +
+                '<select id="admopts-addsvs-'+md5(channel)+'">' +
+                    '<option value="-">' + language.selectOption + '</option>'+
+                    '<option value="VOP">VOP: ' + language.voicePrivilege + '</option>'+
+                    '<option value="HOP">HOP: ' + language.halfopPrivilege + '</option>'+
+                    '<option value="AOP">AOP: ' + language.opPrivilege + '</option>'+
+                    '<option value="SOP">SOP: ' + language.sopPrivilege + '</option>'+
+                    '<option value="QOP">QOP: ' + language.founderPrivilege + '</option>'+
+                '</select>';
+            var button = [
+                {
+                    text: language.cancel,
+                    click: function(){
+                        $(this).dialog('close');
+                    }
+                },
+                {
+                    text: 'OK',
+                    click: function(){
+                        var mode = $('#admopts-add-'+md5(channel)).val();
+                        var svsmode = $('#admopts-addsvs-'+md5(channel)).val();
+                        if(mode == '-' && svsmode == '-'){
+                            $$.alert(language.selectAvalilableOption);
+                            return;
+                        }
+                        if(mode != '-') ircEvents.emit('domain:requestModeChange', { channel: channel, modeString: mode+' '+nick, time: new Date() });
+                        if(svsmode != '-') ircEvents.emit('domain:requestServiceCommand', { service: 'ChanServ', command: svsmode, args: [channel, 'ADD', nick], time: new Date() });
+                        $(this).dialog('close');
+                    }
+                }
+            ];
+            $$.displayDialog('admin', channel, language.administrationOf+he(channel), html, button);
+        },
+
+        // Show anti-status dialog for removing privileges
+        showStatusAnti: function(channel, nick) {
+            var html = '<p>' + language.removeFromNick + '<strong>'+he(nick)+'</strong>' + language.temporaryPrivilegesOnChan + '<strong>'+he(channel)+'</strong>:</p>' +
+                '<select id="admopts-del-'+md5(channel)+'">' +
+                    '<option value="-">' + language.selectOption + '</option>'+
+                    '<option value="-v">' + language.voicePrivilege + '</option>'+
+                    '<option value="-h">' + language.voicePrivilege + '</option>'+
+                    '<option value="-o">' + language.opPrivilege + '</option>'+
+                    '<option value="-a">' + language.sopPrivilege + '</option>'+
+                    '<option value="-q">' + language.founderPrivilege + '</option>'+
+                '</select>' +
+                '<p>' + language.completelyRemoveNick + '<strong>'+he(nick)+'</strong>' + language.fromChanservPrivilegesOnChan + '<strong>'+he(channel)+'</strong><br>' + language.youNeedServicePrivileges + ':</p>' +
+                '<select id="admopts-delsvs-'+md5(channel)+'">' +
+                    '<option value="-">' + language.dontRemove + '</option>'+
+                    '<option value="+">' + language.yesRemove + '</option>'+
+                '</select>';
+            var button = [
+                {
+                    text: language.cancel,
+                    click: function(){
+                        $(this).dialog('close');
+                    }
+                },
+                {
+                    text: 'OK',
+                    click: function(){
+                        var mode = $('#admopts-del-'+md5(channel)).val();
+                        var svsmode = $('#admopts-delsvs-'+md5(channel)).val();
+                        if(mode == '-' && svsmode == '-'){
+                            $$.alert(language.selectAvailableOption);
+                            return;
+                        }
+                        if(mode != '-') ircEvents.emit('domain:requestModeChange', { channel: channel, modeString: mode+' '+nick, time: new Date() });
+                        if(svsmode == '+') ircEvents.emit('domain:requestServiceCommand', { service: 'ChanServ', command: 'ACCESS', args: [channel, 'DEL', nick], time: new Date() });
+                        $(this).dialog('close');
+                    }
+                }
+            ];
+            $$.displayDialog('admin', channel, language.administrationOf+he(channel), html, button);
+        },
+
+        // Show channel modes dialog
+        showChannelModes: function(channel) {
+            var channame = channel.substring(1);
+            var ch = md5(channame);
+
+            var html = '<p>'+language.changeChannelModesOf+he(channel)+":</p>" +
+                '<table><tr><th></th><th>' + language.character + '</th><th>' + language.description + '</th></tr>';
+            modes.changeableSingle.forEach(function(mode){
+                if(modes['single'].indexOf(mode[0]) >= 0) html += '<tr><td><input type="checkbox" id="'+ch+'_mode_'+mode[0]+'"></td><td>'+mode[0]+'</td><td>'+mode[1]+'</td></tr>';
+            }, this);
+            modes.changeableArg.forEach(function(mode){
+                if(modes['argAdd'].indexOf(mode[0]) >= 0 || modes['argBoth'].indexOf(mode[0]) >= 0) html += '<tr><td><input type="checkbox" id="'+ch+'_mode_'+mode[0]+'"></td><td>'+mode[0]+'</td><td>'+mode[1]+'</td><td><input type="text" id="'+ch+'_mode_'+mode[0]+'_text"></td></tr>';
+            }, this);
+            html += '</table>';
+
+            var button = [ {
+                text: language.applySetting,
+                click: function(){
+                    uiDialogs.changeChannelModes(channel);
+                    $(this).dialog('close');
+                }
+            } ];
+
+            $$.displayDialog('admin', channel, language.administrationOf+he(channel), html, button);
+
+            var chanModes = gateway.findChannel(channel).modes;
+            if(!chanModes){
+                return;
+            }
+            modes.changeableSingle.forEach(function(mode){
+                if(chanModes[mode[0]]){
+                    $('#'+ch+'_mode_'+mode[0]).prop('checked', true);
+                }
+            }, this);
+            modes.changeableArg.forEach(function(mode){
+                if(chanModes[mode[0]]){
+                    $('#'+ch+'_mode_'+mode[0]).prop('checked', true);
+                    $('#'+ch+'_mode_'+mode[0]+'_text').val(chanModes[mode[0]]);
+                }
+            }, this);
+        },
+
+        // Apply channel mode changes
+        changeChannelModes: function(channel) {
+            var modesw = '';
+            var modeop = '';
+            var modearg = '';
+            var chanModes = gateway.findChannel(channel).modes;
+            var channame = channel.substring(1);
+            var ch = md5(channame);
+
+            modes.changeableSingle.forEach(function(mode){
+                mode = mode[0];
+                var set = chanModes[mode];
+                var checked = $('#'+ch+'_mode_'+mode).prop('checked');
+                if(set != checked){
+                    if(checked){
+                        if(modeop != '+'){
+                                modeop = '+';
+                                modesw += '+';
+                            }
+                        modesw += mode;
+                    } else {
+                        if(modeop != '-'){
+                                modeop = '-';
+                                modesw += '-';
+                            }
+                        modesw += mode;
+                    }
+                }
+            }, this);
+
+            modes.changeableArg.forEach(function(mode){
+                mode = mode[0];
+                var set = chanModes[mode];
+                var checked = $('#'+ch+'_mode_'+mode).prop('checked');
+                var text = $('#'+ch+'_mode_'+mode+'_text').val();
+                if(set != checked || (set && set != text)){
+                    if(checked){
+                        if(modeop != '+'){
+                                modeop = '+';
+                                modesw += '+';
+                            }
+                        modesw += mode;
+                        modearg += text + ' ';
+                    } else {
+                        if(modeop != '-'){
+                                modeop = '-';
+                                modesw += '-';
+                            }
+                        modesw += mode;
+                        if(mode == 'k'){
+                            modearg += text + ' ';
+                        }
+                    }
+                }
+            }, this);
+
+            ircEvents.emit('domain:requestModeChange', { target: channel, modeString: modesw+' '+modearg, time: new Date() });
+            setTimeout(function(){ ircEvents.emit('ui:showChannelModesDialog', { channelName: channel }); }, 2000);
+        },
+
+        // Show invite prompt dialog
+        showInvitePrompt: function(channel) {
+            var html = '<p>Nick: <input id="inviteNick" type="text"></p>';
+            var button = [ {
+                text: language.cancel,
+                click: function(){
+                    $(this).dialog('close');
+                }
+            }, {
+                text: language.inviteSomeone,
+                click: function(){
+                    var nick = $('#inviteNick').val();
+                    if(!nick || nick == ''){
+                        $$.alert(language.mustGiveNick);
+                        return;
+                    }
+                    ircEvents.emit('domain:requestInvite', { channel: channel, nick: nick, time: new Date() });
+                    $(this).dialog('close');
+                }
+            } ];
+            $$.displayDialog('admin', 'invite-'+channel, language.inviteUserTo+he(channel), html, button);
+        },
+
+        // Show knocking notification dialog
+        knocking: function(channel, nick, reason) {
+            var html = '<b>'+nick+'</b>' + language.requestsInvitationTo + '<b>'+he(channel)+'</b> ('+$$.colorize(reason)+')';
+            var button = [ {
+                text: 'Zaproś',
+                click: function(){
+                    ircEvents.emit('domain:requestInvite', { channel: channel, nick: nick, time: new Date() });
+                    $(this).dialog('close');
+                }
+            } ];
+            $$.displayDialog('knock', nick, language.requestForInvitation, html, button);
+        },
+
+        // Show permission error dialog
+        showPermError: function(text) {
+            var html = language.noAccess +
+                '<br>' + language.notEnoughPrivileges + '<br>'+text;
+            $$.displayDialog('error', 'error', language.error, html);
+        },
+
+        // Show quit confirmation dialog
+        clickQuit: function() {
+            var html = '<form id="quit-form" onsubmit="ircEvents.emit(\'domain:requestQuit\', { message: $(\'#quit-msg\').val(), time: new Date() }); $$.closeDialog(\'confirm\', \'quit\'); return false;" action="javascript:void(0);">'+
+                language.quitMessage + '<input type="text" id="quit-msg" value="' + language.defaultQuitMessage + '" />';
+                '</form>';
+            var button = [ {
+                text: language.disconnect,
+                click: function(){
+                    $('#quit-form').submit();
+                    $(this).dialog('close');
+                }
+            }, {
+                text: language.cancel,
+                click: function(){
+                    $(this).dialog('close');
+                }
+            } ];
+            $$.displayDialog('confirm', 'quit', language.ircQuit, html, button);
+            $('#quit-msg').focus();
+            $('#quit-msg').select();
+        },
+
+        // Deprecated quit function (now handled by domain event)
+        quit: function() {
+            console.warn('gateway.quit() is deprecated. Use domain:requestQuit event.');
+            $('.notifywindow').fadeOut(100);
+        },
+
+        // Display global ban information
+        displayGlobalBanInfo: function(text) {
+            var html = language.connectionNotAllowedHtml +
+                '</ul><br><p>' + language.serverMessageIs + '<br>'+he(text)+'</p>';
+            $$.closeDialog('connect', '1');
+            $$.displayDialog('error', 'noaccess', language.noAccessToNetwork, html);
+            ircEvents.emit('domain:setConnectStatus', { status: 'banned' });
+        },
+
+        // Update history for all channels and queries
+        updateHistory: function() {
+            for(var i=0; i<gateway.channels.length; i++){
+                var chan = gateway.channels[i];
+                updateHistory(chan.name, chan.id);
+            }
+            for(var i=0; i<gateway.queries.length; i++){
+                var query = gateway.queries[i];
+                updateHistory(query.name, query.id);
+            }
+        },
+
+        // Load older chat history (refactored to use domain event)
+        loadOlderHistory: function(channel) {
+            var chan = gateway.findChannel(channel);
+            if(!chan){
+                console.log('Channel not found:', channel);
+                return;
+            }
+
+            var loadOlderButton = $('#' + chan.id + '-window .loadOlderButton');
+            var msgid = loadOlderButton.attr('data-msgid') || null;
+
+            loadOlderButton.remove();
+
+            if(!msgid){
+                console.log('No msgid found for loading older history');
+                return;
+            }
+
+            var limit = gateway.calculateHistoryLimit();
+            console.log('Requesting history BEFORE msgid:', msgid, 'limit:', limit);
+
+            // Use domain event handler (handles capability and isupport checks)
+            ircEvents.emit('domain:requestHistoryBefore', {
+                channel: channel,
+                limit: limit,
+                beforeMsgid: msgid
+            });
+        }
+    };
+
+    // Note: insertMessage is extremely large and remains in gateway_def.js for now
+    // It will be moved in a follow-up refactor due to its complexity
+
+    // ==========================================
     // ATTACH UI FUNCTIONS TO GATEWAY
     // ==========================================
     function attachUIFunctionsToGateway() {
@@ -1116,6 +1528,7 @@
         Object.assign(gateway, uiNicklist);
         Object.assign(gateway, uiInput);
         Object.assign(gateway, uiWindows);
+        Object.assign(gateway, uiDialogs);
     }
 
     /**

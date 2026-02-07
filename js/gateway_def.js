@@ -306,15 +306,7 @@ var gateway = {
 	// Removed displayOwnWhois, statusWindow, lastKeypressWindow, keypressSuppress - now in uiState (gateway_display.js)
 	'allowNewSend' : true,
 	'commandProcessing': false,
-	'chanPassword': function(chan) {
-		if($('#chpass').val() == ''){
-			$$.alert(language.passwordNotGiven);
-			return false;
-		}
-		ircEvents.emit('domain:requestJoinChannel', { channelName: chan, password: $('#chpass').val(), time: new Date() }); // Emit domain event
-		$(".errorwindow").fadeOut(250); // UI action
-		return true;
-	},
+	// Removed chanPassword - moved to uiDialogs (gateway_display.js)
 	'reconnect': function() { // UI-initiated reconnect
 		gateway.websock.onerror = undefined;
 		gateway.websock.onclose = undefined;
@@ -452,76 +444,7 @@ var gateway = {
 	// Removed joinChannels() method (now domain-driven)
 	// Removed connectTimeout() method (now domain-driven)
 	// Removed stopAndReconnect() method (now domain-driven)
-	'initSys': function() { // UI initialization
-		var html = language.connectingWaitHtml;
-		$$.displayDialog('connect', '1', language.connecting, html);
-	},
-	'initialize': function() { // UI-initiated connection flow
-		var nickInput, chanInput, passInput;
-
-		if(settings.get('automLogIn')){
-			if(conn.my_nick == '' || conn.my_reqChannel == ''){
-				$$.alert(language.errorLoadingData);
-				return false;
-			}
-			nickInput = conn.my_nick;
-			chanInput = conn.my_reqChannel;
-			passInput = conn.my_pass;
-		} else {
-			nickInput = $('#nsnick').val();
-			chanInput = $('#nschan').val();
-			passInput = $('#nspass').val();
-			// Validation checks
-			if(nickInput == ''){ $$.alert(language.mustGiveNick); return false; }
-			if(chanInput == ''){ $$.alert(language.mustGiveChannel); return false; }
-			if(chanInput.charAt(0) != '#'){ chanInput = '#' + chanInput; $('#nschan').val(chanInput); }
-			if(!nickInput.match(/^[\[\^\|0-9a-z_`\{\}\[\]\-]+$/i)) { $$.alert(language.badCharsInNick); return false; }
-			if(nickInput.match(/^[0-9-]/)){
-				$$.alert(language.badNickStart);
-				return false;
-			}
-			if(!chanInput.match(/^[#,a-z0-9_\.\-\\]+$/i)) { $$.alert(language.badCharsInChan); return false; }
-			if(passInput.match(/[ ]+/i)) { $$.alert(language.spaceInPassword); return false; }
-		}
-
-		if(settings.get('enableautomLogIn')){
-			// Handled by settings.set('automLogIn', true);
-			settings.set('automLogIn', true); // Use settings.set directly
-			var button = [ {
-				text: 'OK',
-				click: function(){ $(this).dialog('close'); }
-			} ];
-			$$.displayDialog('connect', '2', language.information, language.youCanDisableAutoconnect, button);
-		}
-		
-		// Emit domain event to update user info before connecting
-		ircEvents.emit('domain:updateConnectionParams', {
-			nick: nickInput,
-			channels: [ chanInput ],
-			nickservNick: nickInput,
-			nickservPass: passInput,
-			savePassword: settings.get('save_password')
-		});
-
-		try { // UI localStorage updates
-			if(chanInput){ localStorage.setItem('channel', chanInput); }
-			if(nickInput){ localStorage.setItem('nick', nickInput); }
-			if(settings.get('save_password')){
-				if(nickInput && passInput){ // Use current nick and pass
-					localStorage.setItem('password', encryptPassword(passInput));
-				}
-			}
-		} catch(e) {}
-		
-		// guser.account = guser.nick; // This is domain logic, will be handled by domain:updateConnectionParams
-		try {
-			window.history.pushState('', guser.nick+ ' @ '+mainSettings.networkName, '/'+chanInput.substr(1)+'/'+nickInput+'/');
-		} catch(e) {}
-		gateway.initSys();
-		gateway.connect(false); // Initiate protocol connection
-
-		return true;
-	},
+	// Removed initSys, initialize - moved to uiDialogs (gateway_display.js)
 	'delayedSendTimer': false, // Protocol layer
 	'toSend': [], // Protocol layer
 	'sendDelayCnt': 0, // Protocol layer
@@ -617,15 +540,7 @@ var gateway = {
 		$('#input').focus();
 		return false;
 	},
-	'changeTopic': function(channel) { // UI-initiated action, emits domain event
-		if(!confirm(language.areYouSureToChangeTopicOf+channel+'? '+language.itCantBeUndone)){
-			return false;
-		}
-		var newTopic = $('#topicEdit').val().replace(/\n/g, ' ');
-		ircEvents.emit('domain:requestTopicChange', { channelName: channel, newTopic: newTopic, time: new Date() }); // Emit domain event
-		$$.closeDialog('confirm', 'topic'); // UI action
-		return true;
-	},
+	// Removed changeTopic - moved to uiDialogs (gateway_display.js)
 	// Removed 'tabHistory' - now in uiState (gateway_display.js), exposed via gateway.tabHistory
 	'lasterror': '', // This is now domainLastError
 	// Removed 'nickListVisibility' - now in uiState (gateway_display.js), exposed via gateway.nickListVisibility
@@ -960,11 +875,7 @@ var gateway = {
 	// Removed 'active' - now in uiState (gateway_display.js), exposed via gateway.active
 	// Removed toggleNickOpt, toggleNickOptInfo, toggleNickOptAdmin - moved to uiNicklist (gateway_display.js)
 	// Removed toggleChannelOperOpts, toggleChannelOpts, toggleNickOpts - moved to uiNicklist (gateway_display.js)
-	'showPermError': function(text) { // UI action
-		var html = language.noAccess +
-			'<br>' + language.notEnoughPrivileges + '<br>'+text;
-		$$.displayDialog('error', 'error', language.error, html);
-	},
+	// Removed showPermError - moved to uiDialogs (gateway_display.js)
 	'clickQuit': function() { // UI action, emits domain event
 		var html = '<form id="quit-form" onsubmit="ircEvents.emit(\'domain:requestQuit\', { message: $(\'#quit-msg\').val(), time: new Date() }); $$.closeDialog(\'confirm\', \'quit\'); return false;" action="javascript:void(0);">'+ 
 			language.quitMessage + '<input type="text" id="quit-msg" value="' + language.defaultQuitMessage + '" />';
@@ -985,11 +896,7 @@ var gateway = {
 		$('#quit-msg').focus();
 		$('#quit-msg').select();
 	},
-	'quit': function() { // This is now part of clickQuit's submit handler
-		// commands.quit.callback(['quit'], '/quit '+$('#quit-msg').val()); // No longer directly callable here
-		console.warn('gateway.quit() is deprecated. Use domain:requestQuit event.');
-		$('.notifywindow').fadeOut(100);
-	},
+	// Removed quit - moved to uiDialogs (gateway_display.js)
 	// Removed 'completion' - now in uiState (gateway_display.js), exposed via gateway.completion
 	// Removed doComplete - moved to uiHelpers (gateway_display.js)
 	'parseChannelMode': function(args, chan, dispType) { // This is domain logic and needs to be moved to gateway_domain.js
@@ -1056,13 +963,7 @@ var gateway = {
 		return modeString;
 	},
 	// Removed enterPressed, arrowPressed, inputPaste, inputKeypress - moved to uiInput (gateway_display.js)
-	'displayGlobalBanInfo': function(text){ // UI action
-		var html = language.connectionNotAllowedHtml +
-			'</ul><br><p>' + language.serverMessageIs + '<br>'+he(text)+'</p>';
-		$$.closeDialog('connect', '1');
-		$$.displayDialog('error', 'noaccess', language.noAccessToNetwork, html);
-		ircEvents.emit('domain:setConnectStatus', { status: 'banned' }); // Set status via domain event
-	},
+	// Removed displayGlobalBanInfo - moved to uiDialogs (gateway_display.js)
 	// Removed getMeta, getAvatarUrl, getMsgid - moved to uiHelpers (gateway_display.js)
 	'makeLabel': function(){ // Domain helper - calls global generateLabel function
 		return generateLabel(); // Direct call to global function
@@ -1353,16 +1254,7 @@ var gateway = {
 		}
 		console.error('Unhandled message from '+sender.nick+' to '+dest+'!');
 	},
-	'updateHistory': function(){ // UI utility
-		for(var i=0; i<gateway.channels.length; i++){
-			var chan = gateway.channels[i];
-			updateHistory(chan.name, chan.id);
-		}
-		for(var i=0; i<gateway.queries.length; i++){
-			var query = gateway.queries[i];
-			updateHistory(query.name, query.id);
-		}
-	},
+	// Removed updateHistory - moved to uiDialogs (gateway_display.js)
 	'labelNotProcessed': function(label, msg, batch){ // Protocol/Domain logic
 		// Access labelCallbacks via domain event
 		ircEvents.emit('domain:processLabelNotProcessed', { label: label, msg: msg, batch: batch });
@@ -1552,4 +1444,8 @@ var hooks = {
 		return ircEvents.emit(event, data);
 	}
 };
-window.hooks = hooks;
+window.hooks = hooks;// NOTE: The following UI dialog functions have been moved to gateway_display.js (uiDialogs):
+// - showStatus, showStatusAnti, showChannelModes, changeChannelModes
+// - showInvitePrompt, knocking, clickQuit, loadOlderHistory
+// They remain defined here temporarily for compatibility but will be fully removed in a future commit
+// All calls go through gateway.functionName() which are attached from gateway_display.js
