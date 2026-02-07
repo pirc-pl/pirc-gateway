@@ -302,14 +302,14 @@ var services = {
 	},
 	'showChanServCmds': function(chan) {
 		if(!services.requireRegisteredNick()) return;
-		html = language.eachFunctionNeedsPermissions + '<br>'
-			'<table>'
-			'<tr><td><button id="cs-ban-' + md5(chan) + '-button">BAN</button></td><td>' + language.nickOrMask + ': <input type="text" id="cs-ban-'+md5(chan)+'"></td><td>' + language.reason + ': <input type="text" id="cs-banreason-'+md5(chan)+'"></td><td>' + language.banUser + '</td></tr>'
-			'<tr><td><button id="cs-kick-' + md5(chan) + '-button">KICK</button></td><td>' + language.nickOrMask + ': <input type="text" id="cs-kick-'+md5(chan)+'"></td><td>' + language.reason + ': <input type="text" id="cs-kickreason-'+md5(chan)+'"></td><td>' + language.kickUser + '</td></tr>'
-			'<tr><td><button id="cs-register-' + md5(chan) + '-button">REGISTER</button></td><td>' + language.channelDescription + ': <input type="text" id="cs-register-'+md5(chan)+'"></td><td></td><td>' + language.registerChannel + '</td></tr>'
-			'<tr><td><button id="cs-status-' + md5(chan) + '-button">STATUS</button></td><td>' + language.nickname + ': <input type="text" id="cs-status-'+md5(chan)+'"></td><td></td><td>' + language.checkUserChanservStatus + '</td></tr>'
-			'<tr><td><button id="cs-accesslist-' + md5(chan) + '-button">ACCESS LIST</button></td><td></td><td></td><td>' + language.displayAccessList + '</td></tr>'
-			'<tr><td><button id="cs-accessdel-' + md5(chan) + '-button">ACCESS DEL</button></td><td>' + language.nickname + ': <input type="text" id="cs-acc-del-'+md5(chan)+'"></td><td></td><td>' + language.deleteUserFromAccessList + '</td></tr>'
+		html = language.eachFunctionNeedsPermissions + '<br>' +
+			'<table>' +
+			'<tr><td><button id="cs-ban-' + md5(chan) + '-button">BAN</button></td><td>' + language.nickOrMask + ': <input type="text" id="cs-ban-'+md5(chan)+'"></td><td>' + language.reason + ': <input type="text" id="cs-banreason-'+md5(chan)+'"></td><td>' + language.banUser + '</td></tr>' +
+			'<tr><td><button id="cs-kick-' + md5(chan) + '-button">KICK</button></td><td>' + language.nickOrMask + ': <input type="text" id="cs-kick-'+md5(chan)+'"></td><td>' + language.reason + ': <input type="text" id="cs-kickreason-'+md5(chan)+'"></td><td>' + language.kickUser + '</td></tr>' +
+			'<tr><td><button id="cs-register-' + md5(chan) + '-button">REGISTER</button></td><td>' + language.channelDescription + ': <input type="text" id="cs-register-'+md5(chan)+'"></td><td></td><td>' + language.registerChannel + '</td></tr>' +
+			'<tr><td><button id="cs-status-' + md5(chan) + '-button">STATUS</button></td><td>' + language.nickname + ': <input type="text" id="cs-status-'+md5(chan)+'"></td><td></td><td>' + language.checkUserChanservStatus + '</td></tr>' +
+			'<tr><td><button id="cs-accesslist-' + md5(chan) + '-button">ACCESS LIST</button></td><td></td><td></td><td>' + language.displayAccessList + '</td></tr>' +
+			'<tr><td><button id="cs-accessdel-' + md5(chan) + '-button">ACCESS DEL</button></td><td>' + language.nickname + ': <input type="text" id="cs-acc-del-'+md5(chan)+'"></td><td></td><td>' + language.deleteUserFromAccessList + '</td></tr>' +
 		'</table>';
 		$$.displayDialog('admin', 'cs-'+chan, language.chanservCommandsOn+he(chan), html);
 		$$.alert(language.workInProgress);
@@ -379,13 +379,13 @@ var services = {
 	},
 	'showBotServCmds': function(chan){
 		if(!services.requireRegisteredNick()) return;
-		html = language.eachFunctionNeedsPermissions + '<br>'
-			'<table>'
-			'<tr><td><button id="bs-botlist-' + md5(chan) + '-button">BOTLIST</button></td><td></td><td></td><td>' + language.showBotList + '</td></tr>'
-			'<tr><td><button id="bs-assign-' + md5(chan) + '-button">ASSIGN</button></td><td>' + language.nickChosenFromBotList + ': <input type="text" id="bs-assign-'+md5(chan)+'"></td><td></td><td>' + language.assignBotToChan + '</td></tr>'
-			'<tr><td><button id="bs-unassign-' + md5(chan) + '-button">UNASSIGN</button></td><td></td><td></td><td>' + language.removeBotFromChan + '</td></tr>'
-			'<tr><td><button id="bs-act-' + md5(chan) + '-button">ACT</button></td><td>' + language.message + ': <input type="text" id="bs-act-'+md5(chan)+'"></td><td></td><td>' + language.sendActionToChan + '</td></tr>'
-			'<tr><td><button id="bs-say-' + md5(chan) + '-button">SAY</button></td><td>' + language.message + ': <input type="text" id="bs-say-'+md5(chan)+'"></td><td></td><td>' + language.sendMessageToChan + '</td></tr>'
+		html = language.eachFunctionNeedsPermissions + '<br>' +
+			'<table>' +
+			'<tr><td><button id="bs-botlist-' + md5(chan) + '-button">BOTLIST</button></td><td></td><td></td><td>' + language.showBotList + '</td></tr>' +
+			'<tr><td><button id="bs-assign-' + md5(chan) + '-button">ASSIGN</button></td><td>' + language.nickChosenFromBotList + ': <input type="text" id="bs-assign-'+md5(chan)+'"></td><td></td><td>' + language.assignBotToChan + '</td></tr>' +
+			'<tr><td><button id="bs-unassign-' + md5(chan) + '-button">UNASSIGN</button></td><td></td><td></td><td>' + language.removeBotFromChan + '</td></tr>' +
+			'<tr><td><button id="bs-act-' + md5(chan) + '-button">ACT</button></td><td>' + language.message + ': <input type="text" id="bs-act-'+md5(chan)+'"></td><td></td><td>' + language.sendActionToChan + '</td></tr>' +
+			'<tr><td><button id="bs-say-' + md5(chan) + '-button">SAY</button></td><td>' + language.message + ': <input type="text" id="bs-say-'+md5(chan)+'"></td><td></td><td>' + language.sendMessageToChan + '</td></tr>' +
 		'</table>';
 		$$.displayDialog('admin', 'bs-'+chan, language.botservCommandsOn+he(chan), html);
 		$$.alert(language.workInProgress);
@@ -459,11 +459,11 @@ var services = {
 		return cmdString;
 	},
 	'showBan': function(channel, nick) {
-		var html = '<p>'+language.banAndKickUserFrom +he(nick)+language.fromChannel+he(channel)+'. '+ language.giveKickReason +'</p>'
-			'<input type="text" id="kbinput" maxlength="307" /><br>'
-			'<select id="kbtime">'
-				'<option value=" ">' + language.noAutoUnban + '</option>'
-				'<option value="1d">' + language.unban1Day + '</option>'
+		var html = '<p>'+language.banAndKickUserFrom +he(nick)+language.fromChannel+he(channel)+'. '+ language.giveKickReason +'</p>' +
+			'<input type="text" id="kbinput" maxlength="307" /><br>' +
+			'<select id="kbtime">' +
+				'<option value=" ">' + language.noAutoUnban + '</option>' +
+				'<option value="1d">' + language.unban1Day + '</option>' +
 				'<option value="1h">' + language.unban1Hour + '</option>';
 		if(settings.get('timedBanMethod') == 'ChanServ'){
 			html += '<option value="30d">' + language.unban1Month + '</option>';
@@ -568,9 +568,9 @@ var services = {
 		return true;
 	},
 	'registerMyNick': function() {
-		var html = '<table><tr><td style="text-align: right; padding-right: 10px;">' + language.password + '</td><td><input type="password" id="nickRegisterPass"></td></tr>'
-			'<tr><td style="text-align: right; padding-right: 10px;">' + language.repeatPassword + '</td><td><input type="password" id="nickRegisterPassConf"></td></tr>'
-			'<tr><td style="text-align: right; padding-right: 10px;">' + language.email + '</td><td><input type="text" id="nickRegisterMail"></td></tr>'
+		var html = '<table><tr><td style="text-align: right; padding-right: 10px;">' + language.password + '</td><td><input type="password" id="nickRegisterPass"></td></tr>' +
+			'<tr><td style="text-align: right; padding-right: 10px;">' + language.repeatPassword + '</td><td><input type="password" id="nickRegisterPassConf"></td></tr>' +
+			'<tr><td style="text-align: right; padding-right: 10px;">' + language.email + '</td><td><input type="text" id="nickRegisterMail"></td></tr>' +
 			'</table><p>' + language.emailNeeded + '</p>';
 		var button = [ { 
 			text: language.cancel,
@@ -636,8 +636,8 @@ var services = {
 		$$.displayDialog('services', 'hostserv', language.settingOfVhost, html, button);
 		*/
 	'setVhost': function(){
-		var html = '<p>' + language.thisCommandWillRequestVhost + '</p>'
-			'<p>' + language.newVhost + '<input type="text" id="newVhost"></p>'
+		var html = '<p>' + language.thisCommandWillRequestVhost + '</p>' +
+			'<p>' + language.newVhost + '<input type="text" id="newVhost"></p>' +
 			'<p>' + language.lettersDigitsDot + '</p>';
 		var button = [ { 
 			text: language.cancel,

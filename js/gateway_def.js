@@ -758,7 +758,7 @@ var gateway = {
 		}, this);
 		
 		ircEvents.emit('domain:requestModeChange', { target: channel, modeString: modesw+' '+modearg, time: new Date() }); // Emit domain event
-		setTimeout(function(){ ircEvents.emit('ui:showChannelModesDialog', { channelName: channel }); }, 2000); // Re-open dialog (UI action)
+		setTimeout(function(){ gateway.showChannelModes(channel); }, 2000);
 	},
 	'showInvitePrompt': function(channel) { // UI action, emits domain event
 		var html = '<p>Nick: <input id="inviteNick" type="text"></p>';
@@ -811,8 +811,8 @@ var gateway = {
 		$$.displayDialog('admin', 'kick-'+channel, 'KICK', html, button);
 	},
 	/*'showBan' : function(channel, nick) { // This function is complex UI, needs full refactor
-		console.warn('showBan is complex UI logic, needs refactor. Emitting ui:showBanDialog');
-		ircEvents.emit('ui:showBanDialog', { channel: channel, nick: nick });
+		console.warn('showBan is complex UI logic, needs refactor.');
+		// showBan function is now in gateway_services.js
 	},
 	'banClick': function() { // This function is part of showBan dialog, needs refactor
 		console.warn('banClick is part of showBan dialog, needs refactor. Emitting domain:requestBan');

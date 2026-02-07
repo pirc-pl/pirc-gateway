@@ -1400,28 +1400,33 @@ ircEvents.on('protocol:rplWhoisbot', function(data) {
     }
 });
 
+// Invite list aggregation (WHOIS-style pattern)
+var pendingInviteLists = {}; // Temporary storage for invite list entries
+
 ircEvents.on('protocol:rplInvitlist', function(data) {
-    var channel = gateway.findChannel(data.channelName);
-    if (channel) {
-        // Store or process invite list entry
-        ircEvents.emit('channel:inviteListEntry', {
-            channelName: channel.name,
-            channelId: channel.id,
-            usermask: data.usermask,
-            setBy: data.setBy,
-            setDate: data.setDate,
-        });
+    var channelName = data.channelName;
+    if (!pendingInviteLists[channelName]) {
+        pendingInviteLists[channelName] = [];
     }
+    pendingInviteLists[channelName].push({
+        mask: data.usermask,
+        setBy: data.setBy,
+        setAt: data.setDate,
+    });
 });
 
 ircEvents.on('protocol:rplEndofinvitelist', function(data) {
-    var channel = gateway.findChannel(data.channelName);
+    var channelName = data.channelName;
+    var channel = gateway.findChannel(channelName);
     if (channel) {
-        ircEvents.emit('channel:endOfInviteList', {
+        var entries = pendingInviteLists[channelName] || [];
+        ircEvents.emit('channel:inviteListComplete', {
             channelName: channel.name,
             channelId: channel.id,
+            entries: entries,
             message: data.message,
         });
+        delete pendingInviteLists[channelName];
     }
 });
 
@@ -1466,28 +1471,33 @@ ircEvents.on('protocol:rplWhoiscountry', function(data) {
     }
 });
 
+// Exception list aggregation (WHOIS-style pattern)
+var pendingExceptLists = {}; // Temporary storage for except list entries
+
 ircEvents.on('protocol:rplExceptlist', function(data) {
-    var channel = gateway.findChannel(data.channelName);
-    if (channel) {
-        // Store or process except list entry
-        ircEvents.emit('channel:exceptListEntry', {
-            channelName: channel.name,
-            channelId: channel.id,
-            exceptionMask: data.exceptionMask,
-            setBy: data.setBy,
-            setDate: data.setDate,
-        });
+    var channelName = data.channelName;
+    if (!pendingExceptLists[channelName]) {
+        pendingExceptLists[channelName] = [];
     }
+    pendingExceptLists[channelName].push({
+        mask: data.exceptionMask,
+        setBy: data.setBy,
+        setAt: data.setDate,
+    });
 });
 
 ircEvents.on('protocol:rplEndofexceptlist', function(data) {
-    var channel = gateway.findChannel(data.channelName);
+    var channelName = data.channelName;
+    var channel = gateway.findChannel(channelName);
     if (channel) {
-        ircEvents.emit('channel:endOfExceptList', {
+        var entries = pendingExceptLists[channelName] || [];
+        ircEvents.emit('channel:exceptListComplete', {
             channelName: channel.name,
             channelId: channel.id,
+            entries: entries,
             message: data.message,
         });
+        delete pendingExceptLists[channelName];
     }
 });
 
@@ -1793,27 +1803,33 @@ ircEvents.on('protocol:rplEndofnames', function(data) {
     }
 });
 
+// Ban list aggregation (WHOIS-style pattern)
+var pendingBanLists = {}; // Temporary storage for ban list entries
+
 ircEvents.on('protocol:rplBanlist', function(data) {
-    var channel = gateway.findChannel(data.channelName);
-    if (channel) {
-        ircEvents.emit('channel:banListEntry', {
-            channelName: channel.name,
-            channelId: channel.id,
-            banmask: data.banmask,
-            setBy: data.setBy,
-            setAt: data.setAt,
-        });
+    var channelName = data.channelName;
+    if (!pendingBanLists[channelName]) {
+        pendingBanLists[channelName] = [];
     }
+    pendingBanLists[channelName].push({
+        mask: data.banmask,
+        setBy: data.setBy,
+        setAt: data.setAt,
+    });
 });
 
 ircEvents.on('protocol:rplEndofbanlist', function(data) {
-    var channel = gateway.findChannel(data.channelName);
+    var channelName = data.channelName;
+    var channel = gateway.findChannel(channelName);
     if (channel) {
-        ircEvents.emit('channel:endOfBanList', {
+        var entries = pendingBanLists[channelName] || [];
+        ircEvents.emit('channel:banListComplete', {
             channelName: channel.name,
             channelId: channel.id,
+            entries: entries,
             message: data.message,
         });
+        delete pendingBanLists[channelName];
     }
 });
 
@@ -1825,9 +1841,8 @@ ircEvents.on('protocol:rplEndofwhowas', function(data) {
 });
 
 ircEvents.on('protocol:rplInfo', function(data) {
-    ircEvents.emit('server:infoMessage', {
-        message: data.message,
-    });
+    // RPL_INFO (371) - Server info line
+    // Not displayed (old code also ignored this)
 });
 
 ircEvents.on('protocol:rplMotd', function(data) {
@@ -1837,9 +1852,8 @@ ircEvents.on('protocol:rplMotd', function(data) {
 });
 
 ircEvents.on('protocol:rplInfostart', function(data) {
-    ircEvents.emit('server:infoStart', {
-        message: data.message,
-    });
+    // RPL_INFOSTART (373) - Server info start
+    // Not displayed (old code also ignored this)
 });
 
 ircEvents.on('protocol:rplEndofinfo', function(data) {
@@ -1927,20 +1941,8 @@ ircEvents.on('protocol:rplNotoperanymore', function(data) {
     });
 });
 
-ircEvents.on('protocol:rplQlist', function(data) {
-    // Q list entries
-    ircEvents.emit('server:qlistEntry', {
-        channel: data.channelName,
-        mask: data.mask,
-        message: data.message,
-    });
-});
-
-ircEvents.on('protocol:rplEndofqlist', function(data) {
-    ircEvents.emit('server:endOfQlist', {
-        message: data.message,
-    });
-});
+// Quiet list (RPL_QLIST/RPL_ENDOFQLIST) not supported
+// Only ban (b), except (e), and invex (I) lists are implemented
 
 ircEvents.on('protocol:rplAlist', function(data) {
     // A list entries (admin list)
@@ -2132,6 +2134,18 @@ ircEvents.on('protocol:errYouwillbebanned', function(data) {
         type: 'youWillBeBanned',
         message: data.message,
     });
+});
+
+ircEvents.on('protocol:errYoureBannedCreep', function(data) {
+    // ERR_YOUREBANNEDCREEP (465) - User is banned from server
+    // This requires special handling: show ban dialog and set connect status
+    ircEvents.emit('client:globalBan', {
+        code: '465',
+        message: data.message,
+        time: data.time
+    });
+    // Set connection status to banned
+    ircEvents.emit('domain:setConnectStatus', { status: 'banned' });
 });
 
 ircEvents.on('protocol:errKeyset', function(data) {
@@ -2548,6 +2562,28 @@ ircEvents.on('protocol:errMlockrestricted', function(data) {
     });
 });
 
+ircEvents.on('protocol:errCannotDoCommand', function(data) {
+    // ERR_CANNOTDOCOMMAND (972) - Cannot execute command due to permissions
+    ircEvents.emit('client:permissionError', {
+        code: '972',
+        type: 'cannotDoCommand',
+        message: data.message,
+        target: data.target,
+        time: data.time
+    });
+});
+
+ircEvents.on('protocol:errCannotChangeChanMode', function(data) {
+    // ERR_CANNOTCHANGECHANMODE (974) - Cannot change channel mode due to permissions
+    ircEvents.emit('client:permissionError', {
+        code: '974',
+        type: 'cannotChangeChanMode',
+        message: data.message,
+        target: data.target,
+        time: data.time
+    });
+});
+
 ircEvents.on('protocol:rplKeyvalue', function(data) {
     ircEvents.emit('metadata:keyValue', {
         target: data.target,
@@ -2680,22 +2716,8 @@ ircEvents.on('protocol:ctcpAction', function(data) {
     });
 });
 
-ircEvents.on('protocol:ctcpReply', function(data) {
-    // Check if this is our own CTCP reply being echoed back by the server
-    // Don't display our own CTCP replies (they're automatic responses, not interesting to show)
-    var sender = data.user || { nick: data.fromNick };
-
-    console.log('CTCP Reply from:', sender.nick, 'sender.id:', sender.id, 'guser.me.nick:', guser.me ? guser.me.nick : 'null', 'guser.me.id:', guser.me ? guser.me.id : 'null');
-
-    if (guser.me && (sender.id === guser.me.id || sender.nick === guser.me.nick)) {
-        console.log('Filtering out own CTCP reply');
-        // This is our own CTCP reply being echoed - don't display it
-        return;
-    }
-
-    // Pass through to UI for display (event name stays the same for UI compatibility)
-    // The UI layer already has a handler for protocol:ctcpReply
-});
+// Note: CTCP reply filtering moved to UI layer (gateway_display.js)
+// because both domain and UI listen to protocol:ctcpReply directly
 
 ircEvents.on('protocol:ctcpVersionRequest', function(data) {
     // Build version string matching old format
