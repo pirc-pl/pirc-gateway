@@ -106,7 +106,6 @@ function ChannelMemberList(channelName) {
         if (!this.findMemberById(user.id)) {
             var member = new ChannelMember(user, this.channelName);
             this.members.push(member);
-            console.log('[NICKLIST-DEBUG] Added', user.nick, 'to', this.channelName, 'total members:', this.members.length);
             // Sort to maintain order if needed, or sort on retrieval for UI
             this.members.sort(this._sortFunc);
 
@@ -121,8 +120,6 @@ function ChannelMemberList(channelName) {
                 });
             }
             return member;
-        } else {
-            console.log('[NICKLIST-DEBUG] User', user.nick, 'already in', this.channelName, '- not adding duplicate');
         }
         return this.findMemberById(user.id);
     };

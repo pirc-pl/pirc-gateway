@@ -462,7 +462,6 @@ ircEvents.on('protocol:joinCommand', function(data) {
     if (user === guser.me) { // If WE joined - create channel state
         // Create ChannelMemberList for channels WE are in
         var cml = users.addChannelMemberList(channelName);
-        console.log('[NICKLIST-DEBUG] Created ChannelMemberList for', channelName, 'current member count:', cml.members.length);
         // Don't add ourselves here - NAMES reply will include us with proper channel modes
 
         // Mark this channel as initializing (waiting for NAMES completion)
@@ -1483,7 +1482,6 @@ ircEvents.on('protocol:rplNamreply', function(data) {
 
     // Get or create ChannelMemberList for this channel
     var cml = users.addChannelMemberList(channelName);
-    console.log('[NICKLIST-DEBUG] NAMES for', channelName, 'adding', data.names.length, 'users, current count:', cml.members.length);
 
     data.names.forEach(nickEntry => {
         let modes = '';
@@ -3079,7 +3077,9 @@ ircEvents.on('domain:requestRemoveListWindow', function(data) {
 // --- IRC Commands & Services ---
 
 ircEvents.on('domain:requestIrcCommand', function(data) {
-    console.log('DOMAIN: Request IRC Command:', data.command, data.args, data.raw);
+    if (data.command !== 'PONG') {
+        console.log('DOMAIN: Request IRC Command:', data.command, data.args, data.raw);
+    }
     ircCommand.performQuick(data.command, data.args, data.raw);
 });
 

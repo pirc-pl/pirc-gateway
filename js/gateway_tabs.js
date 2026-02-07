@@ -23,20 +23,16 @@
 function Nicklist(chan, id) {
 	this.channel = chan;
 	this.id = id+'-nicklist';
-	console.log('[NICKLIST-DEBUG] Creating Nicklist instance for channel', chan, 'with DOM id', this.id);
 	this.uiMembers = new Map(); // Map of NicklistUser instances, indexed by ChannelMember.id
 	this._eventUnsubscribers = []; // Store unsubscribe functions for cleanup
 
     // Event listener for when the overall channel member list changes (add/remove)
     var unsubscribe1 = ircEvents.on('domain:channelMemberListChanged', function(data) {
-        console.log('[NICKLIST-DEBUG] Event received for channel', data.channelName, 'type:', data.type, 'this.channel:', this.channel);
         if (data.channelName.toLowerCase() !== this.channel.toLowerCase()) {
-            console.log('[NICKLIST-DEBUG] Ignoring - not for this channel');
             return;
         }
 
         if (data.type === 'add') {
-            console.log('[NICKLIST-DEBUG] Adding member to UI:', data.member.nick, 'for channel', this.channel);
             this._addMemberToUI(data.member);
         } else if (data.type === 'remove') {
             this._removeMemberFromUI(data.memberId);
@@ -77,11 +73,9 @@ function Nicklist(chan, id) {
     this._addMemberToUI = function(channelMember, skipSortAndStats) {
         // Check if already exists to avoid duplicates
         if (this.uiMembers.has(channelMember.id)) {
-            console.log('[NICKLIST-DEBUG] Member', channelMember.nick, 'already in UI for', this.channel, '- skipping');
             return;
         }
 
-        console.log('[NICKLIST-DEBUG] Adding member', channelMember.nick, 'to UI nicklist for', this.channel);
         var nickListItem = new NicklistUser(channelMember, this.channel);
         this.uiMembers.set(channelMember.id, nickListItem);
 
@@ -134,7 +128,6 @@ function Nicklist(chan, id) {
         $nicklistUl.append(sortedElements); // Append all at once for performance
 	}
 	this.remove = function() {
-		console.log('[NICKLIST-DEBUG] Removing Nicklist for', this.channel, 'cleaning up', this._eventUnsubscribers.length, 'event listeners');
 		// Unsubscribe from all events
 		this._eventUnsubscribers.forEach(function(unsubscribe) {
 			if (typeof unsubscribe === 'function') {
@@ -223,7 +216,6 @@ function Nicklist(chan, id) {
 	}
 
     // Don't initialize members here - they will be added by the channel:channelCreation event handler
-    console.log('[NICKLIST-DEBUG] Nicklist created for', this.channel, '- members will be added by event handler');
 }
 
 function NicklistUser(channelMember, chan) {
