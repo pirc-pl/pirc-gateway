@@ -260,14 +260,13 @@ function NicklistUser(channelMember, chan) {
 			html +=		'<li id="'+this.id+'-showBan">' + language.banUser + '</li>';
 		} else if(mainSettings.timedBanMethod == 'ChanServ'){
 			html +=		'<li id="'+this.id+'-showBan">' + language.banUsingChanserv + '</li>';
-		} else {
-		html += 		'<li id="'+this.id+'-givePrivileges">' + language.givePrivileges + '</li>'+ 
-						'<li id="'+this.id+'-takePrivileges">' + language.takePrivileges + '</li>'+ 
+		}
+		html += 		'<li id="'+this.id+'-givePrivileges">' + language.givePrivileges + '</li>'+
+						'<li id="'+this.id+'-takePrivileges">' + language.takePrivileges + '</li>'+
 					// '<li id="'+this.id+'-showBanUni">Banuj</li>'+
-					'</ul>'+ 
-				'</li>'+ 
+					'</ul>'+
+				'</li>'+
 			'</ul>';
-	}
 		return html;
 	}
 
@@ -347,10 +346,10 @@ function NicklistUser(channelMember, chan) {
 			gateway.toggleNickOpt(this.id);
 		}.bind(this));
 		$('#'+this.id+'-toggleNickOptAdmin').off('click').click(function(){ gateway.toggleNickOptAdmin(this.id); }.bind(this));
-		$('#'+this.id+'-showKick').off('click').click(function(){ ircEvents.emit('ui:showKickDialog', { channel: this.channel, nick: this.channelMember.nick }); }.bind(this)); // Emit UI event
-		$('#'+this.id+'-showBan').off('click').click(function(){ ircEvents.emit('ui:showBanDialog', { channel: this.channel, nick: this.channelMember.nick }); }.bind(this)); // Emit UI event
-		$('#'+this.id+'-givePrivileges').off('click').click(function(){ ircEvents.emit('ui:showPrivilegesDialog', { channel: this.channel, nick: this.channelMember.nick }); }.bind(this)); // Emit UI event
-		$('#'+this.id+'-takePrivileges').off('click').click(function(){ ircEvents.emit('ui:showPrivilegesAntiDialog', { channel: this.channel, nick: this.channelMember.nick }); }.bind(this)); // Emit UI event
+		$('#'+this.id+'-showKick').off('click').click(function(){ gateway.showKick(this.channel, this.channelMember.nick); }.bind(this));
+		$('#'+this.id+'-showBan').off('click').click(function(){ gateway.showBan(this.channel, this.channelMember.nick); }.bind(this));
+		$('#'+this.id+'-givePrivileges').off('click').click(function(){ gateway.showStatus(this.channel, this.channelMember.nick); }.bind(this));
+		$('#'+this.id+'-takePrivileges').off('click').click(function(){ gateway.showStatusAnti(this.channel, this.channelMember.nick); }.bind(this));
 		/*$('#'+this.id+'-showBanUni').click(function(){ gateway.showBan(this.channel, this.user.nick); }.bind(this));*/
 		$('#'+this.id+'-avatarField').off('error').error(function(){ ircEvents.emit('domain:disableAutoAvatar', { nick: this.channelMember.nick }); }.bind(this)); // Emit domain event, rebind error
 
@@ -923,10 +922,10 @@ function ChannelTab(chan) {
 	$('#'+this.id+'-openBanList').click(function(){ ircEvents.emit('domain:requestModeList', { channelName: this.name, mode: 'b', time: new Date() }); }.bind(this)); // Emit domain event
 	$('#'+this.id+'-openExceptList').click(function(){ ircEvents.emit('domain:requestModeList', { channelName: this.name, mode: 'e', time: new Date() }); }.bind(this)); // Emit domain event
 	$('#'+this.id+'-openInvexList').click(function(){ ircEvents.emit('domain:requestModeList', { channelName: this.name, mode: 'I', time: new Date() }); }.bind(this)); // Emit domain event
-	$('#'+this.id+'-openChannelModes').click(function(){ ircEvents.emit('ui:showChannelModesDialog', { channelName: this.name }); }.bind(this)); // Emit UI event
-	$('#'+this.id+'-showInvitePrompt').click(function(){ ircEvents.emit('ui:showInvitePromptDialog', { channelName: this.name }); }.bind(this)); // Emit UI event
-	$('#'+this.id+'-showChanservCommands').click(function(){ ircEvents.emit('ui:showChanServCmdsDialog', { channelName: this.name }); }.bind(this)); // Emit UI event
-	$('#'+this.id+'-showBotservCommands').click(function(){ ircEvents.emit('ui:showBotServCmdsDialog', { channelName: this.name }); }.bind(this)); // Emit UI event
+	$('#'+this.id+'-openChannelModes').click(function(){ gateway.showChannelModes(this.name); }.bind(this));
+	$('#'+this.id+'-showInvitePrompt').click(function(){ gateway.showInvitePrompt(this.name); }.bind(this));
+	$('#'+this.id+'-showChanservCommands').click(function(){ services.showChanServCmds(this.name); }.bind(this));
+	$('#'+this.id+'-showBotservCommands').click(function(){ services.showBotServCmds(this.name); }.bind(this));
 	this.setTopic('');
 	// guser.setUmode(false); // This is domain logic and should be handled by domain events.
 	try {

@@ -1391,7 +1391,7 @@
             }, this);
 
             ircEvents.emit('domain:requestModeChange', { target: channel, modeString: modesw+' '+modearg, time: new Date() });
-            setTimeout(function(){ ircEvents.emit('ui:showChannelModesDialog', { channelName: channel }); }, 2000);
+            setTimeout(function(){ gateway.showChannelModes(channel); }, 2000);
         },
 
         // Show invite prompt dialog
@@ -2266,6 +2266,36 @@
             }
         });
 
+        ircEvents.on('client:globalBan', function(data) {
+            // ERR_YOUREBANNEDCREEP (465) - Show global ban dialog
+            var time = data.time || new Date();
+            var html = language.connectionNotAllowedHtml +
+                '</ul><br><p>' + language.serverMessageIs + '<br>' + he(data.message) + '</p>';
+            $$.closeDialog('connect', '1');
+            $$.displayDialog('error', 'noaccess', language.noAccessToNetwork, html);
+            // Note: Domain layer will handle setting connectStatus to 'banned'
+        });
+
+        ircEvents.on('client:permissionError', function(data) {
+            // ERR_CANNOTDOCOMMAND (972) or ERR_CANNOTCHANGECHANMODE (974)
+            var time = data.time || new Date();
+            var html = language.noAccess +
+                '<br>' + language.notEnoughPrivileges + '<br>' + he(data.message);
+            $$.displayDialog('error', 'error', language.error, html);
+
+            // Append message to relevant channel tab if present, otherwise to status
+            var targetTab = null;
+            if (data.target && (data.target.startsWith('#') || data.target.startsWith('&'))) {
+                // Target is a channel
+                targetTab = gateway.findChannel(data.target);
+            }
+            // Fall back to status window if channel not found
+            targetTab = targetTab || gateway.statusWindow;
+            if (targetTab) {
+                targetTab.appendMessage(language.messagePatterns.noPerms, [$$.niceTime(time), he(data.target || '')]);
+            }
+        });
+
         ircEvents.on('client:reconnectNeeded', function() {
             $$.displayReconnect(); // Pure UI function
         });
@@ -2608,6 +2638,14 @@ ircEvents.on('client:notice', function(data) {
 
         // CTCP reply received
         ircEvents.on('protocol:ctcpReply', function(data) {
+            // Filter out our own CTCP replies (automatic responses, not interesting to display)
+            var sender = data.user || { nick: data.fromNick };
+
+            if (guser.me && (sender.id === guser.me.id || sender.nick === guser.me.nick)) {
+                console.log('UI: Filtering out own CTCP reply from', sender.nick);
+                return; // Don't display our own CTCP replies
+            }
+
             var query = gateway.findQuery(data.fromNick);
             var target = query || gateway.statusWindow;
 
@@ -2785,6 +2823,117 @@ ircEvents.on('client:notice', function(data) {
             } else {
                 console.log('[WHOIS-DEBUG] No HTML generated for WHOIS dialog - data was empty');
             }
+        });
+
+        /**
+         * Helper function to display ban/except/invex list dialogs
+         * @param {string} mode - 'b', 'e', or 'I'
+         * @param {Object} data - Event data with channelName, channelId, entries
+         */
+        function displayListDialog(mode, data) {
+            var listName;
+            var modeChar = mode;
+
+            // Get list name from language
+            switch(mode) {
+                case 'b': listName = language.ofBans; break;
+                case 'e': listName = language.ofExcepts; break;
+                case 'I': listName = language.ofInvites; break;
+            }
+
+            var dialogId = 'list-' + mode + '-' + data.channelName;
+
+            // Check if list is empty
+            if (!data.entries || data.entries.length === 0) {
+                $$.displayDialog('list', dialogId,
+                    language.listOf + listName + language.onChannel + he(data.channelName),
+                    language.listIsEmpty);
+                return;
+            }
+
+            // Build table HTML
+            var html = '<div class="beIListContents"><table><tr>';
+            html += '<th>' + language.mask + '</th>';
+            html += '<th>' + language.setBy + '</th>';
+            html += '<th>' + language.date + '</th>';
+
+            // Add "Applies To" column only for bans
+            if (mode === 'b') {
+                html += '<th>' + language.appliesTo + '</th>';
+            }
+
+            html += '</tr>';
+
+            // Add each entry as a table row
+            for (var i = 0; i < data.entries.length; i++) {
+                var entry = data.entries[i];
+                html += '<tr>';
+                html += '<td>' + he(entry.mask) + '</td>';
+                html += '<td>' + he(entry.setBy || '') + '</td>';
+                html += '<td>' + $$.parseTime(entry.setAt) + '</td>';
+
+                // Add "Applies To" column for bans
+                if (mode === 'b') {
+                    html += '<td>';
+                    try {
+                        var affected = localStorage.getItem('banmask-' + md5(entry.mask));
+                        if (affected) {
+                            html += he(affected);
+                        }
+                    } catch(e) {}
+                    html += '</td>';
+                }
+
+                // Add remove button (visible only to channel operators)
+                html += '<td class="' + data.channelId + '-operActions" style="display:none">';
+                html += '<button id="un' + mode + '-' + data.channelId + '-' + md5(entry.mask) + '">' + language.remove + '</button>';
+                html += '</td>';
+
+                html += '</tr>';
+            }
+
+            html += '</table></div>';
+
+            // Display the dialog
+            $$.displayDialog('list', dialogId,
+                language.listOf + listName + language.onChannel + he(data.channelName),
+                html);
+
+            // Attach click handlers to remove buttons
+            for (var i = 0; i < data.entries.length; i++) {
+                var entry = data.entries[i];
+                (function(mask, channelName, mode, dialogId) {
+                    $('#un' + mode + '-' + data.channelId + '-' + md5(mask)).click(function() {
+                        // Request mode change to remove this entry
+                        ircEvents.emit('domain:requestModeChange', {
+                            target: channelName,
+                            modeString: '-' + mode + ' ' + mask
+                        });
+                        // Re-request the list to update the dialog
+                        ircEvents.emit('domain:requestModeList', {
+                            channelName: channelName,
+                            mode: mode
+                        });
+                        // Close the dialog
+                        $$.closeDialog('list', dialogId);
+                    });
+                })(entry.mask, data.channelName, mode, dialogId);
+            }
+        }
+
+        // Ban list complete - display dialog
+        ircEvents.on('channel:banListComplete', function(data) {
+            displayListDialog('b', data);
+        });
+
+        // Except list complete - display dialog
+        ircEvents.on('channel:exceptListComplete', function(data) {
+            displayListDialog('e', data);
+        });
+
+        // Invite list complete - display dialog
+        ircEvents.on('channel:inviteListComplete', function(data) {
+            displayListDialog('I', data);
         });
 
     }

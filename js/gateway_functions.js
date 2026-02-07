@@ -407,6 +407,7 @@ var readyFunc = function(){
 	}
 
 	settings.load();
+	ignore.loadList();
 	var slang = settings.get('setLanguage');
 	if (!slang) slang = mainSettings.language;
 	setLanguage(slang);
@@ -462,7 +463,11 @@ function str2bool(b){
 }
 
 function he(text) { //HTML Escape
-	return $('<div/>').text(text).html().replace(/\n/g, '\n').replace(/\r/g, '\r');
+	return $('<div/>').text(text).html()
+		.replace(/\n/g, '\n')
+		.replace(/\r/g, '\r')
+		.replace(/'/g, '&#39;')
+		.replace(/"/g, '&quot;');
 }
 
 function bsEscape(text) { // escapowanie beksleszy i zakończeń stringa

@@ -150,6 +150,19 @@ var conn = {
 		$('#not_connected_wrapper').fadeOut(400);
 	},
 	'gatewayInit': function(){
+		// Check for required browser capabilities
+		if(!navigator.cookieEnabled){
+			$('.not-connected-text > p').html(language.cookiesDisabledHtml);
+			return;
+		}
+		if(!window.WebSocket){
+			$('.not-connected-text > p').html(language.websocketDisabledHtml);
+			return;
+		}
+
+		// Register cross-tab communication listener
+		window.addEventListener('storage', gateway.storageHandler);
+
 		conn.waitForAlive = true;
 		try {
 			localStorage.setItem('checkAlive', Math.random().toString());
