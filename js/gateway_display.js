@@ -1007,6 +1007,107 @@
     };
 
     // ==========================================
+    // PUBLIC UI WINDOW/QUERY MANAGEMENT FUNCTIONS
+    // ==========================================
+
+    var uiWindows = {
+        // Open a query window with a user
+        openQuery: function(nick, id) {
+            if(ignore.ignoring(nick, 'query')){
+                var button = [
+                    {
+                        text: language.changeSettings,
+                        click: function(){
+                            ignore.askIgnore(nick);
+                            $(this).dialog('close');
+                        }
+                    },
+                    {
+                        text: 'OK',
+                        click: function(){
+                            $(this).dialog('close');
+                        }
+                    }
+                ];
+                var html = '<p>' + language.cantPMBecauseIgnoring + '</p>';
+                $$.displayDialog('error', 'ignore', language.error, html, button);
+                return;
+            }
+            uiWindows.findOrCreate(nick, true); // Create and activate query tab
+            if(id){
+                gateway.toggleNickOpt(id); // UI action
+            }
+        },
+
+        // Find or create a channel/query tab
+        findOrCreate: function(name, setActive) {
+            if(!name || name == ''){
+                return null;
+            }
+            var tab;
+            if(name.charAt(0) == '#'){ // Channel
+                tab = gateway.findChannel(name);
+                if(!tab) {
+                    tab = new ChannelTab(name);
+                    gateway.channels.push(tab);
+                    gateway.sortChannelTabs();
+                }
+            } else { // Query
+                tab = gateway.findQuery(name);
+                if(!tab) {
+                    tab = new Query(name);
+                    gateway.queries.push(tab);
+                }
+            }
+            if(setActive){
+                gateway.switchTab(name);
+            }
+            return tab;
+        },
+
+        // Get or create the channel list window
+        getOrOpenListWindow: function() {
+            if(!gateway.listWindow) {
+                gateway.listWindow = new ListWindow();
+            }
+            gateway.listWindow.clearData();
+            gateway.switchTab(gateway.listWindow.name);
+            return gateway.listWindow;
+        },
+
+        // Toggle channel list panel visibility
+        toggleChanList: function() {
+            if($('#chlist-body').is(':visible')){
+                $('#chlist-body').css('display', '');
+
+                $('#chlist').css('height', '').css('top', '');
+                $('#nicklist').css('bottom', '');
+                var nicklistBottom = $('#nicklist').css('bottom');
+                $('#nicklist').css('bottom', '36%');
+                $("#nicklist").animate({
+                    "bottom":	nicklistBottom
+                }, 400);
+
+                $('#chlist-button').text('⮙ ' + language.channelList + ' ⮙');
+            } else {
+                $('#chlist-body').css('display', 'block');
+                $('#chlist').css('height', 'initial').css('top', '64.5%');
+                $("#nicklist").animate({
+                    "bottom":	"36%"
+                }, 400);
+                $('#chlist-button').text('⮛ ' + language.hideList + ' ⮛');
+                ircEvents.emit('domain:requestListChannels', { minUsers: '>9', time: new Date() });
+            }
+        },
+
+        // Refresh the channel list
+        refreshChanList: function() {
+            ircEvents.emit('domain:requestListChannels', { minUsers: '>9', time: new Date() });
+            $('#chlist-body').html(language.loadingWait);
+        }
+    };
+
+    // ==========================================
     // ATTACH UI FUNCTIONS TO GATEWAY
     // ==========================================
     function attachUIFunctionsToGateway() {
@@ -1014,6 +1115,7 @@
         Object.assign(gateway, uiTabs);
         Object.assign(gateway, uiNicklist);
         Object.assign(gateway, uiInput);
+        Object.assign(gateway, uiWindows);
     }
 
     /**

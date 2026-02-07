@@ -662,32 +662,7 @@ var gateway = {
 	},
 	// Removed 'commandHistory', 'commandHistoryPos' - now in uiState (gateway_display.js)
 	// Removed inputFocus - moved to uiHelpers (gateway_display.js)
-	'openQuery': function(nick, id) { // UI action
-		if(ignore.ignoring(nick, 'query')){
-			var button = [
-				{
-					text: language.changeSettings,
-					click: function(){
-						ignore.askIgnore(nick);
-						$(this).dialog('close');
-					}
-				},
-				{
-					text: 'OK',
-					click: function(){
-						$(this).dialog('close');
-					}
-				}
-			];
-			var html = '<p>' + language.cantPMBecauseIgnoring + '</p>';
-			$$.displayDialog('error', 'ignore', language.error, html, button);
-			return;
-		}
-		gateway.findOrCreate(nick, true); // Direct UI action - create and activate query tab
-		if(id){
-			gateway.toggleNickOpt(id); // UI action
-		}
-	},
+	// Removed openQuery - moved to uiWindows (gateway_display.js)
 	'showStatus': function(channel, nick) { // UI action, emits domain events
 		var html = '<p>' + language.giveForNick + '<strong>'+he(nick)+'</strong>' + language.temporaryPrivilegesOnChan + '<strong>'+he(channel)+'</strong>:</p>' + 
 			'<select id="admopts-add-'+md5(channel)+'">' + 
@@ -1049,30 +1024,7 @@ var gateway = {
 		console.warn('gateway.processJoin is domain logic and should be moved.');
 		ircEvents.emit('domain:processJoinCommand', { msg: msg, time: new Date() }); // Emit domain event
 	},
-	'findOrCreate': function(name, setActive){ // UI action - creates UI tabs directly
-		if(!name || name == ''){
-			return null;
-		}
-		var tab;
-		if(name.charAt(0) == '#'){ // Channel
-			tab = gateway.findChannel(name);
-			if(!tab) {
-				tab = new ChannelTab(name);
-				gateway.channels.push(tab);
-				gateway.sortChannelTabs();
-			}
-		} else { // Query
-			tab = gateway.findQuery(name);
-			if(!tab) {
-				tab = new Query(name);
-				gateway.queries.push(tab);
-			}
-		}
-		if(setActive){
-			gateway.switchTab(name);
-		}
-		return tab;
-	},
+	// Removed findOrCreate - moved to uiWindows (gateway_display.js)
 	'find': function(name){ // UI helper
 		if(!name || name == ''){
 			return false;
@@ -1087,45 +1039,8 @@ var gateway = {
 	'smallListLoading': false, // Now domain state
 	// Removed 'listWindow' - now in uiState (gateway_display.js), exposed via gateway.listWindow
 	'listWindowLabel': null, // Domain state
-	'getOrOpenListWindow': function() { // UI action
-		if(!gateway.listWindow) {
-			gateway.listWindow = new ListWindow();
-		}
-		gateway.listWindow.clearData();
-		gateway.switchTab(gateway.listWindow.name); // Direct UI action
-		return gateway.listWindow;
-	},
-	'toggleChanList': function() { // UI action, emits domain event
-		if($('#chlist-body').is(':visible')){
-			$('#chlist-body').css('display', '');
-
-			$('#chlist').css('height', '').css('top', '');
-			$('#nicklist').css('bottom', '');
-			var nicklistBottom = $('#nicklist').css('bottom');
-			$('#nicklist').css('bottom', '36%');
-			$("#nicklist").animate({
-				"bottom":	nicklistBottom
-			}, 400);
-			
-			$('#chlist-button').text('⮙ ' + language.channelList + ' ⮙');
-		} else {
-			$('#chlist-body').css('display', 'block');
-			$('#chlist').css('height', 'initial').css('top', '64.5%');
-		//	$('#nicklist').css('bottom', '31%');
-			$("#nicklist").animate({
-				"bottom":	"36%"
-			}, 400);
-			$('#chlist-button').text('⮛ ' + language.hideList + ' ⮛');
-			// if(!$('#chlist-body > table').length){ // This check needs to be domain-aware
-				ircEvents.emit('domain:requestListChannels', { minUsers: '>9', time: new Date() }); // Emit domain event
-			// }
-		}
-	},
+	// Removed getOrOpenListWindow, toggleChanList, refreshChanList - moved to uiWindows (gateway_display.js)
 	// Removed toggleFormatting - moved to uiHelpers (gateway_display.js)
-	'refreshChanList': function() { // UI action, emits domain event
-		ircEvents.emit('domain:requestListChannels', { minUsers: '>9', time: new Date() }); // Emit domain event
-		$('#chlist-body').html(language.loadingWait);
-	},
 	'parseUmodes': function(modes) { // This is domain logic, needs to be moved to gateway_domain.js
 		console.warn('gateway.parseUmodes is domain logic and should be moved.');
 		ircEvents.emit('domain:processUserModes', { modes: modes, time: new Date() }); // Emit domain event
