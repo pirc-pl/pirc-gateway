@@ -1300,7 +1300,16 @@ var disp = {
 			} else { // Not an event, or a summary, or already grouped
 				if (consecutiveEvents.length > 0) {
 					var prevEl = consecutiveEvents[0].prev();
-					if (prevEl.hasClass('event-group-summary')) {
+					// If prev element is a grouped event, find its summary
+					if (prevEl.hasClass('grouped-event')) {
+						var groupId = prevEl.attr('data-group-id');
+						if (groupId) {
+							var summary = $('.event-group-summary[data-group-id="' + groupId + '"]');
+							if (summary.length > 0) {
+								disp.extendEventGroup(summary, consecutiveEvents);
+							}
+						}
+					} else if (prevEl.hasClass('event-group-summary')) {
 						disp.extendEventGroup(prevEl, consecutiveEvents);
 					} else if (consecutiveEvents.length > 2) {
 						disp.createEventGroup(consecutiveEvents);
@@ -1313,7 +1322,16 @@ var disp = {
 		// After the loop, handle any trailing events
 		if (consecutiveEvents.length > 0) {
 			var prevEl = consecutiveEvents[0].prev();
-			if (prevEl.hasClass('event-group-summary')) {
+			// If prev element is a grouped event, find its summary
+			if (prevEl.hasClass('grouped-event')) {
+				var groupId = prevEl.attr('data-group-id');
+				if (groupId) {
+					var summary = $('.event-group-summary[data-group-id="' + groupId + '"]');
+					if (summary.length > 0) {
+						disp.extendEventGroup(summary, consecutiveEvents);
+					}
+				}
+			} else if (prevEl.hasClass('event-group-summary')) {
 				disp.extendEventGroup(prevEl, consecutiveEvents);
 			} else if (consecutiveEvents.length > 2) {
 				disp.createEventGroup(consecutiveEvents);
@@ -1402,7 +1420,7 @@ var disp = {
 	'collapseEventGroup': function(groupId){
 		$('.grouped-event[data-group-id="' + groupId + '"]').hide();
 		$('#show-' + groupId).show();
-		$('#hide-' + groupId).show();
+		$('#hide-' + groupId).hide();
 	},
 	'ungroupAllEvents': function(){
 		// Expand and remove all event groups

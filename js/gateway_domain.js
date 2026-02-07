@@ -899,6 +899,14 @@ ircEvents.on('protocol:quitCommand', function(data) {
     var user = data.user; // User who quit
 
     if (user) {
+        // Collect channels where the user was a member before removing them
+        var affectedChannels = [];
+        users.channelMemberLists.forEach(function(cml) {
+            if (cml.getMemberById(user.id)) {
+                affectedChannels.push(cml.channelName);
+            }
+        });
+
         // Remove user from all ChannelMemberLists they were part of
         users.channelMemberLists.forEach(function(cml) {
             cml.removeMemberById(user.id);
@@ -906,12 +914,15 @@ ircEvents.on('protocol:quitCommand', function(data) {
         if (user === guser.me) { // Own quit
             ircEvents.emit('user:selfQuit', {
                 nick: user.nick,
-                quitMessage: quitMessage
+                quitMessage: quitMessage,
+                channels: affectedChannels
             });
         } else { // Other user quit
             ircEvents.emit('user:otherQuit', {
                 user: { nick: user.nick, ident: user.ident, host: user.host }, // Pass relevant user info
-                quitMessage: quitMessage
+                quitMessage: quitMessage,
+                channels: affectedChannels,
+                time: new Date()
             });
         }
     }

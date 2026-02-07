@@ -470,7 +470,7 @@
         });
 
         ircEvents.on('user:otherQuit', function(data) {
-            // User quit from server - show quit messages in all channels and queries
+            // User quit from server - show quit messages only on channels where user was present
             // UI decides whether to show quit messages based on settings
             if (!settings.get('showPartQuit')) {
                 var nickStr = he(data.user.nick);
@@ -479,16 +479,20 @@
                 var quitStr = he(data.quitMessage || '');
                 var timeStr = $$.niceTime(data.time);
 
-                // Show quit message in all channels the user was in
-                for (var i = 0; i < gateway.channels.length; i++) {
-                    var chan = gateway.channels[i];
-                    chan.appendMessage(language.messagePatterns.quit, [
-                        timeStr,
-                        nickStr,
-                        identStr,
-                        hostStr,
-                        quitStr
-                    ]);
+                // Show quit message only in channels where the user was a member
+                if (data.channels && data.channels.length > 0) {
+                    for (var i = 0; i < data.channels.length; i++) {
+                        var chan = gateway.findChannel(data.channels[i]);
+                        if (chan) {
+                            chan.appendMessage(language.messagePatterns.quit, [
+                                timeStr,
+                                nickStr,
+                                identStr,
+                                hostStr,
+                                quitStr
+                            ]);
+                        }
+                    }
                 }
                 // Show quit message in queries with this user
                 var query = gateway.findQuery(data.user.nick);
