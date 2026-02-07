@@ -303,12 +303,9 @@ var gateway = {
 	'pingIntervalID': false,
 	'whoChannelsIntervalID': false,
 	'disconnectMessageShown': 0,
-	'displayOwnWhois': false, // UI flag
+	// Removed displayOwnWhois, statusWindow, lastKeypressWindow, keypressSuppress - now in uiState (gateway_display.js)
 	'allowNewSend' : true,
-	'statusWindow': new Status(), // UI object
 	'commandProcessing': false,
-	'lastKeypressWindow': false,
-	'keypressSuppress': false,
 	'chanPassword': function(chan) {
 		if($('#chpass').val() == ''){
 			$$.alert(language.passwordNotGiven);
@@ -549,7 +546,7 @@ var gateway = {
 			gateway.toSend.push(data);
 		}
 	},
-	'channels': [], // UI-level array of Channel UI objects
+	// Removed 'channels' - now in uiState (gateway_display.js), exposed via gateway.channels
 	'findChannel': function(name) { // UI-level lookup
 		if(typeof(name) != 'string') return false;
 		for (var i=0; i<gateway.channels.length; i++) {
@@ -592,7 +589,7 @@ var gateway = {
 			}
 		}
 	},
-	'queries': [], // UI-level array of Query UI objects
+	// Removed 'queries' - now in uiState (gateway_display.js), exposed via gateway.queries
 	'findQuery': function(name) { // UI-level lookup
 		if(typeof(name) != 'string') return false;
 		for (i in gateway.queries) {
@@ -631,7 +628,7 @@ var gateway = {
 	},
 	'tabHistory': ['--status'], // UI navigation history
 	'lasterror': '', // This is now domainLastError
-	'nickListVisibility': true, // UI state
+	// Removed 'nickListVisibility' - now in uiState (gateway_display.js), exposed via gateway.nickListVisibility
 	'nickListToggle': function() { // UI action
 		var active = gateway.getActive();
 		if(!active){
@@ -1102,8 +1099,7 @@ var gateway = {
 			console.error('Invalid performCommand: '+command[0]);
 		}
 	},
-	'commandHistory': [], // UI history
-	'commandHistoryPos': -1, // UI history
+	// Removed 'commandHistory', 'commandHistoryPos' - now in uiState (gateway_display.js)
 	'inputFocus': function() { // UI action
 		if(window.getSelection().toString() == ''){
 			$("#input").focus();
@@ -1442,7 +1438,7 @@ var gateway = {
 			return false;
 		}
 	},
-	'active': '--status', // UI representation of active tab, kept for now. Domain's active tab is domainActiveTab
+	// Removed 'active' - now in uiState (gateway_display.js), exposed via gateway.active
 	'toggleNickOpt': function(nicklistid) { // UI action
 		if($('#'+nicklistid+'-opt').is(':visible')) {
 			if($('#'+nicklistid+'-opt-info').is(':visible')){
@@ -1560,52 +1556,7 @@ var gateway = {
 		console.warn('gateway.quit() is deprecated. Use domain:requestQuit event.');
 		$('.notifywindow').fadeOut(100);
 	},
-	'completion': {
-		'string': '',
-		'rawStr': '',
-		'repeat': 0,
-		'array': [],
-		'lastPos': -1,
-		'find': function(string, rawStr, comPos) {
-			var complarr = [];
-			var ccount = 0;
-			//komendy
-			//complarr[0] = string;
-			//ccount++;
-			if(string.length > 0 && string.indexOf('/') == 0 && comPos == 0) {
-				for (i in commands) {
-					if(i.indexOf(string.slice(1).toLowerCase()) == 0) {
-						complarr[ccount] = '/'+i;
-						ccount++;
-					}
-				}
-			//else, bo jak sa komendy to nic innego nie trzeba uzup
-			} else {
-				if(string.indexOf('#') == 0) {
-					for (var ichannel = 0; ichannel < gateway.channels.length; ichannel++) {
-						if(gateway.channels[ichannel].name.toLowerCase().replace(/^[^a-z0-9]/ig).indexOf(string.toLowerCase().replace(/^[^a-z0-9]/ig)) == 0) {
-							complarr[ccount] = gateway.channels[ichannel].name;
-							ccount++;
-						}
-					}
-				} else {
-					var chan = gateway.findChannel(gateway.active);
-					if(chan) {
-						for (var inick=0; inick < chan.nicklist.list.length; inick++) {
-							if(chan.nicklist.list[inick].user.nick.toLowerCase().replace(/^[^a-z0-9]/ig).indexOf(string.toLowerCase().replace(/^[^a-z0-9]/ig)) == 0) {
-								complarr[ccount] = chan.nicklist.list[inick].user.nick;
-								if(comPos == 0) {
-									complarr[ccount] += ':';
-								}
-								ccount++;
-							}
-						}
-					}
-				}
-			}
-			return complarr;
-		}
-	},
+	// Removed 'completion' - now in uiState (gateway_display.js), exposed via gateway.completion
 	'doComplete': function() { // UI action
 		if(gateway.completion.repeat == 0 || gateway.completion.array.length == 0) {
 			var rawstr = $('#input').val().replace(/^\s+/g, '').replace(/\s+$/g, '');
@@ -1701,7 +1652,7 @@ var gateway = {
 		return false;
 	},
 	'smallListLoading': false, // Now domain state
-	'listWindow': null, // UI object
+	// Removed 'listWindow' - now in uiState (gateway_display.js), exposed via gateway.listWindow
 	'listWindowLabel': null, // Domain state
 	'getOrOpenListWindow': function() { // UI action
 		if(!gateway.listWindow) {

@@ -64,6 +64,83 @@
         }
     }
 
+    // ==========================================
+    // UI STATE (moved from gateway object)
+    // ==========================================
+    var uiState = {
+        statusWindow: new Status(),
+        channels: [],
+        queries: [],
+        active: '--status',
+        listWindow: null,
+        completion: {
+            string: '',
+            rawStr: '',
+            repeat: 0,
+            array: [],
+            lastPos: -1,
+            find: function(string, rawStr, comPos) {
+                var complarr = [];
+                var ccount = 0;
+                if(string.length > 0 && string.indexOf('/') == 0 && comPos == 0) {
+                    for (i in commands) {
+                        if(i.indexOf(string.slice(1).toLowerCase()) == 0) {
+                            complarr[ccount] = '/'+i;
+                            ccount++;
+                        }
+                    }
+                } else {
+                    if(string.indexOf('#') == 0) {
+                        for (var ichannel = 0; ichannel < gateway.channels.length; ichannel++) {
+                            if(gateway.channels[ichannel].name.toLowerCase().replace(/^[^a-z0-9]/ig).indexOf(string.toLowerCase().replace(/^[^a-z0-9]/ig)) == 0) {
+                                complarr[ccount] = gateway.channels[ichannel].name;
+                                ccount++;
+                            }
+                        }
+                    } else {
+                        var chan = gateway.findChannel(gateway.active);
+                        if(chan) {
+                            for (var inick=0; inick < chan.nicklist.list.length; inick++) {
+                                if(chan.nicklist.list[inick].user.nick.toLowerCase().replace(/^[^a-z0-9]/ig).indexOf(string.toLowerCase().replace(/^[^a-z0-9]/ig)) == 0) {
+                                    complarr[ccount] = chan.nicklist.list[inick].user.nick;
+                                    if(comPos == 0) {
+                                        complarr[ccount] += ':';
+                                    }
+                                    ccount++;
+                                }
+                            }
+                        }
+                    }
+                }
+                return complarr;
+            }
+        },
+        commandHistory: [],
+        historyPosition: 0,
+        nickListVisibility: true,
+        lastKeypressWindow: '',
+        keypressSuppress: '',
+        displayOwnWhois: false
+    };
+
+    // ==========================================
+    // EXPOSE UI STATE ON GATEWAY FOR BACKWARD COMPATIBILITY
+    // ==========================================
+    // These will be gradually removed as callers are refactored
+    function exposeUIStateOnGateway() {
+        gateway.statusWindow = uiState.statusWindow;
+        gateway.channels = uiState.channels;
+        gateway.queries = uiState.queries;
+        gateway.active = uiState.active;
+        gateway.listWindow = uiState.listWindow;
+        gateway.completion = uiState.completion;
+        gateway.commandHistory = uiState.commandHistory;
+        gateway.nickListVisibility = uiState.nickListVisibility;
+        gateway.lastKeypressWindow = uiState.lastKeypressWindow;
+        gateway.keypressSuppress = uiState.keypressSuppress;
+        gateway.displayOwnWhois = uiState.displayOwnWhois;
+    }
+
     /**
      * Initializes UI-related event listeners.
      */
@@ -1060,5 +1137,8 @@ ircEvents.on('client:notice', function(data) {
     }
 
     // Initialize display listeners on system ready
-    ircEvents.on('system:ready', initDisplayListeners);
+    ircEvents.on('system:ready', function() {
+        exposeUIStateOnGateway();
+        initDisplayListeners();
+    });
 })();
