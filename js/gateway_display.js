@@ -120,7 +120,8 @@
         nickListVisibility: true,
         lastKeypressWindow: '',
         keypressSuppress: '',
-        displayOwnWhois: false
+        displayOwnWhois: false,
+        tabHistory: ['--status']
     };
 
     // ==========================================
@@ -139,6 +140,7 @@
         gateway.lastKeypressWindow = uiState.lastKeypressWindow;
         gateway.keypressSuppress = uiState.keypressSuppress;
         gateway.displayOwnWhois = uiState.displayOwnWhois;
+        gateway.tabHistory = uiState.tabHistory;
     }
 
     // ==========================================
@@ -370,10 +372,251 @@
     };
 
     // ==========================================
-    // ATTACH HELPER FUNCTIONS TO GATEWAY
+    // PUBLIC UI TAB MANAGEMENT FUNCTIONS
     // ==========================================
-    function attachHelperFunctionsToGateway() {
+
+    var uiTabs = {
+        // Switch to the next tab
+        nextTab: function() {
+            var swtab = $('li.activeWindow').next().find('a.switchTab');
+            if(swtab){
+                swtab.trigger('click');
+            }
+        },
+
+        // Switch to the previous tab
+        prevTab: function() {
+            var swtab = $('li.activeWindow').prev().find('a.switchTab');
+            if(swtab){
+                swtab.trigger('click');
+            }
+        },
+
+        // Switch to a specific tab by name
+        switchTab: function(chan) {
+            var act = uiTabs.getActive();
+            if(act){
+                act.saveScroll();
+                act.setMark();
+            } else {
+                gateway.statusWindow.saveScroll();
+                gateway.statusWindow.setMark();
+            }
+            chan = chan.toLowerCase();
+            var newActiveTabName = '';
+
+            if(chan != "--status" && gateway.findChannel(chan)) {
+                var id = gateway.findChannel(chan).id;
+                $('#main-window > span').hide();
+                $('#tab-info > span').hide();
+                $('#nicklist-main > span').hide();
+                $('#chstats > div').hide();
+                $('#info > span').hide();
+                $('#'+id+'-nicklist').show();
+                $('#tabs > li').removeClass("activeWindow");
+                $('#'+id+'-tab').addClass("activeWindow");
+                $('#'+id+'-window').show();
+                $('#'+id+'-chstats').show();
+                $('#'+id+'-topic').show();
+                $('#'+id+'-tab-info').show();
+                $('#'+id+'-topic').prop('title', language.clickForWholeTopic);
+
+                gateway.findChannel(chan).markRead();
+                newActiveTabName = chan;
+                $('#input').focus();
+                if($("#nicklist").width() < 41 && gateway.nickListVisibility) {
+                    $("#nicklist-closed").fadeOut(1, function () {
+                        $("#nicklist").animate({
+                            "opacity": "toggle",
+                            "width":	"23%"
+                        }, 1);
+                        $("#chstats").animate({
+                            "opacity": "toggle",
+                            "width":	"23%"
+                        }, 1);
+                        $("#chatbox").animate({
+                            "width":	"77%"
+                        }, 1, function() {
+                            gateway.findChannel(chan).restoreScroll();
+                            setTimeout(function(){
+                                gateway.findChannel(chan).restoreScroll();
+                            }, 200);
+                            $('#nickopts').css('display', '');
+                            $('#chlist').css('display', '');
+                        });
+                    });
+                } else {
+                    gateway.findChannel(chan).restoreScroll();
+                    setTimeout(function(){
+                        gateway.findChannel(chan).restoreScroll();
+                    }, 200);
+                }
+                disp.groupEvents('#'+id+'-window');
+            } else if(chan != "--status" && gateway.findQuery(chan)) {
+                var id = gateway.findQuery(chan).id;
+                $('#main-window > span').hide();
+                $('#tab-info > span').hide();
+                $('#nicklist-main > span').hide();
+                $('#info > span').hide();
+                $('#chstats > div').hide();
+                $('#--status-nicklist').show();
+                $('#tabs > li').removeClass("activeWindow");
+                $('#'+id+'-tab').addClass("activeWindow");
+                $('#'+id+'-window').show();
+                $('#'+id+'-topic').show();
+                $('#'+id+'-chstats').show();
+                $('#'+id+'-tab-info').show();
+                $('#'+id+'-topic').prop('title', '');
+                newActiveTabName = chan;
+                $('#input').focus();
+                if($("#nicklist").width() > 40) {
+                    $("#nicklist").animate({
+                        "opacity": "toggle",
+                        "width":	"40px"
+                    }, 1);
+                    $("#chstats").animate({
+                        "opacity": "toggle",
+                        "width":	"40px"
+                    }, 1);
+                    $("#chatbox").animate({
+                        "width":	"97%"
+                    }, 1, function () {
+                        $("#nicklist-closed").fadeIn(1);
+                        gateway.findQuery(chan).restoreScroll();
+                        setTimeout(function(){
+                            gateway.findQuery(chan).restoreScroll();
+                        }, 200);
+                        $('#nickopts').css('display', 'none');
+                        $('#chlist').css('display', 'none');
+                    });
+                } else {
+                    gateway.findQuery(chan).restoreScroll();
+                    setTimeout(function(){
+                        gateway.findQuery(chan).restoreScroll();
+                    }, 200);
+                }
+                gateway.findQuery(chan).markRead();
+            } else if(gateway.listWindow && chan == gateway.listWindow.name) {
+                var id = gateway.listWindow.id;
+                $('#main-window > span').hide();
+                $('#tab-info > span').hide();
+                $('#nicklist-main > span').hide();
+                $('#info > span').hide();
+                $('#chstats > div').hide();
+                $('#--status-nicklist').show();
+                $('#tabs > li').removeClass("activeWindow");
+                $('#'+id+'-tab').addClass("activeWindow");
+                $('#'+id+'-window').show();
+                $('#'+id+'-topic').show();
+                $('#'+id+'-chstats').show();
+                $('#'+id+'-tab-info').show();
+                gateway.listWindow.markRead();
+                newActiveTabName = chan;
+                $('#input').focus();
+                if($("#nicklist").width() > 40) {
+                    $("#nicklist").animate({
+                        "opacity": "toggle",
+                        "width":	"40px"
+                    }, 1);
+                    $("#chstats").animate({
+                        "opacity": "toggle",
+                        "width":	"40px"
+                    }, 1);
+                    $("#chatbox").animate({
+                        "width":	"97%"
+                    }, 1, function () {
+                        $("#nicklist-closed").fadeIn(1);
+                        gateway.listWindow.restoreScroll();
+                        $('#nickopts').css('display', 'none');
+                        $('#chlist').css('display', 'none');
+                    });
+                } else {
+                    gateway.listWindow.restoreScroll();
+                }
+            } else if(chan == "--status") {
+                $('#main-window > span').hide();
+                $('#tab-info > span').hide();
+                $('#nicklist-main > span').hide();
+                $('#info > span').hide();
+                $('#chstats > div').hide();
+                $('#--status-nicklist').show();
+                $('#tabs > li').removeClass("activeWindow");
+                $('#--status-tab').addClass("activeWindow");
+                $('#--status-window').show();
+                $('#--status-topic').show();
+                $('#--status-chstats').show();
+                gateway.statusWindow.markRead();
+                newActiveTabName = chan;
+                $('#input').focus();
+                if($("#nicklist").width() > 40) {
+                    $("#nicklist").animate({
+                        "opacity": "toggle",
+                        "width":	"40px"
+                    }, 1);
+                    $("#chstats").animate({
+                        "opacity": "toggle",
+                        "width":	"40px"
+                    }, 1);
+                    $("#chatbox").animate({
+                        "width":	"97%"
+                    }, 1, function () {
+                        $("#nicklist-closed").fadeIn(1);
+                        gateway.statusWindow.restoreScroll();
+                        setTimeout(function(){
+                            gateway.statusWindow.restoreScroll();
+                            }, 200);
+                        $('#nickopts').css('display', 'none');
+                        $('#chlist').css('display', 'none');
+                    });
+                } else {
+                    gateway.statusWindow.restoreScroll();
+                    setTimeout(function(){
+                        gateway.statusWindow.restoreScroll();
+                        }, 200);
+                }
+            }
+            ircEvents.emit('domain:tabSwitched', { oldTab: gateway.active, newTab: newActiveTabName });
+            gateway.active = newActiveTabName; // Update active tab after domain event
+            gateway.tabHistory.push(newActiveTabName); // Update UI tab history
+            gateway.checkNickListVisibility();
+        },
+
+        // Get the active tab object (returns false for status window)
+        getActive: function() {
+            if(gateway.active == '--status') {
+                return false;
+            } else if(gateway.findChannel(gateway.active)) {
+                return gateway.findChannel(gateway.active);
+            } else if(gateway.findQuery(gateway.active)) {
+                return gateway.findQuery(gateway.active);
+            } else if(gateway.listWindow && gateway.active == gateway.listWindow.name) {
+                return false;
+            } else {
+                return false;
+            }
+        },
+
+        // Get the last tab from history, ignoring specified tab
+        tabHistoryLast: function(ignore) {
+            var ignorec = ignore.toLowerCase();
+            for(var i=gateway.tabHistory.length; i > 0; i--) {
+                var tabName = gateway.tabHistory[i];
+                if(tabName && (!ignorec || ignorec != tabName)) {
+                    if(gateway.findChannel(tabName) || gateway.findQuery(tabName) || (gateway.listWindow && tabName == gateway.listWindow.name)) {
+                        return tabName;
+                    }
+                }
+            }
+            return '--status';
+        }
+    };
+
+    // ==========================================
+    // ATTACH TAB FUNCTIONS AND HELPER FUNCTIONS TO GATEWAY
+    // ==========================================
+    function attachUIFunctionsToGateway() {
         Object.assign(gateway, uiHelpers);
+        Object.assign(gateway, uiTabs);
     }
 
     /**
@@ -1374,7 +1617,7 @@ ircEvents.on('client:notice', function(data) {
     // Initialize display listeners on system ready
     ircEvents.on('system:ready', function() {
         exposeUIStateOnGateway();
-        attachHelperFunctionsToGateway();
+        attachUIFunctionsToGateway();
         initDisplayListeners();
     });
 })();
