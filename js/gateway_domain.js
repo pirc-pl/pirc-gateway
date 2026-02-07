@@ -2681,11 +2681,11 @@ ircEvents.on('protocol:ctcpAction', function(data) {
 });
 
 ircEvents.on('protocol:ctcpReply', function(data) {
-    // Check if this message should be hidden (e.g., our own CTCP replies being echoed)
-    var tags = data.tags || {};
-    var label = tags.label || null;
+    // Check if this is our own CTCP reply being echoed back by the server
+    // Don't display our own CTCP replies (they're automatic responses, not interesting to show)
+    var sender = data.user || { nick: data.fromNick };
 
-    if (label && domainLabelsToHide.indexOf(label) !== -1) {
+    if (sender.id === guser.me.id || sender.nick === guser.me.nick) {
         // This is our own CTCP reply being echoed - don't display it
         return;
     }
