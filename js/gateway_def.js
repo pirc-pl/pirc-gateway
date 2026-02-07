@@ -632,13 +632,7 @@ var gateway = {
 	// Removed nickListToggle, checkNickListVisibility, showNickList - moved to uiNicklist (gateway_display.js)
 	// Removed insert, insertEmoji, insertColor, insertCode - moved to uiHelpers (gateway_display.js)
 	// Removed nextTab, prevTab, switchTab, tabHistoryLast - moved to uiTabs (gateway_display.js)
-	'notEnoughParams': function(command, reason) { // UI action
-		if(gateway.getActive()) {
-			gateway.getActive().appendMessage(language.messagePatterns.notEnoughParams, [$$.niceTime(), he(command), reason]);
-		} else {
-			gateway.statusWindow.appendMessage(language.messagePatterns.notEnoughParams, [$$.niceTime(), he(command), reason]);
-		}
-	},
+	// Removed notEnoughParams - moved to uiInput (gateway_display.js)
 	'callCommand': function(command, input, alias) { // Delegates to user_commands.js
 		if(alias && alias in commands) {
 			if(typeof(commands[alias].callback) == 'string') {
@@ -662,133 +656,9 @@ var gateway = {
 			return false;
 		}
 	},
-	'parseUserCommand': function(input) { // UI action
-		command = input.slice(1).split(" ");
-		if(!gateway.callCommand(command, input)) {
-			if (gateway.getActive()) {
-				gateway.getActive().appendMessage(language.messagePatterns.noSuchCommand, [$$.niceTime(), he(command[0])]);
-			} else {
-				gateway.statusWindow.appendMessage(language.messagePatterns.noSuchCommand, [$$.niceTime(), he(command[0])]);
-			}
-		}
-	},
+	// Removed parseUserCommand, parseUserMessage, parseUserInput, performCommand - moved to uiInput (gateway_display.js)
 	'sendSingleMessage': function(text, active){ // UI action, emits domain event
 		ircEvents.emit('domain:requestSendMessage', { target: active.name, message: text, time: new Date() }); // Emit domain event
-	},
-	'parseUserMessage': function(input){ // UI action
-		var active = gateway.getActive();
-		if(active) {
-			var textToSend = input;
-			if(lengthInUtf8Bytes(textToSend) >= 420){
-				var button = [ {
-					text: language.yes,
-					click: function(){
-						do {
-							var sendNow = '';
-							while(lengthInUtf8Bytes(sendNow)<420 && textToSend.length > 0){
-								sendNow += textToSend.charAt(0);
-								textToSend = textToSend.substring(1);
-							}
-							gateway.sendSingleMessage(sendNow, active);
-						} while (textToSend != "");
-						$(this).dialog('close');
-					}
-				}, { 
-					text: language.no,
-					click: function(){
-						$(this).dialog('close');
-					}
-				} ];
-				var html = language.textTooLongForSingleLine + '<br><br><strong>'+$$.sescape(input)+'</strong>';
-				$$.displayDialog('confirm', 'command', language.confirm, html, button);
-			} else {
-				gateway.sendSingleMessage(input, active);
-			}
-		}
-	},
-	'parseUserInput': function(input) { // UI action
-		if(!input){
-			input = '';
-		}
-		if(settings.get('sendEmoji')){
-			input = $$.textToEmoji(input);
-		}
-		if (!input) {
-			return;
-		}
-		// Connection status check should come from domain
-		ircEvents.emit('domain:checkConnectionStatus', { callback: function(connected) {
-			if(!connected) {
-				if (gateway.getActive()) {
-					gateway.getActive().appendMessage(language.messagePatterns.notConnected, [$$.niceTime()]);
-				} else {
-					gateway.statusWindow.appendMessage(language.messagePatterns.notConnected, [$$.niceTime()]);
-				}
-				return;
-			}
-
-			var regexp = /^\s+(\/.*)$/;
-			var match = regexp.exec(input);
-			if(match){
-				var button = [ {
-					text: language.sendMessage,
-					click: function(){
-						gateway.parseUserMessage(input);
-						$(this).dialog('close');
-					}
-				}, { 
-					text: language.runCommand,
-					click: function(){
-						gateway.parseUserCommand(match[1]);
-						$(this).dialog('close');
-					}
-				}, { 
-					text: language.cancel,
-					click: function(){
-						$(this).dialog('close');
-					}
-				} ];
-				var html = language.textStartsWithSpaceAndSlash + '<br><br><strong>'+$$.sescape(input)+'</strong>';
-				$$.displayDialog('confirm', 'command', language.confirm, html, button);
-			} else {
-				regexp = /^(#[^ ,]{1,25})$/;
-				match = regexp.exec(input);
-				if(match){
-					var button = [ { 
-						text: language.sendMessage,
-						click: function(){
-							gateway.parseUserMessage(input);
-							$(this).dialog('close');
-						}
-					}, { 
-						text: language.joinTo+input,
-						click: function(){
-							ircEvents.emit('domain:requestJoinChannel', { channelName: input, time: new Date() }); // Emit domain event
-							$(this).dialog('close');
-						}
-					}, { 
-						text: language.cancel,
-						click: function(){
-							$(this).dialog('close');
-						}
-					} ];
-					var html = language.messageStartsWithHash + '<br><br><strong>'+$$.sescape(input)+'</string>';
-					$$.displayDialog('confirm', 'command', language.confirm, html, button);
-				} else if(input.charAt(0) == "/") { 
-					gateway.parseUserCommand(input);
-				} else {
-					gateway.parseUserMessage(input);
-				}
-			}
-		}});
-		$("#input").val("");
-	},
-	'performCommand': function(input){ // UI action
-		input = '/' + input;
-		var command = input.slice(1).split(" ");
-		if(!gateway.callCommand(command, input)) {
-			console.error('Invalid performCommand: '+command[0]);
-		}
 	},
 	// Removed 'commandHistory', 'commandHistoryPos' - now in uiState (gateway_display.js)
 	// Removed inputFocus - moved to uiHelpers (gateway_display.js)
@@ -1270,74 +1140,13 @@ var gateway = {
 		if(!modeString) modeString = language.none; // Fallback
 		return modeString;
 	},
-	'enterPressed': function(){ // UI action
-		// Connection status check should come from domain
-		ircEvents.emit('domain:checkConnectionStatus', { callback: function(connected) {
-			if(!connected) {
-				$$.alert(language.cantSendNoConnection);
-				return;
-			}
-			if(gateway.commandHistory.length == 0 || gateway.commandHistory[gateway.commandHistory.length-1] != $('#input').val()) {
-				if(gateway.commandHistoryPos != -1 && gateway.commandHistoryPos == gateway.commandHistory.length-1) {
-					gateway.commandHistory[gateway.commandHistoryPos] = $('#input').val();
-				} else {
-					gateway.commandHistory.push($('#input').val());
-				}
-			}
-			gateway.parseUserInput($('#input').val());
-			gateway.commandHistoryPos = -1;
-		}});
-	},
-	'arrowPressed': function(dir){ // UI action
-		if(dir == 'up'){
-			if(gateway.commandHistoryPos == gateway.commandHistory.length-1 && $('#input').val() != '') {
-				gateway.commandHistory[gateway.commandHistoryPos] = $('#input').val();
-			}
-			if(gateway.commandHistoryPos == -1 && gateway.commandHistory.length > 0 && typeof(gateway.commandHistory[gateway.commandHistory.length-1]) == 'string') {
-				gateway.commandHistoryPos = gateway.commandHistory.length-1;
-				if($('#input').val() != '' && gateway.commandHistory[gateway.commandHistory.length-1] != $('#input').val()) {
-					gateway.commandHistory.push($('#input').val());
-				}
-				$('#input').val(gateway.commandHistory[gateway.commandHistoryPos]);
-			} else if(gateway.commandHistoryPos != -1 && gateway.commandHistoryPos != 0) {
-				gateway.commandHistoryPos--;
-				$('#input').val(gateway.commandHistory[gateway.commandHistoryPos]);
-			}
-		} else {
-			if(gateway.commandHistoryPos == gateway.commandHistory.length-1 && $('#input').val() != '') {
-				gateway.commandHistory[gateway.commandHistoryPos] = $('#input').val();
-			}
-			if(gateway.commandHistoryPos == -1 && $('#input').val() != '' && gateway.commandHistory.length > 0 && gateway.commandHistory[gateway.commandHistory.length-1] != $('#input').val()) {
-				gateway.commandHistory.push($('#input').val());
-				$('#input').val('');
-			} else if (gateway.commandHistoryPos != -1) {
-				if(typeof(gateway.commandHistory[gateway.commandHistoryPos+1]) == 'string') {
-					gateway.commandHistoryPos++;
-					$('#input').val(gateway.commandHistory[gateway.commandHistoryPos]);
-				} else {
-					gateway.commandHistoryPos = -1;
-					$('#input').val('');
-				}
-			}
-		}
-	},
+	// Removed enterPressed, arrowPressed, inputPaste, inputKeypress - moved to uiInput (gateway_display.js)
 	'displayGlobalBanInfo': function(text){ // UI action
 		var html = language.connectionNotAllowedHtml +
 			'</ul><br><p>' + language.serverMessageIs + '<br>'+he(text)+'</p>';
 		$$.closeDialog('connect', '1');
 		$$.displayDialog('error', 'noaccess', language.noAccessToNetwork, html);
 		ircEvents.emit('domain:setConnectStatus', { status: 'banned' }); // Set status via domain event
-	},
-	'inputPaste': function(e){ // UI action // TODO
-		var items = (e.clipboardData || e.originalEvent.clipboardData).items;
-	},
-	'inputKeypress': function(e){ // UI action, emits domain event
-		if(!('message-tags' in activeCaps)) return; // Check activeCaps directly
-		if($('#input').val().length > 0 && $('#input').val().charAt(0) == '/') return; // typing a command
-		if(!gateway.getActive()) return;
-		
-		var currentWindow = gateway.getActive();
-		ircEvents.emit('domain:processTypingActivity', { windowName: currentWindow.name, inputValue: $('#input').val(), time: new Date() });
 	},
 	// Removed getMeta, getAvatarUrl, getMsgid - moved to uiHelpers (gateway_display.js)
 	'makeLabel': function(){ // Domain helper - calls global generateLabel function

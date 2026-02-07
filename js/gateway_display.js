@@ -116,7 +116,7 @@
             }
         },
         commandHistory: [],
-        historyPosition: 0,
+        commandHistoryPos: -1,
         nickListVisibility: true,
         lastKeypressWindow: '',
         keypressSuppress: '',
@@ -136,6 +136,7 @@
         gateway.listWindow = uiState.listWindow;
         gateway.completion = uiState.completion;
         gateway.commandHistory = uiState.commandHistory;
+        gateway.commandHistoryPos = uiState.commandHistoryPos;
         gateway.nickListVisibility = uiState.nickListVisibility;
         gateway.lastKeypressWindow = uiState.lastKeypressWindow;
         gateway.keypressSuppress = uiState.keypressSuppress;
@@ -787,12 +788,232 @@
     };
 
     // ==========================================
+    // PUBLIC UI INPUT/COMMAND FUNCTIONS
+    // ==========================================
+
+    var uiInput = {
+        // Display "not enough parameters" error message
+        notEnoughParams: function(command, reason) {
+            if(gateway.getActive()) {
+                gateway.getActive().appendMessage(language.messagePatterns.notEnoughParams, [$$.niceTime(), he(command), reason]);
+            } else {
+                gateway.statusWindow.appendMessage(language.messagePatterns.notEnoughParams, [$$.niceTime(), he(command), reason]);
+            }
+        },
+
+        // Parse and execute a user command (starts with /)
+        parseUserCommand: function(input) {
+            command = input.slice(1).split(" ");
+            if(!gateway.callCommand(command, input)) {
+                if (gateway.getActive()) {
+                    gateway.getActive().appendMessage(language.messagePatterns.noSuchCommand, [$$.niceTime(), he(command[0])]);
+                } else {
+                    gateway.statusWindow.appendMessage(language.messagePatterns.noSuchCommand, [$$.niceTime(), he(command[0])]);
+                }
+            }
+        },
+
+        // Parse and send a user message
+        parseUserMessage: function(input) {
+            var active = gateway.getActive();
+            if(active) {
+                var textToSend = input;
+                if(lengthInUtf8Bytes(textToSend) >= 420){
+                    var button = [ {
+                        text: language.yes,
+                        click: function(){
+                            do {
+                                var sendNow = '';
+                                while(lengthInUtf8Bytes(sendNow)<420 && textToSend.length > 0){
+                                    sendNow += textToSend.charAt(0);
+                                    textToSend = textToSend.substring(1);
+                                }
+                                gateway.sendSingleMessage(sendNow, active);
+                            } while (textToSend != "");
+                            $(this).dialog('close');
+                        }
+                    }, {
+                        text: language.no,
+                        click: function(){
+                            $(this).dialog('close');
+                        }
+                    } ];
+                    var html = language.textTooLongForSingleLine + '<br><br><strong>'+$$.sescape(input)+'</strong>';
+                    $$.displayDialog('confirm', 'command', language.confirm, html, button);
+                } else {
+                    gateway.sendSingleMessage(input, active);
+                }
+            }
+        },
+
+        // Parse user input (command or message)
+        parseUserInput: function(input) {
+            if(!input){
+                input = '';
+            }
+            if(settings.get('sendEmoji')){
+                input = $$.textToEmoji(input);
+            }
+            if (!input) {
+                return;
+            }
+            // Connection status check should come from domain
+            ircEvents.emit('domain:checkConnectionStatus', { callback: function(connected) {
+                if(!connected) {
+                    if (gateway.getActive()) {
+                        gateway.getActive().appendMessage(language.messagePatterns.notConnected, [$$.niceTime()]);
+                    } else {
+                        gateway.statusWindow.appendMessage(language.messagePatterns.notConnected, [$$.niceTime()]);
+                    }
+                    return;
+                }
+
+                var regexp = /^\s+(\/.*)$/;
+                var match = regexp.exec(input);
+                if(match){
+                    var button = [ {
+                        text: language.sendMessage,
+                        click: function(){
+                            uiInput.parseUserMessage(input);
+                            $(this).dialog('close');
+                        }
+                    }, {
+                        text: language.runCommand,
+                        click: function(){
+                            uiInput.parseUserCommand(match[1]);
+                            $(this).dialog('close');
+                        }
+                    }, {
+                        text: language.cancel,
+                        click: function(){
+                            $(this).dialog('close');
+                        }
+                    } ];
+                    var html = language.textStartsWithSpaceAndSlash + '<br><br><strong>'+$$.sescape(input)+'</strong>';
+                    $$.displayDialog('confirm', 'command', language.confirm, html, button);
+                } else {
+                    regexp = /^(#[^ ,]{1,25})$/;
+                    match = regexp.exec(input);
+                    if(match){
+                        var button = [ {
+                            text: language.sendMessage,
+                            click: function(){
+                                uiInput.parseUserMessage(input);
+                                $(this).dialog('close');
+                            }
+                        }, {
+                            text: language.joinTo+input,
+                            click: function(){
+                                ircEvents.emit('domain:requestJoinChannel', { channelName: input, time: new Date() });
+                                $(this).dialog('close');
+                            }
+                        }, {
+                            text: language.cancel,
+                            click: function(){
+                                $(this).dialog('close');
+                            }
+                        } ];
+                        var html = language.messageStartsWithHash + '<br><br><strong>'+$$.sescape(input)+'</string>';
+                        $$.displayDialog('confirm', 'command', language.confirm, html, button);
+                    } else if(input.charAt(0) == "/") {
+                        uiInput.parseUserCommand(input);
+                    } else {
+                        uiInput.parseUserMessage(input);
+                    }
+                }
+            }});
+            $("#input").val("");
+        },
+
+        // Execute a command by name
+        performCommand: function(input) {
+            input = '/' + input;
+            var command = input.slice(1).split(" ");
+            if(!gateway.callCommand(command, input)) {
+                console.error('Invalid performCommand: '+command[0]);
+            }
+        },
+
+        // Handle Enter key press
+        enterPressed: function() {
+            // Connection status check should come from domain
+            ircEvents.emit('domain:checkConnectionStatus', { callback: function(connected) {
+                if(!connected) {
+                    $$.alert(language.cantSendNoConnection);
+                    return;
+                }
+                if(gateway.commandHistory.length == 0 || gateway.commandHistory[gateway.commandHistory.length-1] != $('#input').val()) {
+                    if(gateway.commandHistoryPos != -1 && gateway.commandHistoryPos == gateway.commandHistory.length-1) {
+                        gateway.commandHistory[gateway.commandHistoryPos] = $('#input').val();
+                    } else {
+                        gateway.commandHistory.push($('#input').val());
+                    }
+                }
+                uiInput.parseUserInput($('#input').val());
+                gateway.commandHistoryPos = -1;
+            }});
+        },
+
+        // Handle arrow key navigation in command history
+        arrowPressed: function(dir) {
+            if(dir == 'up'){
+                if(gateway.commandHistoryPos == gateway.commandHistory.length-1 && $('#input').val() != '') {
+                    gateway.commandHistory[gateway.commandHistoryPos] = $('#input').val();
+                }
+                if(gateway.commandHistoryPos == -1 && gateway.commandHistory.length > 0 && typeof(gateway.commandHistory[gateway.commandHistory.length-1]) == 'string') {
+                    gateway.commandHistoryPos = gateway.commandHistory.length-1;
+                    if($('#input').val() != '' && gateway.commandHistory[gateway.commandHistory.length-1] != $('#input').val()) {
+                        gateway.commandHistory.push($('#input').val());
+                    }
+                    $('#input').val(gateway.commandHistory[gateway.commandHistoryPos]);
+                } else if(gateway.commandHistoryPos != -1 && gateway.commandHistoryPos != 0) {
+                    gateway.commandHistoryPos--;
+                    $('#input').val(gateway.commandHistory[gateway.commandHistoryPos]);
+                }
+            } else {
+                if(gateway.commandHistoryPos == gateway.commandHistory.length-1 && $('#input').val() != '') {
+                    gateway.commandHistory[gateway.commandHistoryPos] = $('#input').val();
+                }
+                if(gateway.commandHistoryPos == -1 && $('#input').val() != '' && gateway.commandHistory.length > 0 && gateway.commandHistory[gateway.commandHistory.length-1] != $('#input').val()) {
+                    gateway.commandHistory.push($('#input').val());
+                    $('#input').val('');
+                } else if (gateway.commandHistoryPos != -1) {
+                    if(typeof(gateway.commandHistory[gateway.commandHistoryPos+1]) == 'string') {
+                        gateway.commandHistoryPos++;
+                        $('#input').val(gateway.commandHistory[gateway.commandHistoryPos]);
+                    } else {
+                        gateway.commandHistoryPos = -1;
+                        $('#input').val('');
+                    }
+                }
+            }
+        },
+
+        // Handle paste events
+        inputPaste: function(e) {
+            var items = (e.clipboardData || e.originalEvent.clipboardData).items;
+            // TODO: Handle pasted content
+        },
+
+        // Handle keypress for typing indicators (refactored to use domain event)
+        inputKeypress: function(e) {
+            // Don't check activeCaps here - let domain handle capability check
+            if($('#input').val().length > 0 && $('#input').val().charAt(0) == '/') return; // typing a command
+            if(!gateway.getActive()) return;
+
+            var currentWindow = gateway.getActive();
+            ircEvents.emit('domain:processTypingActivity', { windowName: currentWindow.name, inputValue: $('#input').val(), time: new Date() });
+        }
+    };
+
+    // ==========================================
     // ATTACH UI FUNCTIONS TO GATEWAY
     // ==========================================
     function attachUIFunctionsToGateway() {
         Object.assign(gateway, uiHelpers);
         Object.assign(gateway, uiTabs);
         Object.assign(gateway, uiNicklist);
+        Object.assign(gateway, uiInput);
     }
 
     /**
