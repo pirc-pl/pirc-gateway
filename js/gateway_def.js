@@ -693,42 +693,7 @@ var gateway = {
 			}, 450);
 		});
 	},
-	'insert': function(text) { // UI helper
-		var input = $('#input');
-		var oldText = input.val();
-		input.focus();
-		input.val(oldText + text);
-	},
-	'insertEmoji': function(e) { // UI helper
-		gateway.insert(e);
-		var index = emoji.selectable.indexOf(e);
-		if (index >= 0) {
-			emoji.selectable.splice(index, 1);
-			$('#emoticon-symbols span:nth-child(' + (index+1) + ')').remove();
-		}
-		emoji.selectable.unshift(e);
-		if (emoji.selectable.length > 80) {
-			emoji.selectable.splice(-1);
-			$('#emoticon-symbols span:last').remove();
-		}
-		$('#emoticon-symbols').prepend(makeEmojiSelector(e));
-		saveSelectableEmoji();
-	},
-	'insertColor': function(color) { // UI helper
-		gateway.insert(String.fromCharCode(3) + (color<10?'0':'') + color.toString());
-	},
-	'insertCode': function(code) { // UI helper
-		var text = false;
-		switch(code){
-			case 2: text = String.fromCharCode(2); break;
-			case 3: text = String.fromCharCode(3); break;
-			case 15: text = String.fromCharCode(15); break;
-			case 22: text = String.fromCharCode(22); break;
-			case 29: text = String.fromCharCode(29); break;
-			case 31: text = String.fromCharCode(31); break;
-		}
-		if(text) gateway.insert(text);
-	},
+	// Removed insert, insertEmoji, insertColor, insertCode - moved to uiHelpers (gateway_display.js)
 	'nextTab': function() { // UI action
 		var swtab = $('li.activeWindow').next().find('a.switchTab');
 		if(swtab){
@@ -1100,11 +1065,7 @@ var gateway = {
 		}
 	},
 	// Removed 'commandHistory', 'commandHistoryPos' - now in uiState (gateway_display.js)
-	'inputFocus': function() { // UI action
-		if(window.getSelection().toString() == ''){
-			$("#input").focus();
-		}
-	},
+	// Removed inputFocus - moved to uiHelpers (gateway_display.js)
 	'openQuery': function(nick, id) { // UI action
 		if(ignore.ignoring(nick, 'query')){
 			var button = [
@@ -1557,33 +1518,7 @@ var gateway = {
 		$('.notifywindow').fadeOut(100);
 	},
 	// Removed 'completion' - now in uiState (gateway_display.js), exposed via gateway.completion
-	'doComplete': function() { // UI action
-		if(gateway.completion.repeat == 0 || gateway.completion.array.length == 0) {
-			var rawstr = $('#input').val().replace(/^\s+/g, '').replace(/\s+$/g, '');
-			var str = $('#input').val().replace(/^\s+/g, '').replace(/\s+$/g, '').split(/\s+/);
-			if(str && str.length > 0 && str[str.length-1].length > 0) {
-				gateway.completion.array = gateway.completion.find(str[str.length-1], rawstr, str.length-1);
-				if(gateway.completion.array.length > 0) {
-					str[str.length-1] = gateway.completion.array[0] + " ";
-					gateway.completion.repeat = 1;
-					$('#input').val(str.join(" "));
-					gateway.completion.lastPos = 0;
-				}
-				//gateway.statusWindow.appendMessage('%s - %s<br />', [ gateway.completion.lastPos, gateway.completion.array.toString() ]);
-			}
-		} else if(gateway.completion.array.length > 0) {
-			var str = $('#input').val().replace(/^\s+/g, '').replace(/\s+$/g, '').split(/\s+/);
-			if(gateway.completion.lastPos+1 < gateway.completion.array.length) {
-				str[str.length-1] = gateway.completion.array[gateway.completion.lastPos+1] + " ";
-				gateway.completion.lastPos++;
-				$('#input').val(str.join(" "));
-			} else {
-				gateway.completion.lastPos = 0;
-				str[str.length-1] = gateway.completion.array[0] + " ";
-				$('#input').val(str.join(" "));
-			}
-		}
-	},
+	// Removed doComplete - moved to uiHelpers (gateway_display.js)
 	'parseChannelMode': function(args, chan, dispType) { // This is domain logic and needs to be moved to gateway_domain.js
 		console.warn('gateway.parseChannelMode is domain logic and should be moved.');
 		// Delegate to domain event
@@ -1688,15 +1623,7 @@ var gateway = {
 			// }
 		}
 	},
-	'toggleFormatting': function() { // UI action
-		if($('#formatting').is(':visible')){
-			$('#formatting').hide();
-			$('#formatting-button').text(language.insertFormatCodes);
-		} else {
-			$('#formatting').show();
-			$('#formatting-button').text('⮙ ' + language.hideFormatting + ' ⮙');
-		}
-	},
+	// Removed toggleFormatting - moved to uiHelpers (gateway_display.js)
 	'refreshChanList': function() { // UI action, emits domain event
 		ircEvents.emit('domain:requestListChannels', { minUsers: '>9', time: new Date() }); // Emit domain event
 		$('#chlist-body').html(language.loadingWait);
@@ -1784,134 +1711,11 @@ var gateway = {
 		var currentWindow = gateway.getActive();
 		ircEvents.emit('domain:processTypingActivity', { windowName: currentWindow.name, inputValue: $('#input').val(), time: new Date() });
 	},
-	'getMeta': function(nick, size){ // UI helper
-		var avatar = gateway.getAvatarUrl(nick, size);
-		if(avatar) {
-			meta = '<img src="' + he(avatar) + '" alt="'+he(nick)+'" onerror="this.src=\'/styles/img/noavatar.png\';">';
-		} else {
-			var user = users.getUser(nick);
-			if(!user.metadata) user.metadata = {};
-			if('display-name' in user.metadata){
-				var dispNick = he(user.metadata['display-name']);
-			} else {
-				var dispNick = he(nick);
-			}
-			meta = '<span class="avatar letterAvatar" style="background-color:'+$$.nickColor(nick, true)+';"><span role="presentation">'+dispNick.charAt(0)+'</span></span>';
-		}
-		return meta;
-	},
-	'getAvatarUrl': function(nick, size){ // UI helper
-		if(!size) size = 200;
-		var user = users.getUser(nick);
-		if(user.disableAvatar) return false;
-		var avatar = false;
-		if('avatar' in user.metadata){
-			avatar = user.metadata['avatar'].replace('{size}', size.toString());
-		}
-		if(!avatar){
-			var expr = /^~?[su]id([0-9]+)$/;
-			var avmatch = expr.exec(user.ident);
-			if(avmatch){
-				var irccloudUrl = 'https://static.irccloud-cdn.com/avatar-redirect/s' + size.toString() + '/' + avmatch[1];
-			//	if(ImageExists(irccloudUrl)){
-					avatar = irccloudUrl;
-			//	}
-			}
-		}
-		return avatar;
-	},
-	'getMsgid': function(tags){ // Extract msgid from tags
-		return (tags && tags.msgid) ? tags.msgid : '';
-	},
+	// Removed getMeta, getAvatarUrl, getMsgid - moved to uiHelpers (gateway_display.js)
 	'makeLabel': function(){ // Domain helper - calls global generateLabel function
 		return generateLabel(); // Direct call to global function
 	},
-	'calculateHistoryLimit': function(){ // UI helper
-		var chatWrapper = $('#chat-wrapper');
-		if(!chatWrapper.length){
-			return 20; // Fallback to conservative default if wrapper not found
-		}
-
-		var availableHeight = chatWrapper.innerHeight();
-		if(!availableHeight || availableHeight < 100){
-			return 20; // Fallback if height seems wrong
-		}
-
-		var activeWindow = null;
-		if(gateway.active){ // UI state, access directly
-			var activeTab = gateway.find(gateway.active);
-			if(activeTab){
-				activeWindow = $('#' + activeTab.id + '-window');
-			}
-		}
-
-		if(!activeWindow || !activeWindow.length){
-			activeWindow = chatWrapper.find('span[id$="-window"]').filter(function(){
-				return $(this).find('.messageDiv').length > 0;
-			}).first();
-		}
-
-		var avgMessageHeight = 80; // Default estimate in pixels (more realistic than 50)
-		var measuredMessages = 0;
-
-		// Try to measure from active/found window
-		if(activeWindow && activeWindow.length){
-			var messages = activeWindow.find('.messageDiv').slice(0, 10);
-			console.log('History limit: Found', messages.length, 'messages in active window for measurement');
-			if(messages.length > 0){
-				var heights = [];
-				messages.each(function(){
-					var h = $(this).outerHeight(true);
-					heights.push(h);
-					console.log('History limit: Message height:', h);
-				});
-				if(heights.length > 0){
-					var sum = heights.reduce(function(a, b){ return a + b; }, 0);
-					avgMessageHeight = sum / heights.length;
-					measuredMessages = heights.length;
-					console.log('History limit: Calculated average from active window:', avgMessageHeight);
-				}
-			}
-		} else {
-			console.log('History limit: No active window found for measurement');
-		}
-
-		// If we couldn't get enough measurements, try Status window
-		if(measuredMessages < 3 && gateway.statusWindow){
-			console.log('History limit: Not enough measurements (', measuredMessages, '), trying Status window');
-			var statusWindow = $('#' + gateway.statusWindow.id + '-window');
-			if(statusWindow && statusWindow.length){
-				var messages = statusWindow.find('.messageDiv').filter(':visible').slice(0, 10);
-				console.log('History limit: Found', messages.length, 'visible messages in Status window');
-				if(messages.length >= 3){
-					var heights = [];
-					messages.each(function(){
-						var h = $(this).outerHeight(true);
-						// Only use reasonable heights (skip collapsed/hidden elements)
-						if(h > 15){
-							heights.push(h);
-						}
-					});
-					if(heights.length >= 3){
-						var sum = heights.reduce(function(a, b){ return a + b; }, 0);
-						avgMessageHeight = sum / heights.length;
-						measuredMessages = heights.length;
-						console.log('History limit: Used Status window for measurements, average:', avgMessageHeight);
-					} else {
-						console.log('History limit: Status window measurements too small, using default');
-					}
-				}
-			} else {
-				console.log('History limit: Status window not found');
-			}
-		}
-
-		var estimatedCount = Math.floor(availableHeight / avgMessageHeight * 1.5);
-		var limit = Math.max(10, Math.min(estimatedCount, 200));
-
-		console.log('Calculated history limit:', limit, 'based on height:', availableHeight, 'avg msg height:', avgMessageHeight, 'measured from', measuredMessages, 'messages');
-		return limit;
-	},
+	// Removed calculateHistoryLimit - moved to uiHelpers (gateway_display.js)
 	'insertMessage': function(cmd, dest, text, ownMsg, label, sender, time, options){ // UI action
 		// options can contain: attrs, addClass, isHistory, msgid - provided by abstracted event
 		options = options || {};
