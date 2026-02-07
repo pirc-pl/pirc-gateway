@@ -1329,30 +1329,57 @@ ircEvents.on('protocol:rplWhoisloggedin', function(data) {
 });
 
 ircEvents.on('protocol:rplNotopic', function(data) {
-    // Emit event that a channel has no topic for the UI to update its channel object.
-    ircEvents.emit('channel:topic', {
-        channelName: data.channelName,
-        topic: '',
-        setBy: '',
-        setDate: 0,
-    });
+    var channelKey = data.channelName.toLowerCase();
+
+    // Check if channel is being initially joined
+    if (domainChannelsInitializing[channelKey]) {
+        // Accumulate "no topic" data for channel creation event
+        domainChannelsInitializing[channelKey].topic = '';
+        domainChannelsInitializing[channelKey].topicSetBy = '';
+        domainChannelsInitializing[channelKey].topicSetDate = 0;
+    } else {
+        // Channel already exists - emit event for UI to update
+        ircEvents.emit('channel:topic', {
+            channelName: data.channelName,
+            topic: '',
+            setBy: '',
+            setDate: 0,
+        });
+    }
 });
 
 ircEvents.on('protocol:rplTopic', function(data) {
-    // Emit event that a channel's topic has been reported for the UI to update its channel object.
-    ircEvents.emit('channel:topic', {
-        channelName: data.channelName,
-        topic: data.topic,
-    });
+    var channelKey = data.channelName.toLowerCase();
+
+    // Check if channel is being initially joined
+    if (domainChannelsInitializing[channelKey]) {
+        // Accumulate topic data for channel creation event
+        domainChannelsInitializing[channelKey].topic = data.topic;
+    } else {
+        // Channel already exists - emit event for UI to update
+        ircEvents.emit('channel:topic', {
+            channelName: data.channelName,
+            topic: data.topic,
+        });
+    }
 });
 
 ircEvents.on('protocol:rplTopicwhotime', function(data) {
-    // Emit event for UI to update topic metadata
-    ircEvents.emit('channel:topicInfoUpdated', {
-        channelName: data.channelName,
-        setBy: data.setBy,
-        setDate: data.setDate,
-    });
+    var channelKey = data.channelName.toLowerCase();
+
+    // Check if channel is being initially joined
+    if (domainChannelsInitializing[channelKey]) {
+        // Accumulate topic metadata for channel creation event
+        domainChannelsInitializing[channelKey].topicSetBy = data.setBy;
+        domainChannelsInitializing[channelKey].topicSetDate = data.setDate;
+    } else {
+        // Channel already exists - emit event for UI to update topic metadata
+        ircEvents.emit('channel:topicInfoUpdated', {
+            channelName: data.channelName,
+            setBy: data.setBy,
+            setDate: data.setDate,
+        });
+    }
 });
 
 ircEvents.on('protocol:rplListsyntax', function(data) {
@@ -1727,6 +1754,10 @@ ircEvents.on('protocol:rplEndofnames', function(data) {
         if (cml) {
             var members = cml.getAllMembers(); // Get all ChannelMember objects
 
+            // Check if server supports chat history
+            var historySupported = ('draft/chathistory' in activeCaps) && ('CHATHISTORY' in isupport);
+            var historyMaxLimit = historySupported ? (isupport['CHATHISTORY'] || 0) : 0;
+
             // Emit channel:channelCreation with complete initial data
             ircEvents.emit('channel:channelCreation', {
                 channelName: channelName,
@@ -1735,19 +1766,15 @@ ircEvents.on('protocol:rplEndofnames', function(data) {
                 // Include our own user info for the join message
                 nick: guser.me.nick,
                 ident: guser.me.ident,
-                host: guser.me.host
+                host: guser.me.host,
+                // Include topic data if available
+                topic: domainChannelsInitializing[channelKey].topic || '',
+                topicSetBy: domainChannelsInitializing[channelKey].topicSetBy || '',
+                topicSetDate: domainChannelsInitializing[channelKey].topicSetDate || 0,
+                // Include history support info for UI
+                historySupported: historySupported,
+                historyMaxLimit: historyMaxLimit
             });
-
-            // Automatically request chat history if server supports it
-            // Emit event for UI to calculate limit and request history
-            if (('draft/chathistory' in activeCaps) && ('CHATHISTORY' in isupport)) {
-                // Mark channel as awaiting initial history
-                domainChannelsAwaitingInitialHistory[channelKey] = true;
-                ircEvents.emit('channel:requestInitialHistory', {
-                    channelName: channelName,
-                    maxLimit: isupport['CHATHISTORY'] // Server's max limit (0 = unlimited)
-                });
-            }
 
             // Remove from initializing list
             delete domainChannelsInitializing[channelKey];
@@ -2653,10 +2680,36 @@ ircEvents.on('protocol:ctcpAction', function(data) {
     });
 });
 
+ircEvents.on('protocol:ctcpReply', function(data) {
+    // Check if this message should be hidden (e.g., our own CTCP replies being echoed)
+    var tags = data.tags || {};
+    var label = tags.label || null;
+
+    if (label && domainLabelsToHide.indexOf(label) !== -1) {
+        // This is our own CTCP reply being echoed - don't display it
+        return;
+    }
+
+    // Pass through to UI for display (event name stays the same for UI compatibility)
+    // The UI layer already has a handler for protocol:ctcpReply
+});
+
 ircEvents.on('protocol:ctcpVersionRequest', function(data) {
-    // Auto-reply to VERSION requests
-    var versionString = 'VERSION ' + (mainSettings.version || 'PIRC Gateway');
-    ircCommand.sendCtcpReply(data.requestedBy, versionString);
+    // Build version string matching old format
+    var versionString = language.gatewayVersionIs + mainSettings.version;
+    if (addons && addons.length > 0) {
+        versionString += language.versionWithAddons;
+        for (var i = 0; i < addons.length; i++) {
+            if (i > 0) {
+                versionString += ', ';
+            }
+            versionString += addons[i];
+        }
+    }
+    versionString += ', ' + language.runningOn + ' ' + navigator.userAgent;
+
+    // Send CTCP reply
+    ircCommand.sendCtcpReply(data.requestedBy, 'VERSION ' + versionString);
 
     ircEvents.emit('ctcp:versionRequest', {
         sender: data.requestedBy,
@@ -2665,8 +2718,21 @@ ircEvents.on('protocol:ctcpVersionRequest', function(data) {
 });
 
 ircEvents.on('protocol:ctcpUserinfoRequest', function(data) {
-    // Auto-reply to USERINFO requests
-    ircCommand.sendCtcpReply(data.requestedBy, 'USERINFO ' + guser.nick);
+    // Build version string matching old format (USERINFO used same format as VERSION)
+    var versionString = language.gatewayVersionIs + mainSettings.version;
+    if (addons && addons.length > 0) {
+        versionString += language.versionWithAddons;
+        for (var i = 0; i < addons.length; i++) {
+            if (i > 0) {
+                versionString += ', ';
+            }
+            versionString += addons[i];
+        }
+    }
+    versionString += ', ' + language.runningOn + ' ' + navigator.userAgent;
+
+    // Send CTCP reply
+    ircCommand.sendCtcpReply(data.requestedBy, 'USERINFO ' + versionString);
 
     ircEvents.emit('ctcp:userinfoRequest', {
         sender: data.requestedBy,
@@ -3182,6 +3248,9 @@ ircEvents.on('domain:requestChatHistory', function(data) {
     var reference;
     if(data.type === 'LATEST'){
         reference = '*'; // Special case for initial history
+        // Mark channel as awaiting initial history
+        var channelKey = data.channelName.toLowerCase();
+        domainChannelsAwaitingInitialHistory[channelKey] = true;
     } else if(data.msgid){
         reference = 'msgid=' + data.msgid;
     } else if(data.timestamp){

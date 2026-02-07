@@ -1496,23 +1496,38 @@
 
             var loadOlderButton = $('#' + chan.id + '-window .loadOlderButton');
             var msgid = loadOlderButton.attr('data-msgid') || null;
+            var timestamp = loadOlderButton.attr('data-timestamp') || null;
 
             loadOlderButton.remove();
 
-            if(!msgid){
-                console.log('No msgid found for loading older history');
-                return;
-            }
-
+            // Calculate UI-appropriate limit based on screen size
             var limit = gateway.calculateHistoryLimit();
-            console.log('Requesting history BEFORE msgid:', msgid, 'limit:', limit);
 
-            // Use domain event handler (handles capability and isupport checks)
-            ircEvents.emit('domain:requestHistoryBefore', {
-                channel: channel,
-                limit: limit,
-                beforeMsgid: msgid
-            });
+            // Check if this is an initial LATEST query (timestamp='*')
+            if (timestamp === '*') {
+                console.log('Requesting LATEST history, limit:', limit);
+                ircEvents.emit('domain:requestChatHistory', {
+                    channelName: channel,
+                    type: 'LATEST',
+                    msgid: null,
+                    timestamp: null, // Domain will handle '*' -> latest
+                    limit: limit,
+                    time: new Date()
+                });
+            } else if (msgid || timestamp) {
+                // Request history BEFORE the oldest known message
+                console.log('Requesting history BEFORE msgid:', msgid, 'timestamp:', timestamp, 'limit:', limit);
+                ircEvents.emit('domain:requestChatHistory', {
+                    channelName: channel,
+                    type: 'BEFORE',
+                    msgid: msgid,
+                    timestamp: timestamp,
+                    limit: limit,
+                    time: new Date()
+                });
+            } else {
+                console.log('No reference point found for loading older history');
+            }
         }
     };
 
@@ -1664,32 +1679,64 @@
                 he(data.host),
                 he(data.channelName)
             ], data.time);
-        });
 
-        // Listener for automatic history request on channel join
-        // Domain layer emits this when server supports CHATHISTORY
-        // UI calculates appropriate limit and requests history
-        ircEvents.on('channel:requestInitialHistory', function(data) {
-            var channelName = data.channelName;
-            var maxLimit = data.maxLimit; // Server's max limit (0 = unlimited)
+            // Set and display topic if available
+            if (data.topic !== undefined) {
+                channel.setTopic(data.topic);
+                if (data.topicSetBy) {
+                    channel.setTopicSetBy(data.topicSetBy);
+                }
+                if (data.topicSetDate) {
+                    channel.setTopicSetDate(data.topicSetDate);
+                }
 
-            // Calculate UI-appropriate limit based on screen size
-            var limit = gateway.calculateHistoryLimit();
+                // Display topic message
+                if (data.topic) {
+                    channel.appendMessage(language.messagePatterns.topic, [
+                        $$.niceTime(),
+                        channelName,
+                        $$.colorize(data.topic)
+                    ]);
 
-            // Respect server's maximum if it has one
-            if (maxLimit != 0 && maxLimit < limit) {
-                limit = maxLimit;
+                    // Display topic metadata if available
+                    if (data.topicSetBy && data.topicSetDate) {
+                        channel.appendMessage(language.messagePatterns.topicTime, [
+                            $$.niceTime(),
+                            he(data.topicSetBy),
+                            $$.parseTime(data.topicSetDate)
+                        ]);
+                    }
+                } else {
+                    // No topic set
+                    channel.appendMessage(language.messagePatterns.topicNotSet, [
+                        $$.niceTime(),
+                        channelName
+                    ]);
+                }
             }
 
-            // Request history via domain event
-            ircEvents.emit('domain:requestChatHistory', {
-                channelName: channelName,
-                type: 'LATEST',
-                msgid: null,
-                timestamp: null, // '*' is handled specially by domain
-                limit: limit,
-                time: new Date()
-            });
+            // Automatically request initial history if server supports it
+            if (data.historySupported) {
+                // Calculate UI-appropriate limit based on screen size (one window height)
+                var limit = gateway.calculateHistoryLimit();
+
+                // Respect server's maximum if it has one
+                if (data.historyMaxLimit != 0 && data.historyMaxLimit < limit) {
+                    limit = data.historyMaxLimit;
+                }
+
+                console.log('Automatically requesting initial history for', channelName, 'limit:', limit);
+
+                // Request initial history (LATEST)
+                ircEvents.emit('domain:requestChatHistory', {
+                    channelName: channelName,
+                    type: 'LATEST',
+                    msgid: null,
+                    timestamp: null,
+                    limit: limit,
+                    time: new Date()
+                });
+            }
         });
 
         // Listener for NAMES refresh (not initial join)
@@ -2272,6 +2319,11 @@
         ircEvents.on('client:welcome', function(data) {
             // Display RPL_WELCOME (001) message in status window
             gateway.statusWindow.appendMessage(language.messagePatterns.motd, [$$.niceTime(), he(data.message)]);
+
+            // Set initial page title with confirmed nick
+            if (data.target) {
+                document.title = he(data.target) + ' @ ' + mainSettings.networkName;
+            }
         });
 
         ircEvents.on('server:motdLine', function(data) {
@@ -2439,7 +2491,7 @@ ircEvents.on('client:notice', function(data) {
         });
 
         ircEvents.on('domain:meNickChanged', function(data) {
-            document.title = he(data.newNick)+' @ PIRC.pl';
+            document.title = he(data.newNick) + ' @ ' + mainSettings.networkName;
             // Also trigger the old client:myNickChanged if it's still used for a dialog
             ircEvents.emit('client:myNickChanged', { oldNick: data.oldNick, newNick: data.newNick });
         });
@@ -2566,6 +2618,33 @@ ircEvents.on('client:notice', function(data) {
                     language.userSoftware + '<b>' + he(data.fromNick) + '</b>:<br>' + he(data.ctcpText)
                 );
             }
+        });
+
+        // CTCP VERSION request received
+        ircEvents.on('ctcp:versionRequest', function(data) {
+            gateway.statusWindow.appendMessage(language.messagePatterns.ctcpRequest, [
+                $$.niceTime(),
+                he(data.sender),
+                'VERSION'
+            ]);
+        });
+
+        // CTCP USERINFO request received
+        ircEvents.on('ctcp:userinfoRequest', function(data) {
+            gateway.statusWindow.appendMessage(language.messagePatterns.ctcpRequest, [
+                $$.niceTime(),
+                he(data.sender),
+                'USERINFO'
+            ]);
+        });
+
+        // CTCP REFERER request received
+        ircEvents.on('ctcp:refererRequest', function(data) {
+            gateway.statusWindow.appendMessage(language.messagePatterns.ctcpRequest, [
+                $$.niceTime(),
+                he(data.sender),
+                'REFERER'
+            ]);
         });
 
         // Channel list completed - populate the list window
