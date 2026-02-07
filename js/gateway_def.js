@@ -629,70 +629,7 @@ var gateway = {
 	// Removed 'tabHistory' - now in uiState (gateway_display.js), exposed via gateway.tabHistory
 	'lasterror': '', // This is now domainLastError
 	// Removed 'nickListVisibility' - now in uiState (gateway_display.js), exposed via gateway.nickListVisibility
-	'nickListToggle': function() { // UI action
-		var active = gateway.getActive();
-		if(!active){
-			active = gateway.statusWindow;
-		}
-		active.saveScroll();
-		if($("#nicklist").width() > 40) {
-			$("#nicklist").animate({
-				"opacity": "toggle",
-				"width":	"40px"
-			}, 400);
-			$("#chstats").animate({
-				"opacity": "toggle",
-				"width":	"40px"
-			}, 400);
-			$("#chatbox").animate({
-				"width":	"97%"
-			}, 401, function () {
-				$("#nicklist-closed").fadeIn(200);
-				setTimeout(function(){
-					gateway.getActive().restoreScroll();
-				}, 250);
-			});
-			$('#nickopts').css('display', 'none');
-			$('#chlist').css('display', 'none');
-			gateway.nickListVisibility = false;
-		} else {
-			gateway.showNickList();
-			gateway.nickListVisibility = true;
-		}
-		gateway.checkNickListVisibility();
-		$('#input').focus();
-	},
-	'checkNickListVisibility': function() { // UI action
-		setTimeout(function(){
-			if(!$('#nicklist-closed').is(':visible') && !$('#nicklist').is(':visible')){
-				gateway.showNickList();
-			}
-		}, 1500);
-	},
-	'showNickList': function() { // UI action
-		$("#nicklist-closed").fadeOut(200, function () {
-			$("#nicklist").animate({
-				"opacity": "show",
-				"width":	"23%"
-			}, 400);
-			$("#chstats").animate({
-				"opacity": "show",
-				"width":	"23%"
-			}, 400);
-			$("#chatbox").animate({
-				"width":	"77%"
-			}, 401);
-			setTimeout(function(){
-				var tab = gateway.getActive();
-				if(!tab){
-					tab = gateway.statusWindow;
-				}
-				tab.restoreScroll();
-				$('#nickopts').css('display', '');
-				$('#chlist').css('display', '');
-			}, 450);
-		});
-	},
+	// Removed nickListToggle, checkNickListVisibility, showNickList - moved to uiNicklist (gateway_display.js)
 	// Removed insert, insertEmoji, insertColor, insertCode - moved to uiHelpers (gateway_display.js)
 	// Removed nextTab, prevTab, switchTab, tabHistoryLast - moved to uiTabs (gateway_display.js)
 	'notEnoughParams': function(command, reason) { // UI action
@@ -1176,93 +1113,8 @@ var gateway = {
 	*/
 	// Removed getActive - moved to uiTabs (gateway_display.js)
 	// Removed 'active' - now in uiState (gateway_display.js), exposed via gateway.active
-	'toggleNickOpt': function(nicklistid) { // UI action
-		if($('#'+nicklistid+'-opt').is(':visible')) {
-			if($('#'+nicklistid+'-opt-info').is(':visible')){
-				 $('#'+nicklistid+'-opt-info').hide('blind', {
-					direction: "vertical"
-				}, 300);
-				$('#'+nicklistid+'-opt').removeClass('activeInfo');
-			 }
-			$('#'+nicklistid+'-opt').hide('blind', {
-				direction: "vertical"
-			}, 300);
-			$('#'+nicklistid).removeClass('activeNick');
-		} else {
-			$('#'+nicklistid+'-opt').show('blind', {
-				direction: "vertical"
-			}, 300);
-			$('#'+nicklistid).addClass('activeNick');
-		}
-	},
-	'toggleNickOptInfo': function(nicklistid) { // UI action
-		if($('#'+nicklistid+'-opt-info').is(':visible')){
-			 $('#'+nicklistid+'-opt-info').hide('blind', {
-				direction: "vertical"
-			}, 300);
-			$('#'+nicklistid+'-opt').removeClass('activeInfo');
-		} else {
-			$('#'+nicklistid+'-opt-info').show('blind', {
-				direction: "vertical"
-			}, 300);
-			$('#'+nicklistid+'-opt').addClass('activeInfo');
-		}
-	},
-	'toggleNickOptAdmin': function(nicklistid) { // UI action
-		if($('#'+nicklistid+'-opt-admin').is(':visible')){
-			 $('#'+nicklistid+'-opt-admin').hide('blind', {
-				direction: "vertical"
-			}, 300);
-			$('#'+nicklistid+'-opt').removeClass('activeAdmin');
-		} else {
-			$('#'+nicklistid+'-opt-admin').show('blind', {
-				direction: "vertical"
-			}, 300);
-			$('#'+nicklistid+'-opt').addClass('activeAdmin');
-		}
-	},
-	'toggleChannelOperOpts': function(channel) { // UI action
-		var $element = $('#'+gateway.findChannel(channel).id+'-operActions ul');
-		if($element.is(':visible')){
-			$element.hide('blind', {
-				direction: 'vertical'
-			}, 300);
-			$('#'+gateway.findChannel(channel).id+'-operActions .chstats-button').removeClass('channelAdminActive');
-		} else {
-			$element.show('blind', {
-				direction: 'vertical'
-			}, 300);
-			$('#'+gateway.findChannel(channel).id+'-operActions .chstats-button').addClass('channelAdminActive');
-		}
-	},
-	'toggleChannelOpts': function(channel) { // UI action
-		var $element = $('#'+gateway.findChannel(channel).id+'-channelOptions ul');
-		if($element.is(':visible')){
-			$element.hide('blind', {
-				direction: 'vertical'
-			}, 300);
-			$('#'+gateway.findChannel(channel).id+'-chstats .chstats-button').removeClass('channelAdminActive');
-		} else {
-			$element.show('blind', {
-				direction: 'vertical'
-			}, 300);
-			$('#'+gateway.findChannel(channel).id+'-chstats .chstats-button').addClass('channelAdminActive');
-		}
-	},
-	'toggleNickOpts': function() { // UI action
-		var $element = $('#nickOptions')
-		if($element.is(':visible')){
-			$element.hide('blind', {
-				direction: 'down'
-			}, 300);
-			$('#nickopts .nickoptsButton').removeClass('channelAdminActive');
-		} else {
-			$element.show('blind', {
-				direction: 'down'
-			}, 300);
-			$('#nickopts .nickoptsButton').addClass('channelAdminActive');
-		}
-	},
+	// Removed toggleNickOpt, toggleNickOptInfo, toggleNickOptAdmin - moved to uiNicklist (gateway_display.js)
+	// Removed toggleChannelOperOpts, toggleChannelOpts, toggleNickOpts - moved to uiNicklist (gateway_display.js)
 	'showPermError': function(text) { // UI action
 		var html = language.noAccess +
 			'<br>' + language.notEnoughPrivileges + '<br>'+text;

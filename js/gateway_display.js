@@ -612,11 +612,187 @@
     };
 
     // ==========================================
-    // ATTACH TAB FUNCTIONS AND HELPER FUNCTIONS TO GATEWAY
+    // PUBLIC UI NICKLIST FUNCTIONS
+    // ==========================================
+
+    var uiNicklist = {
+        // Toggle nicklist visibility
+        nickListToggle: function() {
+            var active = gateway.getActive();
+            if(!active){
+                active = gateway.statusWindow;
+            }
+            active.saveScroll();
+            if($("#nicklist").width() > 40) {
+                $("#nicklist").animate({
+                    "opacity": "toggle",
+                    "width":	"40px"
+                }, 400);
+                $("#chstats").animate({
+                    "opacity": "toggle",
+                    "width":	"40px"
+                }, 400);
+                $("#chatbox").animate({
+                    "width":	"97%"
+                }, 401, function () {
+                    $("#nicklist-closed").fadeIn(200);
+                    setTimeout(function(){
+                        gateway.getActive().restoreScroll();
+                    }, 250);
+                });
+                $('#nickopts').css('display', 'none');
+                $('#chlist').css('display', 'none');
+                gateway.nickListVisibility = false;
+            } else {
+                uiNicklist.showNickList();
+                gateway.nickListVisibility = true;
+            }
+            uiNicklist.checkNickListVisibility();
+            $('#input').focus();
+        },
+
+        // Check if nicklist is visible and show it if needed
+        checkNickListVisibility: function() {
+            setTimeout(function(){
+                if(!$('#nicklist-closed').is(':visible') && !$('#nicklist').is(':visible')){
+                    uiNicklist.showNickList();
+                }
+            }, 1500);
+        },
+
+        // Show the nicklist panel
+        showNickList: function() {
+            $("#nicklist-closed").fadeOut(200, function () {
+                $("#nicklist").animate({
+                    "opacity": "show",
+                    "width":	"23%"
+                }, 400);
+                $("#chstats").animate({
+                    "opacity": "show",
+                    "width":	"23%"
+                }, 400);
+                $("#chatbox").animate({
+                    "width":	"77%"
+                }, 401);
+                setTimeout(function(){
+                    var tab = gateway.getActive();
+                    if(!tab){
+                        tab = gateway.statusWindow;
+                    }
+                    tab.restoreScroll();
+                    $('#nickopts').css('display', '');
+                    $('#chlist').css('display', '');
+                }, 450);
+            });
+        },
+
+        // Toggle nick options menu
+        toggleNickOpt: function(nicklistid) {
+            if($('#'+nicklistid+'-opt').is(':visible')) {
+                if($('#'+nicklistid+'-opt-info').is(':visible')){
+                     $('#'+nicklistid+'-opt-info').hide('blind', {
+                        direction: "vertical"
+                    }, 300);
+                    $('#'+nicklistid+'-opt').removeClass('activeInfo');
+                 }
+                $('#'+nicklistid+'-opt').hide('blind', {
+                    direction: "vertical"
+                }, 300);
+                $('#'+nicklistid).removeClass('activeNick');
+            } else {
+                $('#'+nicklistid+'-opt').show('blind', {
+                    direction: "vertical"
+                }, 300);
+                $('#'+nicklistid).addClass('activeNick');
+            }
+        },
+
+        // Toggle nick options info section
+        toggleNickOptInfo: function(nicklistid) {
+            if($('#'+nicklistid+'-opt-info').is(':visible')){
+                 $('#'+nicklistid+'-opt-info').hide('blind', {
+                    direction: "vertical"
+                }, 300);
+                $('#'+nicklistid+'-opt').removeClass('activeInfo');
+            } else {
+                $('#'+nicklistid+'-opt-info').show('blind', {
+                    direction: "vertical"
+                }, 300);
+                $('#'+nicklistid+'-opt').addClass('activeInfo');
+            }
+        },
+
+        // Toggle nick options admin section
+        toggleNickOptAdmin: function(nicklistid) {
+            if($('#'+nicklistid+'-opt-admin').is(':visible')){
+                 $('#'+nicklistid+'-opt-admin').hide('blind', {
+                    direction: "vertical"
+                }, 300);
+                $('#'+nicklistid+'-opt').removeClass('activeAdmin');
+            } else {
+                $('#'+nicklistid+'-opt-admin').show('blind', {
+                    direction: "vertical"
+                }, 300);
+                $('#'+nicklistid+'-opt').addClass('activeAdmin');
+            }
+        },
+
+        // Toggle channel operator actions menu
+        toggleChannelOperOpts: function(channel) {
+            var $element = $('#'+gateway.findChannel(channel).id+'-operActions ul');
+            if($element.is(':visible')){
+                $element.hide('blind', {
+                    direction: 'vertical'
+                }, 300);
+                $('#'+gateway.findChannel(channel).id+'-operActions .chstats-button').removeClass('channelAdminActive');
+            } else {
+                $element.show('blind', {
+                    direction: 'vertical'
+                }, 300);
+                $('#'+gateway.findChannel(channel).id+'-operActions .chstats-button').addClass('channelAdminActive');
+            }
+        },
+
+        // Toggle channel options menu
+        toggleChannelOpts: function(channel) {
+            var $element = $('#'+gateway.findChannel(channel).id+'-channelOptions ul');
+            if($element.is(':visible')){
+                $element.hide('blind', {
+                    direction: 'vertical'
+                }, 300);
+                $('#'+gateway.findChannel(channel).id+'-chstats .chstats-button').removeClass('channelAdminActive');
+            } else {
+                $element.show('blind', {
+                    direction: 'vertical'
+                }, 300);
+                $('#'+gateway.findChannel(channel).id+'-chstats .chstats-button').addClass('channelAdminActive');
+            }
+        },
+
+        // Toggle global nick options panel
+        toggleNickOpts: function() {
+            var $element = $('#nickOptions')
+            if($element.is(':visible')){
+                $element.hide('blind', {
+                    direction: 'down'
+                }, 300);
+                $('#nickopts .nickoptsButton').removeClass('channelAdminActive');
+            } else {
+                $element.show('blind', {
+                    direction: 'down'
+                }, 300);
+                $('#nickopts .nickoptsButton').addClass('channelAdminActive');
+            }
+        }
+    };
+
+    // ==========================================
+    // ATTACH UI FUNCTIONS TO GATEWAY
     // ==========================================
     function attachUIFunctionsToGateway() {
         Object.assign(gateway, uiHelpers);
         Object.assign(gateway, uiTabs);
+        Object.assign(gateway, uiNicklist);
     }
 
     /**
