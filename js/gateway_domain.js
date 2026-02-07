@@ -913,7 +913,7 @@ ircEvents.on('protocol:quitCommand', function(data) {
         // Collect channels where the user was a member before removing them
         var affectedChannels = [];
         users.channelMemberLists.forEach(function(cml) {
-            if (cml.getMemberById(user.id)) {
+            if (cml.findMemberById(user.id)) {
                 affectedChannels.push(cml.channelName);
             }
         });
@@ -2685,7 +2685,10 @@ ircEvents.on('protocol:ctcpReply', function(data) {
     // Don't display our own CTCP replies (they're automatic responses, not interesting to show)
     var sender = data.user || { nick: data.fromNick };
 
-    if (sender.id === guser.me.id || sender.nick === guser.me.nick) {
+    console.log('CTCP Reply from:', sender.nick, 'sender.id:', sender.id, 'guser.me.nick:', guser.me ? guser.me.nick : 'null', 'guser.me.id:', guser.me ? guser.me.id : 'null');
+
+    if (guser.me && (sender.id === guser.me.id || sender.nick === guser.me.nick)) {
+        console.log('Filtering out own CTCP reply');
         // This is our own CTCP reply being echoed - don't display it
         return;
     }

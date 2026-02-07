@@ -2066,7 +2066,13 @@
                 historyLimit = isupport['CHATHISTORY'];
             }
 
-            if ((data.oldestMsgid || data.oldestTimestamp) && data.receivedMessages >= historyLimit) {
+            // Show "load older" button if:
+            // - For initial history: we received any messages (user can try to load more)
+            // - For manual requests: we received >= historyLimit messages (likely more available)
+            var shouldShowLoadOlder = (data.oldestMsgid || data.oldestTimestamp) &&
+                (data.isInitialHistory ? data.receivedMessages > 0 : data.receivedMessages >= historyLimit);
+
+            if (shouldShowLoadOlder) {
                 // Find the oldest message from this batch and insert button before it
                 var selector = data.oldestMsgid
                     ? '[data-msgid="' + data.oldestMsgid + '"]'
