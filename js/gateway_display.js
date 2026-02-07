@@ -2355,6 +2355,24 @@ ircEvents.on('client:notice', function(data) {
             gateway.findOrCreate(data.nick, data.setActive);
         });
 
+        // User setting information (e.g., user modes)
+        ircEvents.on('user:settingInfo', function(data) {
+            var isSelf = (guser.me && data.nick === guser.me.nick) || data.nick === guser.nick;
+
+            if (isSelf) {
+                // Display for current user
+                var settingDisplay = data.settingString || language.none;
+                gateway.statusWindow.appendMessage(language.messagePatterns.selfUserSettingInfo, [
+                    $$.niceTime(data.time),
+                    he(data.nick),
+                    settingDisplay
+                ]);
+            } else {
+                // For other users - not yet implemented
+                console.log('UI: Received user:settingInfo for another user:', data.nick, '- not yet implemented');
+            }
+        });
+
         // Channel list started loading
         ircEvents.on('server:listStart', function(data) {
             if (gateway.listWindow) {

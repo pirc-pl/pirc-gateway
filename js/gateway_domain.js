@@ -572,12 +572,24 @@ ircEvents.on('protocol:modeCommand', function(data) {
             }
         });
     } else { // User mode
-        // Apply user modes to the user object directly or via domain event
-        ircEvents.emit('user:modeChanged', {
-            nick: target,
-            modeString: modeString,
-            byNick: data.user.nick,
-        });
+        // Check if this is for the current user
+        var isSelf = (guser.me && target === guser.me.nick) || target === guser.nick;
+
+        if (isSelf) {
+            // Parse and apply the mode changes
+            ircEvents.emit('domain:processUserModes', {
+                modes: modeString,
+                time: data.time || new Date()
+            });
+        } else {
+            // Mode change for another user - emit generic event
+            ircEvents.emit('user:modeChanged', {
+                nick: target,
+                modeString: modeString,
+                byNick: data.user.nick,
+                time: data.time || new Date()
+            });
+        }
     }
 });
 
@@ -1008,14 +1020,32 @@ ircEvents.on('protocol:rplIsupport', function(data) {
 });
 
 ircEvents.on('protocol:rplUmodes', function(data) {
-    // Apply umode changes to the current user (guser.me)
-    if (guser.me && data.target === guser.me.nick) {
-        guser.me.setModes(data.umodes); // Assuming setModes method on user object
-        ircEvents.emit('user:modesUpdated', {
-            nick: guser.me.nick,
-            modes: data.umodes
-        });
+    // RPL_UMODES (221): server is telling us our complete mode string
+    // Clear existing modes and parse the new mode string
+    guser.clearUmodes();
+
+    // Parse the mode string using domain:processUserModes
+    if (data.umodes) {
+        var modes = data.umodes;
+        var plus = false;
+        for(var i=0; i<modes.length; i++){
+            var c = modes.charAt(i);
+            switch(c){
+                case '+': plus = true; break;
+                case '-': plus = false; break;
+                case ' ': return;
+                default: guser.setUmode(c, plus); break;
+            }
+        }
     }
+
+    // Emit user:settingInfo event with the umode string
+    var umodeString = getUmodeString();
+    ircEvents.emit('user:settingInfo', {
+        nick: guser.me ? guser.me.nick : guser.nick,
+        settingString: umodeString,
+        time: data.time || new Date()
+    });
 });
 
 ircEvents.on('protocol:rplNone', function(data) {
@@ -3296,6 +3326,30 @@ ircEvents.on('domain:checkConnectionStatus', function(data) {
 
 
 // --- Mode Parsing ---
+
+// Domain internal method to generate umode string from user's current modes
+function getUmodeString(user) {
+    var modeString = '+';
+    if (user && user.umodes) {
+        for (var mode in user.umodes) {
+            if (user.umodes[mode] === true) {
+                modeString += mode;
+            }
+        }
+    } else if (guser && guser.umodes) {
+        // Fallback to guser.umodes for current user
+        for (var mode in guser.umodes) {
+            if (guser.umodes[mode] === true) {
+                modeString += mode;
+            }
+        }
+    }
+    if (modeString.length === 1) {
+        modeString = ''; // Return empty string, UI will use language.none
+    }
+    return modeString;
+}
+
 ircEvents.on('domain:processUserModes', function(data) {
     console.log('DOMAIN: Processing user modes:', data.modes);
     var modes = data.modes;
@@ -3309,7 +3363,13 @@ ircEvents.on('domain:processUserModes', function(data) {
             default: guser.setUmode(c, plus); break; // guser.setUmode updates domain state
         }
     }
-    // No direct UI update here, UI should listen to user:modesUpdated from guser.setUmode
+    // Emit user:settingInfo event with the umode string
+    var umodeString = getUmodeString();
+    ircEvents.emit('user:settingInfo', {
+        nick: guser.me ? guser.me.nick : guser.nick,
+        settingString: umodeString,
+        time: data.time || new Date()
+    });
 });
 
 
