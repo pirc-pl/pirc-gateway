@@ -2047,5 +2047,5 @@ var $$ = {
 };
 
 function escapeRegExp(string) { // my editor syntax colouring fails at this, so moved to the end
-	return string.replace(/[.*+?^${}()|[\\]/g, '\\$&'); // $& means the whole matched string
+	return string.replace(//[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
 }
