@@ -1437,6 +1437,26 @@
             $$.displayDialog('error', 'error', language.error, html);
         },
 
+        // Show kick dialog
+        showKick: function(channel, nick) {
+            var html = '<p>'+language.kickUser+he(nick)+language.fromChannel+he(channel)+'. ' + language.giveKickReason + '</p>' +
+                "<input type='text' id='kickinput' maxlength='307' />";
+            var button = [ {
+                text: language.cancel,
+                click: function(){
+                    $(this).dialog('close');
+                }
+            }, {
+                text: language.doKick,
+                click: function(){
+                    var reason = $('#kickinput').val();
+                    ircEvents.emit('domain:requestKick', { channel: channel, nick: nick, reason: reason, time: new Date() });
+                    $(this).dialog('close');
+                }
+            } ];
+            $$.displayDialog('admin', 'kick-'+channel, 'KICK', html, button);
+        },
+
         // Show quit confirmation dialog
         clickQuit: function() {
             var html = '<form id="quit-form" onsubmit="ircEvents.emit(\'domain:requestQuit\', { message: $(\'#quit-msg\').val(), time: new Date() }); $$.closeDialog(\'confirm\', \'quit\'); return false;" action="javascript:void(0);">'+
