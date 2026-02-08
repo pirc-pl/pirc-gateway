@@ -49,7 +49,7 @@ var scriptFiles = [
 	'/js/gateway_conn.js',        // Uses: decryptPassword (line 112); Provides: conn object; Pushes: conn.gatewayInit
 	'/js/gateway_ignore.js',
 	'/js/gateway_services.js',    // Uses: encryptPassword (line 253)
-	'/js/gateway_cmd_binds.js',
+	'/js/irc_protocol.js',
 	'/js/gateway_user_commands.js',
 	'/js/gateway_tabs.js',
 	'/js/gateway_cmds.js',
