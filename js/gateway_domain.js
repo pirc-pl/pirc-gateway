@@ -2924,9 +2924,9 @@ ircEvents.on('domain:connectionDisconnected', function(data) {
     var reasonText = data.reasonKey ? language[data.reasonKey] : data.reason;
     console.log('DOMAIN: Connection Disconnected:', reasonText);
     clearTimeout(domainConnectTimeoutID);
-    if (gateway.websock) { // Assuming gateway.websock is a domain-level network interface
-        gateway.websock.onerror = undefined;
-        gateway.websock.onclose = undefined;
+    if (ircTransport.websock) { // Assuming ircTransport.websock is a domain-level network interface
+        ircTransport.websock.onerror = undefined;
+        ircTransport.websock.onclose = undefined;
     }
     domainConnectTimeoutID = false;
     clearInterval(domainPingIntervalID);
@@ -3002,7 +3002,7 @@ ircEvents.on('domain:setConnectionTimeout', function(data) {
 ircEvents.on('domain:requestStopAndReconnect', function(data) {
     console.log('DOMAIN: Request Stop And Reconnect:', data.reason);
     ircEvents.emit('domain:connectionDisconnected', { reason: data.reason });
-    if(gateway.websock && gateway.websock.readyState === WebSocket.OPEN) ircCommand.quit(data.reason); // Protocol action
+    if(ircTransport.websock && ircTransport.websock.readyState === WebSocket.OPEN) ircCommand.quit(data.reason); // Protocol action
     setTimeout(function() { ircEvents.emit('domain:requestReconnect'); }, 500);
 });
 
