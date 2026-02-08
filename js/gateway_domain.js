@@ -144,6 +144,75 @@ ircEvents.on('batch:metadata-subs', function(data){
 });
 
 // ============================================================================
+// BATCH HELPER FUNCTIONS
+// ============================================================================
+
+/**
+ * Find a batch of a specific type in the batch hierarchy
+ * @param {Object} tags - Message tags object
+ * @param {string} type - Batch type to search for (e.g., 'chathistory')
+ * @returns {Object|null} - Batch object or null if not found
+ */
+function findBatchOfType(tags, type){
+	if(!tags || !('batch' in tags)){
+		console.log('[BATCH-DEBUG] No batch in tags, type requested:', type);
+		return null;
+	}
+	var batch = domainBatch[tags.batch];
+	if(!batch){
+		console.log('[BATCH-DEBUG] Batch', tags.batch, 'not found in domainBatch');
+		return null;
+	}
+	console.log('[BATCH-DEBUG] Checking batch', tags.batch, 'type:', batch.type, 'looking for:', type);
+	if(batch.type == type)
+		return batch;
+	if(batch.parents){
+		for(var i=0; i<batch.parents.length; i++){
+			if(batch.parents[i].type == type)
+				return batch.parents[i];
+		}
+	}
+	console.log('[BATCH-DEBUG] Batch type mismatch, returning null');
+	return null;
+}
+
+/**
+ * Check if a message is part of a chathistory batch
+ * @param {Object} tags - Message tags object
+ * @returns {boolean} - True if message is in a chathistory batch
+ */
+function isHistoryBatch(tags){
+	return findBatchOfType(tags, 'chathistory') !== null;
+}
+
+/**
+ * Check if there's an active chathistory batch for a channel
+ * @param {string} chan - Channel name
+ * @returns {boolean} - True if chathistory batch is active for this channel
+ */
+function historyBatchActive(chan){
+	// Check if there's an active chathistory batch for this channel
+	for(var batchId in domainBatch){
+		var batch = domainBatch[batchId];
+		if(batch.type == 'chathistory' && batch.args && batch.args[0] && batch.args[0].toLowerCase() == chan.toLowerCase()){
+			console.log('[BATCH-DEBUG] historyBatchActive: true for', chan, 'batchId:', batchId);
+			return true;
+		}
+		// Also check parent batches
+		if(batch.parents){
+			for(var i=0; i<batch.parents.length; i++){
+				if(batch.parents[i].type == 'chathistory' && batch.parents[i].args && batch.parents[i].args[0] && batch.parents[i].args[0].toLowerCase() == chan.toLowerCase()){
+					console.log('[BATCH-DEBUG] historyBatchActive: true for', chan, 'in parent batch');
+					return true;
+				}
+			}
+		}
+	}
+	console.log('[BATCH-DEBUG] historyBatchActive: false for', chan);
+	return false;
+}
+
+// ============================================================================
 // CLIENT-SPECIFIC LISTENERS (migrated from other layers)
 // ============================================================================
 

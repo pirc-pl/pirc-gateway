@@ -240,38 +240,9 @@ var gateway = {
 	// Removed showPermError, clickQuit, quit - moved to uiDialogs (gateway_display.js)
 	// Removed 'completion' - now in uiState (gateway_display.js), exposed via gateway.completion
 	// Removed doComplete - moved to uiHelpers (gateway_display.js)
-	'parseChannelMode': function(args, chan, dispType) { // This is domain logic and needs to be moved to gateway_domain.js
-		console.warn('gateway.parseChannelMode is domain logic and should be moved.');
-		// Delegate to domain event
-		ircEvents.emit('domain:parseChannelMode', { args: args, channelName: chan.name, dispType: dispType, rawMsg: {} /* needs full msg object */ });
-		return ''; // This function no longer generates infoText directly
-	},
-	'parseIsupport': function() { // This is domain logic and needs to be moved to gateway_domain.js
-		console.warn('gateway.parseIsupport is domain logic and should be moved.');
-		ircEvents.emit('domain:parseIsupport', {}); // Emit domain event
-	},
-	'storageHandler': function(evt) { // This is domain logic and needs to be moved to gateway_domain.js
-		console.warn('gateway.storageHandler is domain logic and should be moved.');
-		ircEvents.emit('domain:processStorageEvent', { evt: evt, time: new Date() }); // Emit domain event
-	},
+	// Removed parseChannelMode, parseIsupport, storageHandler - thin wrappers, callers now emit domain events directly
 	// Removed quitQueue, quitTimeout, netJoinUsers, netJoinQueue, netJoinTimeout
-	'processNetsplit': function(){ // Domain logic, needs to be moved to gateway_domain.js
-		console.warn('gateway.processNetsplit is domain logic and should be moved.');
-		ircEvents.emit('domain:processNetsplitEvents', { time: new Date() }); // Emit domain event
-	},
-	'processNetjoin': function(){ // Domain logic, needs to be moved to gateway_domain.js
-		console.warn('gateway.processNetjoin is domain logic and should be moved.');
-		ircEvents.emit('domain:processNetjoinEvents', { time: new Date() }); // Emit domain event
-	},
-	'processQuit': function(msg){ // Domain logic, needs to be moved to gateway_domain.js
-		console.warn('gateway.processQuit is domain logic and should be moved.');
-		ircEvents.emit('domain:processQuitCommand', { msg: msg, time: new Date() }); // Emit domain event
-		return true; // Keep old return for compatibility until fully removed
-	},
-	'processJoin': function(msg){ // Domain logic, needs to be moved to gateway_domain.js
-		console.warn('gateway.processJoin is domain logic and should be moved.');
-		ircEvents.emit('domain:processJoinCommand', { msg: msg, time: new Date() }); // Emit domain event
-	},
+	// Removed processNetsplit, processNetjoin, processQuit, processJoin - thin wrappers, callers now emit domain events directly
 	// Removed findOrCreate - moved to uiWindows (gateway_display.js)
 	'find': function(name){ // UI helper
 		if(!name || name == ''){
@@ -591,13 +562,7 @@ var gateway = {
 		console.error('Unhandled message from '+sender.nick+' to '+dest+'!');
 	},
 	// Removed updateHistory - moved to uiDialogs (gateway_display.js)
-	'labelNotProcessed': function(label, msg, batch){ // Protocol/Domain logic
-		// Access labelCallbacks via domain event
-		ircEvents.emit('domain:processLabelNotProcessed', { label: label, msg: msg, batch: batch });
-	},
-	'setLabelCallback': function(label, callback, timeoutMs) { // Protocol/Domain logic
-		ircEvents.emit('domain:setLabelCallback', { label: label, callback: callback, timeoutMs: timeoutMs });
-	},
+	// Removed labelNotProcessed, setLabelCallback - thin wrappers, callers now emit domain events directly
 	'msgNotDelivered': function(label, msg){ // Domain logic
 		// activeCaps is domain state - needs to be passed via domain event listener to UI or a domain-exposed accessor
 		console.log('[LABEL-DEBUG] msgNotDelivered called with label:', label, 'echo-message cap:', ('echo-message' in activeCaps));
@@ -609,52 +574,17 @@ var gateway = {
 		sel.prop('title', language.messageNotDelivered); // UI action
 		console.log('[LABEL-DEBUG] Added msgDeliveryFailed class to', sel.length, 'element(s)');
 	},
-	'isHistoryBatch': function(tags){ // Domain helper - accesses domainBatch directly (layering violation, acceptable for now)
-		return gateway.findBatchOfType(tags, 'chathistory');
-	},
-	'historyBatchActive': function(chan){ // Domain helper - accesses domainBatch directly (layering violation, acceptable for now)
-		// Check if there's an active chathistory batch for this channel
-		for(var batchId in domainBatch){
-			var batch = domainBatch[batchId];
-			if(batch.type == 'chathistory' && batch.args && batch.args[0] && batch.args[0].toLowerCase() == chan.toLowerCase()){
-				console.log('[BATCH-DEBUG] historyBatchActive: true for', chan, 'batchId:', batchId);
-				return true;
-			}
-			// Also check parent batches
-			if(batch.parents){
-				for(var i=0; i<batch.parents.length; i++){
-					if(batch.parents[i].type == 'chathistory' && batch.parents[i].args && batch.parents[i].args[0] && batch.parents[i].args[0].toLowerCase() == chan.toLowerCase()){
-						console.log('[BATCH-DEBUG] historyBatchActive: true for', chan, 'in parent batch');
-						return true;
-					}
-				}
-			}
-		}
-		console.log('[BATCH-DEBUG] historyBatchActive: false for', chan);
-		return false;
-	},
+	// Removed isHistoryBatch, historyBatchActive, findBatchOfType - moved to gateway_domain.js
+	// These are now globally accessible functions: findBatchOfType(), isHistoryBatch(), historyBatchActive()
 	// Removed loadOlderHistory - moved to uiDialogs in gateway_display.js
-	'findBatchOfType': function(tags, type){ // Domain helper - accesses global domainBatch (layering violation, acceptable for now)
-		if(!tags || !('batch' in tags)){
-			console.log('[BATCH-DEBUG] No batch in tags, type requested:', type);
-			return null;
-		}
-		var batch = domainBatch[tags.batch];
-		if(!batch){
-			console.log('[BATCH-DEBUG] Batch', tags.batch, 'not found in domainBatch');
-			return null;
-		}
-		console.log('[BATCH-DEBUG] Checking batch', tags.batch, 'type:', batch.type, 'looking for:', type);
-		if(batch.type == type)
-			return batch;
-		if(batch.parents){
-			for(var i=0; i<batch.parents.length; i++){
-				if(batch.parents[i].type == type)
-					return batch.parents[i];
-			}
-		}
-		console.log('[BATCH-DEBUG] Batch type mismatch, returning null');
-		return null;
+	'isHistoryBatch': function(tags){ // Thin wrapper for compatibility
+		return isHistoryBatch(tags);
+	},
+	'historyBatchActive': function(chan){ // Thin wrapper for compatibility
+		return historyBatchActive(chan);
+	},
+	'findBatchOfType': function(tags, type){ // Thin wrapper for compatibility
+		return findBatchOfType(tags, type);
 	},
 	// Removed processIncomingTags - thin wrapper, callers now emit domain:processIncomingTags directly
 	// Removed typing - deprecated thin wrapper, callers now emit domain:processTypingActivity directly
