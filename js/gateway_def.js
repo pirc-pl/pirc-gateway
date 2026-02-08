@@ -1373,7 +1373,7 @@ var gateway = {
 
 
 // IRCEventEmitter class and ircEvents instance are defined in gateway_functions.js
-// (must be available before gateway_cmd_binds.js loads)
+// (must be available before irc_protocol.js loads)
 
 // Formal hook registration API for addons
 var hooks = {

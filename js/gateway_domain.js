@@ -1,6 +1,6 @@
 // js/gateway_domain.js
 // This file will contain listeners for domain-level events that orchestrate core application logic,
-// separating it from protocol handling (gateway_cmd_binds.js) and UI rendering (gateway_display.js).
+// separating it from protocol handling (irc_protocol.js) and UI rendering (gateway_display.js).
 
 var activeCaps = {};
 var isupport = [];
@@ -66,7 +66,7 @@ var domainNetJoinTimeout = false;
 
 
 // ============================================================================
-// BATCH HANDLERS (migrated from gateway_cmd_binds.js)
+// BATCH HANDLERS (migrated from irc_protocol.js)
 // ============================================================================
 
 function ircBatch(name, type, args, msg){
@@ -151,7 +151,7 @@ ircEvents.on('client:processOwnChannelList', function(data) {
     var nick = data.nick;
     var channelNames = data.channelNames;
 
-    // This logic was moved from gateway_cmd_binds.js
+    // This logic was moved from irc_protocol.js
     domainConnectStatus = '001'; // Update domainConnectStatus
     if(nick == guser.nick){
         channelNames.forEach( function(channame){
@@ -178,7 +178,7 @@ ircEvents.on('channel:requestWho', function(data) {
 });
 
 // ============================================================================
-// PROTOCOL LISTENERS (migrated from gateway_cmd_binds.js)
+// PROTOCOL LISTENERS (migrated from irc_protocol.js)
 // ============================================================================
 
 ircEvents.on('protocol:accountCommand', function(data) {

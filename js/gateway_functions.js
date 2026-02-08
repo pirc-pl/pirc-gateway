@@ -280,7 +280,7 @@ var loaded = false;
 
 /**
  * Event emitter with priority support for IRC handlers
- * Must be defined here (before gateway_cmd_binds.js loads)
+ * Must be defined here (before irc_protocol.js loads)
  * @constructor
  */
 var IRCEventEmitter = function() {
