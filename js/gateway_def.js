@@ -539,10 +539,7 @@ var gateway = {
 	'listWindowLabel': null, // Domain state
 	// Removed getOrOpenListWindow, toggleChanList, refreshChanList - moved to uiWindows (gateway_display.js)
 	// Removed toggleFormatting - moved to uiHelpers (gateway_display.js)
-	'parseUmodes': function(modes) { // This is domain logic, needs to be moved to gateway_domain.js
-		console.warn('gateway.parseUmodes is domain logic and should be moved.');
-		ircEvents.emit('domain:processUserModes', { modes: modes, time: new Date() }); // Emit domain event
-	},
+	// Removed parseUmodes - thin wrapper, callers now emit domain:processUserModes directly
 	'getUmodeString': function(){ // UI helper, displays current umode
 		var modeString = '';
 		if(guser.umodes){
@@ -556,9 +553,7 @@ var gateway = {
 	// Removed enterPressed, arrowPressed, inputPaste, inputKeypress - moved to uiInput (gateway_display.js)
 	// Removed displayGlobalBanInfo - moved to uiDialogs (gateway_display.js)
 	// Removed getMeta, getAvatarUrl, getMsgid - moved to uiHelpers (gateway_display.js)
-	'makeLabel': function(){ // Domain helper - calls global generateLabel function
-		return generateLabel(); // Direct call to global function
-	},
+	// Removed makeLabel - thin wrapper, callers now call generateLabel() directly
 	// Removed calculateHistoryLimit - moved to uiHelpers (gateway_display.js)
 	'insertMessage': function(cmd, dest, text, ownMsg, label, sender, time, options){ // UI action
 		// options can contain: attrs, addClass, isHistory, msgid - provided by abstracted event
@@ -946,20 +941,10 @@ var gateway = {
 		console.log('[BATCH-DEBUG] Batch type mismatch, returning null');
 		return null;
 	},
-	'processIncomingTags': function(ircmsg){ // Domain logic
-		ircEvents.emit('domain:processIncomingTags', { ircmsg: ircmsg });
-	},
-	'typing': function(user, dest, mode){ // This is primarily domain logic, should be moved to gateway_domain.js
-		// The logic for tab.typing.start/stop is in Query/Channel UI objects
-		console.warn('gateway.typing is deprecated. Use domain:processTypingActivity event.');
-		ircEvents.emit('domain:processTypingActivity', { user: user, dest: dest, mode: mode, time: new Date() });
-	},
-	'changeCapSupport': function(cap, enable){ // Domain logic
-		ircEvents.emit('domain:changeCapSupport', { cap: cap, enable: enable });
-	},
-	'hideMessageWithLabel': function(label){ // Domain logic
-		ircEvents.emit('domain:addLabelToHide', { label: label });
-	}
+	// Removed processIncomingTags - thin wrapper, callers now emit domain:processIncomingTags directly
+	// Removed typing - deprecated thin wrapper, callers now emit domain:processTypingActivity directly
+	// Removed changeCapSupport - thin wrapper, callers now emit domain:changeCapSupport directly
+	// Removed hideMessageWithLabel - thin wrapper, callers now emit domain:addLabelToHide directly
 }
 
 
