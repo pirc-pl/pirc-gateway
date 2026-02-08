@@ -22,46 +22,120 @@
 
 // IRC parser (irc) and logging (ircLog) moved to irc_transport.js
 
+/**
+ * ============================================================================
+ * GATEWAY OBJECT - Legacy Coordination Layer
+ * ============================================================================
+ *
+ * This object historically served as the main application coordinator but has
+ * been significantly refactored. Most functionality has been moved to specialized
+ * layers following proper architectural separation:
+ *
+ * TRANSPORT LAYER (irc_transport.js):
+ *   - WebSocket management (connect, reconnect, send, receive)
+ *   - IRC message parsing
+ *   - Connection lifecycle
+ *
+ * PROTOCOL LAYER (irc_protocol.js):
+ *   - IRC command handlers
+ *   - Protocol event emission
+ *
+ * DOMAIN LAYER (gateway_domain.js):
+ *   - Application state management
+ *   - Business logic
+ *   - Batch/label handling
+ *   - User/channel domain objects
+ *
+ * UI LAYER (gateway_display.js):
+ *   - DOM manipulation
+ *   - Event listening
+ *   - Dialog management
+ *   - Tab management
+ *   - User input handling
+ *
+ * WHAT REMAINS IN GATEWAY:
+ *
+ * 1. THIN WRAPPERS (for backwards compatibility):
+ *    - reconnect(), connect(), send(), forceSend() → ircTransport
+ *    - isHistoryBatch(), historyBatchActive(), findBatchOfType() → domain functions
+ *
+ * 2. UI STATE REFERENCES (exposed from gateway_display.js):
+ *    - channels, queries, active, statusWindow, listWindow, etc.
+ *    - These are managed in uiState but exposed via gateway for compatibility
+ *
+ * 3. UI HELPER FUNCTIONS:
+ *    - findChannel(), findQuery(), find() - array lookups
+ *    - removeChannel(), removeQuery() - array management
+ *    - sortChannelTabs() - tab ordering
+ *
+ * 4. LEGACY STATE FLAGS (to be migrated):
+ *    - labelProcessed - should move to transport/domain
+ *    - pingIntervalID, whoChannelsIntervalID - timer IDs
+ *    - disconnectMessageShown - UI state
+ *    - allowNewSend, commandProcessing - transport state
+ *    - lasterror - domain state
+ *    - smallListLoading, listWindowLabel - UI/domain state
+ *
+ * 5. COMMAND DELEGATION:
+ *    - callCommand() - delegates to user_commands.js
+ *
+ * 6. LARGE COMPLEX FUNCTIONS (need refactoring):
+ *    - insertMessage() - ~300 lines, should move to UI layer
+ *    - msgNotDelivered() - has UI logic, should move to UI layer
+ *    - sendSingleMessage() - thin wrapper, could be removed
+ *    - getUmodeString() - mixes domain/UI concerns
+ *
+ * FUTURE REFACTORING GOALS:
+ * - Move insertMessage to gateway_display.js
+ * - Move remaining state flags to appropriate layers
+ * - Remove all thin wrappers once all call sites are updated
+ * - Eventually reduce gateway to just a reference container or remove entirely
+ */
 var gateway = {
-	// WebSocket connection, send/receive, and processData moved to ircTransport in irc_transport.js
-	// Removed connectStatus, joined, setConnectedWhenIdentified, firstConnect, userQuit, sasl, whowasExpect312, retrySasl, pingcnt
-	// Removed whoisData, smallListData, lasterror, label, labelCallbacks, labelInfo, labelsToHide, batch
-	// Removed connectTimeoutID - now managed by domain layer
-	'labelProcessed': false, // Track if current label was processed
-	'pingIntervalID': false,
-	'whoChannelsIntervalID': false,
-	'disconnectMessageShown': 0,
-	// Removed displayOwnWhois, statusWindow, lastKeypressWindow, keypressSuppress - now in uiState (gateway_display.js)
-	'allowNewSend' : true,
-	'commandProcessing': false,
-	// Removed chanPassword - moved to uiDialogs (gateway_display.js)
-	// Removed reconnect, configureConnection, connect, processData, sockError, onRecv - moved to ircTransport
-	// Removed iKnowIAmConnected: logic moved to domain:connected listener and UI client:connected listener
-	// Removed disconnected: logic moved to domain:connectionDisconnected listener and UI client:disconnected listeners
-	// Removed ping() method (now domain-driven)
-	'reconnect': function() { // Thin wrapper for UI compatibility
+	// =========================================================================
+	// LEGACY STATE FLAGS (to be migrated to appropriate layers)
+	// =========================================================================
+	'labelProcessed': false, // Track if current label was processed (transport/domain state)
+	'pingIntervalID': false, // Timer ID for ping checks (domain state)
+	'whoChannelsIntervalID': false, // Timer ID for WHO queries (domain state)
+	'disconnectMessageShown': 0, // Disconnect message counter (UI state)
+	'allowNewSend' : true, // Send throttle flag (transport state)
+	'commandProcessing': false, // Command processing flag (transport state)
+	'lasterror': '', // Last error string (domain state)
+	'smallListLoading': false, // List loading flag (domain state)
+	'listWindowLabel': null, // LIST window label reference (domain state)
+
+	// =========================================================================
+	// THIN WRAPPERS - Transport Layer (for backwards compatibility)
+	// =========================================================================
+	'reconnect': function() { // → ircTransport.reconnect()
 		ircTransport.reconnect();
 	},
-	'connect': function(force) { // Thin wrapper for UI compatibility
+	'connect': function(force) { // → ircTransport.connect()
 		ircTransport.connect(force);
 	},
-	'ctcp': function(dest, text) { // UI event handler, should emit domain event
-		ircEvents.emit('domain:requestCtcpCommand', { dest: dest, text: text, time: new Date() }); // Emit domain event
-	},
-	// Removed processStatus() method (now domain-driven)
-	// Removed joinChannels() method (now domain-driven)
-	// Removed connectTimeout() method (now domain-driven)
-	// Removed stopAndReconnect() method (now domain-driven)
-	// Removed initSys, initialize - moved to uiDialogs (gateway_display.js)
-	// Removed delayedSendTimer, toSend, sendDelayCnt, sendDelayed, send, forceSend - moved to ircTransport
-	'send': function(data) { // Thin wrapper for compatibility
+	'send': function(data) { // → ircTransport.send()
 		ircTransport.send(data);
 	},
-	'forceSend': function(data) { // Thin wrapper for compatibility
+	'forceSend': function(data) { // → ircTransport.forceSend()
 		ircTransport.forceSend(data);
 	},
-	// Removed 'channels' - now in uiState (gateway_display.js), exposed via gateway.channels
-	'findChannel': function(name) { // UI-level lookup
+
+	// =========================================================================
+	// THIN WRAPPERS - Domain Events (for backwards compatibility)
+	// =========================================================================
+	'ctcp': function(dest, text) { // → domain:requestCtcpCommand
+		ircEvents.emit('domain:requestCtcpCommand', { dest: dest, text: text, time: new Date() });
+	},
+	'sendSingleMessage': function(text, active){ // → domain:requestSendMessage
+		ircEvents.emit('domain:requestSendMessage', { target: active.name, message: text, time: new Date() });
+	},
+
+	// =========================================================================
+	// UI HELPER FUNCTIONS - Channel/Query Management
+	// =========================================================================
+	// Note: 'channels' array is in uiState (gateway_display.js), exposed via gateway.channels
+	'findChannel': function(name) { // Lookup channel tab by name
 		if(typeof(name) != 'string') return false;
 		for (var i=0; i<gateway.channels.length; i++) {
 			if(gateway.channels[i].name.toLowerCase() == name.toLowerCase()) {
@@ -103,8 +177,8 @@ var gateway = {
 			}
 		}
 	},
-	// Removed 'queries' - now in uiState (gateway_display.js), exposed via gateway.queries
-	'findQuery': function(name) { // UI-level lookup
+	// Note: 'queries' array is in uiState (gateway_display.js), exposed via gateway.queries
+	'findQuery': function(name) { // Lookup query tab by name
 		if(typeof(name) != 'string') return false;
 		for (i in gateway.queries) {
 			if(gateway.queries[i] && gateway.queries[i].name.toLowerCase() == name.toLowerCase()) {
@@ -131,15 +205,10 @@ var gateway = {
 		$('#input').focus();
 		return false;
 	},
-	// Removed changeTopic - moved to uiDialogs (gateway_display.js)
-	// Removed 'tabHistory' - now in uiState (gateway_display.js), exposed via gateway.tabHistory
-	'lasterror': '', // This is now domainLastError
-	// Removed 'nickListVisibility' - now in uiState (gateway_display.js), exposed via gateway.nickListVisibility
-	// Removed nickListToggle, checkNickListVisibility, showNickList - moved to uiNicklist (gateway_display.js)
-	// Removed insert, insertEmoji, insertColor, insertCode - moved to uiHelpers (gateway_display.js)
-	// Removed nextTab, prevTab, switchTab, tabHistoryLast - moved to uiTabs (gateway_display.js)
-	// Removed notEnoughParams - moved to uiInput (gateway_display.js)
-	'callCommand': function(command, input, alias) { // Delegates to user_commands.js
+	// =========================================================================
+	// COMMAND DELEGATION - User Commands
+	// =========================================================================
+	'callCommand': function(command, input, alias) { // Delegates to commands in gateway_user_commands.js
 		if(alias && alias in commands) {
 			if(typeof(commands[alias].callback) == 'string') {
 				return gateway.callCommand(command, input, commands[alias].callback);
@@ -162,17 +231,50 @@ var gateway = {
 			return false;
 		}
 	},
-	// Removed parseUserCommand, parseUserMessage, parseUserInput, performCommand - moved to uiInput (gateway_display.js)
-	'sendSingleMessage': function(text, active){ // UI action, emits domain event
-		ircEvents.emit('domain:requestSendMessage', { target: active.name, message: text, time: new Date() }); // Emit domain event
+	// =========================================================================
+	// HELPERS - Miscellaneous
+	// =========================================================================
+	'find': function(name){ // Combined lookup for channel or query by name
+		if(!name || name == ''){
+			return false;
+		}
+		if(name.charAt(0) == '#'){ //kanał
+			return gateway.findChannel(name);
+		} else { //query
+			return gateway.findQuery(name);
+		}
+		return false;
 	},
-	// Removed 'commandHistory', 'commandHistoryPos' - now in uiState (gateway_display.js)
-	// Removed inputFocus - moved to uiHelpers (gateway_display.js)
-	// Removed openQuery - moved to uiWindows (gateway_display.js)
-	// Removed showStatus, showStatusAnti, showChannelModes, changeChannelModes - moved to uiDialogs in gateway_display.js
-	// Removed showInvitePrompt, knocking - moved to uiDialogs in gateway_display.js
-	// Removed showKick - moved to uiDialogs in gateway_display.js
-	/*'showBan' : function(channel, nick) { // This function is complex UI, needs full refactor
+	'getUmodeString': function(){ // Get formatted user mode string (mixes domain/UI)
+		var modeString = '';
+		if(guser.umodes){
+			for(var mode in guser.umodes){
+				if(guser.umodes[mode]) modeString += mode;
+			}
+		}
+		if(!modeString) modeString = language.none; // Fallback
+		return modeString;
+	},
+
+	// =========================================================================
+	// THIN WRAPPERS - Domain Functions (for backwards compatibility)
+	// =========================================================================
+	'isHistoryBatch': function(tags){ // → isHistoryBatch() in gateway_domain.js
+		return isHistoryBatch(tags);
+	},
+	'historyBatchActive': function(chan){ // → historyBatchActive() in gateway_domain.js
+		return historyBatchActive(chan);
+	},
+	'findBatchOfType': function(tags, type){ // → findBatchOfType() in gateway_domain.js
+		return findBatchOfType(tags, type);
+	},
+
+	// =========================================================================
+	// COMPLEX FUNCTIONS - Need Refactoring
+	// =========================================================================
+	// TODO: These functions should be moved to appropriate layers
+
+	/*'showBan' : function(channel, nick) { // COMMENTED OUT - Complex UI, needs refactor
 		console.warn('showBan is complex UI logic, needs refactor.');
 		// showBan function is now in gateway_services.js
 	},
@@ -233,50 +335,7 @@ var gateway = {
 		return banFormat;
 	},
 	*/
-	// Removed getActive - moved to uiTabs (gateway_display.js)
-	// Removed 'active' - now in uiState (gateway_display.js), exposed via gateway.active
-	// Removed toggleNickOpt, toggleNickOptInfo, toggleNickOptAdmin - moved to uiNicklist (gateway_display.js)
-	// Removed toggleChannelOperOpts, toggleChannelOpts, toggleNickOpts - moved to uiNicklist (gateway_display.js)
-	// Removed showPermError, clickQuit, quit - moved to uiDialogs (gateway_display.js)
-	// Removed 'completion' - now in uiState (gateway_display.js), exposed via gateway.completion
-	// Removed doComplete - moved to uiHelpers (gateway_display.js)
-	// Removed parseChannelMode, parseIsupport, storageHandler - thin wrappers, callers now emit domain events directly
-	// Removed quitQueue, quitTimeout, netJoinUsers, netJoinQueue, netJoinTimeout
-	// Removed processNetsplit, processNetjoin, processQuit, processJoin - thin wrappers, callers now emit domain events directly
-	// Removed findOrCreate - moved to uiWindows (gateway_display.js)
-	'find': function(name){ // UI helper
-		if(!name || name == ''){
-			return false;
-		}
-		if(name.charAt(0) == '#'){ //kanał
-			return gateway.findChannel(name);
-		} else { //query
-			return gateway.findQuery(name);
-		}
-		return false;
-	},
-	'smallListLoading': false, // Now domain state
-	// Removed 'listWindow' - now in uiState (gateway_display.js), exposed via gateway.listWindow
-	'listWindowLabel': null, // Domain state
-	// Removed getOrOpenListWindow, toggleChanList, refreshChanList - moved to uiWindows (gateway_display.js)
-	// Removed toggleFormatting - moved to uiHelpers (gateway_display.js)
-	// Removed parseUmodes - thin wrapper, callers now emit domain:processUserModes directly
-	'getUmodeString': function(){ // UI helper, displays current umode
-		var modeString = '';
-		if(guser.umodes){
-			for(var mode in guser.umodes){
-				if(guser.umodes[mode]) modeString += mode;
-			}
-		}
-		if(!modeString) modeString = language.none; // Fallback
-		return modeString;
-	},
-	// Removed enterPressed, arrowPressed, inputPaste, inputKeypress - moved to uiInput (gateway_display.js)
-	// Removed displayGlobalBanInfo - moved to uiDialogs (gateway_display.js)
-	// Removed getMeta, getAvatarUrl, getMsgid - moved to uiHelpers (gateway_display.js)
-	// Removed makeLabel - thin wrapper, callers now call generateLabel() directly
-	// Removed calculateHistoryLimit - moved to uiHelpers (gateway_display.js)
-	'insertMessage': function(cmd, dest, text, ownMsg, label, sender, time, options){ // UI action
+	'insertMessage': function(cmd, dest, text, ownMsg, label, sender, time, options){ // TODO: Move to gateway_display.js (~300 lines)
 		// options can contain: attrs, addClass, isHistory, msgid - provided by abstracted event
 		options = options || {};
 		if(!time)
@@ -561,10 +620,9 @@ var gateway = {
 		}
 		console.error('Unhandled message from '+sender.nick+' to '+dest+'!');
 	},
-	// Removed updateHistory - moved to uiDialogs (gateway_display.js)
-	// Removed labelNotProcessed, setLabelCallback - thin wrappers, callers now emit domain events directly
-	'msgNotDelivered': function(label, msg){ // Domain logic
-		// activeCaps is domain state - needs to be passed via domain event listener to UI or a domain-exposed accessor
+	'msgNotDelivered': function(label, msg){ // TODO: Refactor - has UI logic, should move to UI layer
+		// This function mixes domain logic (checking activeCaps) with UI logic (DOM manipulation)
+		// Should be split: domain emits event, UI layer handles visual feedback
 		console.log('[LABEL-DEBUG] msgNotDelivered called with label:', label, 'echo-message cap:', ('echo-message' in activeCaps));
 		if(!('echo-message' in activeCaps))
 			return;
@@ -573,18 +631,6 @@ var gateway = {
 		sel.addClass('msgDeliveryFailed'); // UI action
 		sel.prop('title', language.messageNotDelivered); // UI action
 		console.log('[LABEL-DEBUG] Added msgDeliveryFailed class to', sel.length, 'element(s)');
-	},
-	// Removed isHistoryBatch, historyBatchActive, findBatchOfType - moved to gateway_domain.js
-	// These are now globally accessible functions: findBatchOfType(), isHistoryBatch(), historyBatchActive()
-	// Removed loadOlderHistory - moved to uiDialogs in gateway_display.js
-	'isHistoryBatch': function(tags){ // Thin wrapper for compatibility
-		return isHistoryBatch(tags);
-	},
-	'historyBatchActive': function(chan){ // Thin wrapper for compatibility
-		return historyBatchActive(chan);
-	},
-	'findBatchOfType': function(tags, type){ // Thin wrapper for compatibility
-		return findBatchOfType(tags, type);
 	},
 	// Removed processIncomingTags - thin wrapper, callers now emit domain:processIncomingTags directly
 	// Removed typing - deprecated thin wrapper, callers now emit domain:processTypingActivity directly
