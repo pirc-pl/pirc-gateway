@@ -94,6 +94,56 @@ function ircBatch(name, type, args, msg){
 	}
 }
 
+// ============================================================================
+// INCOMING MESSAGE ENRICHMENT
+// ============================================================================
+
+// Update user state from sender info and well-known message tags.
+// Runs for every incoming message before command handlers, so all cmd:* handlers
+// already see up-to-date user data.
+ircEvents.on('domain:processIncomingTags', function(data) {
+	var msg = data.msg;
+	var user = msg.user;
+
+	// Update user ident/host from sender prefix
+	if(user && msg.sender.user) {
+		if(msg.sender.ident.length > 0) user.setIdent(msg.sender.ident);
+		if(msg.sender.host.length > 0) user.setHost(msg.sender.host);
+	}
+	if(user && msg.sender.server) {
+		user.setServer(true);
+	}
+
+	// Apply server-time tag to the enriched message object
+	if('time' in msg.tags) {
+		msg.time = new Date(msg.tags['time']);
+	}
+
+	if(user) {
+		// account-tag: update sender's account on every message
+		if('account' in msg.tags) {
+			user.setAccount(msg.tags['account'] || false);
+		}
+		// inspircd.org/bot: mark sender as a bot
+		if('inspircd.org/bot' in msg.tags) {
+			user.setBot(true);
+		}
+	}
+
+	// Handle incoming typing indicators carried in TAGMSG
+	if(user && msg.command === 'TAGMSG') {
+		var typingMode = '+typing' in msg.tags ? msg.tags['+typing'] : msg.tags['+draft/typing'];
+		if(typingMode !== undefined) {
+			ircEvents.emit('user:typingActivity', {
+				user: user,
+				dest: msg.args[0],
+				mode: typingMode,
+				time: msg.time
+			});
+		}
+	}
+});
+
 ircEvents.on('batch:chathistory', function(data){
 	var msg = data.msg;
 	var batch = data.batch;

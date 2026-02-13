@@ -106,7 +106,6 @@ var irc = {
 			'user': false
 		};
 		this.time = new Date();
-		this.user = null;
 		this.getLabel = function(){ // get originating label even if it's a batch or even a nested batch
 			if('label' in this.tags)
 				return this.tags.label;
@@ -290,22 +289,11 @@ var irc = {
 			ircmsg.args.push(ircmsg.text); // handling text as a last argument as required by the protocol
 		}
 
-		if(ircmsg.sender.nick.length > 0){
-			var user = users.getUser(ircmsg.sender.nick);
-			ircmsg.user = user;
-
-			// add u@h
-			if(ircmsg.sender.user){
-				if(ircmsg.sender.ident.length > 0) user.setIdent(ircmsg.sender.ident);
-				if(ircmsg.sender.host.length > 0) user.setHost(ircmsg.sender.host);
-			}
-
-			if(ircmsg.sender.server){
-				user.server = true;
-			}
-		}
-
-		ircEvents.emit('domain:processIncomingTags', { ircmsg: ircmsg }); // Emit domain event
+		// Freeze parsed result - immutable transport output; enrichment happens in processData
+		Object.freeze(ircmsg.args);
+		Object.freeze(ircmsg.tags);
+		Object.freeze(ircmsg.sender);
+		Object.freeze(ircmsg);
 		return ircmsg;
 	}
 };
@@ -428,31 +416,39 @@ var ircTransport = {
 		gateway.commandProcessing = true;
 		for (i in data.packets) {
 			gateway.labelProcessed = false; // Set domain state
-			try {
-				var msg = data.packets[i];
-				if(!msg || !msg.command) continue;
-				console.log('→', ircLog.filterIncoming(msg));
-				if(msg.tags && 'batch' in msg.tags && msg.tags.batch){
-					var batchObj = domainBatch[msg.tags.batch]; // Access domainBatch via event
-					if (batchObj) {
-						msg.batch = batchObj;
-					}
+			var msg = data.packets[i];
+			if(!msg || !msg.command) continue;
+
+			// Create mutable enriched copy of the immutable parsed message,
+			// attaching the sender's user object and batch reference
+			var enrichedMsg = Object.assign({}, msg);
+			enrichedMsg.user = msg.sender.nick ? users.getUser(msg.sender.nick) : null;
+			if(msg.tags && 'batch' in msg.tags && msg.tags.batch){
+				var batchObj = domainBatch[msg.tags.batch]; // Access domainBatch via event
+				if (batchObj) {
+					enrichedMsg.batch = batchObj;
 				}
-				var command = msg.command;
-				var continueProcessing = ircEvents.emit('cmd:' + command, msg); // Emit raw protocol event
+			}
+
+			try {
+				console.log('→', ircLog.filterIncoming(enrichedMsg));
+				// Let domain update user state from sender info and message tags
+				ircEvents.emit('domain:processIncomingTags', { msg: enrichedMsg });
+				var command = enrichedMsg.command;
+				ircEvents.emit('cmd:' + command, enrichedMsg); // Emit raw protocol event
 
 				if(!ircEvents.hasListeners('cmd:' + command)) {
-					cmdNotImplemented(msg); // UI call for unhandled command
+					cmdNotImplemented(enrichedMsg); // UI call for unhandled command
 				}
 			} catch(error) {
-				console.error('Error processing message!', msg, error);
+				console.error('Error processing message!', enrichedMsg, error);
 			}
-			if(('label' in msg.tags && !('isBatchStart' in msg)) || ('isBatchEnd' in msg)){
+			if(('label' in enrichedMsg.tags && !('isBatchStart' in enrichedMsg)) || ('isBatchEnd' in enrichedMsg)){
 				var batch = null;
-				if('label' in msg.tags){
-					var label = msg.tags.label;
+				if('label' in enrichedMsg.tags){
+					var label = enrichedMsg.tags.label;
 				} else {
-					var batchObj = domainBatch[msg.tags.batch]; // Access domainBatch
+					var batchObj = domainBatch[enrichedMsg.tags.batch]; // Access domainBatch
 					if(!batchObj || !batchObj.label)
 						continue;
 					var label = batchObj.getLabel(); // Domain method
@@ -461,7 +457,7 @@ var ircTransport = {
 					batch = batchObj;
 				}
 				if(!gateway.labelProcessed){
-					ircEvents.emit('domain:labelNotProcessed', { label: label, msg: msg, batch: batch }); // Emit domain event
+					ircEvents.emit('domain:labelNotProcessed', { label: label, msg: enrichedMsg, batch: batch }); // Emit domain event
 				}
 				// Clearing callbacks/info/labelsToHide via domain events
 				ircEvents.emit('domain:clearLabelState', { label: label }); // Emit domain event

@@ -2623,6 +2623,17 @@ ircEvents.on('client:notice', function(data) {
             gateway.findOrCreate(data.nick, data.setActive);
         });
 
+        // Incoming typing indicator from a remote user
+        ircEvents.on('user:typingActivity', function(data) {
+            var tab = gateway.find(data.dest);
+            if(!tab || !tab.typing) return;
+            if(data.mode === 'active') {
+                tab.typing.start(data.user, 30);
+            } else {
+                tab.typing.stop(data.user);
+            }
+        });
+
         // User setting information (e.g., user modes)
         ircEvents.on('user:settingInfo', function(data) {
             var isSelf = (guser.me && data.nick === guser.me.nick) || data.nick === guser.nick;
