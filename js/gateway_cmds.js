@@ -248,17 +248,20 @@ var ircCommand = {
 	},
 	'listChannels': function(text){
 		var args = text ? [text] : [];
-		if(!gateway.smallListLoading && ('labeled-response' in activeCaps)) { // Check domain state
+		if('labeled-response' in activeCaps) {
 			// Use labeled-response for full list window
-			var label = generateLabel(); // Get label from domain
-			ircEvents.emit('domain:setListWindowLabel', { label: label }); // Set list window label via domain event
+			var label = generateLabel();
+			ircEvents.emit('domain:setListWindowLabel', { label: label });
 			gateway.getOrOpenListWindow();
 			ircCommand.perform('LIST', args, false, {'label': label});
-			ircEvents.emit('domain:listCommandProcessed', { usesWindow: true });
 		} else {
 			ircCommand.perform('LIST', args);
-			ircEvents.emit('domain:listCommandProcessed', { usesWindow: false, smallList: gateway.smallListLoading });
 		}
+	},
+	'listChannelsSmall': function(text){
+		// Always sends plain LIST without labeled-response; used for sidebar channel list
+		var args = text ? [text] : [];
+		ircCommand.perform('LIST', args);
 	},
 	'changeNick': function(nick){
 		ircCommand.performQuick('NICK', [nick]);

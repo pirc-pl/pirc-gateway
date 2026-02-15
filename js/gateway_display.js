@@ -2676,13 +2676,6 @@ ircEvents.on('client:notice', function(data) {
             }
         });
 
-        // LIST command processed - show message only when output goes to the status tab
-        ircEvents.on('domain:listCommandProcessed', function(data) {
-            if (!data.usesWindow && !data.smallList && gateway.active != '--status') {
-                gateway.getActive().appendMessage(language.messagePatterns.listShown, [$$.niceTime()]);
-            }
-        });
-
         // List window closed - clear reference so future requests create a fresh window
         ircEvents.on('listWindow:removed', function(data) {
             gateway.listWindow = null;

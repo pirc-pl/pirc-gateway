@@ -134,7 +134,10 @@ var commands = {
 			} else {
 				ircCommand.listChannels(input.substring(input.indexOf(' ')+1));
 			}
-			// Message display is now handled by domain:listCommandProcessed event listener in gateway_display.js
+			// If no list window was opened (no labeled-response), list goes to status tab
+			if(!gateway.listWindow && gateway.active != '--status') {
+				gateway.getActive().appendMessage(language.messagePatterns.listShown, [$$.niceTime()]);
+			}
 		}
 	},
 	'cs': {

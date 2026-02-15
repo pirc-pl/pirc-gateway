@@ -1456,7 +1456,6 @@ ircEvents.on('protocol:rplEndoflist', function(data) {
         smallListData: domainSmallListData.map(item => [item.channel, item.visibleUsers, item.topic]),
     });
     domainSmallListData = []; // Clear accumulator
-    gateway.smallListLoading = false; // Allow future /list commands to use full list window
 });
 
 ircEvents.on('protocol:rplChannelmodeis', function(data) {
@@ -3420,8 +3419,7 @@ ircEvents.on('domain:setUserQuit', function(data) {
 
 ircEvents.on('domain:requestListChannels', function(data) {
     console.log('DOMAIN: Request List Channels:', data.minUsers);
-    gateway.smallListLoading = true; // Must be set before listChannels() checks it
-    ircCommand.listChannels(data.minUsers);
+    ircCommand.listChannelsSmall(data.minUsers);
 });
 
 ircEvents.on('domain:requestChatHistory', function(data) {

@@ -102,7 +102,6 @@ var gateway = {
 	'allowNewSend' : true, // Send throttle flag (transport state)
 	'commandProcessing': false, // Command processing flag (transport state)
 	'lasterror': '', // Last error string (domain state)
-	'smallListLoading': false, // List loading flag (domain state)
 	'listWindowLabel': null, // LIST window label reference (domain state)
 
 	// =========================================================================
