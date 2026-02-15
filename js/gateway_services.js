@@ -178,15 +178,15 @@ var services = {
 			return false;
 		}
 		if (maskMatch(msg.text, 'invalidPassword')) { // złe hasło nickserv
-			services.nickStore = guser.me.nickservNick;
-			var html = language.givenPasswordForNick + '<b>'+guser.me.nickservNick+'</b>' + language.isInvalidChangeNick + '<br>'+services.badNickString();
+			services.nickStore = guser.nickservnick;
+			var html = language.givenPasswordForNick + '<b>'+guser.nickservnick+'</b>' + language.isInvalidChangeNick + '<br>'+services.badNickString();
 			$$.displayDialog('error', 'nickserv', language.error, html);
 			services.displayBadNickCounter();
 			return true;
 		}
 		if(maskMatch(msg.text, 'registeredProtectedNick')){
 			if(domainConnectStatus == 'ghostAndNickSent'){ // Check domainConnectStatus directly
-				ircCommand.NickServ('IDENTIFY', [guser.me.nickservPass]);
+				ircCommand.NickServ('IDENTIFY', [guser.nickservpass]);
 				ircEvents.emit('domain:setConnectStatus', { status: 'identified' }); // Set gateway.connectStatus via domain event
 				return true;
 			}
@@ -210,10 +210,10 @@ var services = {
 		if(maskMatch(msg.text ,'accessDenied')){
 			if(domainConnectStatus == 'ghostSent'){ // Check domainConnectStatus directly
 				ircEvents.emit('domain:setConnectStatus', { status: 'identified' }); // Set gateway.connectStatus via domain event
-				services.nickStore = guser.me.nickservNick;
+				services.nickStore = guser.nickservnick;
 				ircEvents.emit('domain:setNickservNick', { nick: '' }); // Set guser.nickservnick via domain event
 				ircEvents.emit('domain:setNickservPass', { pass: '' }); // Set guser.nickservpass via domain event
-				var html = language.passwordForUsedNick + '<b>'+guser.me.nickservNick+'</b>' + language.isInvalidRetryOrChangeNick + '<br>'+services.badNickString();
+				var html = language.passwordForUsedNick + '<b>'+services.nickStore+'</b>' + language.isInvalidRetryOrChangeNick + '<br>'+services.badNickString();
 				$$.displayDialog('error', 'nickserv', language.error, html);
 				services.ignoreNextAccessDenial = true;
 				return true;
@@ -224,7 +224,7 @@ var services = {
 			return false;
 		}
 		if(maskMatch(msg.text, 'nickRemovedFromNetwork') || maskMatch(msg.text, 'servicesReleasedNick')){
-			ircCommand.changeNick(guser.me.nickservNick);
+			ircCommand.changeNick(guser.nickservnick);
 			ircEvents.emit('domain:setConnectStatus', { status: 'ghostAndNickSent' }); // Set gateway.connectStatus via domain event
 			return true;
 		}
