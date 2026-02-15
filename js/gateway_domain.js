@@ -2847,6 +2847,10 @@ ircEvents.on('protocol:errSaslfail', function(data) {
         message: data.message,
     });
     saslInProgress = false; // Reset SASL state
+    // Clear credentials so GHOST/RECOVER isn't attempted with the same bad credentials.
+    // They may be re-entered by the user if NickServ later prompts for login.
+    guser.nickservpass = '';
+    guser.nickservnick = '';
     // End capability negotiation on SASL failure to finalize registration
     ircCommand.performQuick('CAP', ['END']);
 });
