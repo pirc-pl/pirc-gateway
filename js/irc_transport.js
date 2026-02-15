@@ -307,6 +307,7 @@ var ircTransport = {
 	'delayedSendTimer': false,
 	'toSend': [],
 	'sendDelayCnt': 0,
+	'sockErrorPending': null,
 
 	/**
 	 * Configure WebSocket connection handlers and send timer
@@ -363,6 +364,10 @@ var ircTransport = {
 	 * User-initiated reconnect
 	 */
 	'reconnect': function() {
+		if (ircTransport.sockErrorPending !== null) {
+			clearTimeout(ircTransport.sockErrorPending);
+			ircTransport.sockErrorPending = null;
+		}
 		ircTransport.websock.onerror = undefined;
 		ircTransport.websock.onclose = undefined;
 		if (ircTransport.websock) {
@@ -383,7 +388,9 @@ var ircTransport = {
 	 */
 	'sockError': function(e) {
 		console.error('WebSocket error!');
-		setTimeout(function(){
+		if (ircTransport.sockErrorPending !== null) return; // onerror and onclose can both fire; deduplicate
+		ircTransport.sockErrorPending = setTimeout(function(){
+			ircTransport.sockErrorPending = null;
 			ircEvents.emit('domain:websocketError', { event: e, currentStatus: domainConnectStatus, autoReconnect: settings.get('autoReconnect') }); // Emit domain event
 		}, 1000);
 	},
