@@ -103,6 +103,11 @@ var gateway = {
 	'commandProcessing': false, // Command processing flag (transport state)
 	'lasterror': '', // Last error string (domain state)
 
+	// Cross-tab storage event handler: relay storage events to the domain layer
+	'storageHandler': function(evt) {
+		ircEvents.emit('domain:processStorageEvent', { evt: evt });
+	},
+
 	// =========================================================================
 	// THIN WRAPPERS - Transport Layer (for backwards compatibility)
 	// =========================================================================

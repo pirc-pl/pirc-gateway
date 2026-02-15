@@ -2254,6 +2254,17 @@ ircEvents.on('protocol:errErroneusnickname', function(data) {
 });
 
 ircEvents.on('protocol:errNicknameinuse', function(data) {
+    if (domainConnectStatus === 'disconnected') {
+        // Pre-registration nick collision: try an alternate nick automatically.
+        // Increment trailing digits, or append two random digits if none present.
+        var nick = guser.nick;
+        var match = nick.match(/^(.*?)(\d+)$/);
+        var altNick = match ? match[1] + (parseInt(match[2]) + 1)
+                            : nick + Math.floor(Math.random() * 90 + 10);
+        guser.nick = altNick;
+        ircCommand.changeNick(altNick);
+        return;
+    }
     ircEvents.emit('client:errorMessage', {
         code: '433',
         type: 'nicknameInUse',

@@ -2685,6 +2685,33 @@ ircEvents.on('client:notice', function(data) {
             gateway.listWindow = null;
         });
 
+        // Another browser tab is already connected - block this instance
+        ircEvents.on('ui:displayAlreadyConnectedMessage', function(data) {
+            var html = language.alreadyConnectedAs + '<strong>' + he(data.nick) + '</strong>! ' + language.cantOpenMultipleInstances;
+            if (data.suggestedChannel && data.suggestedChannel !== '#') {
+                html += '<br>' + language.goToTabToJoin + '<strong>' + he(data.suggestedChannel) + '</strong>.';
+            }
+            $$.displayDialog('connect', '0', language.alreadyConnected, html);
+        });
+
+        // Connected tab was asked by another tab to join a channel
+        ircEvents.on('ui:promptForChannelJoin', function(data) {
+            var chan = data.channelName;
+            if (gateway.findChannel(chan)) return; // already in this channel
+            var html = language.otherTabWantsToJoin + '<strong>' + he(chan) + '</strong>.';
+            var buttons = [ {
+                text: language.cancel,
+                click: function() { $(this).dialog('close'); }
+            }, {
+                text: language.join,
+                click: function() {
+                    ircCommand.channelJoin(chan);
+                    $(this).dialog('close');
+                }
+            } ];
+            $$.displayDialog('confirm', 'join', language.confirm, html, buttons);
+        });
+
         // CTCP reply received
         ircEvents.on('protocol:ctcpReply', function(data) {
             // Filter out our own CTCP replies (automatic responses, not interesting to display)
