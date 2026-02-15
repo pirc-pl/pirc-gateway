@@ -337,7 +337,7 @@ var ircCommand = {
 		ircCommand.perform('METADATA', cmdArgs);
 	},
 	'sendTags': function(target, name, value){
-		if(!ircTransport.websock || ircTransport.websock.readyState !== WebSocket.OPEN) return;
+		if(domainConnectStatus !== 'connected') return;
 		var tags = {};
 		if(Array.isArray(name)){
 			for(var i=0; i<name.length; i++){
