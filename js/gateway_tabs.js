@@ -837,8 +837,14 @@ function ChannelTab(chan) {
 			var newScrollHeight = document.getElementById('chat-wrapper').scrollHeight;
 			var heightDiff = newScrollHeight - oldScrollHeight;
 			if(heightDiff > 0){
-				// Adjust scroll position to compensate for added content above
-				$('#chat-wrapper').scrollTop(oldScrollTop + heightDiff);
+				var clientHeight = document.getElementById('chat-wrapper').clientHeight;
+				if(oldScrollTop + clientHeight >= oldScrollHeight){
+					// Was at the bottom (or content fit in viewport): stay at bottom
+					$('#chat-wrapper').scrollTop(newScrollHeight);
+				} else {
+					// Was scrolled up: adjust to keep same visible content stationary
+					$('#chat-wrapper').scrollTop(oldScrollTop + heightDiff);
+				}
 			}
 		} else if(rescroll && this.name.toLowerCase() == gateway.active.toLowerCase()) {
 			$('#chat-wrapper').scrollTop(document.getElementById('chat-wrapper').scrollHeight);
