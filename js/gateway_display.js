@@ -100,9 +100,11 @@
                     } else {
                         var chan = gateway.findChannel(gateway.active);
                         if(chan) {
-                            for (var inick=0; inick < chan.nicklist.list.length; inick++) {
-                                if(chan.nicklist.list[inick].user.nick.toLowerCase().replace(/^[^a-z0-9]/ig).indexOf(string.toLowerCase().replace(/^[^a-z0-9]/ig)) == 0) {
-                                    complarr[ccount] = chan.nicklist.list[inick].user.nick;
+                            var cml = users.getChannelMemberList(chan.name);
+                            var members = cml ? cml.getAllMembers() : [];
+                            for (var inick=0; inick < members.length; inick++) {
+                                if(members[inick].nick.toLowerCase().replace(/^[^a-z0-9]/ig).indexOf(string.toLowerCase().replace(/^[^a-z0-9]/ig)) == 0) {
+                                    complarr[ccount] = members[inick].nick;
                                     if(comPos == 0) {
                                         complarr[ccount] += ':';
                                     }
