@@ -670,26 +670,65 @@ ircEvents.on('protocol:modeCommand', function(data) {
 
     if (data.isChannel) { // Protocol layer determines if target is a channel
         var channelName = target;
-        // Emit general channel mode update for UI
-        ircEvents.emit('channel:modesUpdated', {
-            channelName: channelName,
-            modes: modeString, // Pass original modeString for now
-            byNick: data.user.nick
-        });
 
-        // Parse modeString for user-specific mode changes within the channel
-        var userModeChanges = parseChannelUserModes(modeString, channelName);
-        userModeChanges.forEach(change => {
-            var user = users.getExistingUser(change.nick); // Get domain user object
-            if (user) {
-                // This event will trigger the ChannelMemberList to update the ChannelMember
-                ircEvents.emit('domain:channelModeForUserChanged', {
-                    channelName: channelName,
-                    user: user, // Pass the user object
-                    modeChange: change // Pass mode change details
-                });
+        // Parse mode string into mode chars and arguments
+        var parts = modeString.split(' ');
+        var modeSpecPart = parts[0] || '';
+        var modeArgs = parts.slice(1);
+
+        // Mode categories - member status modes always take a nick argument
+        var memberStatusModes = ['o', 'v', 'h', 'a', 'q'];
+        // Channel modes that take an arg only when adding
+        var argAddOnlyModes = ['k', 'l', 'f', 'j', 'L'];
+        // Channel modes that always take an arg (both add and remove)
+        var argBothModes = ['b', 'e', 'I'];
+
+        var argIndex = 0;
+        var isAdding = true;
+        var currentSign = '+';
+        var chanModeChars = '';    // compact channel-only mode string (no member modes)
+        var chanModeParams = [];   // args for channel-only modes
+
+        for (var mi = 0; mi < modeSpecPart.length; mi++) {
+            var ch = modeSpecPart[mi];
+            if (ch === '+') { isAdding = true; currentSign = '+'; continue; }
+            if (ch === '-') { isAdding = false; currentSign = '-'; continue; }
+
+            if (memberStatusModes.indexOf(ch) >= 0) {
+                // Member status mode: consume the nick arg, emit domain event
+                var nick = modeArgs[argIndex++] || '';
+                var user = users.getExistingUser(nick);
+                if (user) {
+                    ircEvents.emit('domain:channelModeForUserChanged', {
+                        channelName: channelName,
+                        user: user,
+                        modeChange: { nick: nick, mode: ch, isAdding: isAdding, channelName: channelName },
+                        byNick: data.user.nick
+                    });
+                }
+            } else {
+                // Channel setting mode: collect into clean mode string
+                if (!chanModeChars || chanModeChars[chanModeChars.length - 1] !== currentSign) {
+                    chanModeChars += currentSign;
+                }
+                chanModeChars += ch;
+
+                var takesArg = argBothModes.indexOf(ch) >= 0 || (isAdding && argAddOnlyModes.indexOf(ch) >= 0);
+                if (takesArg && argIndex < modeArgs.length) {
+                    chanModeParams.push(modeArgs[argIndex++]);
+                }
             }
-        });
+        }
+
+        // Emit channel:modesUpdated only if there are actual channel-setting mode changes
+        if (chanModeChars.replace(/[+-]/g, '') !== '') {
+            ircEvents.emit('channel:modesUpdated', {
+                channelName: channelName,
+                modes: chanModeChars,
+                modeParams: chanModeParams,
+                byNick: data.user.nick
+            });
+        }
     } else { // User mode
         // Check if this is for the current user
         var isSelf = (guser.me && target === guser.me.nick) || target === guser.nick;
@@ -1417,6 +1456,7 @@ ircEvents.on('protocol:rplEndoflist', function(data) {
         smallListData: domainSmallListData.map(item => [item.channel, item.visibleUsers, item.topic]),
     });
     domainSmallListData = []; // Clear accumulator
+    gateway.smallListLoading = false; // Allow future /list commands to use full list window
 });
 
 ircEvents.on('protocol:rplChannelmodeis', function(data) {
@@ -3380,9 +3420,8 @@ ircEvents.on('domain:setUserQuit', function(data) {
 
 ircEvents.on('domain:requestListChannels', function(data) {
     console.log('DOMAIN: Request List Channels:', data.minUsers);
+    gateway.smallListLoading = true; // Must be set before listChannels() checks it
     ircCommand.listChannels(data.minUsers);
-    // UI feedback for loading might be here too or in a separate UI event
-    gateway.smallListLoading = true; // Domain state for list window
 });
 
 ircEvents.on('domain:requestChatHistory', function(data) {

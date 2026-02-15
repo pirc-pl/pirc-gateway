@@ -1096,6 +1096,7 @@
                     "bottom":	"36%"
                 }, 400);
                 $('#chlist-button').text('⮛ ' + language.hideList + ' ⮛');
+                $('#chlist-body').html(language.loadingWait);
                 ircEvents.emit('domain:requestListChannels', { minUsers: '>9', time: new Date() });
             }
         },
@@ -1930,6 +1931,22 @@
             }
         });
 
+        ircEvents.on('domain:channelModeForUserChanged', function(data) {
+            var chan = gateway.findChannel(data.channelName);
+            if (!chan) return;
+            var modeChange = data.modeChange;
+            var modeName = getModeInfo(modeChange.mode, 0);
+            var action = (modeChange.isAdding ? language.gave : language.taken) + modeName
+                + (modeChange.isAdding ? language.forUser : '')
+                + ' <span class="modevictim">' + he(modeChange.nick) + '</span>';
+            chan.appendMessage(language.messagePatterns.modeChange, [
+                $$.niceTime(),
+                he(data.byNick),
+                action,
+                he(data.channelName)
+            ]);
+        });
+
         ircEvents.on('channel:userParted', function(data) {
             var channelName = data.channelName;
             var channame = channelName.toLowerCase();
@@ -2722,16 +2739,29 @@ ircEvents.on('client:notice', function(data) {
             ]);
         });
 
-        // Channel list completed - populate the list window
+        // Channel list completed - populate either the list window or the sidebar panel
         ircEvents.on('list:smallListComplete', function(data) {
             if (gateway.listWindow) {
-                // Add each channel to the list
+                // Add each channel to the full list window
                 data.smallListData.forEach(function(item) {
                     gateway.listWindow.addEntry(item[0], item[1], item[2]);
                 });
-
-                // Render the complete list
                 gateway.listWindow.render();
+            } else if ($('#chlist-body').is(':visible')) {
+                // Populate the small sidebar channel list
+                var sorted = data.smallListData.slice().sort(function(a, b) { return b[1] - a[1]; });
+                var html = '<p>'
+                    + '<span class="chlist_button" onclick="ircCommand.listChannels()">' + language.fullList + '</span> '
+                    + '<span class="chlist_button" onclick="gateway.refreshChanList()">' + language.refresh + '</span>'
+                    + '</p><p>' + language.largestChannels + ':</p><table>';
+                sorted.forEach(function(item) {
+                    html += '<tr title="' + he(item[2]) + '">'
+                        + '<td class="chname" onclick="ircCommand.channelJoin(\'' + bsEscape(item[0]) + '\')">' + he(item[0]) + '</td>'
+                        + '<td class="chusers">' + he(item[1]) + '</td>'
+                        + '</tr>';
+                });
+                html += '</table>';
+                $('#chlist-body').html(html);
             }
         });
 

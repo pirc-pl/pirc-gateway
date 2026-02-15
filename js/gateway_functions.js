@@ -411,6 +411,7 @@ var readyFunc = function(){
 	var slang = settings.get('setLanguage');
 	if (!slang) slang = mainSettings.language;
 	setLanguage(slang);
+	$('#setLanguage').val(slang);
 	$('.gateway-version').html(mainSettings.version);
 	$('.not-connected-text > h3').html(language.loading);
 	$('.not-connected-text > p').html(language.loadingWait);
