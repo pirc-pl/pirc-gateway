@@ -2671,7 +2671,9 @@ ircEvents.on('client:notice', function(data) {
 
         // Channel list started loading
         ircEvents.on('server:listStart', function(data) {
-            if (gateway.listWindow) {
+            // Only clear the list window for unlabeled (full list) requests;
+            // labeled requests are sidebar requests and must not disturb the window
+            if (!data.label && gateway.listWindow) {
                 gateway.listWindow.clearData(); // Show "Loading, please wait..."
             }
         });
@@ -2738,14 +2740,31 @@ ircEvents.on('client:notice', function(data) {
 
         // Channel list completed - populate either the list window or the sidebar panel
         ircEvents.on('list:smallListComplete', function(data) {
-            if (gateway.listWindow) {
-                // Add each channel to the full list window
+            if (data.label) {
+                // Labeled response: this is a sidebar (small list) request - populate sidebar
+                if ($('#chlist-body').is(':visible')) {
+                    var sorted = data.smallListData.slice().sort(function(a, b) { return b[1] - a[1]; });
+                    var html = '<p>'
+                        + '<span class="chlist_button" onclick="ircCommand.listChannels()">' + language.fullList + '</span> '
+                        + '<span class="chlist_button" onclick="gateway.refreshChanList()">' + language.refresh + '</span>'
+                        + '</p><p>' + language.largestChannels + ':</p><table>';
+                    sorted.forEach(function(item) {
+                        html += '<tr title="' + he(item[2]) + '">'
+                            + '<td class="chname" onclick="ircCommand.channelJoin(\'' + bsEscape(item[0]) + '\')">' + he(item[0]) + '</td>'
+                            + '<td class="chusers">' + he(item[1]) + '</td>'
+                            + '</tr>';
+                    });
+                    html += '</table>';
+                    $('#chlist-body').html(html);
+                }
+            } else if (gateway.listWindow) {
+                // Unlabeled response with window open: full list - populate window
                 data.smallListData.forEach(function(item) {
                     gateway.listWindow.addEntry(item[0], item[1], item[2]);
                 });
                 gateway.listWindow.render();
             } else if ($('#chlist-body').is(':visible')) {
-                // Populate the small sidebar channel list
+                // Unlabeled fallback (no labeled-response cap): populate sidebar
                 var sorted = data.smallListData.slice().sort(function(a, b) { return b[1] - a[1]; });
                 var html = '<p>'
                     + '<span class="chlist_button" onclick="ircCommand.listChannels()">' + language.fullList + '</span> '

@@ -247,21 +247,20 @@ var ircCommand = {
 		ircCommand.perform('NAMES', [chan]);
 	},
 	'listChannels': function(text){
+		// Full list window: plain unlabeled LIST; unlabeled responses go to the window
 		var args = text ? [text] : [];
-		if('labeled-response' in activeCaps) {
-			// Use labeled-response for full list window
+		gateway.getOrOpenListWindow();
+		ircCommand.perform('LIST', args);
+	},
+	'listChannelsSmall': function(text){
+		// Sidebar list: labeled LIST when possible so the label identifies this response
+		var args = text ? [text] : [];
+		if('labeled-response' in activeCaps){
 			var label = generateLabel();
-			ircEvents.emit('domain:setListWindowLabel', { label: label });
-			gateway.getOrOpenListWindow();
 			ircCommand.perform('LIST', args, false, {'label': label});
 		} else {
 			ircCommand.perform('LIST', args);
 		}
-	},
-	'listChannelsSmall': function(text){
-		// Always sends plain LIST without labeled-response; used for sidebar channel list
-		var args = text ? [text] : [];
-		ircCommand.perform('LIST', args);
 	},
 	'changeNick': function(nick){
 		ircCommand.performQuick('NICK', [nick]);

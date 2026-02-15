@@ -74,7 +74,7 @@
  *    - disconnectMessageShown - UI state
  *    - allowNewSend, commandProcessing - transport state
  *    - lasterror - domain state
- *    - smallListLoading, listWindowLabel - UI/domain state
+ *    - smallListLoading - UI state (to migrate)
  *
  * 5. COMMAND DELEGATION:
  *    - callCommand() - delegates to user_commands.js
@@ -102,7 +102,6 @@ var gateway = {
 	'allowNewSend' : true, // Send throttle flag (transport state)
 	'commandProcessing': false, // Command processing flag (transport state)
 	'lasterror': '', // Last error string (domain state)
-	'listWindowLabel': null, // LIST window label reference (domain state)
 
 	// =========================================================================
 	// THIN WRAPPERS - Transport Layer (for backwards compatibility)

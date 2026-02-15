@@ -1428,8 +1428,10 @@ ircEvents.on('protocol:rplWhoisspecial', function(data) {
 
 // domainSmallListData global for domain
 ircEvents.on('protocol:rplListstart', function(data) {
+    var label = (data.batch && data.batch.label) || (data.tags && data.tags.label) || null;
     ircEvents.emit('server:listStart', {
         message: data.message,
+        label: label,
     });
     domainSmallListData = []; // Initialize accumulator
 });
@@ -1449,11 +1451,13 @@ ircEvents.on('protocol:rplList', function(data) {
 });
 
 ircEvents.on('protocol:rplEndoflist', function(data) {
+    var label = (data.batch && data.batch.label) || (data.tags && data.tags.label) || null;
     ircEvents.emit('server:endOfList', {
         message: data.message,
     });
     ircEvents.emit('list:smallListComplete', { // Emit consolidated list data
         smallListData: domainSmallListData.map(item => [item.channel, item.visibleUsers, item.topic]),
+        label: label, // Present iff this was a labeled (sidebar) request
     });
     domainSmallListData = []; // Clear accumulator
 });
