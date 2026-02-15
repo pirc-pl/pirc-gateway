@@ -169,9 +169,12 @@ var services = {
 			ircEvents.emit('domain:processConnectionStatusUpdate');
 			return false;
 		}
-		if(maskMatch(msg.text, 'nickNotRegistered') && guser.me.nickservPass != ''){ // Check guser.nickservpass directly
+		if(maskMatch(msg.text, 'nickNotRegistered')){
 			ircEvents.emit('domain:setNickservPass', { pass: '' }); // Set guser.nickservpass via domain event
 			ircEvents.emit('domain:setNickservNick', { nick: '' }); // Set guser.nickservnick via domain event
+			if(domainConnectStatus == 'ghostSent'){
+				ircEvents.emit('domain:setConnectStatus', { status: 'identified' }); // Advance state so connection completes
+			}
 			return false;
 		}
 		if (maskMatch(msg.text, 'invalidPassword')) { // złe hasło nickserv
