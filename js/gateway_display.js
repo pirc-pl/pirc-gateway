@@ -2676,12 +2676,16 @@ ircEvents.on('client:notice', function(data) {
             }
         });
 
-        // LIST command processed - show message if output goes to status and user is on different tab
+        // LIST command processed - show message only when output goes to the status tab
         ircEvents.on('domain:listCommandProcessed', function(data) {
-            // Only show message if list doesn't use a window and user is not on status tab
-            if (!data.usesWindow && gateway.active != '--status') {
+            if (!data.usesWindow && !data.smallList && gateway.active != '--status') {
                 gateway.getActive().appendMessage(language.messagePatterns.listShown, [$$.niceTime()]);
             }
+        });
+
+        // List window closed - clear reference so future requests create a fresh window
+        ircEvents.on('listWindow:removed', function(data) {
+            gateway.listWindow = null;
         });
 
         // CTCP reply received

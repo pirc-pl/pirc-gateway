@@ -257,7 +257,7 @@ var ircCommand = {
 			ircEvents.emit('domain:listCommandProcessed', { usesWindow: true });
 		} else {
 			ircCommand.perform('LIST', args);
-			ircEvents.emit('domain:listCommandProcessed', { usesWindow: false });
+			ircEvents.emit('domain:listCommandProcessed', { usesWindow: false, smallList: gateway.smallListLoading });
 		}
 	},
 	'changeNick': function(nick){
