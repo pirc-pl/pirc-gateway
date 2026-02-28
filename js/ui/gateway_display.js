@@ -684,8 +684,8 @@ const uiState = {
 						const cml = connection.chat.users.getChannelMemberList(chan.name);
 						const members = cml ? cml.getAllMembers() : [];
 						for (const member of members) {
-							if (member.nick.toLowerCase().replace(/^[^a-z0-9]/ig).indexOf(string.toLowerCase().replace(/^[^a-z0-9]/ig)) == 0) {
-								complarr[ccount] = member.nick;
+							if (member.user.nick.toLowerCase().replace(/^[^a-z0-9]/ig).indexOf(string.toLowerCase().replace(/^[^a-z0-9]/ig)) == 0) {
+								complarr[ccount] = member.user.nick;
 								if (comPos == 0) {
 									complarr[ccount] += ':';
 								}
