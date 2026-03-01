@@ -1,0 +1,3 @@
+#!/bin/sh
+REV=$(git rev-parse --short HEAD)
+echo "const REVISION = '$REV';" > js/revision.js

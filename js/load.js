@@ -47,6 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
  * 4. Ready functions executed (readyFunctions array)
  */
 const scriptFiles = [
+	'/js/revision.js',
 	'/js/gateway_global_settings.js',
 	'/js/language.js',
 	'/js/settings.js',

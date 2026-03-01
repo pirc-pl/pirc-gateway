@@ -1,0 +1,2 @@
+const REVISION = 'GIT';
+
