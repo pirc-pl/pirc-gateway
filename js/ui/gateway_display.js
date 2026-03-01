@@ -2000,7 +2000,7 @@ Object.assign(uiTabs, {
 				if ($('#noticeDisplay').val() == 2) { // notice in status window
 					uiState.statusWindow.appendMessage(language.messagePatterns.yourNotice, [addClass, attrs, $$.niceTime(), he(dest), he(message)], time);
 				} else if ($('#noticeDisplay').val() == 1) { // notice in a query window
-					const query = uiTabs.findOrCreate(command[1]);
+					const query = uiTabs.findOrCreate(dest);
 					query.appendMessage(language.messagePatterns.yourNotice, [addClass, attrs, $$.niceTime(), he(dest), he(message)], time);
 				} else if ($('#noticeDisplay').val() == 0) { // notice in pop-up
 					const html = `<span class="notice">[<b>${  he(sender.nick)  } → ${  he(dest)  }</b>]</span> ${  message}`;
@@ -2030,8 +2030,22 @@ Object.assign(uiTabs, {
 						// default behavior
 					}
 				}
+				const noticeDisplay = $('#noticeDisplay').val();
+				if (noticeDisplay == 0 && !foundTab) { // pop-up, no existing query tab
+					const html = `<span class="notice">[<b>${  he(sender.nick)  } → ${  he(dest)  }</b>]</span> ${  message}`;
+					uiDialogs.displayDialog('notice', sender.nick, language.privateNoticeFrom + he(sender.nick), html, false, attrs);
+					return;
+				} else if (noticeDisplay == 2 && !foundTab) { // status window, no existing query tab
+					uiState.statusWindow.appendMessage(language.messagePatterns.notice, [addClass, attrs, $$.niceTime(time), he(sender.nick), he(sender.ident), he(sender.host), he(message)], time);
+					return;
+				}
+				// query mode (or existing query tab): show in query
 				tab = uiTabs.findOrCreate(qname);
 				tab.typing.stop(sender);
+				tab.appendMessage(language.messagePatterns.notice, [addClass, attrs, $$.niceTime(time), he(sender.nick), he(sender.ident), he(sender.host), he(message)], time);
+				tab.markNew();
+				tab.appendMessage('%s', [images.html], time, options);
+				$$.applyCallbacks(images.callbacks);
 			} else { // sent by server
 				const expressions = [/^Your "real name" is now set to be/, / invited [^ ]+ into the channel.$/];
 				for (const expr of expressions) {
