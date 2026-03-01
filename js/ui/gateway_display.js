@@ -2665,6 +2665,11 @@ function initDisplayListeners() {
 		sel.removeClass('notDelivered').addClass('msgDelivered');
 	});
 
+	// Show ignore dialog for a given nick (triggered by /ignore command)
+	commandBus.on('chat:requestIgnoreUser', ({ nick }) => {
+		ignore.askIgnore(nick);
+	});
+
 	// Message delivery failed (no echo-message confirmation received)
 	commandBus.on('chat:messageDeliveryFailed', (data) => {
 		uiTabs.msgNotDelivered(data.label, data.msg);

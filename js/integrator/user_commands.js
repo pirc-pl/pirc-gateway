@@ -471,7 +471,7 @@ const commands = {
 					uiState.statusWindow.appendMessage(language.messagePatterns.ignoreListEnd, [$$.niceTime()]);
 				}
 			} else { //są argumenty
-				ignore.askIgnore(command[1]);
+				commandBus.emit('chat:requestIgnoreUser', { nick: command[1] });
 				/*		if(command[3] != null){
 			//			uiInput.notEnoughParams("ignore", "Za dużo parametrów.");
 				}*/

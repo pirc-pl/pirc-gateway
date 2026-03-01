@@ -305,24 +305,35 @@ const ignore = {
 		} else {
 			nick = user.nick;
 		}
-		if (!user) {
-			console.error('askIgnore called with non-existing nick');
-			return;
-		}
 
 		if (nick.isInList(servicesNicks)) {
 			uiDialogs.displayDialog('error', 'ignore', language.error, language.cantIgnoreNetworkService, 'OK');
 			return;
 		}
+
+		// If user is not in the user list, create a minimal object for nick-only masking
+		if (!user) {
+			user = {
+				id: nick.replace(/[^a-zA-Z0-9]+/g, '-').toLowerCase() + '-unknown',
+				nick: nick,
+				host: null,
+				ident: null,
+				realname: null,
+				account: null
+			};
+		}
+
 		const chanNickIgnored = ignore.isInList('channel', 'userhost', $$.wildcardToRegex(`${nick  }!*@*`));
 		const queryNickIgnored = ignore.isInList('query', 'userhost', $$.wildcardToRegex(`${nick  }!*@*`));
 		const chanIgnored = ignore.ignoring(nick, 'channel');
 		const queryIgnored = ignore.ignoring(nick, 'query');
 		let html =
 			`<p><select id="${  user.id  }_ignore_type">` +
-				`<option value="nick">(${  language.nicknameSmall  }) ${  he(user.nick)  }!*@*</option>` +
-				`<option value="host">(${  language.hostnameSmall  }) *!*@${  he(user.host)  }</option>` +
-				`<option value="realname">(${  language.realnameSmall  }) ~r:${  he(user.realname.replace(/ /g, '_'))  }</option>`;
+				`<option value="nick">(${  language.nicknameSmall  }) ${  he(user.nick)  }!*@*</option>`;
+		if (user.host)
+			html += `<option value="host">(${  language.hostnameSmall  }) *!*@${  he(user.host)  }</option>`;
+		if (user.realname)
+			html += `<option value="realname">(${  language.realnameSmall  }) ~r:${  he(user.realname.replace(/ /g, '_'))  }</option>`;
 		if (user.account)
 			html += `<option value="account">(${  language.accountNameSmall  }) ~a:${  he(user.account)  }</option>`;
 		html += '</select></p>' +
