@@ -485,7 +485,7 @@ class IrcTransport {
 	 * @param {string} data - IRC command to send
 	 */
 	send(data) {
-		if (this.websock && this.websock.readyState === this.websock.OPEN && (this.sendDelayCnt < 3 || this._domain.connectStatus != 'connected')) {
+		if (this.websock && this.websock.readyState === this.websock.OPEN && (this.sendDelayCnt < 3 || !this._domain.isConnected())) {
 			this.forceSend(data);
 			this.sendDelayCnt++;
 		} else {

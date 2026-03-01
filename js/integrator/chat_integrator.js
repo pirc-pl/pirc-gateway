@@ -143,6 +143,12 @@ class ChatIntegrator {
 		if (!user) return false;
 		return user === this.me.userRef || (user.nick && user.nick === this.me.userRef.nick);
 	}
+
+	// Returns true when user actions (sending messages, joining channels) are possible.
+	// wrongPassword means authentication failed but the IRC connection is active.
+	isConnected() {
+		return this.connectStatus === 'connected' || this.connectStatus === 'wrongPassword';
+	}
 }
 
 
@@ -853,6 +859,7 @@ function registerChatHandlers(events, chat, transport) {
 
 	// When our own nick changes to the desired nickserv nick while in a ghost state,
 	// clear the recover fallback timer and check if the connection can advance.
+	// Also: any nick change while in wrongPassword resets to connected state.
 	events.on('chat:meNickChanged', ({ newNick }) => {
 		if (newNick === chat.me.nickservnick) {
 			if (chat.recoverTimeout) {
@@ -862,6 +869,10 @@ function registerChatHandlers(events, chat, transport) {
 			if (chat.connectStatus === 'ghostSent' || chat.connectStatus === 'ghostAndNickSent') {
 				events.emit('chat:processConnectionStatusUpdate');
 			}
+		}
+		if (chat.connectStatus === 'wrongPassword') {
+			chat.connectStatus = 'identified';
+			events.emit('chat:processConnectionStatusUpdate');
 		}
 	});
 
@@ -947,7 +958,7 @@ function registerChatHandlers(events, chat, transport) {
 	// protocol:pingCommand removed — server PING/PONG handled directly in irc_protocol.js
 
 	events.on('protocol:pongCommand', (data) => {
-		// ChatIntegrator logic for PONG: record latency, etc.
+		chat.pingCnt = 0; // Reset ping counter — server is alive
 		events.emit('server:pongReceived', {
 			token: data.token
 		});
@@ -1257,6 +1268,11 @@ function registerChatHandlers(events, chat, transport) {
 		console.debug('DOMAIN: Client connected, handling chat-level setup');
 		events.emit('chat:setConnectedWhenIdentified'); // Signal chat layer
 		events.emit('chat:clearConnectTimeout'); // Clear connection timeout
+		// Start keepalive ping interval to prevent server/NAT from closing idle connections
+		clearInterval(chat.pingIntervalID);
+		chat.pingIntervalID = setInterval(() => {
+			events.emit('chat:requestPing');
+		}, 30000);
 	});
 
 	events.on('protocol:rplYourhost', (data) => {
@@ -3128,7 +3144,7 @@ function registerChatHandlers(events, chat, transport) {
 		if (chat.userQuit) {
 			return;
 		}
-		if (chat.connectStatus != 'connected') {
+		if (!chat.isConnected()) {
 			// This used to be in gateway.connectTimeout()
 			events.emit('chat:connectionTimeoutExpired', { currentStatus: chat.connectStatus });
 		}
@@ -3270,7 +3286,7 @@ function registerChatHandlers(events, chat, transport) {
 
 	events.on('chat:requestJoinChannel', (data) => {
 		console.debug('DOMAIN: Request Join Channel:', data.channelName, data.password || 'no pass');
-		if (chat.connectStatus !== 'connected') return;
+		if (!chat.isConnected()) return;
 		events.emit('chat:joinChannel', { channels: data.channelName, password: data.password });
 	});
 
@@ -3619,7 +3635,7 @@ function registerChatHandlers(events, chat, transport) {
 	events.on('chat:checkConnectionStatus', (data) => {
 		console.debug('DOMAIN: Checking connection status:', chat.connectStatus);
 		if (typeof data.callback === 'function') {
-			data.callback(chat.connectStatus == 'connected');
+			data.callback(chat.isConnected());
 		}
 	});
 
@@ -3717,7 +3733,7 @@ function registerChatHandlers(events, chat, transport) {
 					localStorage.setItem('reqChannelJoin', chat.me.channels[0]);
 				}
 			} catch (e) {}
-		} else if (chat.connectStatus == 'connected') {
+		} else if (chat.isConnected()) {
 			try {
 				if (evt.key == 'checkAlive') {
 					localStorage.removeItem(evt.key);
