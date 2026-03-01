@@ -902,6 +902,13 @@ function registerChatHandlers(events, chat, transport) {
 			return;
 		}
 
+		// Filter notices from ignored users (skip server notices)
+		if (!sender.server && !chat.isOwnUser(sender)) {
+			const ignoreType = data.isChannel ? 'channel' : 'query';
+			if (ignore.ignoring(sender, ignoreType))
+				return;
+		}
+
 		// Check if this is from a chat history batch
 		let historyBatch = null;
 		if (tags.batch && tags.batch in chat.batch) {
@@ -1056,6 +1063,13 @@ function registerChatHandlers(events, chat, transport) {
 			transport.labelProcessed = true;
 			// Don't emit display event for hidden messages
 			return;
+		}
+
+		// Filter messages from ignored users
+		if (!chat.isOwnUser(data.sender)) {
+			const ignoreType = data.isChannel ? 'channel' : 'query';
+			if (ignore.ignoring(data.sender, ignoreType))
+				return;
 		}
 
 		// Check if this is from a chat history batch
