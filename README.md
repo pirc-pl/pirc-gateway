@@ -13,6 +13,7 @@ location / {
 }
 ```
 Skopiuj plik `/js/gateway_global_settings.example.js` do `/js/gateway_global_settings.js` i zmień ustawienia według swoich potrzeb.
+Wykonaj `git config core.hooksPath .githooks` aby CTCP VERSION wskazywał rewizję GIT.
 
 Otwieraj stronę pod adresem `https://example.com/` (puste pola), `https://example.com/kanal/` (nazwa kanału w adresie ma być bez znaku `#`) lub `https://example.com/kanal/nick/`.
 
@@ -35,6 +36,7 @@ location / {
 }
 ```
 Rename the `/js/gateway_global_settings.example.js` to `/js/gateway_global_settings.js` and adjust the settings to fit your needs.
+Do `git config core.hooksPath .githooks` so CTCP VERSION will return a GIT revision.
 
 Use the URL of `https://example.com/` (empty inputs), `https://example.com/channel/` (channel name in url should not include the `#` character) or `https://example.com/channel/nickname/`.
 
