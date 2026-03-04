@@ -361,7 +361,7 @@ class NicklistUser {
 	setActions() {
 		$(`#${  this.id  }-toggleNickOpt`).off('click').click(() => { uiNicklist.toggleNickOpt(this.id); });
 		$(`#${  this.id  }-openQuery`).off('click').click(() => { uiTabs.openQuery(this.channelMember.user.nick, this.channelMember.id); });
-		$(`#${  this.id  }-askIgnore`).off('click').click(() => { ignore.askIgnore(this.channelMember); });
+		$(`#${  this.id  }-askIgnore`).off('click').click(() => { ignore.askIgnore(this.channelMember.user); });
 		$(`#${  this.id  }-doWhois`).off('click').click(() => {
 			if (this.userStableId == connection.chat.me.userRef.id) // Compare stable IDs
 				uiState.displayOwnWhois = true; // This is a UI flag
