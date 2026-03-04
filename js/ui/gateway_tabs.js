@@ -379,7 +379,7 @@ class NicklistUser {
 		});
 		$(`#${  this.id  }-toggleNickOptAdmin`).off('click').click(() => { uiNicklist.toggleNickOptAdmin(this.id); });
 		$(`#${  this.id  }-showKick`).off('click').click(() => { uiDialogs.showKick(this.channel, this.channelMember.user.nick); });
-		$(`#${  this.id  }-showBan`).off('click').click(() => { uiDialogs.showBan(this.channel, this.channelMember.user.nick); });
+		$(`#${  this.id  }-showBan`).off('click').click(() => { services.showBan(this.channel, this.channelMember.user.nick); });
 		$(`#${  this.id  }-givePrivileges`).off('click').click(() => { uiDialogs.showStatus(this.channel, this.channelMember.user.nick); });
 		$(`#${  this.id  }-takePrivileges`).off('click').click(() => { uiDialogs.showStatusAnti(this.channel, this.channelMember.user.nick); });
 		/*$('#'+this.id+'-showBanUni').click(function(){ uiDialogs.showBan(this.channel, this.user.nick); }.bind(this));*/
