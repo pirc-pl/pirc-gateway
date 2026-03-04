@@ -75,8 +75,10 @@ const ignore = {
 		if (nick.isInList(servicesNicks))
 			return false;
 
-		if (!user)
-			return false;
+		if (!user) {
+			// Nick not in users list - can only match nick-based patterns
+			return ignore.wildcardChecker(ignoreData.userhost[type], `${nick  }!*@*`);
+		}
 
 		if (user.realname && ignore.wildcardChecker(ignoreData.realname[type], user.realname.replace(/ /g, '_')))
 			return true;

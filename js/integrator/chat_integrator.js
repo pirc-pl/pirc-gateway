@@ -1446,14 +1446,8 @@ function registerChatHandlers(events, chat, transport) {
 	});
 
 	events.on('protocol:rplWhoishelpop', (data) => {
-		const user = chat.users.getUser(data.nick);
-		if (user) {
-			// Helpop status is WHOIS-specific, not stored permanently
-			events.emit('user:helpopStatusChanged', {
-				nick: user.nick,
-				isHelpop: true,
-			});
-		}
+		// WHOIS-specific data - don't access users storage
+		chat.whoisData.isHelpop = true;
 	});
 
 	// Accumulator for WHOIS data
@@ -1476,15 +1470,8 @@ function registerChatHandlers(events, chat, transport) {
 	});
 
 	events.on('protocol:rplWhoisoperator', (data) => {
-		const user = chat.users.getUser(data.nick);
-		if (user) {
-			// Operator status is WHOIS-specific, not stored permanently
-			events.emit('user:operatorStatusChanged', {
-				nick: user.nick,
-				isOperator: true,
-			});
-			chat.whoisData.operatorInfo = data.message;
-		}
+		// WHOIS-specific data - don't access users storage
+		chat.whoisData.operatorInfo = data.message;
 	});
 
 	events.on('protocol:rplWhowasuser', ({ nick, ident, host, realname }) => {
@@ -1511,17 +1498,9 @@ function registerChatHandlers(events, chat, transport) {
 	});
 
 	events.on('protocol:rplWhoisidle', (data) => {
-		const user = chat.users.getUser(data.nick);
-		if (user) {
-			// Idle and signon time are WHOIS-specific, stored in chat.whoisData
-			events.emit('user:idleInfoUpdated', {
-				nick: user.nick,
-				idleSeconds: data.idleSeconds,
-				signOn: data.signOn,
-			});
-			chat.whoisData.idleTime = data.idleSeconds;
-			chat.whoisData.signedOn = data.signOn;
-		}
+		// WHOIS-specific data - don't access users storage
+		chat.whoisData.idleSeconds = data.idleSeconds;
+		chat.whoisData.signOn = data.signOn;
 	});
 
 	events.on('protocol:rplEndofwhois', (data) => {
@@ -1537,28 +1516,13 @@ function registerChatHandlers(events, chat, transport) {
 	});
 
 	events.on('protocol:rplWhoischannels', (data) => {
-		const user = chat.users.getUser(data.nick);
-		if (user) {
-			// Channel list is WHOIS-specific, stored in chat.whoisData
-			events.emit('user:channelsUpdated', {
-				nick: user.nick,
-				channels: data.channels,
-			});
-			chat.whoisData.channels = data.channels;
-		}
+		// WHOIS-specific data - don't access users storage
+		chat.whoisData.channels = data.channels;
 	});
 
 	events.on('protocol:rplWhoisspecial', (data) => {
-		const user = chat.users.getUser(data.nick);
-		if (user) {
-			// Special status is WHOIS-specific info like "is a Network Administrator"
-			// No need to store on user object, just emit for UI display
-			events.emit('user:specialStatusUpdated', {
-				nick: user.nick,
-				status: data.message,
-			});
-			chat.whoisData.specialInfo = data.message;
-		}
+		// WHOIS-specific data - don't access users storage
+		chat.whoisData.specialStatus = data.message;
 	});
 
 	// chat.smallListData global for chat
@@ -1681,15 +1645,8 @@ function registerChatHandlers(events, chat, transport) {
 	});
 
 	events.on('protocol:rplWhoisbot', (data) => {
-		const user = chat.users.getUser(data.nick);
-		if (user) {
-			// Bot status is WHOIS-specific, stored in chat.whoisData
-			events.emit('user:isBot', {
-				nick: user.nick,
-				isBot: true,
-			});
-			chat.whoisData.isBot = true; // Add to WHOIS data
-		}
+		// WHOIS-specific data - don't access users storage
+		chat.whoisData.isBot = true;
 	});
 
 	// Invite list aggregation (WHOIS-style pattern)
@@ -1746,17 +1703,9 @@ function registerChatHandlers(events, chat, transport) {
 	});
 
 	events.on('protocol:rplWhoiscountry', (data) => {
-		const user = chat.users.getUser(data.nick);
-		if (user) {
-			// Country is WHOIS-specific, stored in chat.whoisData
-			events.emit('user:countryInfoUpdated', {
-				nick: user.nick,
-				countryCode: data.countryCode,
-				countryName: data.countryName,
-			});
-			chat.whoisData.countryCode = data.countryCode; // Add to WHOIS data
-			chat.whoisData.countryName = data.countryName; // Add to WHOIS data
-		}
+		// WHOIS-specific data - don't access users storage
+		chat.whoisData.countryCode = data.countryCode;
+		chat.whoisData.countryName = data.countryName;
 	});
 
 	// Exception list aggregation (WHOIS-style pattern)
@@ -2162,15 +2111,8 @@ function registerChatHandlers(events, chat, transport) {
 	});
 
 	events.on('protocol:rplWhoismodes', (data) => {
-		const user = chat.users.getUser(data.nick);
-		if (user) {
-			// User modes are WHOIS-specific, stored in chat.whoisData
-			events.emit('user:whoisModes', {
-				nick: user.nick,
-				modes: data.modes,
-			});
-			chat.whoisData.userModes = data.modes; // Add to WHOIS data
-		}
+		// WHOIS-specific data - don't access users storage
+		chat.whoisData.userModes = data.modes;
 	});
 
 	events.on('protocol:rplYoureoper', (data) => {
@@ -2778,15 +2720,8 @@ function registerChatHandlers(events, chat, transport) {
 	});
 
 	events.on('protocol:rplWhoissecure', (data) => {
-		const user = chat.users.getUser(data.nick);
-		if (user) {
-			// Secure connection is WHOIS-specific, stored in chat.whoisData
-		}
-		events.emit('user:isSecure', {
-			nick: data.nick,
-			message: data.message,
-		});
-		chat.whoisData.isSecure = true; // Add to WHOIS data
+		// WHOIS-specific data - don't access users storage
+		chat.whoisData.isSecure = true;
 	});
 
 	events.on('protocol:errMlockrestricted', (data) => {
