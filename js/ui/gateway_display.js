@@ -2684,6 +2684,11 @@ function initDisplayListeners() {
 		ignore.askIgnore(nick);
 	});
 
+	// Open ignore management dialog when link in ignore list messages is clicked
+	$(document).on('click', '.action-openIgnoreManagement', () => {
+		ignore.showIgnoreManagement();
+	});
+
 	// Message delivery failed (no echo-message confirmation received)
 	commandBus.on('chat:messageDeliveryFailed', (data) => {
 		uiTabs.msgNotDelivered(data.label, data.msg);

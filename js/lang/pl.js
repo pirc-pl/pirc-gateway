@@ -89,7 +89,7 @@ lang.pl = {
 		'queryIgnoreAdded': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">✯</span> Dodano <b>%s</b> do ignorowanych prywatnie.</span></div>',
 		'queryIgnoreRemoved': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">✯</span> Usunięto <b>%s</b> z ignorowanych prywatnie.</span></div>',
 		'ignoreListStart': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">✯</span> Lista ignorowanych:</span></div>',
-		'ignoreListEnd': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">✯</span> Koniec listy.</span></div>',
+		'ignoreListEnd': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">✯</span> Koniec listy. <a href="javascript:void(0);" class="action-openIgnoreManagement">Zarządzaj ignorowanymi</a></span></div>',
 		'ignoreListEmpty': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">✯</span> Lista ignorowanych jest pusta.</span></div>',
 		'ignoreListItem': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="mode"><span class="symbolFont">✯</span> Typ: <b>%s</b>, maska: <b>%s</b></span></div>',
 		'netsplit': '<div class="messageDiv"><span class="time">%s</span> &nbsp; <span class="part"><span class="symbolFont">🢠</span> <span class="netsplit">Netsplit</span>, wychodzą: %s</span></div>',
