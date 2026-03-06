@@ -889,7 +889,7 @@ class ChannelTab {
 		this.left = false;
 		$(`#${  this.id  }-chstats`).show();
 		$(`#${  this.id  }-window`).vprintf(language.messagePatterns.joinOwn, [$$.niceTime(), connection.chat.me.userRef.nick, connection.chat.me.userRef.ident, connection.chat.me.userRef.host, this.name]);
-		if (this.name == uiState.active) {
+		if (this.name.toLowerCase() == uiState.active.toLowerCase()) {
 			this.restoreScroll();
 		}
 	}

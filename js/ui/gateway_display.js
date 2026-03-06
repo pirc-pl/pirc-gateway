@@ -673,7 +673,7 @@ const uiState = {
 			} else {
 				if (string.indexOf('#') == 0) {
 					for (const channel of uiState.channels) {
-						if (channel.name.toLowerCase().replace(/^[^a-z0-9]/ig).indexOf(string.toLowerCase().replace(/^[^a-z0-9]/ig)) == 0) {
+						if (channel.name.toLowerCase().replace(/^[^a-z0-9]/ig, '').indexOf(string.toLowerCase().replace(/^[^a-z0-9]/ig, '')) == 0) {
 							complarr[ccount] = channel.name;
 							ccount++;
 						}
@@ -684,7 +684,7 @@ const uiState = {
 						const cml = connection.chat.users.getChannelMemberList(chan.name);
 						const members = cml ? cml.getAllMembers() : [];
 						for (const member of members) {
-							if (member.user.nick.toLowerCase().replace(/^[^a-z0-9]/ig).indexOf(string.toLowerCase().replace(/^[^a-z0-9]/ig)) == 0) {
+							if (member.user.nick.toLowerCase().replace(/^[^a-z0-9]/ig, '').indexOf(string.toLowerCase().replace(/^[^a-z0-9]/ig, '')) == 0) {
 								complarr[ccount] = member.user.nick;
 								if (comPos == 0) {
 									complarr[ccount] += ':';
@@ -2770,7 +2770,7 @@ function initDisplayListeners() {
 	// Listener for when the client successfully joins a channel.
 	commandBus.on('channel:channelCreation', (data) => {
 		const { channelName, members } = data; // members = Complete initial member list from chat
-		const channame = channelName.toLowerCase();
+		const channame = channelName;
 
 		let channel = uiTabs.findChannel(channame); // Find the UI representation of the channel
 		if (!channel) {
