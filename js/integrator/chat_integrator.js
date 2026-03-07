@@ -3016,6 +3016,10 @@ function registerChatHandlers(events, chat, transport) {
 
 
 	events.on('chat:requestPing', () => {
+		if (!chat.isConnected()) {
+			console.debug('DOMAIN: Request Ping skipped (not connected)');
+			return;
+		}
 		console.debug('DOMAIN: Request Ping');
 		chat.pingCnt++;
 		events.emit('chat:sendRawCommand', { command: 'PING', args: ['JavaScript'] });
