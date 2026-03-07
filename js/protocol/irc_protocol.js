@@ -284,9 +284,9 @@ function registerProtocolHandlers(events, chat, transport) {
 	});
 
 	events.on('cmd:PING', (msg) => {
-		// Server keepalive PING — respond immediately at protocol level, no chat layer involved.
+		// Server keepalive PING — respond immediately, never queue (stale PONGs break new sessions).
 		const token = msg.args[0] || '';
-		transport.send(`PONG :${token}`);
+		transport.forceSend(`PONG :${token}`);
 	});
 
 	events.on('cmd:PONG', (msg) => {

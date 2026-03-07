@@ -375,6 +375,8 @@ class IrcTransport {
 			this.websock.close();
 		}
 		this.websock = null;
+		this.toSend = [];
+		this.sendDelayCnt = 0;
 		setTimeout(() => {
 			self._events.emit('chat:setConnectStatus', { status: 'disconnected' });
 			self._events.emit('transport:reconnecting');
