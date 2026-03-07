@@ -47,7 +47,7 @@ function registerProtocolHandlers(events, chat, transport) {
 	 * @param {string}        [text]   - appended as ":text"
 	 * @param {Object}        [tags]   - message-tags (sent only if message-tags cap active)
 	 */
-	function sendIrc(command, args, text, tags) {
+	function sendIrc(command, args, tags) {
 		let cmdString = '';
 		if (tags && ('message-tags' in chat.activeCaps)) {
 			cmdString += '@';
@@ -68,11 +68,9 @@ function registerProtocolHandlers(events, chat, transport) {
 			} else return;
 		}
 		cmdString += command;
-		if (args) {
-			for (const arg of args) cmdString += ` ${arg}`;
-		}
-		if (text !== undefined && text !== null && text !== false) {
-			cmdString += ` :${text}`;
+		if (args && args.length > 0) {
+			for (let i = 0; i < args.length - 1; i++) cmdString += ` ${args[i]}`;
+			cmdString += ` :${args[args.length - 1]}`;
 		}
 		transport.send(cmdString);
 	}
@@ -1750,7 +1748,7 @@ function registerProtocolHandlers(events, chat, transport) {
 		if (tags && ('labeled-response' in chat.activeCaps)) {
 			events.emit('chat:setLabelInfo', { label, info: { cmd } });
 		}
-		sendIrc(cmd, [data.dest], data.text, tags);
+		sendIrc(cmd, [data.dest, data.text], tags);
 		if (data.hide) {
 			events.emit('chat:addLabelToHide', { label });
 		} else {
@@ -1773,7 +1771,7 @@ function registerProtocolHandlers(events, chat, transport) {
 		if (tags && ('labeled-response' in chat.activeCaps)) {
 			events.emit('chat:setLabelInfo', { label, info: { cmd: 'PRIVMSG' } });
 		}
-		sendIrc('PRIVMSG', [data.dest], ctcp, tags);
+		sendIrc('PRIVMSG', [data.dest, ctcp], tags);
 		events.emit('chat:outgoingMessage', {
 			messageType: 'action',
 			dest: data.dest,
@@ -1794,7 +1792,7 @@ function registerProtocolHandlers(events, chat, transport) {
 	events.on('chat:sendCtcp', (data) => {
 		const ctcp = data.text ? `\x01${data.type} ${data.text}\x01` : `\x01${data.type}\x01`;
 		const cmd = data.isReply ? 'NOTICE' : 'PRIVMSG';
-		sendIrc(cmd, [data.dest], ctcp);
+		sendIrc(cmd, [data.dest, ctcp]);
 	});
 
 	// --- Channel management ---
@@ -1819,9 +1817,9 @@ function registerProtocolHandlers(events, chat, transport) {
 			events.emit('chat:setLabelInfo', { label, info: { cmd: 'JOIN', channels: channelList } });
 			const tags = ('message-tags' in chat.activeCaps) ? { label } : null;
 			if (data.password) {
-				sendIrc('JOIN', [channelString, data.password], null, tags);
+				sendIrc('JOIN', [channelString, data.password], tags);
 			} else {
-				sendIrc('JOIN', [channelString], null, tags);
+				sendIrc('JOIN', [channelString], tags);
 			}
 		} else {
 			if (data.password) {
@@ -1838,7 +1836,7 @@ function registerProtocolHandlers(events, chat, transport) {
 	 */
 	events.on('chat:leaveChannel', (data) => {
 		if (data.reason) {
-			sendIrc('PART', [data.channel], data.reason);
+			sendIrc('PART', [data.channel, data.reason]);
 		} else {
 			sendIrc('PART', [data.channel]);
 		}
@@ -1847,7 +1845,7 @@ function registerProtocolHandlers(events, chat, transport) {
 	/** chat:setTopic — set or query channel topic. */
 	events.on('chat:setTopic', (data) => {
 		if (data.text !== undefined && data.text !== null) {
-			sendIrc('TOPIC', [data.channel], data.text);
+			sendIrc('TOPIC', [data.channel, data.text]);
 		} else {
 			sendIrc('TOPIC', [data.channel]);
 		}
@@ -1856,7 +1854,7 @@ function registerProtocolHandlers(events, chat, transport) {
 	/** chat:knockChannel — send KNOCK to a channel. */
 	events.on('chat:knockChannel', (data) => {
 		if (data.message) {
-			sendIrc('KNOCK', [data.channel], data.message);
+			sendIrc('KNOCK', [data.channel, data.message]);
 		} else {
 			sendIrc('KNOCK', [data.channel]);
 		}
@@ -1870,7 +1868,7 @@ function registerProtocolHandlers(events, chat, transport) {
 	/** chat:kickUser — kick a user from a channel. */
 	events.on('chat:kickUser', (data) => {
 		if (data.reason) {
-			sendIrc('KICK', [data.channel, data.nick], data.reason);
+			sendIrc('KICK', [data.channel, data.nick, data.reason]);
 		} else {
 			sendIrc('KICK', [data.channel, data.nick]);
 		}
@@ -1906,12 +1904,16 @@ function registerProtocolHandlers(events, chat, transport) {
 
 	/** chat:setChannelSettings — set channel modes. Mode string stays IRC-style for now. */
 	events.on('chat:setChannelSettings', (data) => {
-		sendIrc('MODE', [data.channel, data.modeString]);
+		const args = [data.channel];
+		if (data.modeString) args.push(...data.modeString.split(' '));
+		sendIrc('MODE', args);
 	});
 
 	/** chat:setUserSettings — set user (self) modes. */
 	events.on('chat:setUserSettings', (data) => {
-		sendIrc('MODE', [chat.me.nick, data.modeString]);
+		const args = [chat.me.nick];
+		if (data.modeString) args.push(...data.modeString.split(' '));
+		sendIrc('MODE', args);
 	});
 
 	// --- User info queries ---
@@ -1939,7 +1941,7 @@ function registerProtocolHandlers(events, chat, transport) {
 		if (data.labeled && ('labeled-response' in chat.activeCaps)) {
 			const label = generateLabel();
 			const tags = ('message-tags' in chat.activeCaps) ? { label } : null;
-			sendIrc('LIST', args, null, tags);
+			sendIrc('LIST', args, tags);
 		} else {
 			sendIrc('LIST', args);
 		}
@@ -1980,7 +1982,7 @@ function registerProtocolHandlers(events, chat, transport) {
 	/** chat:setAway — set or clear away status. */
 	events.on('chat:setAway', (data) => {
 		if (data.message) {
-			sendIrc('AWAY', [], data.message);
+			sendIrc('AWAY', [data.message]);
 		} else {
 			sendIrc('AWAY');
 		}
@@ -1989,7 +1991,7 @@ function registerProtocolHandlers(events, chat, transport) {
 	/** chat:quit — disconnect from server. */
 	events.on('chat:quit', (data) => {
 		if (data.message) {
-			sendIrc('QUIT', [], data.message);
+			sendIrc('QUIT', [data.message]);
 		} else {
 			sendIrc('QUIT');
 		}
@@ -2030,7 +2032,7 @@ function registerProtocolHandlers(events, chat, transport) {
 			// Future signal types can be added here
 			return;
 		}
-		sendIrc(null, [data.target], null, tags);
+		sendIrc(null, [data.target], tags);
 	});
 
 	// --- Server-stored properties / metadata ---
@@ -2042,7 +2044,7 @@ function registerProtocolHandlers(events, chat, transport) {
 	 */
 	events.on('chat:setColor', (data) => {
 		if (data.color) {
-			sendIrc('METADATA', ['*', 'SET', 'color'], data.color);
+			sendIrc('METADATA', ['*', 'SET', 'color', data.color]);
 		} else {
 			sendIrc('METADATA', ['*', 'SET', 'color']);
 		}
@@ -2051,7 +2053,7 @@ function registerProtocolHandlers(events, chat, transport) {
 	/** chat:setAvatar — set own avatar URL via METADATA. */
 	events.on('chat:setAvatar', (data) => {
 		if (data.url) {
-			sendIrc('METADATA', ['*', 'SET', 'avatar'], data.url);
+			sendIrc('METADATA', ['*', 'SET', 'avatar', data.url]);
 		} else {
 			sendIrc('METADATA', ['*', 'SET', 'avatar']);
 		}
@@ -2067,17 +2069,17 @@ function registerProtocolHandlers(events, chat, transport) {
 
 	/**
 	 * chat:sendRawCommand — escape hatch for protocol-internal commands
-	 * (CAP, AUTHENTICATE, PONG from keepalive, EXTJWT, etc.)
+	 * (CAP, AUTHENTICATE, PING, EXTJWT, etc.)
 	 * @param {string}   [command]
-	 * @param {string[]} [args]
-	 * @param {string}   [raw]      - if provided, sent verbatim (overrides command/args)
+	 * @param {string[]} [args]  - last element is sent as trailing parameter (with leading ':')
+	 * @param {string}   [raw]   - if provided, sent verbatim (overrides command/args)
 	 */
 	events.on('chat:sendRawCommand', (data) => {
 		if (data.raw !== undefined && data.raw !== null) {
 			transport.send(data.raw);
 			return;
 		}
-		sendIrc(data.command, data.args, data.text, data.tags || null);
+		sendIrc(data.command, data.args, data.tags || null);
 	});
 
 }

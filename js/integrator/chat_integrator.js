@@ -2966,7 +2966,7 @@ function registerChatHandlers(events, chat, transport) {
 
 	events.on('chat:requestCap', (data) => {
 		console.debug('DOMAIN: Request CAP:', data.type, data.caps);
-		events.emit('chat:sendRawCommand', { command: 'CAP', args: [data.type], text: data.caps });
+		events.emit('chat:sendRawCommand', { command: 'CAP', args: [data.type, data.caps] });
 	});
 
 	events.on('chat:requestMetadataSubscription', (data) => {
@@ -3321,7 +3321,7 @@ function registerChatHandlers(events, chat, transport) {
 	events.on('chat:requestUser', (data) => {
 		console.debug('DOMAIN: Request USER:', data.username, data.mode, data.unused, data.realname);
 		// TODO: abstract to chat:initiateConnection; protocol layer handles full NICK+USER+CAP registration sequence
-		events.emit('chat:sendRawCommand', { command: 'USER', args: [data.username, data.mode, data.unused], text: data.realname });
+		events.emit('chat:sendRawCommand', { command: 'USER', args: [data.username, data.mode, data.unused, data.realname] });
 	});
 
 	events.on('chat:requestWhois', (data) => {
@@ -3469,7 +3469,7 @@ function registerChatHandlers(events, chat, transport) {
 			events.emit('chat:setAvatar', { url: data.value });
 		} else {
 			// Generic metadata: send directly as METADATA SET
-			events.emit('chat:sendRawCommand', { command: 'METADATA', args: ['*', 'SET', data.key], text: data.value });
+			events.emit('chat:sendRawCommand', { command: 'METADATA', args: ['*', 'SET', data.key, data.value] });
 		}
 	});
 
