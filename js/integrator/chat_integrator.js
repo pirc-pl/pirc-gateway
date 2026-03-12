@@ -2903,7 +2903,7 @@ function registerChatHandlers(events, chat, transport) {
 		versionString += `, ${  language.runningOn  } ${  navigator.userAgent}`;
 
 		// Send CTCP reply
-		events.emit('chat:sendCtcp', { dest: data.requestedBy, type: 'VERSION', text: versionString, isReply: true });
+		events.emit('chat:sendCtcp', { dest: data.requestedBy, type: 'VERSION', ctcpText: versionString, isReply: true });
 
 		events.emit('ctcp:versionRequest', {
 			sender: data.requestedBy,
@@ -2926,7 +2926,7 @@ function registerChatHandlers(events, chat, transport) {
 		versionString += `, ${  language.runningOn  } ${  navigator.userAgent}`;
 
 		// Send CTCP reply
-		events.emit('chat:sendCtcp', { dest: data.requestedBy, type: 'USERINFO', text: versionString, isReply: true });
+		events.emit('chat:sendCtcp', { dest: data.requestedBy, type: 'USERINFO', ctcpText: versionString, isReply: true });
 
 		events.emit('ctcp:userinfoRequest', {
 			sender: data.requestedBy,
@@ -3336,12 +3336,12 @@ function registerChatHandlers(events, chat, transport) {
 
 	events.on('chat:requestCtcp', (data) => {
 		console.debug('DOMAIN: Request CTCP:', data.nick, data.ctcpType);
-		events.emit('chat:requestCtcpCommand', { dest: data.nick, text: data.ctcpType, time: new Date() });
+		events.emit('chat:requestCtcpCommand', { dest: data.nick, ctcpType: data.ctcpType, time: new Date() });
 	});
 
 	events.on('chat:requestCtcpCommand', (data) => {
-		console.debug('DOMAIN: Request CTCP Command:', data.dest, data.text);
-		events.emit('chat:sendCtcp', { dest: data.dest, type: data.text, isReply: false });
+		console.debug('DOMAIN: Request CTCP Command:', data.dest, data.ctcpType);
+		events.emit('chat:sendCtcp', { dest: data.dest, type: data.ctcpType, isReply: false });
 	});
 
 	events.on('chat:requestModeChange', (data) => {
@@ -3446,7 +3446,7 @@ function registerChatHandlers(events, chat, transport) {
 			console.debug('DOMAIN: Cleared typing status for', data.target, '(message sent)');
 		}
 
-		events.emit('chat:sendMessage', { dest: data.target, text: data.message, notice: data.notice });
+		events.emit('chat:sendMessage', { dest: data.target, messageText: data.message, notice: data.notice });
 	});
 
 	events.on('chat:requestSendTags', (data) => {

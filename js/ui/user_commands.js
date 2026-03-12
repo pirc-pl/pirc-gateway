@@ -39,7 +39,7 @@ const commands = {
 		'nicks': true,
 		'custom': [],
 		'callback': function(command, input) {
-			commandBus.emit('chat:sendRawCommand', { raw: input.slice(1).substr(command[0].length + 1) });
+			commandBus.emit('chat:sendRawCommand', { rawCommand: input.slice(1).substr(command[0].length + 1) });
 		}
 	},
 	'away': {
@@ -192,7 +192,7 @@ const commands = {
 								reason += command[i];
 							}
 						}
-						commandBus.emit('chat:setTopic', { channel: command[1], text: reason });
+						commandBus.emit('chat:setTopic', { channel: command[1], newTopic: reason });
 					}
 				} else {
 					if (uiTabs.getActive()) {
@@ -205,7 +205,7 @@ const commands = {
 								reason += command[i];
 							}
 						}
-						commandBus.emit('chat:setTopic', { channel: uiState.active, text: reason });
+						commandBus.emit('chat:setTopic', { channel: uiState.active, newTopic: reason });
 					} else {
 						uiInput.notEnoughParams('topic', language.youHaveToGiveChanFirstArg);
 					}
@@ -439,7 +439,7 @@ const commands = {
 		'callback': function(command, input) {
 			if (command[1]) {
 				if (uiTabs.getActive()) {
-					commandBus.emit('chat:sendAction', { dest: uiState.active, text: input.slice(1).substr(3) });
+					commandBus.emit('chat:sendAction', { dest: uiState.active, actionText: input.slice(1).substr(3) });
 				} else {
 					uiInput.notEnoughParams('me', language.youHaveToBeOnChan);
 				}

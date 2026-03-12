@@ -1736,7 +1736,7 @@ function registerProtocolHandlers(events, chat, transport) {
 	/**
 	 * chat:sendMessage — send a PRIVMSG or NOTICE (NOTICE = "whisper" in some other chat systems).
 	 * @param {string}  dest
-	 * @param {string}  text
+	 * @param {string}  messageText
 	 * @param {boolean} [notice]  - true = NOTICE, false/undefined = PRIVMSG
 	 * @param {boolean} [slow]    - reserved for future throttle path
 	 * @param {boolean} [hide]    - if true, suppress outgoing echo (service commands)
@@ -1748,14 +1748,14 @@ function registerProtocolHandlers(events, chat, transport) {
 		if (tags && ('labeled-response' in chat.activeCaps)) {
 			events.emit('chat:setLabelInfo', { label, info: { cmd } });
 		}
-		sendIrc(cmd, [data.dest, data.text], tags);
+		sendIrc(cmd, [data.dest, data.messageText], tags);
 		if (data.hide) {
 			events.emit('chat:addLabelToHide', { label });
 		} else {
 			events.emit('chat:outgoingMessage', {
 				messageType: data.notice ? 'notice' : 'message',
 				dest: data.dest,
-				text: data.text,
+				text: data.messageText,
 				label,
 				sender: chat.me.userRef,
 				time: new Date()
@@ -1765,7 +1765,7 @@ function registerProtocolHandlers(events, chat, transport) {
 
 	/** chat:sendAction — send CTCP ACTION (/me). */
 	events.on('chat:sendAction', (data) => {
-		const ctcp = `\x01ACTION ${data.text}\x01`;
+		const ctcp = `\x01ACTION ${data.actionText}\x01`;
 		const label = generateLabel();
 		const tags = ('message-tags' in chat.activeCaps) ? { label } : null;
 		if (tags && ('labeled-response' in chat.activeCaps)) {
@@ -1775,7 +1775,7 @@ function registerProtocolHandlers(events, chat, transport) {
 		events.emit('chat:outgoingMessage', {
 			messageType: 'action',
 			dest: data.dest,
-			text: data.text,
+			text: data.actionText,
 			label,
 			sender: chat.me.userRef,
 			time: new Date()
@@ -1786,11 +1786,11 @@ function registerProtocolHandlers(events, chat, transport) {
 	 * chat:sendCtcp — send a CTCP request (PRIVMSG) or reply (NOTICE).
 	 * @param {string}  dest
 	 * @param {string}  type   - CTCP type, e.g. "VERSION"
-	 * @param {string}  [text]
+	 * @param {string}  [ctcpText]
 	 * @param {boolean} [isReply] - true = NOTICE (reply), false = PRIVMSG (request)
 	 */
 	events.on('chat:sendCtcp', (data) => {
-		const ctcp = data.text ? `\x01${data.type} ${data.text}\x01` : `\x01${data.type}\x01`;
+		const ctcp = data.ctcpText ? `\x01${data.type} ${data.ctcpText}\x01` : `\x01${data.type}\x01`;
 		const cmd = data.isReply ? 'NOTICE' : 'PRIVMSG';
 		sendIrc(cmd, [data.dest, ctcp]);
 	});
@@ -1844,8 +1844,8 @@ function registerProtocolHandlers(events, chat, transport) {
 
 	/** chat:setTopic — set or query channel topic. */
 	events.on('chat:setTopic', (data) => {
-		if (data.text !== undefined && data.text !== null) {
-			sendIrc('TOPIC', [data.channel, data.text]);
+		if (data.newTopic !== undefined && data.newTopic !== null) {
+			sendIrc('TOPIC', [data.channel, data.newTopic]);
 		} else {
 			sendIrc('TOPIC', [data.channel]);
 		}
@@ -2010,7 +2010,7 @@ function registerProtocolHandlers(events, chat, transport) {
 		const args = Array.isArray(data.args) ? data.args : [data.args];
 		let commandString = data.command;
 		for (const arg of args) commandString += ` ${arg}`;
-		events.emit('chat:sendMessage', { dest: data.service, text: commandString, hide: true });
+		events.emit('chat:sendMessage', { dest: data.service, messageText: commandString, hide: true });
 	});
 
 	// --- Signals (typing indicators etc.) ---
@@ -2072,11 +2072,11 @@ function registerProtocolHandlers(events, chat, transport) {
 	 * (CAP, AUTHENTICATE, PING, EXTJWT, etc.)
 	 * @param {string}   [command]
 	 * @param {string[]} [args]  - last element is sent as trailing parameter (with leading ':')
-	 * @param {string}   [raw]   - if provided, sent verbatim (overrides command/args)
+	 * @param {string}   [rawCommand]   - if provided, sent verbatim (overrides command/args)
 	 */
 	events.on('chat:sendRawCommand', (data) => {
-		if (data.raw !== undefined && data.raw !== null) {
-			transport.send(data.raw);
+		if (data.rawCommand !== undefined && data.rawCommand !== null) {
+			transport.send(data.rawCommand);
 			return;
 		}
 		sendIrc(data.command, data.args, data.tags || null);

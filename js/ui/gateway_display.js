@@ -315,7 +315,7 @@ const disp = {
 		uiDialogs.closeDialog('confirm', 'topic');
 		uiDialogs.displayDialog('confirm', 'topic', language.topicOfChannel + channel.name, html);
 		$(`#topic-change-button-${  channel.id}`).click(() => {
-			commandBus.emit('chat:setTopic', { channel: channel.name, text: $('#topicEdit').val() });
+			commandBus.emit('chat:setTopic', { channel: channel.name, newTopic: $('#topicEdit').val() });
 		});
 	},
 	'playSound': function() {
@@ -2193,7 +2193,7 @@ const uiDialogs = {
 			return false;
 		}
 		const newTopic = $('#topicEdit').val().replace(/\n/g, ' ');
-		commandBus.emit('chat:setTopic', { channel: channel, text: newTopic });
+		commandBus.emit('chat:setTopic', { channel: channel, newTopic: newTopic });
 		uiDialogs.closeDialog('confirm', 'topic');
 		return true;
 	},
