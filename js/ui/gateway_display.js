@@ -2908,6 +2908,30 @@ function initDisplayListeners() {
 		}
 	});
 
+	// Netsplit/netjoin buffering: { chanName: { nicks: [], time: Date, timer: id } }
+	const netsplitQueue = {};
+	const netjoinQueue = {};
+
+	function flushNetsplitQueue(chanName) {
+		const q = netsplitQueue[chanName];
+		if (!q) return;
+		delete netsplitQueue[chanName];
+		const chan = uiTabs.findChannel(chanName);
+		if (chan && q.nicks.length > 0) {
+			chan.appendMessage(language.messagePatterns.netsplit, [$$.niceTime(q.time), q.nicks.join(', ')], q.time);
+		}
+	}
+
+	function flushNetjoinQueue(chanName) {
+		const q = netjoinQueue[chanName];
+		if (!q) return;
+		delete netjoinQueue[chanName];
+		const chan = uiTabs.findChannel(chanName);
+		if (chan && q.nicks.length > 0) {
+			chan.appendMessage(language.messagePatterns.netjoin, [$$.niceTime(q.time), q.nicks.join(', ')], q.time);
+		}
+	}
+
 	// Listener for when another user joins a channel
 	commandBus.on('channel:userJoined', (data) => {
 		const { channelName } = data;
@@ -2923,10 +2947,12 @@ function initDisplayListeners() {
 		// The chat layer should have already updated the user object and nicklist.
 		// UI layer just needs to re-render the nicklist or append the join message.
 		if (data.isNetsplit) {
-			chan.appendMessage(language.messagePatterns.netjoin, [
-				$$.niceTime(data.time),
-				he(data.nick)
-			], data.time);
+			if (!netjoinQueue[channame]) {
+				netjoinQueue[channame] = { nicks: [], time: data.time, timer: null };
+			}
+			netjoinQueue[channame].nicks.push(he(data.nick));
+			clearTimeout(netjoinQueue[channame].timer);
+			netjoinQueue[channame].timer = setTimeout(() => flushNetjoinQueue(channame), 700);
 		} else if (!settings.get('showPartQuit')) {
 			chan.appendMessage(language.messagePatterns.join, [
 				$$.niceTime(data.time),
@@ -3196,12 +3222,13 @@ function initDisplayListeners() {
 		// User quit from server - show quit messages only on channels where user was present
 		if (channels && channels.length > 0) {
 			if (isNetsplit) {
-				const timeStr = $$.niceTime(time);
 				for (const chanName of channels) {
-					const chan = uiTabs.findChannel(chanName);
-					if (chan) {
-						chan.appendMessage(language.messagePatterns.netsplit, [timeStr, he(user.nick)]);
+					if (!netsplitQueue[chanName]) {
+						netsplitQueue[chanName] = { nicks: [], time: time, timer: null };
 					}
+					netsplitQueue[chanName].nicks.push(he(user.nick));
+					clearTimeout(netsplitQueue[chanName].timer);
+					netsplitQueue[chanName].timer = setTimeout(() => flushNetsplitQueue(chanName), 700);
 				}
 				return;
 			}
