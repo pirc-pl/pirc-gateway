@@ -2722,8 +2722,11 @@ function registerChatHandlers(events, chat, transport) {
 		const tags = data.tags || {};
 		const messageTime = tags.time ? new Date(tags.time) : data.time;
 		const sender = data.sender;
-		if (ignore.ignoring(sender, data.isChannel ? 'channel' : 'query')) return;
-		events.emit('message:received', {
+		const isOwnMessage = chat.isOwnUser(sender);
+
+		if (!isOwnMessage && ignore.ignoring(sender, data.isChannel ? 'channel' : 'query')) return;
+
+		const messageState = {
 			messageType: 'action',
 			text: data.text,
 			dest: data.target,
@@ -2739,7 +2742,20 @@ function registerChatHandlers(events, chat, transport) {
 			isEcho: false,
 			labelToReplace: null,
 			shouldSkipDisplay: false,
-		});
+		};
+
+		if (isOwnMessage) {
+			messageState.isOutgoing = true;
+			if (messageState.label && ('labeled-response' in chat.activeCaps) && ('echo-message' in chat.activeCaps)) {
+				// Incoming from protocol layer = echo from server
+				messageState.isEcho = true;
+				messageState.labelToReplace = messageState.label;
+				transport.labelProcessed = true;
+				messageState.isPending = false;
+			}
+		}
+
+		events.emit('message:received', messageState);
 	});
 
 	// Note: CTCP reply filtering moved to UI layer (gateway_display.js)
