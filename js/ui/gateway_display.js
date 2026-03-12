@@ -3322,7 +3322,7 @@ function initDisplayListeners() {
 		uiState.statusWindow.appendMessage(language.messagePatterns.SaslAuthenticate, [$$.niceTime(data.time), language.SASLLoginAttempt]);
 	});
 
-	commandBus.on('auth:saslLoggedIn', (data) => {
+	commandBus.on('auth:loggedIn', (data) => {
 		uiState.statusWindow.appendMessage(language.messagePatterns.SaslAuthenticate, [$$.niceTime(data.time), language.weAreLoggedInAs + he(data.account)]);
 	});
 
@@ -3330,7 +3330,7 @@ function initDisplayListeners() {
 		uiDialogs.closeDialog('nickserv', 'l');
 	});
 
-	commandBus.on('auth:saslLoggedOut', (data) => {
+	commandBus.on('auth:loggedOut', (data) => {
 		uiState.statusWindow.appendMessage(language.messagePatterns.SaslAuthenticate, [$$.niceTime(data.time), he(data.message)]);
 	});
 

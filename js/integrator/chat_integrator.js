@@ -1354,11 +1354,6 @@ function registerChatHandlers(events, chat, transport) {
 		const user = chat.users.getUser(data.awayNick);
 		if (user) {
 			user.setAway(data.awayMessage);
-			events.emit('user:awayStatusChanged', {
-				nick: user.nick,
-				awayMessage: data.awayMessage,
-				isAway: true
-			});
 		}
 	});
 
@@ -1407,21 +1402,12 @@ function registerChatHandlers(events, chat, transport) {
 	events.on('protocol:rplUnaway', (data) => {
 		if (chat.me.userRef) {
 			chat.me.userRef.notAway();
-			events.emit('user:awayStatusChanged', {
-				nick: chat.me.userRef.nick,
-				isAway: false,
-			});
 		}
 	});
 
 	events.on('protocol:rplNowaway', (data) => {
 		if (chat.me.userRef) {
 			chat.me.userRef.setAway(data.message);
-			events.emit('user:awayStatusChanged', {
-				nick: chat.me.userRef.nick,
-				awayMessage: data.message,
-				isAway: true,
-			});
 		}
 	});
 
@@ -1695,13 +1681,6 @@ function registerChatHandlers(events, chat, transport) {
 		});
 	});
 
-	events.on('protocol:rplSummoning', (data) => {
-		events.emit('user:summoned', {
-			nick: data.nick,
-			message: data.message,
-		});
-	});
-
 	events.on('protocol:rplWhoiscountry', (data) => {
 		// WHOIS-specific data - don't access users storage
 		chat.whoisData.countryCode = data.countryCode;
@@ -1955,19 +1934,6 @@ function registerChatHandlers(events, chat, transport) {
 		});
 	});
 
-	events.on('protocol:rplClosing', (data) => {
-		events.emit('server:closingConnection', {
-			server: data.serverName,
-			message: data.message,
-		});
-	});
-
-	events.on('protocol:rplCloseend', (data) => {
-		events.emit('server:closeCommandEnded', {
-			message: data.message,
-		});
-	});
-
 	events.on('protocol:rplLinks', (data) => {
 		events.emit('server:linkInfo', {
 			linkName: data.linkName,
@@ -2163,21 +2129,6 @@ function registerChatHandlers(events, chat, transport) {
 
 	// Quiet list (RPL_QLIST/RPL_ENDOFQLIST) not supported
 	// Only ban (b), except (e), and invex (I) lists are implemented
-
-	events.on('protocol:rplAlist', (data) => {
-		// A list entries (admin list)
-		events.emit('server:alistEntry', {
-			channel: data.channelName,
-			mask: data.mask,
-			message: data.message,
-		});
-	});
-
-	events.on('protocol:rplEndofalist', (data) => {
-		events.emit('server:endOfAlist', {
-			message: data.message,
-		});
-	});
 
 	events.on('protocol:rplTime', (data) => {
 		events.emit('server:serverTime', {
@@ -2560,13 +2511,6 @@ function registerChatHandlers(events, chat, transport) {
 		});
 	});
 
-	events.on('protocol:errToomanywatch', (data) => {
-		events.emit('client:errorMessage', {
-			type: 'tooManyWatch',
-			message: data.message,
-		});
-	});
-
 	events.on('protocol:errNeedpong', (data) => {
 		events.emit('client:errorMessage', {
 			type: 'needPong',
@@ -2621,101 +2565,6 @@ function registerChatHandlers(events, chat, transport) {
 			type: 'cantSendToUser',
 			message: data.message,
 			nick: data.nick,
-		});
-	});
-
-	events.on('protocol:rplReaway', (data) => {
-		events.emit('user:reAway', {
-			message: data.message,
-		});
-	});
-
-	events.on('protocol:rplGoneaway', (data) => {
-		events.emit('user:goneAway', {
-			message: data.message,
-		});
-	});
-
-	events.on('protocol:rplNotaway', (data) => {
-		if (chat.me.userRef) { // Ensure current user exists before updating
-			chat.me.userRef.notAway();
-		}
-		events.emit('user:awayStatusChanged', { // Emit a consistent away status changed event
-			nick: chat.me.userRef ? chat.me.userRef.nick : null,
-			isAway: false,
-			message: data.message,
-		});
-	});
-
-	events.on('protocol:rplLogon', (data) => {
-		events.emit('user:loggedIn', {
-			message: data.message,
-		});
-	});
-
-	events.on('protocol:rplLogoff', (data) => {
-		events.emit('user:loggedOut', {
-			message: data.message,
-		});
-	});
-
-	events.on('protocol:rplWatchoff', (data) => {
-		events.emit('client:watchOff', {
-			message: data.message,
-		});
-	});
-
-	events.on('protocol:rplWatchstat', (data) => {
-		events.emit('client:watchStatus', {
-			message: data.message,
-		});
-	});
-
-	events.on('protocol:rplNowon', (data) => {
-		const user = chat.users.getUser(data.nick); // Find user by nick from protocolGeneric
-		if (user) {
-			// Online status from JOIN, not stored permanently
-			events.emit('user:onlineStatusChanged', {
-				nick: user.nick,
-				isOnline: true,
-				message: data.message,
-			});
-		}
-	});
-
-	events.on('protocol:rplNowoff', (data) => {
-		const user = chat.users.getUser(data.nick); // Find user by nick from protocolGeneric
-		if (user) {
-			// Online status from QUIT, not stored permanently
-			events.emit('user:onlineStatusChanged', {
-				nick: user.nick,
-				isOnline: false,
-				message: data.message,
-			});
-		}
-	});
-
-	events.on('protocol:rplWatchlist', (data) => {
-		events.emit('client:watchListEntry', {
-			message: data.message,
-		});
-	});
-
-	events.on('protocol:rplEndofwatchlist', (data) => {
-		events.emit('client:endOfWatchList', {
-			message: data.message,
-		});
-	});
-
-	events.on('protocol:rplClearwatch', (data) => {
-		events.emit('client:clearWatch', {
-			message: data.message,
-		});
-	});
-
-	events.on('protocol:rplNowisaway', (data) => {
-		events.emit('user:nowIsAway', {
-			message: data.message,
 		});
 	});
 
@@ -2796,13 +2645,9 @@ function registerChatHandlers(events, chat, transport) {
 			nick: data.nick,
 			account: data.account,
 			message: data.message,
+			time: data.time,
 		});
-		events.emit('auth:saslLoggedIn', { // Emit for consistency with display
-			nick: data.nick,
-			account: data.account,
-			time: data.time
-		});
-		events.emit('auth:userIdentifiedViaNickserv', { // Emit for consistency with display
+		events.emit('auth:userIdentifiedViaNickserv', {
 			nick: data.nick,
 			account: data.account,
 			time: data.time
@@ -2813,11 +2658,7 @@ function registerChatHandlers(events, chat, transport) {
 		events.emit('auth:loggedOut', {
 			nick: data.nick,
 			message: data.message,
-		});
-		events.emit('auth:saslLoggedOut', { // Emit for consistency with display
-			nick: data.nick,
-			message: data.message,
-			time: data.time
+			time: data.time,
 		});
 	});
 
@@ -2878,10 +2719,26 @@ function registerChatHandlers(events, chat, transport) {
 	});
 
 	events.on('protocol:ctcpAction', (data) => {
-		events.emit('ctcp:action', {
-			sender: data.user.nick,
-			target: data.target,
-			message: data.text,
+		const tags = data.tags || {};
+		const messageTime = tags.time ? new Date(tags.time) : data.time;
+		const sender = data.sender;
+		if (ignore.ignoring(sender, data.isChannel ? 'channel' : 'query')) return;
+		events.emit('message:received', {
+			messageType: 'action',
+			text: data.text,
+			dest: data.target,
+			sender: sender,
+			time: messageTime,
+			msgid: tags.msgid || null,
+			serverTime: tags.time || null,
+			label: tags.label || null,
+			isHidden: false,
+			isHistory: false,
+			isOutgoing: false,
+			isPending: false,
+			isEcho: false,
+			labelToReplace: null,
+			shouldSkipDisplay: false,
 		});
 	});
 

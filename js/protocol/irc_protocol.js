@@ -690,14 +690,6 @@ function registerProtocolHandlers(events, chat, transport) {
 		}));
 	});
 
-	events.on('cmd:342', (msg) => {	// RPL_SUMMONING
-		events.emit('protocol:rplSummoning', protocolGeneric(msg, {
-			target: msg.args[0] || '',
-			nick: msg.args[1] || '',
-			message: msg.args[2]
-		}));
-	});
-
 	events.on('cmd:344', (msg) => {	// RPL_WHOISCOUNTRY
 		events.emit('protocol:rplWhoiscountry', protocolGeneric(msg, {
 			target: msg.args[0] || '',
@@ -811,43 +803,6 @@ function registerProtocolHandlers(events, chat, transport) {
 		}
 
 		events.emit('protocol:rplWhospcrpl', protocolGeneric(msg, data));
-	});
-
-	// Server admin numerics (361-365)
-	events.on('cmd:361', (msg) => {	// RPL_ADMINME
-		events.emit('protocol:rplAdminme', protocolGeneric(msg, {
-			target: msg.args[0] || '',
-			server: msg.args[1] || '',
-			message: msg.args[2]
-		}));
-	});
-
-	events.on('cmd:362', (msg) => {	// RPL_ADMINLOC1
-		events.emit('protocol:rplAdminloc1', protocolGeneric(msg, {
-			target: msg.args[0] || '',
-			message: msg.args[1]
-		}));
-	});
-
-	events.on('cmd:363', (msg) => {	// RPL_ADMINLOC2
-		events.emit('protocol:rplAdminloc2', protocolGeneric(msg, {
-			target: msg.args[0] || '',
-			message: msg.args[1]
-		}));
-	});
-
-	events.on('cmd:364', (msg) => {	// RPL_ADMINEMAIL
-		events.emit('protocol:rplAdminemail', protocolGeneric(msg, {
-			target: msg.args[0] || '',
-			message: msg.args[1]
-		}));
-	});
-
-	events.on('cmd:365', (msg) => {	// RPL_ENDOFADMIN
-		events.emit('protocol:rplEndofadmin', protocolGeneric(msg, {
-			target: msg.args[0] || '',
-			message: msg.args[1]
-		}));
 	});
 
 	events.on('cmd:366', (msg) => {	// RPL_ENDOFNAMES
@@ -974,20 +929,7 @@ function registerProtocolHandlers(events, chat, transport) {
 	});
 	// RPL_QLIST (386) and RPL_ENDOFQLIST (387) - Quiet list not supported
 	// Only ban (b), except (e), and invex (I) lists are implemented
-	events.on('cmd:388', (msg) => {	// RPL_ALIST
-		events.emit('protocol:rplAlist', protocolGeneric(msg, {
-			target: msg.args[0] || '',
-			channelName: msg.args[1] || '',
-			mask: msg.args[2] || '',
-			message: msg.args[3]
-		}));
-	});
-	events.on('cmd:389', (msg) => {	// RPL_ENDOFALIST
-		events.emit('protocol:rplEndofalist', protocolGeneric(msg, {
-			target: msg.args[0] || '',
-			message: msg.args[1]
-		}));
-	});
+	// RPL_ALIST (388) / RPL_ENDOFALIST (389) - A-list not implemented
 	events.on('cmd:391', (msg) => {	// RPL_TIME
 		events.emit('protocol:rplTime', protocolGeneric(msg, {
 			target: msg.args[0] || '',
@@ -1385,13 +1327,6 @@ function registerProtocolHandlers(events, chat, transport) {
 		}));
 	});
 
-	events.on('cmd:512', (msg) => {	// ERR_TOOMANYWATCH / ERR_NOSUCHGLINE
-		events.emit('protocol:errToomanywatch', protocolGeneric(msg, {
-			target: msg.args[0] || '',
-			message: msg.args[1]
-		}));
-	});
-
 	events.on('cmd:513', (msg) => {	// ERR_BADPING / ERR_NEEDPONG
 		events.emit('protocol:errBadping', protocolGeneric(msg, {
 			target: msg.args[0] || '',
@@ -1450,135 +1385,7 @@ function registerProtocolHandlers(events, chat, transport) {
 		}));
 	});
 
-	// WATCH numerics (597-609)
-	events.on('cmd:597', (msg) => {	// RPL_REAWAY
-		events.emit('protocol:rplReaway', protocolGeneric(msg, {
-			target: msg.args[0] || '',
-			nick: msg.args[1] || '',
-			ident: msg.args[2] || '',
-			host: msg.args[3] || '',
-			awayTime: parseInt(msg.args[4], 10) || 0,
-			message: msg.args[5]
-		}));
-	});
-
-	events.on('cmd:598', (msg) => {	// RPL_GONEOFFLINE
-		events.emit('protocol:rplGoneoffline', protocolGeneric(msg, {
-			target: msg.args[0] || '',
-			nick: msg.args[1] || '',
-			ident: msg.args[2] || '',
-			host: msg.args[3] || '',
-			offlineTime: parseInt(msg.args[4], 10) || 0,
-			message: msg.args[5]
-		}));
-	});
-
-	events.on('cmd:599', (msg) => {	// RPL_NOTAWAY
-		events.emit('protocol:rplNotaway', protocolGeneric(msg, {
-			target: msg.args[0] || '',
-			nick: msg.args[1] || '',
-			ident: msg.args[2] || '',
-			host: msg.args[3] || '',
-			awayTime: parseInt(msg.args[4], 10) || 0,
-			message: msg.args[5]
-		}));
-	});
-
-	events.on('cmd:600', (msg) => {	// RPL_LOGON
-		events.emit('protocol:rplLogon', protocolGeneric(msg, {
-			target: msg.args[0] || '',
-			nick: msg.args[1] || '',
-			ident: msg.args[2] || '',
-			host: msg.args[3] || '',
-			logonTime: parseInt(msg.args[4], 10) || 0,
-			message: msg.args[5]
-		}));
-	});
-
-	events.on('cmd:601', (msg) => {	// RPL_LOGOFF
-		events.emit('protocol:rplLogoff', protocolGeneric(msg, {
-			target: msg.args[0] || '',
-			nick: msg.args[1] || '',
-			ident: msg.args[2] || '',
-			host: msg.args[3] || '',
-			logoffTime: parseInt(msg.args[4], 10) || 0,
-			message: msg.args[5]
-		}));
-	});
-
-	events.on('cmd:602', (msg) => {	// RPL_WATCHOFF
-		events.emit('protocol:rplWatchoff', protocolGeneric(msg, {
-			target: msg.args[0] || '',
-			nick: msg.args[1] || '',
-			ident: msg.args[2] || '',
-			host: msg.args[3] || '',
-			message: msg.args[4]
-		}));
-	});
-
-	events.on('cmd:603', (msg) => {	// RPL_WATCHSTAT
-		events.emit('protocol:rplWatchstat', protocolGeneric(msg, {
-			target: msg.args[0] || '',
-			message: msg.args[1]
-		}));
-	});
-
-	events.on('cmd:604', (msg) => {	// RPL_NOWON
-		events.emit('protocol:rplNowon', protocolGeneric(msg, {
-			target: msg.args[0] || '',
-			nick: msg.args[1] || '',
-			ident: msg.args[2] || '',
-			host: msg.args[3] || '',
-			logonTime: parseInt(msg.args[4], 10) || 0,
-			message: msg.args[5]
-		}));
-	});
-
-	events.on('cmd:605', (msg) => {	// RPL_NOWOFF
-		events.emit('protocol:rplNowoff', protocolGeneric(msg, {
-			target: msg.args[0] || '',
-			nick: msg.args[1] || '',
-			ident: msg.args[2] || '',
-			host: msg.args[3] || '',
-			logoffTime: parseInt(msg.args[4], 10) || 0,
-			message: msg.args[5]
-		}));
-	});
-
-	events.on('cmd:606', (msg) => {	// RPL_WATCHLIST
-		events.emit('protocol:rplWatchlist', protocolGeneric(msg, {
-			target: msg.args[0] || '',
-			watchedNick: msg.args[1] || '',
-			message: msg.args[2]
-		}));
-	});
-
-	events.on('cmd:607', (msg) => {	// RPL_ENDOFWATCHLIST
-		events.emit('protocol:rplEndofwatchlist', protocolGeneric(msg, {
-			target: msg.args[0] || '',
-			message: msg.args[1]
-		}));
-	});
-
-	events.on('cmd:608', (msg) => {	// RPL_WATCHCLEAR / RPL_CLEARWATCH
-		events.emit('protocol:rplWatchclear', protocolGeneric(msg, {
-			target: msg.args[0] || '',
-			message: msg.args[1]
-		}));
-	});
-
-	events.on('cmd:609', (msg) => {	// RPL_NOWISAWAY
-		events.emit('protocol:rplNowisaway', protocolGeneric(msg, {
-			target: msg.args[0] || '',
-			nick: msg.args[1] || '',
-			ident: msg.args[2] || '',
-			host: msg.args[3] || '',
-			awayTime: parseInt(msg.args[4], 10) || 0,
-			message: msg.args[5]
-		}));
-	});
-
-
+	// WATCH numerics (597-609) not implemented; MONITOR may be added in the future
 
 	events.on('cmd:671', (msg) => {	// RPL_WHOISSECURE
 		events.emit('protocol:rplWhoissecure', protocolGeneric(msg, {
@@ -1699,9 +1506,11 @@ function registerProtocolHandlers(events, chat, transport) {
 	// ============================================================================
 
 	events.on('ctcp:ACTION', (msg) => {
+		const target = msg.args[0] || '';
 		events.emit('protocol:ctcpAction', protocolGeneric(msg, {
-			target: msg.args[0] || '',
-			text: msg.ctcptext || ''
+			target: target,
+			text: msg.ctcptext || '',
+			isChannel: isChannelName(target),
 		}));
 	});
 
@@ -1745,9 +1554,6 @@ function registerProtocolHandlers(events, chat, transport) {
 		const cmd = data.notice ? 'NOTICE' : 'PRIVMSG';
 		const label = generateLabel();
 		const tags = ('message-tags' in chat.activeCaps) ? { label } : null;
-		if (tags && ('labeled-response' in chat.activeCaps)) {
-			events.emit('chat:setLabelInfo', { label, info: { cmd } });
-		}
 		sendIrc(cmd, [data.dest, data.messageText], tags);
 		if (data.hide) {
 			events.emit('chat:addLabelToHide', { label });
@@ -1768,9 +1574,6 @@ function registerProtocolHandlers(events, chat, transport) {
 		const ctcp = `\x01ACTION ${data.actionText}\x01`;
 		const label = generateLabel();
 		const tags = ('message-tags' in chat.activeCaps) ? { label } : null;
-		if (tags && ('labeled-response' in chat.activeCaps)) {
-			events.emit('chat:setLabelInfo', { label, info: { cmd: 'PRIVMSG' } });
-		}
 		sendIrc('PRIVMSG', [data.dest, ctcp], tags);
 		events.emit('chat:outgoingMessage', {
 			messageType: 'action',
@@ -1811,10 +1614,8 @@ function registerProtocolHandlers(events, chat, transport) {
 		} else {
 			channelString = data.channels;
 		}
-		const channelList = channelString.split(',');
 		if ('labeled-response' in chat.activeCaps) {
 			const label = generateLabel();
-			events.emit('chat:setLabelInfo', { label, info: { cmd: 'JOIN', channels: channelList } });
 			const tags = ('message-tags' in chat.activeCaps) ? { label } : null;
 			if (data.password) {
 				sendIrc('JOIN', [channelString, data.password], tags);
