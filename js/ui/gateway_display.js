@@ -2735,22 +2735,34 @@ function initDisplayListeners() {
 			}
 		}
 
+		// Echo-message confirmation: update the pending element in-place rather than
+		// removing it and appending a new one, which would change message order.
+		if (state.isEcho && state.labelToReplace) {
+			const pending = $(`[data-label="${  state.labelToReplace  }"]`);
+			if (pending.length) {
+				pending.removeClass('notDelivered');
+				pending.removeAttr('data-label');
+				pending.attr('data-time', state.time.getTime());
+				if (state.msgid) pending.attr('data-msgid', state.msgid);
+				// Update text if server changed it (only for non-bundled regular messages)
+				if (!pending.hasClass('msgRepeatBlock')) {
+					const msgText = pending.find('span.msgText');
+					if (msgText.length) {
+						msgText.html(`<span class="time msgRepeatBlock">${  $$.niceTime(state.time)  }</span> &nbsp;${  $$.colorize(state.text)  }`);
+					}
+				}
+				return;
+			}
+			// Pending element not found; fall through to insert at current position.
+		}
+
 		let attrs = `data-time="${  state.time.getTime()  }"`;
 		let addClass = '';
-
-		// Handle echo-message confirmation (replace temporary message)
-		if (state.isEcho && state.labelToReplace) {
-			console.log('[ECHO-DEBUG] Echo-message received with label:', state.labelToReplace, 'removing temporary display');
-			const tempMsg = $(`[data-label="${  state.labelToReplace  }"]`);
-			console.log('[ECHO-DEBUG] Found', tempMsg.length, 'temporary message(s) to remove');
-			tempMsg.remove();
-		}
 
 		// Mark outgoing pending messages (waiting for confirmation)
 		if (state.isPending && state.label) {
 			attrs += ` data-label="${  state.label  }"`;
 			addClass = 'notDelivered';
-			console.log('[ECHO-DEBUG] Marking outgoing message as notDelivered, label:', state.label);
 		}
 
 		// Add msgid for deduplication
