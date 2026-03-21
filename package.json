@@ -1,0 +1,8 @@
+{
+  "name": "pirc-gateway",
+  "version": "1.0.0",
+  "description": "Web IRC client",
+  "devDependencies": {
+    "eslint": "^8.0.0"
+  }
+}

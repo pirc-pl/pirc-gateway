@@ -1,0 +1,5 @@
+js/jquery*.js
+js/base64.js
+js/md5.js
+js/gateway_global_settings.js
+js/network.js
