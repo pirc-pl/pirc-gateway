@@ -15,6 +15,9 @@ body {
 	margin: 0;
 	padding: 0;
 	width: 100%;
+	height: 100vh;
+	display: flex;
+	flex-direction: column;
 	background: url('/styles/img/bg.png') repeat-x scroll 0 0 #E4E4E4;
 	overflow: hidden;
 
@@ -87,11 +90,9 @@ input, button, submit {
 #top_menu {
 	background: #272727 url("/styles/img/menu.png") repeat-x center;
 	background-size: auto 100%;
+	flex: 0 0 auto;
 	height: 2.9em;
-	left: 0;
 	min-height: 30px;
-	position: absolute;
-	top: 0;
 	vertical-align: middle;
 	width: 100%;
 }
@@ -143,20 +144,40 @@ input, button, submit {
 	color: #FFFFFF;
 }
 	
+#wrapper {
+	display: flex;
+	flex-direction: row;
+	flex: 1 1 auto;
+	min-height: 0;
+}
+
+#left-col {
+	display: flex;
+	flex-direction: column;
+	flex: 1 1 auto;
+	min-width: 0;
+	min-height: 0;
+}
+
+#right-col {
+	display: flex;
+	flex-direction: column;
+	flex: 0 0 23%;
+	min-height: 0;
+	overflow: hidden;
+	padding-right: 10px;
+}
+
 #nicklist {
-	bottom: 7.4em;
-	position: absolute;
-	right: 10px;
-	top: 12em;
-	width: 23%;
+	flex: 1 1 auto;
+	overflow: hidden;
+	min-height: 0;
 }
 	
 #chatbox {
-	bottom: 5em;
-	left: 0;
-	position: absolute;
-	top: 6.7em;
-	width: 77%;
+	flex: 1 1 auto;
+	overflow: hidden;
+	min-height: 0;
 }
 	
 #chat-wrapper {
@@ -334,13 +355,10 @@ span.modevictim, span.modeinfo {
 }
 	
 #info {
+	flex: 0 0 auto;
 	height: 3.7em;
-	left: 0;
 	margin-left: 25px;
 	overflow: hidden;
-	position: absolute;
-	top: 3.2em;
-	width: 82%;
 	overflow-y: auto;
 }
 	
@@ -383,10 +401,8 @@ span.modevictim, span.modeinfo {
 }
 	
 #inputbox {
-	bottom: 4px;
+	flex: 0 0 auto;
 	height: 2.5em;
-	left: 0;
-	position: absolute;
 	width: 100%;
 }
 
@@ -690,11 +706,7 @@ span.notice, span.notice-nick {
 	
 #nicklist-closed {
 	display: none;
-	height: 93%;
-	position: absolute;
-	right: 0;
-	top: 6%;
-	width: 3%;
+	flex: 1 1 auto;
 }
 
 div.close {
@@ -1062,10 +1074,7 @@ ul.channelOperActions, ul.channelOptions, #nickOptions {
 }
 
 #chstats {
-    position: absolute;
-    right: 10px;
-    top: 6.7em;
-    width: 23%;
+    flex: 0 0 auto;
     height: 5em;
 }
 
@@ -1102,11 +1111,9 @@ span.chstats-text:before {
 }
 
 #chlist {
-    position: absolute;
-    right: 10px;
-	bottom: 5.6em;
-    width: 23%;
+    flex: 0 0 auto;
     height: 1.4em;
+    position: relative;
 }
 
 .chlistwrapper {
@@ -1216,10 +1223,7 @@ div.alert-dialog {
 }
 
 #nickopts {
-    position: absolute;
-    right: 10px;
-	bottom: 3.9em;
-    width: 23%;
+    flex: 0 0 auto;
     height: 1.3em;
 }
 
@@ -1428,10 +1432,9 @@ img.emoji {
 }
 
 #tab-info {
+    flex: 0 0 auto;
     height: 1em;
     padding-left: 3em;
-    position: absolute;
-    bottom: 3.2em;
 }
 
 :root {
@@ -1525,5 +1528,10 @@ span.nick, span.yournick {
     overflow: hidden;
     text-overflow: ellipsis;
     vertical-align: bottom;
+}
+
+/* Channel list expand/collapse transition */
+#chlist, #nicklist {
+    transition: flex-basis 0.4s ease;
 }
 

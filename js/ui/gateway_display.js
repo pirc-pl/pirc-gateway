@@ -1277,18 +1277,10 @@ const uiNicklist = {
 			active = uiState.statusWindow;
 		}
 		active.saveScroll();
-		if ($('#nicklist').width() > 40) {
-			$('#nicklist').animate({
-				'opacity': 'toggle',
-				'width':	'40px'
-			}, 400);
-			$('#chstats').animate({
-				'opacity': 'toggle',
-				'width':	'40px'
-			}, 400);
-			$('#chatbox').animate({
-				'width':	'97%'
-			}, 401, () => {
+		if ($('#right-col').width() > 40) {
+			$('#right-col').animate({
+				'width': '40px'
+			}, 400, () => {
 				$('#nicklist-closed').fadeIn(200);
 				setTimeout(() => {
 					uiTabs.getActive().restoreScroll();
@@ -1317,17 +1309,9 @@ const uiNicklist = {
 	// Show the nicklist panel
 	showNickList: function() {
 		$('#nicklist-closed').fadeOut(200, () => {
-			$('#nicklist').animate({
-				'opacity': 'show',
-				'width':	'23%'
+			$('#right-col').animate({
+				'width': '23%'
 			}, 400);
-			$('#chstats').animate({
-				'opacity': 'show',
-				'width':	'23%'
-			}, 400);
-			$('#chatbox').animate({
-				'width':	'77%'
-			}, 401);
 			setTimeout(() => {
 				let tab = uiTabs.getActive();
 				if (!tab) {
@@ -1759,23 +1743,16 @@ Object.assign(uiTabs, {
 	// Toggle channel list panel visibility
 	toggleChanList: function() {
 		if ($('#chlist-body').is(':visible')) {
+			// Collapse: restore default flex sizes
 			$('#chlist-body').css('display', '');
-
-			$('#chlist').css('height', '').css('top', '');
-			$('#nicklist').css('bottom', '');
-			const nicklistBottom = $('#nicklist').css('bottom');
-			$('#nicklist').css('bottom', '36%');
-			$('#nicklist').animate({
-				'bottom':	nicklistBottom
-			}, 400);
-
+			$('#chlist').css('flex', '');
+			$('#nicklist').css('flex', '');
 			$('#chlist-button').text(`⮙ ${  language.channelList  } ⮙`);
 		} else {
+			// Expand: chlist takes remaining space, nicklist shrinks
 			$('#chlist-body').css('display', 'block');
-			$('#chlist').css('height', 'initial').css('top', '64.5%');
-			$('#nicklist').animate({
-				'bottom':	'36%'
-			}, 400);
+			$('#chlist').css('flex', '1 1 auto');
+			$('#nicklist').css('flex', '0 0 auto');
 			$('#chlist-button').text(`⮛ ${  language.hideList  } ⮛`);
 			$('#chlist-body').html(language.loadingWait);
 			commandBus.emit('chat:requestListChannels', { minUsers: '>9', time: new Date() });

@@ -200,12 +200,8 @@ const settings = (function() {
 			}
 			if (settings.get('tabsListBottom')) {
 				$('#top_menu').detach().insertAfter('#inputbox');
-				if ($('#tabsDownCss').length == 0) {
-					$('head').append('<link rel="stylesheet" type="text/css" href="/styles/gateway_tabs_down.css" id="tabsDownCss">');
-				}
 			} else {
 				$('#top_menu').detach().insertAfter('#options-box');
-				$('#tabsDownCss').remove();
 			}
 			if (settings.get('biggerEmoji')) {
 				document.documentElement.style.setProperty('--emoji-scale', '3');

@@ -188,58 +188,62 @@
 		</div>
 
 		<div id="wrapper">
-			<div id="info">
-				<span id="--status-topic">
-					<h1 class="language-statusTabName"></h1>
-					<h2>------</h2>
-				</span>
-			</div>
-			<div id="chatbox">
-				<div id="chat-wrapper">
-					<div style="width: 98%; margin: 0 auto; margin-top: 1%; margin-bottom: 1%;" id="main-window">
-						<span id="--status-window"></span>
-					</div>
+			<div id="left-col">
+				<div id="info">
+					<span id="--status-topic">
+						<h1 class="language-statusTabName"></h1>
+						<h2>------</h2>
+					</span>
 				</div>
-			</div>
-			<div id="tab-info"></div>
-			<div id="chstats">
-				<div class="chstatswrapper">
-					<span class="chstats-text language-statusWindow symbolFont" id="--status-chstats"></span>
-				</div>
-			</div>
-			<div id="nicklist-closed">
-				<div id="nicklist-hide-button" class="closed" onclick="uiNicklist.nickListToggle()"></div>
-			</div>
-			<div id="nicklist">
-				<div id="nick-wrapper">
-					<div style="margin: 0 auto; width: 93%; margin-top: 3%; margin-bottom: 3%;" id="nicklist-main">
-						<div id="nicklist-hide-button" onclick="uiNicklist.nickListToggle()"></div>
-						<div id="nicklist-hide-wrap">
-							<span id="--status-nicklist">
-							</span>
+				<div id="chatbox">
+					<div id="chat-wrapper">
+						<div style="width: 98%; margin: 0 auto; margin-top: 1%; margin-bottom: 1%;" id="main-window">
+							<span id="--status-window"></span>
 						</div>
 					</div>
 				</div>
+				<div id="tab-info"></div>
 			</div>
-			<div id="chlist">
-				<div class="chlistwrapper">
-					<div id="chlist-body" class="language-loadingWait"></div>
-					<div id="chlist-button" onclick="uiTabs.toggleChanList()" class="symbolFont language-extendChannelList"></div>
+			<div id="right-col">
+				<div id="chstats">
+					<div class="chstatswrapper">
+						<span class="chstats-text language-statusWindow symbolFont" id="--status-chstats"></span>
+					</div>
 				</div>
-			</div>
-			<div id="nickopts">
-				<div id="nickopts-wrapper">
-					<div class="nickoptsButton language-nickOptions" onclick="uiNicklist.toggleNickOpts()"></div>
-					<ul id="nickOptions">
-						<li id="nickRegister" onclick="services.registerMyNick()" class="language-registerNick"></li>
-						<li onclick="services.changeMyNick()" class="language-changeNick"></li>
-						<li onclick="disp.showQueryUmodes()" class="language-privateMessagesBlocking"></li>
-						<li class="avatarCapability language-setOwnAvatar" onclick="disp.showAvatarSetting()"></li>
-						<!--<li class="nickRegistered" onclick="services.setCloak()">Ustaw automatycznego vhosta</li>-->
-						<li class="nickRegistered language-requestAVhost" onclick="services.setVhost()"></li>
-						<li class="nickRegistered language-showChannelsWithAccess" onclick="services.perform('NickServ', 'ALIST', [], true)"></li>
-						<li class="nickRegistered language-showAutojoinChannels" onclick="services.perform('NickServ', 'AJOIN', ['LIST'], true)"></li>
-					</ul>
+				<div id="nicklist-closed">
+					<div id="nicklist-hide-button" class="closed" onclick="uiNicklist.nickListToggle()"></div>
+				</div>
+				<div id="nicklist">
+					<div id="nick-wrapper">
+						<div style="margin: 0 auto; width: 93%; margin-top: 3%; margin-bottom: 3%;" id="nicklist-main">
+							<div id="nicklist-hide-button" onclick="uiNicklist.nickListToggle()"></div>
+							<div id="nicklist-hide-wrap">
+								<span id="--status-nicklist">
+								</span>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div id="chlist">
+					<div class="chlistwrapper">
+						<div id="chlist-body" class="language-loadingWait"></div>
+						<div id="chlist-button" onclick="uiTabs.toggleChanList()" class="symbolFont language-extendChannelList"></div>
+					</div>
+				</div>
+				<div id="nickopts">
+					<div id="nickopts-wrapper">
+						<div class="nickoptsButton language-nickOptions" onclick="uiNicklist.toggleNickOpts()"></div>
+						<ul id="nickOptions">
+							<li id="nickRegister" onclick="services.registerMyNick()" class="language-registerNick"></li>
+							<li onclick="services.changeMyNick()" class="language-changeNick"></li>
+							<li onclick="disp.showQueryUmodes()" class="language-privateMessagesBlocking"></li>
+							<li class="avatarCapability language-setOwnAvatar" onclick="disp.showAvatarSetting()"></li>
+							<!--<li class="nickRegistered" onclick="services.setCloak()">Ustaw automatycznego vhosta</li>-->
+							<li class="nickRegistered language-requestAVhost" onclick="services.setVhost()"></li>
+							<li class="nickRegistered language-showChannelsWithAccess" onclick="services.perform('NickServ', 'ALIST', [], true)"></li>
+							<li class="nickRegistered language-showAutojoinChannels" onclick="services.perform('NickServ', 'AJOIN', ['LIST'], true)"></li>
+						</ul>
+					</div>
 				</div>
 			</div>
 		</div>

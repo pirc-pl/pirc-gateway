@@ -114,12 +114,8 @@ function setEnvironment() {
 		ircEvents.on('settings:changed:tabsListBottom', (data) => {
 			if (data.newValue) {
 				$('#top_menu').detach().insertAfter('#inputbox');
-				if ($('#tabsDownCss').length == 0) {
-					$('head').append('<link rel="stylesheet" type="text/css" href="/styles/gateway_tabs_down.css" id="tabsDownCss">');
-				}
 			} else {
 				$('#top_menu').detach().insertAfter('#options-box');
-				$('#tabsDownCss').remove();
 			}
 		});
 
@@ -252,6 +248,7 @@ function setEnvironment() {
 		ircEvents.on('settings:changed', () => { // General listener for other UI updates
 			$('#nicklist').removeAttr('style');
 			$('#chlist').removeAttr('style');
+			$('#right-col').removeAttr('style');
 			if ($('#chlist-body').is(':visible')) {
 				uiTabs.toggleChanList();
 			}
