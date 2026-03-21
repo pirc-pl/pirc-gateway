@@ -248,7 +248,7 @@ class NicklistUser {
 		const $nickTd = $('<td>', {
 			valign: 'top',
 			style: 'text-align:left;width:100%;',
-			class: (isOwnNick ? 'ownNick ' : '') + 'nickname'
+			class: `${isOwnNick ? 'ownNick ' : ''  }nickname`
 		}).text(this.channelMember.user.nick);
 
 		const $row = $('<tr>', { id: `${this.id}-toggleNickOpt` })

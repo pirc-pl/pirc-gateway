@@ -1055,7 +1055,7 @@ const $$ = {
 					break;
 
 				case String.fromCharCode(4): // hex color
-					currFront = '#' + message.substring(i + 1, i + 7);
+					currFront = `#${  message.substring(i + 1, i + 7)}`;
 					i += 6;
 					formatWaiting = true;
 					break;

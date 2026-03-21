@@ -2654,23 +2654,23 @@ const uiDialogs = {
      */
 function initDisplayListeners() {
 	// URL link warning — used by parseLinks() when displayLinkWarning is on
-	$(document).on('click', 'a[data-link-warn]', function(e) {
+	$(document).on('click', 'a[data-link-warn]', (e) => {
 		if (!confirm(language.linkCanBeUnsafe)) {
 			e.preventDefault();
 		}
 	});
 
 	// Channel link click handler — used by parseLinks() and channel list windows
-	$(document).on('click', 'a[data-channel]', function(e) {
+	$(document).on('click', 'a[data-channel]', (e) => {
 		e.preventDefault();
 		if (!settings.get('displayLinkWarning') || confirm(language.confirmJoin)) {
-			commandBus.emit('chat:requestJoinChannel', { channelName: this.dataset.channel, time: new Date() });
+			commandBus.emit('chat:requestJoinChannel', { channelName: e.currentTarget.dataset.channel, time: new Date() });
 		}
 	});
 
 	// Channel sidebar list click handler
-	$(document).on('click', 'td.chname[data-channel]', function() {
-		commandBus.emit('chat:joinChannel', { channels: this.dataset.channel });
+	$(document).on('click', 'td.chname[data-channel]', (e) => {
+		commandBus.emit('chat:joinChannel', { channels: e.currentTarget.dataset.channel });
 	});
 
 	// Server acknowledged outgoing message (labeled-response ACK); mark as delivered

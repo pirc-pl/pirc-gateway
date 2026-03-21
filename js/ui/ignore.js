@@ -38,8 +38,8 @@ Object.assign(ignore, {
 		uiDialogs.displayDialog('ignore', 'ignorelist', language.listOfIgnoredUsers, $content);
 		if (data.length > 0) {
 			const $table = $('table', uiDialogs.getDialogSelector('ignore', 'ignorelist'));
-			$table.on('click', 'button', function() {
-				ignore.unIgnore($(this).data('type'), $(this).data('mask'));
+			$table.on('click', 'button', (e) => {
+				ignore.unIgnore($(e.currentTarget).data('type'), $(e.currentTarget).data('mask'));
 				ignore.showIgnoreManagement();
 			});
 			for (const [ignoreT, ignoreMask] of data) {
@@ -185,7 +185,7 @@ Object.assign(ignore, {
 		// If user is not in the user list, create a minimal object for nick-only masking
 		if (!user) {
 			user = {
-				id: nick.replace(/[^a-zA-Z0-9]+/g, '-').toLowerCase() + '-unknown',
+				id: `${nick.replace(/[^a-zA-Z0-9]+/g, '-').toLowerCase()  }-unknown`,
 				nick: nick,
 				host: null,
 				ident: null,
