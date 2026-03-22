@@ -231,13 +231,13 @@ class NicklistUser {
 	makeHTML() {
 		const index = this.channelMember.level;
 		const isOwnNick = this.userStableId == connection.chat.me.userRef.id;
-		const avatarAlt = this.channelMember.user.registered ? language.registered : language.unRegistered;
+		const avatarTitle = this.channelMember.user.registered ? language.registered : language.unRegistered;
 
 		const $avatar = $('<img>', {
 			class: 'chavatar',
-			alt: avatarAlt,
+			alt: '',
 			src: disp.getAvatarIcon(this.channelMember.user.nick, this.channelMember.user.registered),
-			title: avatarAlt,
+			title: avatarTitle,
 			id: `${this.id}-avatarField`
 		});
 
@@ -413,7 +413,7 @@ class NicklistUser {
 			loggedIn = false;
 		}
 		const nick = user.nick;
-		$(`#${  this.id  } .chavatar`).attr('alt', regText).attr('src', disp.getAvatarIcon(nick, loggedIn)).attr('title', regText).off('error').error(() => { const u = connection.chat.users.getExistingUser(nick); if (u) uiState.disabledAvatarIds[u.id] = true; });
+		$(`#${  this.id  } .chavatar`).attr('alt', '').attr('src', disp.getAvatarIcon(nick, loggedIn)).attr('title', regText).off('error').error(() => { const u = connection.chat.users.getExistingUser(nick); if (u) uiState.disabledAvatarIds[u.id] = true; });
 		$(`#${  this.id  }-opt .nicklistAvatar`).html(uiHelpers.getMeta(nick, 500));
 	}
 

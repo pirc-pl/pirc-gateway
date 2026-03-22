@@ -804,12 +804,20 @@ const uiHelpers = {
 		}
 	},
 
+	// Called when an avatar image fails to load: marks user as having invalid avatar and shows placeholder
+	avatarError: function(imgEl) {
+		const nick = imgEl.dataset.nick;
+		const user = connection.chat.users.getExistingUser(nick);
+		if (user) uiState.disabledAvatarIds[user.id] = true;
+		imgEl.src = '/styles/img/noavatar.png';
+	},
+
 	// Get user avatar or letter avatar HTML
 	getMeta: function(nick, size) {
 		const avatar = uiHelpers.getAvatarUrl(nick, size);
 		let meta;
 		if (avatar) {
-			meta = `<img src="${  he(avatar)  }" alt="${  he(nick)  }" onerror="this.src='/styles/img/noavatar.png';">`;
+			meta = `<img src="${  he(avatar)  }" alt="" data-nick="${  he(nick)  }" onerror="uiHelpers.avatarError(this);">`;
 		} else {
 			const user = connection.chat.users.getUser(nick);
 			if (!user.metadata) user.metadata = {};
