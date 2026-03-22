@@ -1587,6 +1587,22 @@ span.nick, span.yournick {
     /* Toggle button is always interactive even when strip is otherwise inert */
     #nicklist-closed #nicklist-hide-button {
         pointer-events: auto;
+        /* shift button to right side of the 40px strip, near the screen edge */
+        left: auto;
+        right: 0;
+    }
+
+    /* Bigger dialog close button for touch targets */
+    .ui-dialog-titlebar-close {
+        width: 44px !important;
+        height: 44px !important;
+        top: 50% !important;
+        right: 4px !important;
+        margin: 0 !important;
+        transform: translateY(-50%);
+    }
+    .ui-dialog-titlebar-close .ui-button-icon {
+        font-size: 20px;
     }
 
     /* Constrain jQuery UI dialogs to screen width and keep them in the visual
