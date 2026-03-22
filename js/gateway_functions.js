@@ -115,7 +115,7 @@ function setEnvironment() {
 			if (data.newValue) {
 				$('#top_menu').detach().insertAfter('#inputbox');
 			} else {
-				$('#top_menu').detach().insertAfter('#options-box');
+				$('#top_menu').detach().insertAfter('#about-dialog');
 			}
 		});
 

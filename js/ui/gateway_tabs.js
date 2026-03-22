@@ -710,7 +710,7 @@ class ChannelTab {
 		$(`#${  this.id  }-aJoinDisable`).click(() => { commandBus.emit('chat:requestServiceCommand', { service: 'NickServ', command: 'AJOIN', args: ['DEL', this.name], time: new Date() }); }); // Emit chat event
 		$(`#${  this.id  }-clearWindow`).click(this.clearWindow.bind(this));
 		$(`#${  this.id  }-redoNames`).click(() => { commandBus.emit('chat:requestRedoNames', { channelName: this.name, time: new Date() }); }); // Emit chat event
-		$(`#${  this.id  }-openOperActions`).click(() => { uiDialogs.toggleChannelOperOpts(this.name); });
+		$(`#${  this.id  }-openOperActions`).click(() => { uiNicklist.toggleChannelOperOpts(this.name); });
 		$(`#${  this.id  }-openBanList`).click(() => { commandBus.emit('chat:requestModeList', { channelName: this.name, mode: 'b', time: new Date() }); }); // Emit chat event
 		$(`#${  this.id  }-openExceptList`).click(() => { commandBus.emit('chat:requestModeList', { channelName: this.name, mode: 'e', time: new Date() }); }); // Emit chat event
 		$(`#${  this.id  }-openInvexList`).click(() => { commandBus.emit('chat:requestModeList', { channelName: this.name, mode: 'I', time: new Date() }); }); // Emit chat event

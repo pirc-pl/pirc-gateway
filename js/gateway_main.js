@@ -70,6 +70,7 @@ connection.chat.me.channels = conn.initialChannels.slice();
 ircEvents.on('system:ready', setEnvironment);
 ircEvents.on('system:ready', fillEmoticonSelector);
 ircEvents.on('system:ready', fillColorSelector);
+ircEvents.on('system:ready', () => { disp.setSize(parseFloat(localStorage.getItem('tsize')) || 1); });
 
 // Connection dialog and initial IRC flow — defined in gateway_conn.js
 ircEvents.on('system:ready', conn.gatewayInit);

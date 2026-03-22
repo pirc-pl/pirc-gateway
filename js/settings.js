@@ -201,7 +201,7 @@ const settings = (function() {
 			if (settings.get('tabsListBottom')) {
 				$('#top_menu').detach().insertAfter('#inputbox');
 			} else {
-				$('#top_menu').detach().insertAfter('#options-box');
+				$('#top_menu').detach().insertAfter('#about-dialog');
 			}
 			if (settings.get('biggerEmoji')) {
 				document.documentElement.style.setProperty('--emoji-scale', '3');

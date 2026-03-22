@@ -16,7 +16,8 @@ const disp = {
 			close: function() {
 				$(this).dialog('destroy');
 			},
-			width: 600
+			width: 600,
+			maxHeight: window.innerHeight * 0.8
 		});
 		if (button) {
 			$(`#${  name}`).dialog('option', 'buttons', [ {
@@ -993,33 +994,11 @@ const uiTabs = {
 			uiTabs.findChannel(chan).markRead();
 			newActiveTabName = chan;
 			$('#input').focus();
-			if ($('#nicklist').width() < 41 && uiState.nickListVisibility) {
-				$('#nicklist-closed').fadeOut(1, () => {
-					$('#nicklist').animate({
-						'opacity': 'toggle',
-						'width':	'23%'
-					}, 1);
-					$('#chstats').animate({
-						'opacity': 'toggle',
-						'width':	'23%'
-					}, 1);
-					$('#chatbox').animate({
-						'width':	'77%'
-					}, 1, () => {
-						uiTabs.findChannel(chan).restoreScroll();
-						setTimeout(() => {
-							uiTabs.findChannel(chan).restoreScroll();
-						}, 200);
-						$('#nickopts').css('display', '');
-						$('#chlist').css('display', '');
-					});
-				});
-			} else {
+			$('#right-col').show();
+			uiTabs.findChannel(chan).restoreScroll();
+			setTimeout(() => {
 				uiTabs.findChannel(chan).restoreScroll();
-				setTimeout(() => {
-					uiTabs.findChannel(chan).restoreScroll();
-				}, 200);
-			}
+			}, 200);
 			disp.groupEvents(`#${  id  }-window`);
 		} else if (chan != '--status' && uiTabs.findQuery(chan)) {
 			id = uiTabs.findQuery(chan).id;
@@ -1038,32 +1017,11 @@ const uiTabs = {
 			$(`#${  id  }-topic`).prop('title', '');
 			newActiveTabName = chan;
 			$('#input').focus();
-			if ($('#nicklist').width() > 40) {
-				$('#nicklist').animate({
-					'opacity': 'toggle',
-					'width':	'40px'
-				}, 1);
-				$('#chstats').animate({
-					'opacity': 'toggle',
-					'width':	'40px'
-				}, 1);
-				$('#chatbox').animate({
-					'width':	'97%'
-				}, 1, () => {
-					$('#nicklist-closed').fadeIn(1);
-					uiTabs.findQuery(chan).restoreScroll();
-					setTimeout(() => {
-						uiTabs.findQuery(chan).restoreScroll();
-					}, 200);
-					$('#nickopts').css('display', 'none');
-					$('#chlist').css('display', 'none');
-				});
-			} else {
+			$('#right-col').hide();
+			uiTabs.findQuery(chan).restoreScroll();
+			setTimeout(() => {
 				uiTabs.findQuery(chan).restoreScroll();
-				setTimeout(() => {
-					uiTabs.findQuery(chan).restoreScroll();
-				}, 200);
-			}
+			}, 200);
 			uiTabs.findQuery(chan).markRead();
 		} else if (uiState.listWindow && chan == uiState.listWindow.name) {
 			id = uiState.listWindow.id;
@@ -1082,26 +1040,8 @@ const uiTabs = {
 			uiState.listWindow.markRead();
 			newActiveTabName = chan;
 			$('#input').focus();
-			if ($('#nicklist').width() > 40) {
-				$('#nicklist').animate({
-					'opacity': 'toggle',
-					'width':	'40px'
-				}, 1);
-				$('#chstats').animate({
-					'opacity': 'toggle',
-					'width':	'40px'
-				}, 1);
-				$('#chatbox').animate({
-					'width':	'97%'
-				}, 1, () => {
-					$('#nicklist-closed').fadeIn(1);
-					uiState.listWindow.restoreScroll();
-					$('#nickopts').css('display', 'none');
-					$('#chlist').css('display', 'none');
-				});
-			} else {
-				uiState.listWindow.restoreScroll();
-			}
+			$('#right-col').hide();
+			uiState.listWindow.restoreScroll();
 		} else if (chan == '--status') {
 			$('#main-window > span').hide();
 			$('#tab-info > span').hide();
@@ -1117,32 +1057,11 @@ const uiTabs = {
 			uiState.statusWindow.markRead();
 			newActiveTabName = chan;
 			$('#input').focus();
-			if ($('#nicklist').width() > 40) {
-				$('#nicklist').animate({
-					'opacity': 'toggle',
-					'width':	'40px'
-				}, 1);
-				$('#chstats').animate({
-					'opacity': 'toggle',
-					'width':	'40px'
-				}, 1);
-				$('#chatbox').animate({
-					'width':	'97%'
-				}, 1, () => {
-					$('#nicklist-closed').fadeIn(1);
-					uiState.statusWindow.restoreScroll();
-					setTimeout(() => {
-						uiState.statusWindow.restoreScroll();
-					}, 200);
-					$('#nickopts').css('display', 'none');
-					$('#chlist').css('display', 'none');
-				});
-			} else {
+			$('#right-col').hide();
+			uiState.statusWindow.restoreScroll();
+			setTimeout(() => {
 				uiState.statusWindow.restoreScroll();
-				setTimeout(() => {
-					uiState.statusWindow.restoreScroll();
-				}, 200);
-			}
+			}, 200);
 		}
 		commandBus.emit('chat:tabSwitched', { oldTab: uiState.active, newTab: newActiveTabName });
 		uiState.active = newActiveTabName; // Update active tab after chat event
@@ -1278,7 +1197,7 @@ const uiNicklist = {
 		}
 		active.saveScroll();
 		if ($('#right-col').width() > 40) {
-			$('#right-col').animate({
+			$('#right-col').css('overflow', 'hidden').animate({
 				'width': '40px'
 			}, 400, () => {
 				$('#nicklist-closed').fadeIn(200);
@@ -1300,7 +1219,7 @@ const uiNicklist = {
 	// Check if nicklist is visible and show it if needed
 	checkNickListVisibility: function() {
 		setTimeout(() => {
-			if (!$('#nicklist-closed').is(':visible') && !$('#nicklist').is(':visible')) {
+			if ($('#right-col').is(':visible') && !$('#nicklist-closed').is(':visible') && !$('#nicklist').is(':visible')) {
 				uiNicklist.showNickList();
 			}
 		}, 1500);
@@ -1311,7 +1230,9 @@ const uiNicklist = {
 		$('#nicklist-closed').fadeOut(200, () => {
 			$('#right-col').animate({
 				'width': '23%'
-			}, 400);
+			}, 400, () => {
+				$('#right-col').css('overflow', '');
+			});
 			setTimeout(() => {
 				let tab = uiTabs.getActive();
 				if (!tab) {
@@ -1745,14 +1666,14 @@ Object.assign(uiTabs, {
 		if ($('#chlist-body').is(':visible')) {
 			// Collapse: restore default flex sizes
 			$('#chlist-body').css('display', '');
-			$('#chlist').css('flex', '');
+			$('#chlist').css({'flex': '', 'max-height': ''});
 			$('#nicklist').css('flex', '');
 			$('#chlist-button').text(`⮙ ${  language.channelList  } ⮙`);
 		} else {
-			// Expand: chlist takes remaining space, nicklist shrinks
+			// Expand: chlist sizes to content (capped at 60%), nicklist gets remaining space
 			$('#chlist-body').css('display', 'block');
-			$('#chlist').css('flex', '1 1 auto');
-			$('#nicklist').css('flex', '0 0 auto');
+			$('#chlist').css({'flex': '0 0 auto', 'max-height': '60%'});
+			$('#nicklist').css('flex', '');
 			$('#chlist-button').text(`⮛ ${  language.hideList  } ⮛`);
 			$('#chlist-body').html(language.loadingWait);
 			commandBus.emit('chat:requestListChannels', { minUsers: '>9', time: new Date() });
@@ -2566,6 +2487,8 @@ const uiDialogs = {
 		let dWidth = 600;
 		if (type == 'alert') {
 			dWidth = 400;
+		} else if (type == 'connect') {
+			dWidth = 'auto';
 		}
 		$dialog.dialog({
 			resizable: false,
@@ -2574,7 +2497,8 @@ const uiDialogs = {
 				$(`#${  id}`).dialog('destroy');
 				$(`#${  id}`).remove();
 			},
-			width: dWidth
+			width: dWidth,
+			maxHeight: window.innerHeight * 0.8
 		});
 		if (button == 'OK') {
 			button = [{
