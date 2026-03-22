@@ -187,10 +187,11 @@ input, button, submit {
 	background: none repeat scroll 0 0 #FFFFFF;
 	border: 1px solid #9A9A9A;
 	height: calc(100% - 20px);
-	margin: 10px auto;
+	margin: 10px;
 	overflow: auto;
 	overflow-anchor: none;
-	width: 97%;
+	scrollbar-gutter: stable;
+	width: calc(100% - 20px);
 	word-wrap: break-word;
 }
 	
