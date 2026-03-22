@@ -1067,6 +1067,21 @@ const uiTabs = {
 		uiState.active = newActiveTabName; // Update active tab after chat event
 		uiState.tabHistory.push(newActiveTabName); // Update UI tab history
 		uiNicklist.checkNickListVisibility();
+
+		// Scroll the active tab into view in the tab bar
+		const $activeTab = $('li.activeWindow');
+		if ($activeTab.length) {
+			const wrapper = document.getElementById('tab-wrapper');
+			const wrapperRect = wrapper.getBoundingClientRect();
+			const tabRect = $activeTab[0].getBoundingClientRect();
+			const tabLeft = tabRect.left - wrapperRect.left + wrapper.scrollLeft;
+			const tabRight = tabRect.right - wrapperRect.left + wrapper.scrollLeft;
+			if (tabLeft < wrapper.scrollLeft) {
+				wrapper.scrollLeft = Math.max(0, tabLeft - 10);
+			} else if (tabRight > wrapper.scrollLeft + wrapper.offsetWidth) {
+				wrapper.scrollLeft = tabRight - wrapper.offsetWidth + 10;
+			}
+		}
 	},
 
 	// Get the active tab object (returns false for status window)
@@ -1227,9 +1242,10 @@ const uiNicklist = {
 
 	// Show the nicklist panel
 	showNickList: function() {
+		const targetWidth = window.matchMedia('(max-width: 767px)').matches ? '70%' : '23%';
 		$('#nicklist-closed').fadeOut(200, () => {
 			$('#right-col').animate({
-				'width': '23%'
+				'width': targetWidth
 			}, 400, () => {
 				$('#right-col').css('overflow', '');
 			});
@@ -4183,16 +4199,34 @@ function initUiBindings() {
 		uiState.nickListVisibility = false;
 	}
 
-	// Double-tap on chat area to toggle nicklist
+	// Chat area: swipe left/right to switch tabs; double-tap to toggle nicklist
 	let lastChatTap = 0;
-	$('#chatbox').on('touchend', (e) => {
+	let chatTouchX = 0;
+	let chatTouchY = 0;
+	document.getElementById('chatbox').addEventListener('touchstart', (e) => {
+		chatTouchX = e.touches[0].clientX;
+		chatTouchY = e.touches[0].clientY;
+	}, { passive: true });
+	document.getElementById('chatbox').addEventListener('touchend', (e) => {
+		const dx = e.changedTouches[0].clientX - chatTouchX;
+		const dy = e.changedTouches[0].clientY - chatTouchY;
 		const now = Date.now();
-		if (now - lastChatTap < 300) {
-			uiNicklist.nickListToggle();
-			e.preventDefault();
-			lastChatTap = 0;
-		} else {
-			lastChatTap = now;
+		if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+			// Horizontal swipe — switch tab
+			if (dx < 0) {
+				uiTabs.nextTab();
+			} else {
+				uiTabs.prevTab();
+			}
+		} else if (Math.abs(dx) < 15 && Math.abs(dy) < 15) {
+			// Tap with minimal movement — check for double-tap
+			if (now - lastChatTap < 300) {
+				uiNicklist.nickListToggle();
+				e.preventDefault();
+				lastChatTap = 0;
+			} else {
+				lastChatTap = now;
+			}
 		}
 	});
 
