@@ -162,7 +162,8 @@ input, button, submit {
 #right-col {
 	display: flex;
 	flex-direction: column;
-	flex: 0 0 23%;
+	flex: 0 0 auto;
+	width: 23%; /* flex-basis:auto so jQuery width animation works */
 	min-height: 0;
 	padding-right: 10px;
 }
