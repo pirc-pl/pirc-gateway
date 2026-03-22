@@ -1525,3 +1525,18 @@ span.nick, span.yournick {
     transition: flex-basis 0.4s ease;
 }
 
+/* ==========================================
+   Mobile layout (max-width: 767px)
+   ========================================== */
+@media (max-width: 767px) {
+    /* Hide tab bar arrow buttons — swipe is used instead */
+    #leftarrow, #rightarrow {
+        display: none;
+    }
+
+    /* Prevent iOS auto-zoom when focusing the text input */
+    #input {
+        font-size: 16px;
+    }
+}
+

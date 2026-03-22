@@ -4170,6 +4170,52 @@ function initUiBindings() {
 	$('#nicklist').click(() => {
 		uiHelpers.inputFocus();
 	});
+
+	// Mobile UX
+	const isMobile = window.matchMedia('(max-width: 767px)').matches;
+
+	if (isMobile) {
+		// Start with nicklist collapsed on mobile
+		$('#right-col').css({ width: '40px', overflow: 'hidden' });
+		$('#nicklist-closed').show();
+		$('#nickopts').hide();
+		$('#chlist').hide();
+		uiState.nickListVisibility = false;
+	}
+
+	// Double-tap on chat area to toggle nicklist
+	let lastChatTap = 0;
+	$('#chatbox').on('touchend', (e) => {
+		const now = Date.now();
+		if (now - lastChatTap < 300) {
+			uiNicklist.nickListToggle();
+			e.preventDefault();
+			lastChatTap = 0;
+		} else {
+			lastChatTap = now;
+		}
+	});
+
+	// Swipe left/right on the tab bar to switch tabs
+	let tabSwipeX = 0;
+	let tabSwipeY = 0;
+	document.getElementById('tab-wrapper').addEventListener('touchstart', (e) => {
+		tabSwipeX = e.touches[0].clientX;
+		tabSwipeY = e.touches[0].clientY;
+	}, { passive: true });
+	document.getElementById('tab-wrapper').addEventListener('touchend', (e) => {
+		const dx = e.changedTouches[0].clientX - tabSwipeX;
+		const dy = e.changedTouches[0].clientY - tabSwipeY;
+		// Require at least 40px horizontal movement, more horizontal than vertical
+		if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+			if (dx < 0) {
+				uiTabs.nextTab();
+			} else {
+				uiTabs.prevTab();
+			}
+		}
+	}, { passive: true });
+
 	window.addEventListener('resize', () => {
 		const tab = uiTabs.getActive();
 		if (tab) {
