@@ -1212,6 +1212,10 @@ const uiNicklist = {
 		}
 		active.saveScroll();
 		if ($('#right-col').width() > 40) {
+			$('#nicklist').hide();
+			$('#chstats').hide();
+			$('#nickopts').css('display', 'none');
+			$('#chlist').css('display', 'none');
 			$('#right-col').css('overflow', 'hidden').animate({
 				'width': '40px'
 			}, 400, () => {
@@ -1220,8 +1224,6 @@ const uiNicklist = {
 					uiTabs.getActive().restoreScroll();
 				}, 250);
 			});
-			$('#nickopts').css('display', 'none');
-			$('#chlist').css('display', 'none');
 			uiState.nickListVisibility = false;
 		} else {
 			uiNicklist.showNickList();
@@ -1249,6 +1251,8 @@ const uiNicklist = {
 	showNickList: function() {
 		const targetWidth = window.matchMedia('(max-width: 767px)').matches ? '70%' : '23%';
 		$('#nicklist-closed').fadeOut(200, () => {
+			$('#nicklist').show();
+			$('#chstats').show();
 			$('#right-col').animate({
 				'width': targetWidth
 			}, 400, () => {

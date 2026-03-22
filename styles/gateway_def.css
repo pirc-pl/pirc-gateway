@@ -700,6 +700,7 @@ span.notice, span.notice-nick {
 #nicklist-closed {
 	display: none;
 	flex: 1 1 auto;
+	position: relative;
 }
 
 div.close {
