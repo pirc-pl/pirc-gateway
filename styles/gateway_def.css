@@ -202,6 +202,7 @@ input, button, submit {
 	height: calc(100% - 8px);
 	margin: 4px auto;
 	overflow: auto;
+	position: relative;
 	width: 98%;
 }
 	
@@ -1529,8 +1530,13 @@ span.nick, span.yournick {
    Mobile layout (max-width: 767px)
    ========================================== */
 @media (max-width: 767px) {
-    /* Prevent pull-to-refresh and overscroll bounce interfering with the fixed layout */
+    /* Prevent html + body from being scrollable; use dynamic viewport height */
+    html {
+        overflow: hidden;
+        height: 100%;
+    }
     body {
+        height: 100dvh; /* adjusts when keyboard or browser chrome appears */
         overscroll-behavior: none;
     }
 
@@ -1539,7 +1545,17 @@ span.nick, span.yournick {
         display: none;
     }
 
-    /* Overlay nicklist over chat instead of shrinking the chat area */
+    /* Connect dialog: fit narrow screen and stay visible when keyboard is up */
+    #not_connected_div {
+        width: calc(100vw - 32px) !important;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        margin: 0;
+        max-height: 80dvh;
+        overflow-y: auto;
+    }
+
+    /* Overlay nicklist over chat; hidden by default (shown only for channel tabs) */
     #wrapper {
         position: relative;
     }
@@ -1548,8 +1564,18 @@ span.nick, span.yournick {
         right: 0;
         top: 0;
         bottom: 0;
+        width: 40px;      /* collapsed when shown */
+        overflow: hidden; /* clips content when collapsed */
         background: #f5f5f5;
         box-shadow: -3px 0 8px rgba(0, 0, 0, 0.25);
+    }
+
+    /* Constrain jQuery UI dialogs to screen width */
+    .ui-dialog {
+        max-width: calc(100vw - 16px) !important;
+    }
+    .ui-dialog .ui-dialog-content {
+        overflow-x: auto;
     }
 
     /* Larger touch targets in the input bar */

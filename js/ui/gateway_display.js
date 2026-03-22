@@ -1235,7 +1235,12 @@ const uiNicklist = {
 	checkNickListVisibility: function() {
 		setTimeout(() => {
 			if ($('#right-col').is(':visible') && !$('#nicklist-closed').is(':visible') && !$('#nicklist').is(':visible')) {
-				uiNicklist.showNickList();
+				if (uiState.nickListVisibility === false) {
+					// Nicklist intentionally collapsed — just show the toggle button
+					$('#nicklist-closed').show();
+				} else {
+					uiNicklist.showNickList();
+				}
 			}
 		}, 1500);
 	},
@@ -1247,7 +1252,7 @@ const uiNicklist = {
 			$('#right-col').animate({
 				'width': targetWidth
 			}, 400, () => {
-				$('#right-col').css('overflow', '');
+				$('#right-col').css('overflow', 'visible'); // explicit override of mobile CSS
 			});
 			setTimeout(() => {
 				let tab = uiTabs.getActive();
@@ -2505,6 +2510,9 @@ const uiDialogs = {
 			dWidth = 400;
 		} else if (type == 'connect') {
 			dWidth = 'auto';
+		}
+		if (typeof dWidth === 'number' && window.matchMedia('(max-width: 767px)').matches) {
+			dWidth = Math.min(dWidth, window.innerWidth - 32);
 		}
 		$dialog.dialog({
 			resizable: false,
@@ -4191,11 +4199,9 @@ function initUiBindings() {
 	const isMobile = window.matchMedia('(max-width: 767px)').matches;
 
 	if (isMobile) {
-		// Start with nicklist collapsed on mobile
-		$('#right-col').css({ width: '40px', overflow: 'hidden' });
-		$('#nicklist-closed').show();
-		$('#nickopts').hide();
-		$('#chlist').hide();
+		// Right-col is hidden on non-channel tabs (status is the initial tab).
+		// CSS handles width:40px and overflow:hidden when it is shown for a channel.
+		$('#right-col').hide();
 		uiState.nickListVisibility = false;
 	}
 
