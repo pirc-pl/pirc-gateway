@@ -15,7 +15,7 @@ body {
 	background: #555555 !important;
 }
 
-input[type="text"], input[type="text"], input[type="password"] {
+input[type="text"], input[type="password"] {
 	background: #000000;
 	border-color: #2a2a2a;
 	color: #dddddd;

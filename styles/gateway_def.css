@@ -26,9 +26,6 @@ body {
 	overflow-wrap: break-word;
 	word-break: break-word;*/
 
-	-webkit-hyphens: auto;
-	-moz-hyphens: auto;
-	-ms-hyphens: auto;
 	hyphens: auto;
 }
 
@@ -65,11 +62,7 @@ input, button, submit {
 }
 
 #not_connected_div {
-	-moz-border-radius: 10px;
-	-webkit-border-radius: 10px;
 	border-radius: 10px;
-	-moz-box-shadow: 2px 2px 7px #505050;
-	-webkit-box-shadow: 2px 2px 7px #505050;
 	box-shadow: 2px 2px 7px #505050;
 	background: url("/styles/img/techbg.png") no-repeat scroll right top #E8E8E8;
 	border: 1px solid #757575;
@@ -123,8 +116,6 @@ input, button, submit {
 }
 	
 #top_menu ul li.newmsg {
-	-moz-border-radius: 8px;
-	-webkit-border-radius: 8px;
 	border-radius: 8px;
 	background: none repeat scroll 0 0 #949494 !important;
 }
@@ -134,8 +125,6 @@ input, button, submit {
 }
 	
 #top_menu ul li.newmsg2 {
-	-moz-border-radius: 8px;
-	-webkit-border-radius: 8px;
 	border-radius: 8px;
 	background: none repeat scroll 0 0 #444444;
 }
@@ -181,8 +170,6 @@ input, button, submit {
 }
 	
 #chat-wrapper {
-	-moz-border-radius: 4px;
-	-webkit-border-radius: 4px;
 	border-radius: 4px;
 	background: none repeat scroll 0 0 #FFFFFF;
 	border: 1px solid #9A9A9A;
@@ -196,8 +183,6 @@ input, button, submit {
 }
 	
 #nick-wrapper {
-	-moz-border-radius: 4px;
-	-webkit-border-radius: 4px;
 	border-radius: 4px;
 	background: none repeat scroll 0 0 #FFFFFF;
 	border: 1px solid #9A9A9A;
@@ -231,8 +216,6 @@ ul.nicklist li:hover, ul.nicklist li.activeNick {
 }
 	
 input.input {
-	-moz-border-radius: 2px;
-	-webkit-border-radius: 2px;
 	border-radius: 2px;
 	border: 1px solid #9A9A9A;
 	color: #8A8A8A;
@@ -245,12 +228,10 @@ input.input:focus {
 }
 	
 input.submit {
-	background: none repeat scroll 0 0 #DADADA;;
+	background: none repeat scroll 0 0 #DADADA;
 }
 
 button.textFormat {
-	-moz-border-radius: 2px;
-	-webkit-border-radius: 2px;
 	border-radius: 2px;
 	border: 1px solid #9A9A9A;
 	padding: 3px;
@@ -393,8 +374,6 @@ span.modevictim, span.modeinfo {
 }
 	
 #top_menu ul li:hover, #top_menu ul li:focus {
-	-moz-border-radius: 8px;
-	-webkit-border-radius: 8px;
 	border-radius: 8px;
 	background: none repeat scroll 0 0 #515459;
 	border: 1px solid #303033;
@@ -435,19 +414,13 @@ input.top {
 }
 	
 input.top:focus, input.top:hover {
-	-moz-border-radius: 8px;
-	-webkit-border-radius: 8px;
 	border-radius: 8px;
 	background: none repeat scroll 0 0 #444444;
 	color: #FFFFFF;
 	cursor: pointer;
 	text-decoration: none;
 }
-	
-#chat-wrapper br {
-	margin-top: 2px;
-}
-	
+
 span.yournickname {
 	padding: 5px;
 }
@@ -553,11 +526,7 @@ ul.options li:hover {
 }
 	
 .statuswindow {
-	-moz-border-radius: 10px;
-	-webkit-border-radius: 10px;
 	border-radius: 10px;
-	-moz-box-shadow: 2px 2px 7px #505050;
-	-webkit-box-shadow: 2px 2px 7px #505050;
 	box-shadow: 2px 2px 7px #505050;
 	background: url("/styles/img/techbg.png") no-repeat scroll right top #E8E8E8;
 	border: 1px solid #757575;
@@ -612,8 +581,6 @@ ul.options li:hover {
 }
 	
 .statusbutton {
-	-moz-border-radius: 6px;
-	-webkit-border-radius: 6px;
 	border-radius: 6px;
 	background: none repeat scroll 0 0 #FAFAFA;
 	border: 1px solid #858585;
@@ -667,8 +634,6 @@ ul.options li:hover {
 }
 	
 .kickinput {
-	-moz-border-radius: 10px;
-	-webkit-border-radius: 10px;
 	border-radius: 10px;
 	border: 1px solid #757575;
 	font-size: 1.1em;
@@ -719,9 +684,8 @@ div.close:focus, div.close:hover {
 }
 	
 input[type="text"], input[type="password"] {
-	background: none repeat scroll 0 0 #FFFFFF;
-	border: 1px solid #B2B2B2;
 	background: #F5F5F5;
+	border: 1px solid #B2B2B2;
 	padding: 2px;
 	border-radius: 3px;
 	color: #666;
@@ -765,11 +729,9 @@ input.symbols {
 .symbols, .insertColor, .completion, .submit {
 	display: block;
 	height: 28px;
-	-moz-border-radius: 3px;
-	-webkit-border-radius: 3px;
 	border-radius: 3px;
 	border: 1px solid #9A9A9A;
-	padding: 3px
+	padding: 3px;
 }
 
 .insertColor, .symbols {
@@ -785,7 +747,6 @@ a.charSelect, #size-dialog a {
 	display: block;
 	float: left;
 	margin: 3px;
-	padding: 3px;
 	border: 1px solid  #B2B2B2;
 	padding: 5px;
 	border-radius: 5px;
@@ -852,20 +813,18 @@ a.charSelect:hover, #size-dialog a:hover {
 	background: url("/styles/img/info.png") no-repeat scroll right top #D7E4F3;
 }
 
-#about_div p, #about-dialog p {
+#about-dialog p {
 	background: none repeat scroll 0 0 rgba(255, 255, 255, 0.2);
 	margin-top: 2px;
 	padding: 1px;
 }
 	
-#about_div h3, #about-dialog h3 {
+#about-dialog h3 {
 	font-size: 1.3em;
 	padding-bottom: 10px;
 }
 
 .activeWindow {
-	-moz-border-radius: 8px;
-	-webkit-border-radius: 8px;
 	border-radius: 8px;
 	background: none repeat scroll 0 0 #515459;
 	border: 1px solid #303033;
@@ -874,14 +833,6 @@ a.charSelect:hover, #size-dialog a:hover {
 	padding: 6px !important;
 }
 
-span.uiclick {
-	text-decoration: italic;
-}
-
-span.uiclick:hover {
-	cursor: pointer;
-	text-decoration: underline;
-}
 
 div.table  {
 	display:table;
@@ -1047,7 +998,6 @@ ul.channelOperActions, ul.channelOptions, #nickOptions {
 .ui-widget-overlay {
    background: #dddddd;
    opacity: .65;
-   filter: Alpha(Opacity=65);
 }
 
 .error-dialog-spec .ui-button, .alert-dialog-spec .ui-button, .no-access .ui-button {
@@ -1379,9 +1329,6 @@ span.realNick {
 	font-size: .7em;
 }
 
-#formatting {
-}
-
 #formatting-button {
 	display: none;
     width: 20em;
@@ -1403,7 +1350,6 @@ span.realNick {
 
 .notDelivered {
 	opacity: 0.4;
-	filter: alpha(opacity=40);
 }
 
 .msgDeliveryFailed {
