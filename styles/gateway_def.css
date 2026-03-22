@@ -1538,7 +1538,8 @@ span.nick, span.yournick {
         height: 100%;
     }
     body {
-        height: 100dvh; /* adjusts when keyboard or browser chrome appears */
+        position: relative; /* makes body the containing block for #not_connected_wrapper */
+        height: 100dvh; /* initial height — overridden by JS visualViewport sync */
         overscroll-behavior: none;
     }
 
@@ -1588,8 +1589,15 @@ span.nick, span.yournick {
         pointer-events: auto;
     }
 
-    /* Constrain jQuery UI dialogs to screen width */
+    /* Constrain jQuery UI dialogs to screen width and keep them in the visual
+       viewport. position:fixed prevents the browser from scrolling/shifting to
+       reveal an off-screen dialog (which would fight the keyboard-resize logic). */
     .ui-dialog {
+        position: fixed !important;
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        margin: 0 !important;
         max-width: calc(100vw - 16px) !important;
     }
     .ui-dialog .ui-dialog-content {

@@ -4216,6 +4216,18 @@ function initUiBindings() {
 		$('#nicklist-closed').show();
 		$('#right-col').hide();
 		uiState.nickListVisibility = false;
+
+		// Keep body height in sync with the visual viewport (the portion of the screen
+		// not covered by the on-screen keyboard or browser chrome). 100dvh is not
+		// reliable on older browsers; visualViewport.resize is the authoritative source.
+		const syncBodyHeight = () => {
+			const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+			document.body.style.height = `${h}px`;
+		};
+		if (window.visualViewport) {
+			window.visualViewport.addEventListener('resize', syncBodyHeight);
+		}
+		syncBodyHeight();
 	}
 
 	// Chat area: swipe left/right to switch tabs; double-tap to toggle nicklist
@@ -4270,6 +4282,10 @@ function initUiBindings() {
 	}, { passive: true });
 
 	window.addEventListener('resize', () => {
+		if (isMobile && !window.visualViewport) {
+			// Fallback for browsers without visualViewport: sync from window.innerHeight
+			document.body.style.height = `${window.innerHeight}px`;
+		}
 		const tab = uiTabs.getActive();
 		if (tab) {
 			tab.restoreScroll();
