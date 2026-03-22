@@ -808,8 +808,12 @@ const uiHelpers = {
 	avatarError: function(imgEl) {
 		const nick = imgEl.dataset.nick;
 		const user = connection.chat.users.getExistingUser(nick);
-		if (user) uiState.disabledAvatarIds[user.id] = true;
-		imgEl.src = '/styles/img/noavatar.png';
+		if (user) {
+			uiState.disabledAvatarIds[user.id] = true;
+			imgEl.src = disp.getAvatarIcon(nick, user.registered);
+		} else {
+			imgEl.src = '/styles/img/noavatar.png';
+		}
 	},
 
 	// Get user avatar or letter avatar HTML

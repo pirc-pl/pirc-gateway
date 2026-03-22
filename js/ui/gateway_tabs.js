@@ -383,7 +383,7 @@ class NicklistUser {
 		$(`#${  this.id  }-givePrivileges`).off('click').click(() => { uiDialogs.showStatus(this.channel, this.channelMember.user.nick); });
 		$(`#${  this.id  }-takePrivileges`).off('click').click(() => { uiDialogs.showStatusAnti(this.channel, this.channelMember.user.nick); });
 		/*$('#'+this.id+'-showBanUni').click(function(){ uiDialogs.showBan(this.channel, this.user.nick); }.bind(this));*/
-		$(`#${  this.id  }-avatarField`).off('error').error(() => { const u = connection.chat.users.getExistingUser(this.channelMember.user.nick); if (u) uiState.disabledAvatarIds[u.id] = true; });
+		$(`#${  this.id  }-avatarField`).off('error').error((e) => { const u = connection.chat.users.getExistingUser(this.channelMember.user.nick); if (u) { uiState.disabledAvatarIds[u.id] = true; $(e.target).attr('src', disp.getAvatarIcon(u.nick, u.registered)); } });
 
 		// Oper actions visibility, now driven by current user's privileges
 		// This logic needs to be moved to gateway_display reacting to a chat event
@@ -413,7 +413,7 @@ class NicklistUser {
 			loggedIn = false;
 		}
 		const nick = user.nick;
-		$(`#${  this.id  } .chavatar`).attr('alt', '').attr('src', disp.getAvatarIcon(nick, loggedIn)).attr('title', regText).off('error').error(() => { const u = connection.chat.users.getExistingUser(nick); if (u) uiState.disabledAvatarIds[u.id] = true; });
+		$(`#${  this.id  } .chavatar`).attr('alt', '').attr('src', disp.getAvatarIcon(nick, loggedIn)).attr('title', regText).off('error').error((e) => { const u = connection.chat.users.getExistingUser(nick); if (u) { uiState.disabledAvatarIds[u.id] = true; $(e.target).attr('src', disp.getAvatarIcon(nick, u.registered)); } });
 		$(`#${  this.id  }-opt .nicklistAvatar`).html(uiHelpers.getMeta(nick, 500));
 	}
 
