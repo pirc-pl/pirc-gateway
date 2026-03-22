@@ -252,10 +252,10 @@
 			<div id="input-wrapper">
 				<table class="nostyle"><tr>
 					<!--<td style="width: 150px; text-align: right;"><span id="usernick" class="yournickname">{$nick}</span></td>-->
-					<td style="width: 10px;"><input type="image" src="/styles/img/plus.png" value="" class="completion language-tabTitle" onClick="uiInput.doComplete();$('#input').focus()"></td>
+					<td style="width: 10px;"><input type="image" src="/styles/img/plus.png" value="" class="completion language-tabTitle" onmousedown="return false;" onClick="uiHelpers.doComplete();$('#input').focus()"></td>
 					<td style="padding-right: 10px; padding-left: 5px;"> <input id="input" type="text" name="input" class="input"></td>
 					<td style="width: 10px;"><input type="image" src="/styles/img/smiley_mu.png" class="symbols language-emoticonsSymbolsTitle" onClick="disp.symbolWindowShow()"></td>
-					<td style="width: 10px;"><input type="image" src="/styles/img/kolorki.png" value="" class="insertColor language-colorsFormattingTitle" onClick="disp.colorWindowShow()"></td>
+					<td style="width: 10px;"><input type="image" src="/styles/img/kolorki.png" value="" class="insertColor language-colorsFormattingTitle" onmousedown="return false;" onClick="disp.colorWindowShow()"></td>
 					<td style="width: 10px;"><input type="submit" value="&#11166;" class="submit symbolFont language-enterTitle" OnClick="uiInput.enterPressed()"></td>
 				</tr></table>
 			</div>

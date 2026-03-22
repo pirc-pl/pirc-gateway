@@ -1216,7 +1216,7 @@ const uiNicklist = {
 			$('#chstats').hide();
 			$('#nickopts').css('display', 'none');
 			$('#chlist').css('display', 'none');
-			$('#right-col').css('overflow', 'hidden').animate({
+			$('#right-col').removeClass('mobile-nicklist-open').css('overflow', 'hidden').animate({
 				'width': '40px'
 			}, 400, () => {
 				$('#nicklist-closed').fadeIn(200);
@@ -1253,6 +1253,9 @@ const uiNicklist = {
 		$('#nicklist-closed').fadeOut(200, () => {
 			$('#nicklist').show();
 			$('#chstats').show();
+			if (window.matchMedia('(max-width: 767px)').matches) {
+				$('#right-col').addClass('mobile-nicklist-open');
+			}
 			$('#right-col').animate({
 				'width': targetWidth
 			}, 400, () => {
