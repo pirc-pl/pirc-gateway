@@ -1547,13 +1547,20 @@ span.nick, span.yournick {
         display: none;
     }
 
-    /* Connect dialog: fit narrow screen and stay visible when keyboard is up */
+    /* Connect dialog: fit narrow screen and stay visible when keyboard is up.
+       position:absolute (not fixed) so it scales with the dvh-sized wrapper when
+       the keyboard appears — position:fixed ignores the parent and stays anchored
+       to the original viewport, letting the keyboard cover it. */
+    #not_connected_wrapper {
+        overflow-y: auto; /* fallback scroll if dialog is still taller than remaining space */
+    }
     #not_connected_div {
-        width: calc(100vw - 32px) !important;
+        position: absolute;
+        width: calc(100% - 32px) !important;
         left: 50%;
         transform: translate(-50%, -50%);
         margin: 0;
-        max-height: 80dvh;
+        max-height: 80%;
         overflow-y: auto;
     }
 

@@ -4206,8 +4206,14 @@ function initUiBindings() {
 	const isMobile = window.matchMedia('(max-width: 767px)').matches;
 
 	if (isMobile) {
-		// Right-col is hidden on non-channel tabs (status is the initial tab).
-		// CSS handles width:40px and overflow:hidden when it is shown for a channel.
+		// Hide right-col (status is the initial tab; shown only for channel tabs).
+		// Pre-apply the fully-collapsed state so the first switchTab().show() is correct:
+		// hide all content, show the toggle button — no reflow visible on first appearance.
+		$('#nicklist').hide();
+		$('#chstats').hide();
+		$('#nickopts').css('display', 'none');
+		$('#chlist').css('display', 'none');
+		$('#nicklist-closed').show();
 		$('#right-col').hide();
 		uiState.nickListVisibility = false;
 	}
